@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { createProjectTask } from '../lib/api/todos';
 import { fetchProjects } from '../lib/api/projects';
 import {
@@ -36,6 +37,10 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
     }
   }, []);
 
+  function closeModal() {
+    setOpen(false);
+  }
+
   useEffect(() => {
     if (!open) return;
 
@@ -61,6 +66,25 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
       setProjects([]);
     }
   }, [open, organizations, loadProjects]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
 
   async function handleOrganizationChange(nextOrgId: string) {
     setOrganizationId(nextOrgId);
@@ -90,82 +114,110 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
     setLastOrganizationId(organizationId);
     setLastProjectId(projectId);
     await onCreated();
-    setOpen(false);
+    closeModal();
   }
 
   const canCreate = Boolean(organizationId && projectId);
 
+  const modal = open
+    ? createPortal(
+        <div
+          className="modal-overlay"
+          onClick={closeModal}
+          role="presentation"
+        >
+          <div
+            className="modal task-create-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="task-create-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="modal-header">
+              <h2 id="task-create-modal-title">New task</h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                onClick={closeModal}
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="modal-body">
+              <div className="quick-create-context">
+                <label className="board-filter-field">
+                  Organization
+                  <Select
+                    value={organizationId}
+                    placeholder={
+                      loadingOrganizations ? 'Loading...' : 'Select organization'
+                    }
+                    disabled={loadingOrganizations || organizations.length === 0}
+                    onChange={handleOrganizationChange}
+                    options={organizations.map((organization) => ({
+                      value: organization.id,
+                      label: organization.name,
+                    }))}
+                  />
+                </label>
+
+                <label className="board-filter-field">
+                  Project
+                  <Select
+                    value={projectId}
+                    placeholder={
+                      loadingProjects
+                        ? 'Loading projects...'
+                        : organizationId
+                          ? 'Select project'
+                          : 'Choose organization first'
+                    }
+                    disabled={
+                      !organizationId ||
+                      loadingProjects ||
+                      projects.length === 0
+                    }
+                    onChange={handleProjectChange}
+                    options={projects.map((project) => ({
+                      value: project.id,
+                      label: project.name,
+                    }))}
+                  />
+                </label>
+              </div>
+
+              {!loadingOrganizations && organizations.length === 0 && (
+                <p className="status-message">
+                  Create an organization and project before adding tasks.
+                </p>
+              )}
+
+              {organizationId && !loadingProjects && projects.length === 0 && (
+                <p className="status-message">
+                  No projects in this organization yet. Create a project first.
+                </p>
+              )}
+
+              {canCreate && <TaskForm onSubmit={handleCreate} />}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )
+    : null;
+
   return (
-    <div className="quick-create">
+    <>
       <button
         type="button"
         className="btn btn-primary quick-create-trigger"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => setOpen(true)}
       >
-        {open ? 'Close' : 'New task'}
+        New task
       </button>
-
-      {open && (
-        <section className="quick-create-panel" aria-label="Create task">
-          <div className="quick-create-context">
-            <label className="board-filter-field">
-              Organization
-              <Select
-                value={organizationId}
-                placeholder={
-                  loadingOrganizations ? 'Loading...' : 'Select organization'
-                }
-                disabled={loadingOrganizations || organizations.length === 0}
-                onChange={handleOrganizationChange}
-                options={organizations.map((organization) => ({
-                  value: organization.id,
-                  label: organization.name,
-                }))}
-              />
-            </label>
-
-            <label className="board-filter-field">
-              Project
-              <Select
-                value={projectId}
-                placeholder={
-                  loadingProjects
-                    ? 'Loading projects...'
-                    : organizationId
-                      ? 'Select project'
-                      : 'Choose organization first'
-                }
-                disabled={
-                  !organizationId ||
-                  loadingProjects ||
-                  projects.length === 0
-                }
-                onChange={handleProjectChange}
-                options={projects.map((project) => ({
-                  value: project.id,
-                  label: project.name,
-                }))}
-              />
-            </label>
-          </div>
-
-          {!loadingOrganizations && organizations.length === 0 && (
-            <p className="status-message">
-              Create an organization and project before adding tasks.
-            </p>
-          )}
-
-          {organizationId && !loadingProjects && projects.length === 0 && (
-            <p className="status-message">
-              No projects in this organization yet. Create a project first.
-            </p>
-          )}
-
-          {canCreate && (
-            <TaskForm onSubmit={handleCreate} />
-          )}
-        </section>
-      )}
-    </div>
+      {modal}
+    </>
   );
 }
