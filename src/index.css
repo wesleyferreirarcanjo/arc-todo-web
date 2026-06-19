@@ -1626,6 +1626,42 @@ textarea {
   color: var(--text-muted);
 }
 
+.settings-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.settings-summary-note {
+  margin: 0.45rem 0 0;
+}
+
+.token-total {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.settings-tool-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.token-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .settings-group-card {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -1670,7 +1706,6 @@ textarea {
 
 .tool-key {
   display: inline-block;
-  margin-top: 0.35rem;
   font-size: 0.75rem;
   color: var(--text-muted);
 }

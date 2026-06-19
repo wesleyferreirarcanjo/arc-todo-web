@@ -1,25 +1,64 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   bulkUpdateMcpToolSettings,
-  fetchMcpToolGroups,
+  fetchMcpToolSettings,
   updateMcpToolSetting,
 } from '../lib/api/mcpTools';
-import type { McpToolGroup, McpToolGroupResponse } from '../types/mcpTools';
+import type {
+  McpTokenSummary,
+  McpToolGroup,
+  McpToolGroupResponse,
+} from '../types/mcpTools';
 import { MCP_TOOL_GROUP_LABELS } from '../types/mcpTools';
+
+function formatTokenCount(value: number): string {
+  return value.toLocaleString();
+}
+
+function buildTokenSummary(
+  groups: McpToolGroupResponse[],
+  estimateMethod?: string,
+): McpTokenSummary {
+  const tools = groups.flatMap((group) => group.tools);
+
+  return {
+    estimateMethod:
+      estimateMethod ??
+      'chars/4 on compact JSON of MCP list_tools payload (name, description, inputSchema)',
+    enabledToolCount: tools.filter((tool) => tool.enabled).length,
+    totalToolCount: tools.length,
+    enabledTokens: tools
+      .filter((tool) => tool.enabled)
+      .reduce((sum, tool) => sum + tool.estimatedTokens, 0),
+    totalTokens: tools.reduce((sum, tool) => sum + tool.estimatedTokens, 0),
+  };
+}
+
+function withGroupTokenTotals(group: McpToolGroupResponse): McpToolGroupResponse {
+  return {
+    ...group,
+    enabledTokens: group.tools
+      .filter((tool) => tool.enabled)
+      .reduce((sum, tool) => sum + tool.estimatedTokens, 0),
+    totalTokens: group.tools.reduce((sum, tool) => sum + tool.estimatedTokens, 0),
+  };
+}
 
 export function McpToolsSettingsPage() {
   const [groups, setGroups] = useState<McpToolGroupResponse[]>([]);
+  const [tokenSummary, setTokenSummary] = useState<McpTokenSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [savingGroup, setSavingGroup] = useState<McpToolGroup | null>(null);
 
-  const loadGroups = useCallback(async () => {
+  const loadSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchMcpToolGroups();
-      setGroups(data);
+      const data = await fetchMcpToolSettings();
+      setGroups(data.groups);
+      setTokenSummary(data.tokenSummary);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load MCP tools');
     } finally {
@@ -28,17 +67,12 @@ export function McpToolsSettingsPage() {
   }, []);
 
   useEffect(() => {
-    void loadGroups();
-  }, [loadGroups]);
+    void loadSettings();
+  }, [loadSettings]);
 
-  const totalEnabled = useMemo(
-    () => groups.reduce((count, group) => count + group.tools.filter((tool) => tool.enabled).length, 0),
-    [groups],
-  );
-
-  const totalTools = useMemo(
-    () => groups.reduce((count, group) => count + group.tools.length, 0),
-    [groups],
+  const localTokenSummary = useMemo(
+    () => tokenSummary ?? buildTokenSummary(groups),
+    [groups, tokenSummary],
   );
 
   async function handleToolToggle(key: string, enabled: boolean) {
@@ -46,14 +80,20 @@ export function McpToolsSettingsPage() {
     setError(null);
     try {
       const updated = await updateMcpToolSetting(key, { enabled });
-      setGroups((current) =>
-        current.map((group) => ({
-          ...group,
-          tools: group.tools.map((tool) =>
-            tool.key === updated.key ? updated : tool,
-          ),
-        })),
-      );
+      setGroups((current) => {
+        const nextGroups = current.map((group) => ({
+          ...withGroupTokenTotals({
+            ...group,
+            tools: group.tools.map((tool) =>
+              tool.key === updated.key ? updated : tool,
+            ),
+          }),
+        }));
+        setTokenSummary(
+          buildTokenSummary(nextGroups, tokenSummary?.estimateMethod),
+        );
+        return nextGroups;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update tool');
     } finally {
@@ -72,18 +112,22 @@ export function McpToolsSettingsPage() {
         tools: group.tools.map((tool) => ({ key: tool.key, enabled })),
       });
       const updatedByKey = new Map(updated.map((tool) => [tool.key, tool]));
-      setGroups((current) =>
-        current.map((item) =>
+      setGroups((current) => {
+        const nextGroups = current.map((item) =>
           item.group === groupName
-            ? {
+            ? withGroupTokenTotals({
                 ...item,
                 tools: item.tools.map(
                   (tool) => updatedByKey.get(tool.key) ?? tool,
                 ),
-              }
+              })
             : item,
-        ),
-      );
+        );
+        setTokenSummary(
+          buildTokenSummary(nextGroups, tokenSummary?.estimateMethod),
+        );
+        return nextGroups;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update group');
     } finally {
@@ -119,9 +163,19 @@ export function McpToolsSettingsPage() {
       </div>
 
       <div className="settings-summary">
-        <span>
-          Enabled tools: {totalEnabled} / {totalTools}
-        </span>
+        <div className="settings-summary-row">
+          <span>
+            Enabled tools: {localTokenSummary.enabledToolCount} /{' '}
+            {localTokenSummary.totalToolCount}
+          </span>
+          <span className="token-total">
+            Estimated context: {formatTokenCount(localTokenSummary.enabledTokens)} tokens
+          </span>
+        </div>
+        <p className="subtitle settings-summary-note">
+          Baseline estimate for enabled MCP tool definitions ({localTokenSummary.estimateMethod}).
+          All tools enabled would use about {formatTokenCount(localTokenSummary.totalTokens)} tokens.
+        </p>
       </div>
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -138,7 +192,9 @@ export function McpToolsSettingsPage() {
                     <h3>{MCP_TOOL_GROUP_LABELS[group.group]}</h3>
                     <p className="subtitle">
                       {group.tools.filter((tool) => tool.enabled).length} of{' '}
-                      {group.tools.length} enabled
+                      {group.tools.length} enabled ·{' '}
+                      {formatTokenCount(group.enabledTokens)} /{' '}
+                      {formatTokenCount(group.totalTokens)} tokens
                     </p>
                   </div>
                   <label className="toggle-row">
@@ -165,7 +221,13 @@ export function McpToolsSettingsPage() {
                       <div>
                         <strong>{tool.displayName}</strong>
                         <p className="subtitle">{tool.description}</p>
-                        <code className="tool-key">{tool.key}</code>
+                        <div className="settings-tool-meta">
+                          <code className="tool-key">{tool.key}</code>
+                          <span className="token-badge">
+                            {formatTokenCount(tool.estimatedTokens)} tokens
+                            {!tool.enabled ? ' (disabled)' : ''}
+                          </span>
+                        </div>
                       </div>
                       <label className="toggle-row">
                         <span>{tool.enabled ? 'On' : 'Off'}</span>

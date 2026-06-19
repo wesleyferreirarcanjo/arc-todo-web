@@ -1,13 +1,13 @@
 import { apiRequest } from './client';
 import type {
   BulkUpdateMcpToolSettingsInput,
-  McpToolGroupResponse,
   McpToolSetting,
+  McpToolsSettingsResponse,
   UpdateMcpToolSettingInput,
 } from '../../types/mcpTools';
 
-export function fetchMcpToolGroups(): Promise<McpToolGroupResponse[]> {
-  return apiRequest<McpToolGroupResponse[]>('/mcp-tools');
+export function fetchMcpToolSettings(): Promise<McpToolsSettingsResponse> {
+  return apiRequest<McpToolsSettingsResponse>('/mcp-tools');
 }
 
 export function updateMcpToolSetting(

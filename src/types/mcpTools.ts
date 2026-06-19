@@ -8,11 +8,27 @@ export interface McpToolSetting {
   enabled: boolean;
   defaultEnabled: boolean;
   sortOrder: number;
+  estimatedTokens: number;
 }
 
 export interface McpToolGroupResponse {
   group: McpToolGroup;
   tools: McpToolSetting[];
+  enabledTokens: number;
+  totalTokens: number;
+}
+
+export interface McpTokenSummary {
+  estimateMethod: string;
+  enabledToolCount: number;
+  totalToolCount: number;
+  enabledTokens: number;
+  totalTokens: number;
+}
+
+export interface McpToolsSettingsResponse {
+  groups: McpToolGroupResponse[];
+  tokenSummary: McpTokenSummary;
 }
 
 export interface UpdateMcpToolSettingInput {
