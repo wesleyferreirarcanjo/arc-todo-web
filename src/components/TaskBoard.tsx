@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { LayoutGroup } from 'framer-motion';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
+import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -55,14 +57,16 @@ export function TaskBoard({ tasks, accentColor, onUpdate, onDelete }: TaskBoardP
     : undefined;
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={(event) => void handleDragEnd(event)}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="task-board">
+    <StatusMoveAnimationProvider>
+      <LayoutGroup id="task-board">
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={(event) => void handleDragEnd(event)}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="task-board">
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.status === column.status);
 
@@ -94,11 +98,13 @@ export function TaskBoard({ tasks, accentColor, onUpdate, onDelete }: TaskBoardP
         })}
       </div>
 
-      <DragOverlay dropAnimation={{ duration: 200, easing: 'ease-out' }}>
+      <DragOverlay dropAnimation={null}>
         {activeTask ? (
           <TaskCardOverlay task={activeTask} accentColor={accentColor} />
         ) : null}
       </DragOverlay>
-    </DndContext>
+      </DndContext>
+      </LayoutGroup>
+    </StatusMoveAnimationProvider>
   );
 }

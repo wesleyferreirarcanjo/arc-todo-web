@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { AnimatePresence, m } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { CSSProperties } from 'react';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
-import { expandVariants } from '../lib/motion/variants';
+import { expandVariants, DURATION_BASE } from '../lib/motion/variants';
+import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
 import { Select } from './Select';
 
 function formatDueDateForInput(dueDate: string | null): string {
@@ -57,6 +58,8 @@ export function TaskCard({
   onDelete,
 }: TaskCardProps) {
   const { base } = useMotionTransition();
+  const { markStatusMove, shouldAnimateStatusMove } = useStatusMoveAnimation();
+  const animateStatusMove = shouldAnimateStatusMove(task.id);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
@@ -129,6 +132,13 @@ export function TaskCard({
     }
   }
 
+  function handleStatusSelect(nextStatus: string) {
+    if (nextStatus !== task.status) {
+      markStatusMove(task.id);
+    }
+    void onUpdate(task.id, { status: nextStatus as TaskStatus });
+  }
+
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
     : dragStyle;
@@ -136,16 +146,12 @@ export function TaskCard({
   const showAsDragging = isDragging || isDndDragging;
 
   return (
-    <m.article
+    <motion.article
       ref={setNodeRef}
-      layout
+      layout={animateStatusMove ? 'position' : false}
       className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${editing ? ' is-editing' : ''}`}
       style={cardStyle}
-      animate={{
-        opacity: showAsDragging ? 0.45 : 1,
-        scale: showAsDragging ? 0.98 : 1,
-        boxShadow: showAsDragging ? 'var(--shadow-soft)' : 'var(--shadow-soft)',
-      }}
+      animate={{ opacity: showAsDragging ? 0.45 : 1 }}
       whileHover={
         !showAsDragging && !editing
           ? {
@@ -155,7 +161,11 @@ export function TaskCard({
             }
           : undefined
       }
-      transition={base}
+      transition={{
+        opacity: { duration: showAsDragging ? DURATION_BASE : 0 },
+        layout: animateStatusMove ? base : { duration: 0 },
+        default: base,
+      }}
       {...(isDraggable ? { ...attributes, ...listeners } : {})}
     >
       {(organizationName || projectName) && (
@@ -176,7 +186,7 @@ export function TaskCard({
 
       <AnimatePresence initial={false} mode="wait">
         {editing ? (
-          <m.div
+          <motion.div
             key="edit"
             className="task-edit"
             variants={expandVariants}
@@ -253,9 +263,9 @@ export function TaskCard({
                 Cancel
               </button>
             </div>
-          </m.div>
+          </motion.div>
         ) : (
-          <m.div
+          <motion.div
             key="view"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -282,9 +292,7 @@ export function TaskCard({
             <div className="task-actions">
               <Select
                 value={task.status}
-                onChange={(nextStatus) =>
-                  onUpdate(task.id, { status: nextStatus as TaskStatus })
-                }
+                onChange={handleStatusSelect}
                 options={statusOptions}
               />
 
@@ -313,10 +321,10 @@ export function TaskCard({
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
-          </m.div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </m.article>
+    </motion.article>
   );
 }
 

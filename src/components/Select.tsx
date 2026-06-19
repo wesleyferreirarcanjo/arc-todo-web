@@ -7,7 +7,7 @@ import {
   type CSSProperties,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, m } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { dropdownVariants } from '../lib/motion/variants';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 
@@ -120,7 +120,7 @@ export function Select({
   const menu = createPortal(
     <AnimatePresence>
       {open && (
-        <m.ul
+        <motion.ul
           ref={menuRef}
           className="select-menu"
           style={menuStyle}
@@ -145,7 +145,7 @@ export function Select({
               </button>
             </li>
           ))}
-        </m.ul>
+        </motion.ul>
       )}
     </AnimatePresence>,
     document.body,

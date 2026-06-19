@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
-import { m } from 'framer-motion';
+import { LayoutGroup } from 'framer-motion';
 import type { TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
 import { getEntityAccent, getProjectColor } from '../lib/color/entityColor';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
+import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -105,14 +106,16 @@ export function UnifiedTaskBoard({
   const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={(event) => void handleDragEnd(event)}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="task-board">
+    <StatusMoveAnimationProvider>
+      <LayoutGroup id="unified-task-board">
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={(event) => void handleDragEnd(event)}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="task-board">
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.status === column.status);
           const grouped = groupTasksByOrgAndProject(columnTasks);
@@ -155,7 +158,7 @@ export function UnifiedTaskBoard({
                         >
                           {projectGroup.projectName}
                         </h4>
-                        <m.div layout className="board-project-tasks">
+                        <div className="board-project-tasks">
                           {projectGroup.tasks.map((task) => (
                             <TaskCard
                               key={task.id}
@@ -169,7 +172,7 @@ export function UnifiedTaskBoard({
                               onDelete={() => onDelete(task)}
                             />
                           ))}
-                        </m.div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -180,7 +183,7 @@ export function UnifiedTaskBoard({
         })}
       </div>
 
-      <DragOverlay dropAnimation={{ duration: 200, easing: 'ease-out' }}>
+      <DragOverlay dropAnimation={null}>
         {activeTask ? (
           <TaskCardOverlay
             task={activeTask}
@@ -190,6 +193,8 @@ export function UnifiedTaskBoard({
           />
         ) : null}
       </DragOverlay>
-    </DndContext>
+      </DndContext>
+      </LayoutGroup>
+    </StatusMoveAnimationProvider>
   );
 }

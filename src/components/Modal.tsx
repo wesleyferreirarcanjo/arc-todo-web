@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, m } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { modalPanelVariants, overlayVariants } from '../lib/motion/variants';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 
@@ -43,9 +43,10 @@ export function Modal({
   }, [open, onClose]);
 
   return createPortal(
-    <AnimatePresence>
-      {open && (
-        <m.div
+    <AnimatePresence mode="wait">
+      {open ? (
+        <motion.div
+          key="modal-overlay"
           className="modal-overlay"
           onClick={onClose}
           role="presentation"
@@ -55,7 +56,7 @@ export function Modal({
           exit="exit"
           transition={base}
         >
-          <m.div
+          <motion.div
             className={`modal${className ? ` ${className}` : ''}`}
             role="dialog"
             aria-modal="true"
@@ -79,9 +80,9 @@ export function Modal({
               </button>
             </header>
             <div className="modal-body">{children}</div>
-          </m.div>
-        </m.div>
-      )}
+          </motion.div>
+        </motion.div>
+      ) : null}
     </AnimatePresence>,
     document.body,
   );

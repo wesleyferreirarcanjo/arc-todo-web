@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import { m } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import type { TaskStatus } from '../types/todo';
 import { getColumnDroppableId } from '../lib/board/useTaskBoardDnd';
@@ -28,7 +28,7 @@ export function BoardColumn({
   const highlighted = isDropTarget || isOver;
 
   return (
-    <m.section
+    <motion.section
       ref={setNodeRef}
       className="board-column"
       animate={{
@@ -44,6 +44,6 @@ export function BoardColumn({
         <span className="count-badge">{taskCount}</span>
       </header>
       <div className="board-column-body">{children}</div>
-    </m.section>
+    </motion.section>
   );
 }
