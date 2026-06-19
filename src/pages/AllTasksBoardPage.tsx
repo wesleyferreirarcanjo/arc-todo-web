@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  createProjectTask,
   deleteProjectTask,
   fetchAllTasks,
   updateProjectTask,
@@ -11,11 +10,10 @@ import {
   setLastProjectId,
 } from '../lib/storage/appStorage';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
-import { TaskForm } from '../components/TaskForm';
+import { QuickTaskCreate } from '../components/QuickTaskCreate';
 import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
-  CreateTaskInput,
   ListTasksQuery,
   TaskCriticity,
   TaskStatus,
@@ -94,12 +92,6 @@ export function AllTasksBoardPage() {
     }
   }
 
-  async function handleCreate(input: CreateTaskInput) {
-    if (!organizationId || !projectId) return;
-    await createProjectTask(organizationId, projectId, input);
-    await loadTasks();
-  }
-
   async function handleUpdate(
     task: TaskWithContext,
     input: Partial<{
@@ -137,11 +129,14 @@ export function AllTasksBoardPage() {
 
   return (
     <div className="tasks-page">
-      <header className="page-header">
-        <h2>All tasks</h2>
-        <p className="page-subtitle">
-          Tasks across your organizations and projects.
-        </p>
+      <header className="page-header page-header-with-actions">
+        <div>
+          <h2>All tasks</h2>
+          <p className="page-subtitle">
+            Tasks across your organizations and projects.
+          </p>
+        </div>
+        <QuickTaskCreate onCreated={loadTasks} />
       </header>
 
       <div className="board-filters">
@@ -189,10 +184,6 @@ export function AllTasksBoardPage() {
         )}
       </div>
 
-      {organizationId && projectId && (
-        <TaskForm onSubmit={handleCreate} />
-      )}
-
       {loading && <p className="status-message">Loading tasks...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -200,7 +191,7 @@ export function AllTasksBoardPage() {
         <p className="status-message">
           {hasFilters
             ? 'No tasks match this focus.'
-            : 'No tasks yet. Create a project task to see it here.'}
+            : 'No tasks yet. Use New task above to create one.'}
         </p>
       )}
 
