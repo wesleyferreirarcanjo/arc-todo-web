@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 export interface SelectOption {
   value: string;
@@ -15,6 +23,10 @@ interface SelectProps {
   id?: string;
 }
 
+const MENU_GAP_PX = 6;
+const MENU_MAX_HEIGHT_PX = 256;
+const MENU_Z_INDEX = 1000;
+
 export function Select({
   value,
   onChange,
@@ -27,18 +39,59 @@ export function Select({
   const generatedId = useId();
   const selectId = id ?? generatedId;
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
   const selectedOption = options.find((option) => option.value === value);
   const displayLabel = selectedOption?.label ?? placeholder;
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    function updateMenuPosition() {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP_PX;
+      const spaceAbove = rect.top - MENU_GAP_PX;
+      const openUpward = spaceBelow < 180 && spaceAbove > spaceBelow;
+      const maxHeight = Math.min(
+        MENU_MAX_HEIGHT_PX,
+        openUpward ? spaceAbove : spaceBelow,
+      );
+
+      setMenuStyle({
+        position: 'fixed',
+        left: rect.left,
+        width: rect.width,
+        top: openUpward ? undefined : rect.bottom + MENU_GAP_PX,
+        bottom: openUpward ? window.innerHeight - rect.top + MENU_GAP_PX : undefined,
+        maxHeight: Math.max(maxHeight, 120),
+        zIndex: MENU_Z_INDEX,
+      });
+    }
+
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
     function handlePointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) {
+        return;
       }
+      setOpen(false);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -60,28 +113,15 @@ export function Select({
     setOpen(false);
   }
 
-  return (
-    <div
-      ref={rootRef}
-      className={`select-field${open ? ' is-open' : ''}${disabled ? ' is-disabled' : ''}${className ? ` ${className}` : ''}`}
-    >
-      <button
-        id={selectId}
-        type="button"
-        className="select-trigger"
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <span className={`select-value${selectedOption ? '' : ' is-placeholder'}`}>
-          {displayLabel}
-        </span>
-        <span className="select-chevron" aria-hidden="true" />
-      </button>
-
-      {open && (
-        <ul className="select-menu" role="listbox" aria-labelledby={selectId}>
+  const menu = open
+    ? createPortal(
+        <ul
+          ref={menuRef}
+          className="select-menu"
+          style={menuStyle}
+          role="listbox"
+          aria-labelledby={selectId}
+        >
           {options.map((option) => (
             <li key={option.value || '__empty__'} role="presentation">
               <button
@@ -95,8 +135,34 @@ export function Select({
               </button>
             </li>
           ))}
-        </ul>
-      )}
-    </div>
+        </ul>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <>
+      <div
+        ref={rootRef}
+        className={`select-field${open ? ' is-open' : ''}${disabled ? ' is-disabled' : ''}${className ? ` ${className}` : ''}`}
+      >
+        <button
+          ref={triggerRef}
+          id={selectId}
+          type="button"
+          className="select-trigger"
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span className={`select-value${selectedOption ? '' : ' is-placeholder'}`}>
+            {displayLabel}
+          </span>
+          <span className="select-chevron" aria-hidden="true" />
+        </button>
+      </div>
+      {menu}
+    </>
   );
 }
