@@ -1085,6 +1085,24 @@ textarea {
   font-size: 0.8rem;
 }
 
+.task-card.is-editing {
+  cursor: default;
+}
+
+.task-edit label {
+  width: 100%;
+}
+
+.task-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.task-edit-actions .btn-primary {
+  margin-top: 0;
+}
+
 .page-links {
   display: flex;
   flex-wrap: wrap;
