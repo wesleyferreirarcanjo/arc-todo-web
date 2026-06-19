@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { getEntityAccent } from '../lib/color/entityColor';
 import type { Organization } from '../types/organization';
 
 interface OrganizationListProps {
@@ -14,7 +15,12 @@ export function OrganizationList({ organizations }: OrganizationListProps) {
         <button
           key={organization.id}
           type="button"
-          className="entity-card"
+          className="entity-card has-accent"
+          style={
+            {
+              '--entity-accent': getEntityAccent(organization.id),
+            } as React.CSSProperties
+          }
           onClick={() => navigate(`/organizations/${organization.id}`)}
         >
           <h3>{organization.name}</h3>

@@ -1,4 +1,5 @@
 import { NavLink, useParams } from 'react-router-dom';
+import { getEntityAccent } from '../lib/color/entityColor';
 import { useWorkspace } from '../context/WorkspaceContext';
 
 export function ProjectNavList() {
@@ -26,7 +27,14 @@ export function ProjectNavList() {
             <NavLink
               to={`/organizations/${orgId}/projects/${project.id}`}
               className={({ isActive }) =>
-                isActive ? 'project-nav-link active' : 'project-nav-link'
+                isActive
+                  ? 'project-nav-link active has-accent'
+                  : 'project-nav-link has-accent'
+              }
+              style={
+                {
+                  '--entity-accent': getEntityAccent(project.id),
+                } as React.CSSProperties
               }
             >
               {project.name}

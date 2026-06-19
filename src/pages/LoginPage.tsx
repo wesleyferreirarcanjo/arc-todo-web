@@ -11,7 +11,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to="/organizations" replace />;
+    return <Navigate to="/board" replace />;
   }
 
   async function handleSubmit(event: FormEvent) {

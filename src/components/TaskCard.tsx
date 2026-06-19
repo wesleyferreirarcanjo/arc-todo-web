@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { Task, TaskPriority, TaskStatus } from '../types/todo';
 
 interface TaskCardProps {
   task: Task;
+  organizationName?: string;
+  projectName?: string;
+  accentColor?: string;
   onUpdate: (
     id: string,
     input: Partial<{
@@ -28,7 +31,14 @@ const priorityOptions: { value: TaskPriority; label: string }[] = [
   { value: 'high', label: 'High' },
 ];
 
-export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
+export function TaskCard({
+  task,
+  organizationName,
+  projectName,
+  accentColor,
+  onUpdate,
+  onDelete,
+}: TaskCardProps) {
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
@@ -40,8 +50,26 @@ export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
     }
   }
 
+  const cardStyle = accentColor
+    ? ({ '--entity-accent': accentColor } as CSSProperties)
+    : undefined;
+
   return (
-    <article className={`task-card priority-${task.priority}`}>
+    <article
+      className={`task-card priority-${task.priority}${accentColor ? ' has-accent' : ''}`}
+      style={cardStyle}
+    >
+      {(organizationName || projectName) && (
+        <div className="task-context-badges">
+          {organizationName && (
+            <span className="task-badge task-badge-org">{organizationName}</span>
+          )}
+          {projectName && (
+            <span className="task-badge task-badge-project">{projectName}</span>
+          )}
+        </div>
+      )}
+
       <div className="task-card-header">
         <h3>{task.title}</h3>
         <span className={`priority-badge priority-${task.priority}`}>

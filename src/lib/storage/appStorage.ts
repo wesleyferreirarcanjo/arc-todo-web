@@ -1,5 +1,8 @@
 const ORG_KEY = 'arc_todo_last_org';
 const PROJECT_KEY = 'arc_todo_last_project';
+const THEME_KEY = 'arc_todo_theme';
+
+export type Theme = 'dark' | 'light';
 
 export function getLastOrganizationId(): string | null {
   return localStorage.getItem(ORG_KEY);
@@ -28,4 +31,13 @@ export function clearLastProjectId(): void {
 export function clearWorkspaceSelection(): void {
   clearLastOrganizationId();
   clearLastProjectId();
+}
+
+export function getTheme(): Theme {
+  const stored = localStorage.getItem(THEME_KEY);
+  return stored === 'light' ? 'light' : 'dark';
+}
+
+export function setTheme(theme: Theme): void {
+  localStorage.setItem(THEME_KEY, theme);
 }

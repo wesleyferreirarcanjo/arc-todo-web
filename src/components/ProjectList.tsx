@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { getEntityAccent } from '../lib/color/entityColor';
 import type { Project } from '../types/project';
 
 interface ProjectListProps {
@@ -19,7 +20,12 @@ export function ProjectList({ projects }: ProjectListProps) {
         <button
           key={project.id}
           type="button"
-          className="entity-card"
+          className="entity-card has-accent"
+          style={
+            {
+              '--entity-accent': getEntityAccent(project.id),
+            } as React.CSSProperties
+          }
           onClick={() =>
             navigate(`/organizations/${orgId}/projects/${project.id}`)
           }

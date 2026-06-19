@@ -14,6 +14,26 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface TaskWithContext extends Task {
+  project: {
+    id: string;
+    name: string;
+    organizationId: string;
+  };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface ListTasksQuery {
+  organizationId?: string;
+  projectId?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+}
+
 export interface CreateTaskInput {
   title: string;
   description?: string;
