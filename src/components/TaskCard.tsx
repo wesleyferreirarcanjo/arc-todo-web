@@ -1,17 +1,72 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { AnimatePresence, motion } from 'framer-motion';
-import type { CSSProperties } from 'react';
+import { motion } from 'framer-motion';
+import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
-import { expandVariants, DURATION_BASE } from '../lib/motion/variants';
+import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
+import { Modal } from './Modal';
 import { Select } from './Select';
 
 function formatDueDateForInput(dueDate: string | null): string {
   if (!dueDate) return '';
   return new Date(dueDate).toISOString().slice(0, 10);
+}
+
+function MoreVerticalIcon() {
+  return (
+    <svg
+      className="task-menu-icon"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5" r="1.75" />
+      <circle cx="12" cy="12" r="1.75" />
+      <circle cx="12" cy="19" r="1.75" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      className="task-menu-item-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      className="task-menu-item-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
 }
 
 interface TaskCardProps {
@@ -60,7 +115,9 @@ export function TaskCard({
   const { base } = useMotionTransition();
   const { markStatusMove, shouldAnimateStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
-  const [editing, setEditing] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -69,7 +126,8 @@ export function TaskCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const isDraggable = draggable && !editing;
+  const isInteractionLocked = editModalOpen || actionMenuOpen;
+  const isDraggable = draggable && !isInteractionLocked;
 
   const {
     attributes,
@@ -87,22 +145,47 @@ export function TaskCard({
       ? { transform: CSS.Translate.toString(transform) }
       : undefined;
 
-  function handleStartEdit() {
+  useEffect(() => {
+    if (!actionMenuOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActionMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setActionMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [actionMenuOpen]);
+
+  function resetEditFields() {
     setTitle(task.title);
     setDescription(task.description ?? '');
     setStatus(task.status);
     setCriticity(task.criticity);
     setDueDate(formatDueDateForInput(task.dueDate));
-    setEditing(true);
+  }
+
+  function handleStartEdit() {
+    resetEditFields();
+    setActionMenuOpen(false);
+    setEditModalOpen(true);
   }
 
   function handleCancelEdit() {
-    setTitle(task.title);
-    setDescription(task.description ?? '');
-    setStatus(task.status);
-    setCriticity(task.criticity);
-    setDueDate(formatDueDateForInput(task.dueDate));
-    setEditing(false);
+    resetEditFields();
+    setEditModalOpen(false);
   }
 
   async function handleSave() {
@@ -117,13 +200,14 @@ export function TaskCard({
         criticity,
         dueDate: dueDate || null,
       });
-      setEditing(false);
+      setEditModalOpen(false);
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
+    setActionMenuOpen(false);
     setDeleting(true);
     try {
       await onDelete(task.id);
@@ -139,6 +223,10 @@ export function TaskCard({
     void onUpdate(task.id, { status: nextStatus as TaskStatus });
   }
 
+  function stopCardPointer(event: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>) {
+    event.stopPropagation();
+  }
+
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
     : dragStyle;
@@ -146,185 +234,216 @@ export function TaskCard({
   const showAsDragging = isDragging || isDndDragging;
 
   return (
-    <motion.article
-      ref={setNodeRef}
-      layout={animateStatusMove ? 'position' : false}
-      className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${editing ? ' is-editing' : ''}`}
-      style={cardStyle}
-      animate={{ opacity: showAsDragging ? 0.45 : 1 }}
-      whileHover={
-        !showAsDragging && !editing
-          ? {
-              y: -1,
-              boxShadow: 'var(--shadow-lift)',
-              borderColor: 'var(--border-strong)',
-            }
-          : undefined
-      }
-      transition={{
-        opacity: { duration: showAsDragging ? DURATION_BASE : 0 },
-        layout: animateStatusMove ? base : { duration: 0 },
-        default: base,
-      }}
-      {...(isDraggable ? { ...attributes, ...listeners } : {})}
-    >
-      {(organizationName || projectName) && (
-        <div className="task-context-badges">
-          {organizationName && (
-            <span className="task-badge task-badge-org">{organizationName}</span>
-          )}
-          {projectName && (
-            <span
-              className="task-badge task-badge-project"
-              style={accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : undefined}
-            >
-              {projectName}
-            </span>
-          )}
-        </div>
-      )}
-
-      <AnimatePresence initial={false} mode="wait">
-        {editing ? (
-          <motion.div
-            key="edit"
-            className="task-edit"
-            variants={expandVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={base}
-          >
-            <label>
-              Title
-              <input
-                type="text"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              Description
-              <textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                rows={3}
-              />
-            </label>
-
-            <div className="form-row">
-              <label>
-                Status
-                <Select
-                  value={status}
-                  onChange={(nextStatus) => setStatus(nextStatus as TaskStatus)}
-                  options={statusOptions}
-                />
-              </label>
-
-              <label>
-                Criticity
-                <Select
-                  value={criticity}
-                  onChange={(nextCriticity) =>
-                    setCriticity(nextCriticity as TaskCriticity)
-                  }
-                  options={criticityOptions}
-                />
-              </label>
-
-              <label>
-                Due date
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(event) => setDueDate(event.target.value)}
-                />
-              </label>
-            </div>
-
-            <div className="task-edit-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={saving || !title.trim()}
-                onClick={() => void handleSave()}
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={saving}
-                onClick={handleCancelEdit}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="view"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={base}
-          >
-            <div className="task-card-header">
-              <h3>{task.title}</h3>
-              <span className={`criticity-badge criticity-${task.criticity}`}>
-                {task.criticity}
-              </span>
-            </div>
-
-            {task.description && (
-              <p className="task-description">{task.description}</p>
+    <>
+      <motion.article
+        ref={setNodeRef}
+        layout={animateStatusMove ? 'position' : false}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}`}
+        style={cardStyle}
+        animate={{ opacity: showAsDragging ? 0.45 : 1 }}
+        whileHover={
+          !showAsDragging && !isInteractionLocked
+            ? {
+                y: -1,
+                boxShadow: 'var(--shadow-lift)',
+                borderColor: 'var(--border-strong)',
+              }
+            : undefined
+        }
+        transition={{
+          opacity: { duration: showAsDragging ? DURATION_BASE : 0 },
+          layout: animateStatusMove ? base : { duration: 0 },
+          default: base,
+        }}
+        {...(isDraggable ? { ...attributes, ...listeners } : {})}
+      >
+        {(organizationName || projectName) && (
+          <div className="task-context-badges">
+            {organizationName && (
+              <span className="task-badge task-badge-org">{organizationName}</span>
             )}
-
-            <div className="task-meta">
-              {task.dueDate && (
-                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-              )}
-            </div>
-
-            <div className="task-actions">
-              <Select
-                value={task.status}
-                onChange={handleStatusSelect}
-                options={statusOptions}
-              />
-
-              <Select
-                value={task.criticity}
-                onChange={(nextCriticity) =>
-                  onUpdate(task.id, { criticity: nextCriticity as TaskCriticity })
+            {projectName && (
+              <span
+                className="task-badge task-badge-project"
+                style={
+                  accentColor
+                    ? ({ '--entity-accent': accentColor } as CSSProperties)
+                    : undefined
                 }
-                options={criticityOptions}
-              />
+              >
+                {projectName}
+              </span>
+            )}
+          </div>
+        )}
 
+        <div
+          className="task-action-menu"
+          ref={menuRef}
+          onPointerDown={stopCardPointer}
+          onClick={stopCardPointer}
+        >
+          <button
+            type="button"
+            className="task-menu-trigger"
+            aria-label="Task actions"
+            aria-haspopup="menu"
+            aria-expanded={actionMenuOpen}
+            onClick={() => setActionMenuOpen((open) => !open)}
+          >
+            <MoreVerticalIcon />
+          </button>
+
+          {actionMenuOpen && (
+            <div className="task-action-menu-panel" role="menu">
               <button
                 type="button"
-                className="btn btn-secondary"
+                role="menuitem"
+                className="task-action-menu-item"
                 onClick={handleStartEdit}
               >
+                <PencilIcon />
                 Edit
               </button>
 
               <button
                 type="button"
-                className="btn btn-danger"
-                onClick={handleDelete}
+                role="menuitem"
+                className="task-action-menu-item task-action-menu-item-danger"
                 disabled={deleting}
+                onClick={() => void handleDelete()}
               >
+                <TrashIcon />
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.article>
+          )}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={base}
+        >
+          <div className="task-card-header">
+            <h3>{task.title}</h3>
+            <span className={`criticity-badge criticity-${task.criticity}`}>
+              {task.criticity}
+            </span>
+          </div>
+
+          {task.description && (
+            <p className="task-description">{task.description}</p>
+          )}
+
+          <div className="task-meta">
+            {task.dueDate && (
+              <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+            )}
+          </div>
+
+          <div className="task-actions">
+            <Select
+              value={task.status}
+              onChange={handleStatusSelect}
+              options={statusOptions}
+            />
+
+            <Select
+              value={task.criticity}
+              onChange={(nextCriticity) =>
+                onUpdate(task.id, { criticity: nextCriticity as TaskCriticity })
+              }
+              options={criticityOptions}
+            />
+          </div>
+        </motion.div>
+      </motion.article>
+
+      <Modal
+        open={editModalOpen}
+        onClose={handleCancelEdit}
+        title="Edit task"
+        titleId={`edit-task-modal-${task.id}`}
+        className="task-edit-modal"
+      >
+        <form
+          className="task-edit-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave();
+          }}
+        >
+          <label>
+            Title
+            <input
+              type="text"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Description
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={6}
+            />
+          </label>
+
+          <div className="form-row">
+            <label>
+              Status
+              <Select
+                value={status}
+                onChange={(nextStatus) => setStatus(nextStatus as TaskStatus)}
+                options={statusOptions}
+              />
+            </label>
+
+            <label>
+              Criticity
+              <Select
+                value={criticity}
+                onChange={(nextCriticity) =>
+                  setCriticity(nextCriticity as TaskCriticity)
+                }
+                options={criticityOptions}
+              />
+            </label>
+
+            <label>
+              Due date
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="task-edit-form-actions">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={saving || !title.trim()}
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={saving}
+              onClick={handleCancelEdit}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
 
@@ -358,7 +477,11 @@ export function TaskCardOverlay({
           {projectName && (
             <span
               className="task-badge task-badge-project"
-              style={accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : undefined}
+              style={
+                accentColor
+                  ? ({ '--entity-accent': accentColor } as CSSProperties)
+                  : undefined
+              }
             >
               {projectName}
             </span>
