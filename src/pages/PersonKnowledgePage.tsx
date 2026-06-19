@@ -5,6 +5,7 @@ import {
   deletePersonKnowledge,
   fetchPersonKnowledge,
   updatePersonKnowledge,
+  uploadKnowledgeAttachment,
 } from '../lib/api/knowledge';
 import { fetchPerson } from '../lib/api/persons';
 import { KnowledgeForm } from '../components/KnowledgeForm';
@@ -46,9 +47,18 @@ export function PersonKnowledgePage() {
     void loadData();
   }, [loadData]);
 
-  async function handleCreate(input: CreateKnowledgeInput) {
+  async function handleCreate(input: CreateKnowledgeInput, files?: File[]) {
     if (!orgId || !personId) return;
     const created = await createPersonKnowledge(orgId, personId, input);
+    if (files?.length) {
+      for (const file of files) {
+        await uploadKnowledgeAttachment(
+          { type: 'person', orgId, personId },
+          created.id,
+          file,
+        );
+      }
+    }
     setEntries((prev) => [created, ...prev]);
   }
 
@@ -104,6 +114,7 @@ export function PersonKnowledgePage() {
       {!loading && !error && entries.length > 0 && (
         <KnowledgeList
           entries={entries}
+          scope={{ type: 'person', orgId, personId }}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

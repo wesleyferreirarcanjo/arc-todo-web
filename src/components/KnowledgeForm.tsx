@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import type { CreateKnowledgeInput } from '../types/knowledge';
 
 interface KnowledgeFormProps {
-  onSubmit: (input: CreateKnowledgeInput) => Promise<void>;
+  onSubmit: (input: CreateKnowledgeInput, files?: File[]) => Promise<void>;
   submitLabel?: string;
 }
 
@@ -12,6 +12,7 @@ export function KnowledgeForm({
 }: KnowledgeFormProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,12 +24,16 @@ export function KnowledgeForm({
     setError(null);
 
     try {
-      await onSubmit({
-        title: title.trim(),
-        content: content.trim(),
-      });
+      await onSubmit(
+        {
+          title: title.trim(),
+          content: content.trim(),
+        },
+        files.length > 0 ? files : undefined,
+      );
       setTitle('');
       setContent('');
+      setFiles([]);
     } catch {
       setError('Failed to create knowledge entry.');
     } finally {
@@ -62,6 +67,25 @@ export function KnowledgeForm({
           required
         />
       </label>
+
+      <label>
+        Attachments
+        <input
+          type="file"
+          multiple
+          onChange={(event) =>
+            setFiles(
+              event.target.files ? Array.from(event.target.files) : [],
+            )
+          }
+        />
+      </label>
+
+      {files.length > 0 && (
+        <p className="knowledge-meta">
+          {files.length} file{files.length === 1 ? '' : 's'} selected
+        </p>
+      )}
 
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Saving...' : submitLabel}

@@ -47,4 +47,37 @@ export interface ListKnowledgeQuery {
   organizationId?: string;
   projectId?: string;
   personId?: string;
+  fileName?: string;
+  mimeType?: string;
+  hasAttachments?: boolean;
 }
+
+export interface KnowledgeAttachment {
+  id: string;
+  knowledgeEntryId: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  description: string | null;
+  tags: string[];
+  uploadedById: string;
+  createdAt: string;
+}
+
+export interface UploadAttachmentInput {
+  description?: string;
+  tags?: string;
+}
+
+export interface ListAttachmentQuery {
+  fileName?: string;
+  mimeType?: string;
+  tag?: string;
+}
+
+export type KnowledgeScopeContext =
+  | { type: 'general' }
+  | { type: 'organization'; orgId: string }
+  | { type: 'project'; orgId: string; projectId: string }
+  | { type: 'person'; orgId: string; personId: string }
+  | { type: 'generalPerson'; personId: string };

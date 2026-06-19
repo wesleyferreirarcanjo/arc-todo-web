@@ -1,8 +1,13 @@
-import type { KnowledgeEntry, UpdateKnowledgeInput } from '../types/knowledge';
+import type {
+  KnowledgeEntry,
+  KnowledgeScopeContext,
+  UpdateKnowledgeInput,
+} from '../types/knowledge';
 import { KnowledgeCard } from './KnowledgeCard';
 
 interface KnowledgeListProps {
   entries: KnowledgeEntry[];
+  scope: KnowledgeScopeContext;
   getScopeLabel?: (entry: KnowledgeEntry) => string | undefined;
   onUpdate: (id: string, input: UpdateKnowledgeInput) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -10,6 +15,7 @@ interface KnowledgeListProps {
 
 export function KnowledgeList({
   entries,
+  scope,
   getScopeLabel,
   onUpdate,
   onDelete,
@@ -24,6 +30,7 @@ export function KnowledgeList({
         <KnowledgeCard
           key={entry.id}
           entry={entry}
+          scope={scope}
           scopeLabel={getScopeLabel?.(entry)}
           onUpdate={onUpdate}
           onDelete={onDelete}

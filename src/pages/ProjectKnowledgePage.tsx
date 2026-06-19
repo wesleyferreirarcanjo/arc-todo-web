@@ -5,6 +5,7 @@ import {
   deleteProjectKnowledge,
   fetchProjectKnowledge,
   updateProjectKnowledge,
+  uploadKnowledgeAttachment,
 } from '../lib/api/knowledge';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
@@ -41,9 +42,18 @@ export function ProjectKnowledgePage() {
     void loadEntries();
   }, [loadEntries]);
 
-  async function handleCreate(input: CreateKnowledgeInput) {
+  async function handleCreate(input: CreateKnowledgeInput, files?: File[]) {
     if (!orgId || !projectId) return;
     const created = await createProjectKnowledge(orgId, projectId, input);
+    if (files?.length) {
+      for (const file of files) {
+        await uploadKnowledgeAttachment(
+          { type: 'project', orgId, projectId },
+          created.id,
+          file,
+        );
+      }
+    }
     setEntries((prev) => [created, ...prev]);
   }
 
@@ -96,6 +106,7 @@ export function ProjectKnowledgePage() {
       {!loading && !error && entries.length > 0 && (
         <KnowledgeList
           entries={entries}
+          scope={{ type: 'project', orgId, projectId }}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

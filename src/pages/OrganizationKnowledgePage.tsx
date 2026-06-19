@@ -5,6 +5,7 @@ import {
   deleteOrganizationKnowledge,
   fetchOrganizationKnowledge,
   updateOrganizationKnowledge,
+  uploadKnowledgeAttachment,
 } from '../lib/api/knowledge';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
@@ -41,9 +42,18 @@ export function OrganizationKnowledgePage() {
     void loadEntries();
   }, [loadEntries]);
 
-  async function handleCreate(input: CreateKnowledgeInput) {
+  async function handleCreate(input: CreateKnowledgeInput, files?: File[]) {
     if (!orgId) return;
     const created = await createOrganizationKnowledge(orgId, input);
+    if (files?.length) {
+      for (const file of files) {
+        await uploadKnowledgeAttachment(
+          { type: 'organization', orgId },
+          created.id,
+          file,
+        );
+      }
+    }
     setEntries((prev) => [created, ...prev]);
   }
 
@@ -96,6 +106,7 @@ export function OrganizationKnowledgePage() {
       {!loading && !error && entries.length > 0 && (
         <KnowledgeList
           entries={entries}
+          scope={{ type: 'organization', orgId }}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

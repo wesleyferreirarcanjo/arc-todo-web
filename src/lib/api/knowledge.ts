@@ -1,10 +1,14 @@
-import { apiRequest } from './client';
+import { apiDownload, apiRequest, apiUpload, triggerBrowserDownload } from './client';
 import type {
   CreateKnowledgeInput,
+  KnowledgeAttachment,
   KnowledgeEntry,
   KnowledgeEntryWithContext,
+  KnowledgeScopeContext,
+  ListAttachmentQuery,
   ListKnowledgeQuery,
   UpdateKnowledgeInput,
+  UploadAttachmentInput,
 } from '../../types/knowledge';
 
 function buildKnowledgeQueryString(query?: ListKnowledgeQuery): string {
@@ -15,9 +19,95 @@ function buildKnowledgeQueryString(query?: ListKnowledgeQuery): string {
   if (query.organizationId) params.set('organizationId', query.organizationId);
   if (query.projectId) params.set('projectId', query.projectId);
   if (query.personId) params.set('personId', query.personId);
+  if (query.fileName) params.set('fileName', query.fileName);
+  if (query.mimeType) params.set('mimeType', query.mimeType);
+  if (query.hasAttachments) params.set('hasAttachments', 'true');
 
   const qs = params.toString();
   return qs ? `?${qs}` : '';
+}
+
+function buildAttachmentQueryString(query?: ListAttachmentQuery): string {
+  if (!query) return '';
+
+  const params = new URLSearchParams();
+  if (query.fileName) params.set('fileName', query.fileName);
+  if (query.mimeType) params.set('mimeType', query.mimeType);
+  if (query.tag) params.set('tag', query.tag);
+
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+}
+
+function attachmentsBasePath(
+  scope: KnowledgeScopeContext,
+  knowledgeId: string,
+): string {
+  switch (scope.type) {
+    case 'general':
+      return `/knowledge/${knowledgeId}/attachments`;
+    case 'organization':
+      return `/organizations/${scope.orgId}/knowledge/${knowledgeId}/attachments`;
+    case 'project':
+      return `/organizations/${scope.orgId}/projects/${scope.projectId}/knowledge/${knowledgeId}/attachments`;
+    case 'person':
+      return `/organizations/${scope.orgId}/persons/${scope.personId}/knowledge/${knowledgeId}/attachments`;
+    case 'generalPerson':
+      return `/persons/${scope.personId}/knowledge/${knowledgeId}/attachments`;
+  }
+}
+
+export function fetchKnowledgeAttachments(
+  scope: KnowledgeScopeContext,
+  knowledgeId: string,
+  query?: ListAttachmentQuery,
+): Promise<KnowledgeAttachment[]> {
+  return apiRequest<KnowledgeAttachment[]>(
+    `${attachmentsBasePath(scope, knowledgeId)}${buildAttachmentQueryString(query)}`,
+  );
+}
+
+export function uploadKnowledgeAttachment(
+  scope: KnowledgeScopeContext,
+  knowledgeId: string,
+  file: File,
+  input: UploadAttachmentInput = {},
+): Promise<KnowledgeAttachment> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (input.description?.trim()) {
+    formData.append('description', input.description.trim());
+  }
+  if (input.tags?.trim()) {
+    formData.append('tags', input.tags.trim());
+  }
+
+  return apiUpload<KnowledgeAttachment>(
+    attachmentsBasePath(scope, knowledgeId),
+    formData,
+  );
+}
+
+export async function downloadKnowledgeAttachment(
+  scope: KnowledgeScopeContext,
+  knowledgeId: string,
+  attachmentId: string,
+): Promise<void> {
+  const { blob, filename } = await apiDownload(
+    `${attachmentsBasePath(scope, knowledgeId)}/${attachmentId}/download`,
+  );
+  triggerBrowserDownload(blob, filename);
+}
+
+export function deleteKnowledgeAttachment(
+  scope: KnowledgeScopeContext,
+  knowledgeId: string,
+  attachmentId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `${attachmentsBasePath(scope, knowledgeId)}/${attachmentId}`,
+    { method: 'DELETE' },
+  );
 }
 
 export function fetchGeneralKnowledge(): Promise<KnowledgeEntry[]> {

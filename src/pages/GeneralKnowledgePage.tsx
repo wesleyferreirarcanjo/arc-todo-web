@@ -5,6 +5,7 @@ import {
   deleteGeneralKnowledge,
   fetchGeneralKnowledge,
   updateGeneralKnowledge,
+  uploadKnowledgeAttachment,
 } from '../lib/api/knowledge';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
@@ -36,8 +37,17 @@ export function GeneralKnowledgePage() {
     void loadEntries();
   }, [loadEntries]);
 
-  async function handleCreate(input: CreateKnowledgeInput) {
+  async function handleCreate(input: CreateKnowledgeInput, files?: File[]) {
     const created = await createGeneralKnowledge(input);
+    if (files?.length) {
+      for (const file of files) {
+        await uploadKnowledgeAttachment(
+          { type: 'general' },
+          created.id,
+          file,
+        );
+      }
+    }
     setEntries((prev) => [created, ...prev]);
   }
 
@@ -81,6 +91,7 @@ export function GeneralKnowledgePage() {
       {!loading && !error && entries.length > 0 && (
         <KnowledgeList
           entries={entries}
+          scope={{ type: 'general' }}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

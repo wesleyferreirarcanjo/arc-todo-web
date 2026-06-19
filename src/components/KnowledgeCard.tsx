@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import type { KnowledgeEntry, UpdateKnowledgeInput } from '../types/knowledge';
+import type {
+  KnowledgeEntry,
+  KnowledgeScopeContext,
+  UpdateKnowledgeInput,
+} from '../types/knowledge';
+import { KnowledgeAttachments } from './KnowledgeAttachments';
 
 interface KnowledgeCardProps {
   entry: KnowledgeEntry;
+  scope: KnowledgeScopeContext;
   scopeLabel?: string;
   onUpdate: (id: string, input: UpdateKnowledgeInput) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -10,6 +16,7 @@ interface KnowledgeCardProps {
 
 export function KnowledgeCard({
   entry,
+  scope,
   scopeLabel,
   onUpdate,
   onDelete,
@@ -117,6 +124,8 @@ export function KnowledgeCard({
           </div>
         </>
       )}
+
+      <KnowledgeAttachments knowledgeId={entry.id} scope={scope} />
     </article>
   );
 }
