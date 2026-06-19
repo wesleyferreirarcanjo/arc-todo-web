@@ -8,6 +8,7 @@ import type {
   McpTokenSummary,
   McpToolGroup,
   McpToolGroupResponse,
+  McpToolGroupTokenTotals,
 } from '../types/mcpTools';
 import { MCP_TOOL_GROUP_LABELS } from '../types/mcpTools';
 
@@ -15,32 +16,53 @@ function formatTokenCount(value: number): string {
   return value.toLocaleString();
 }
 
+function sumToolTokens(
+  tools: McpToolGroupResponse['tools'],
+  field: 'startupTokens' | 'executionTokens',
+  enabledOnly = false,
+): number {
+  return tools
+    .filter((tool) => !enabledOnly || tool.enabled)
+    .reduce((sum, tool) => sum + tool[field], 0);
+}
+
+function buildGroupTokenTotals(
+  tools: McpToolGroupResponse['tools'],
+): McpToolGroupTokenTotals {
+  return {
+    enabledStartupTokens: sumToolTokens(tools, 'startupTokens', true),
+    totalStartupTokens: sumToolTokens(tools, 'startupTokens'),
+    enabledExecutionTokens: sumToolTokens(tools, 'executionTokens', true),
+    totalExecutionTokens: sumToolTokens(tools, 'executionTokens'),
+  };
+}
+
 function buildTokenSummary(
   groups: McpToolGroupResponse[],
-  estimateMethod?: string,
+  existing?: McpTokenSummary | null,
 ): McpTokenSummary {
   const tools = groups.flatMap((group) => group.tools);
 
   return {
-    estimateMethod:
-      estimateMethod ??
-      'chars/4 on compact JSON of MCP list_tools payload (name, description, inputSchema)',
+    startupEstimateMethod:
+      existing?.startupEstimateMethod ??
+      'chars/4 on compact JSON of name + description (typical IDE session start)',
+    executionEstimateMethod:
+      existing?.executionEstimateMethod ??
+      'chars/4 on compact JSON of full list_tools payload (name, description, inputSchema)',
     enabledToolCount: tools.filter((tool) => tool.enabled).length,
     totalToolCount: tools.length,
-    enabledTokens: tools
-      .filter((tool) => tool.enabled)
-      .reduce((sum, tool) => sum + tool.estimatedTokens, 0),
-    totalTokens: tools.reduce((sum, tool) => sum + tool.estimatedTokens, 0),
+    enabledStartupTokens: sumToolTokens(tools, 'startupTokens', true),
+    totalStartupTokens: sumToolTokens(tools, 'startupTokens'),
+    enabledExecutionTokens: sumToolTokens(tools, 'executionTokens', true),
+    totalExecutionTokens: sumToolTokens(tools, 'executionTokens'),
   };
 }
 
 function withGroupTokenTotals(group: McpToolGroupResponse): McpToolGroupResponse {
   return {
     ...group,
-    enabledTokens: group.tools
-      .filter((tool) => tool.enabled)
-      .reduce((sum, tool) => sum + tool.estimatedTokens, 0),
-    totalTokens: group.tools.reduce((sum, tool) => sum + tool.estimatedTokens, 0),
+    ...buildGroupTokenTotals(group.tools),
   };
 }
 
@@ -81,16 +103,16 @@ export function McpToolsSettingsPage() {
     try {
       const updated = await updateMcpToolSetting(key, { enabled });
       setGroups((current) => {
-        const nextGroups = current.map((group) => ({
-          ...withGroupTokenTotals({
+        const nextGroups = current.map((group) =>
+          withGroupTokenTotals({
             ...group,
             tools: group.tools.map((tool) =>
               tool.key === updated.key ? updated : tool,
             ),
           }),
-        }));
+        );
         setTokenSummary(
-          buildTokenSummary(nextGroups, tokenSummary?.estimateMethod),
+          buildTokenSummary(nextGroups, tokenSummary ?? undefined),
         );
         return nextGroups;
       });
@@ -124,7 +146,7 @@ export function McpToolsSettingsPage() {
             : item,
         );
         setTokenSummary(
-          buildTokenSummary(nextGroups, tokenSummary?.estimateMethod),
+          buildTokenSummary(nextGroups, tokenSummary ?? undefined),
         );
         return nextGroups;
       });
@@ -168,13 +190,32 @@ export function McpToolsSettingsPage() {
             Enabled tools: {localTokenSummary.enabledToolCount} /{' '}
             {localTokenSummary.totalToolCount}
           </span>
-          <span className="token-total">
-            Estimated context: {formatTokenCount(localTokenSummary.enabledTokens)} tokens
-          </span>
+        </div>
+        <div className="token-summary-grid">
+          <article className="token-summary-card">
+            <span className="token-summary-label">Startup cost</span>
+            <strong className="token-summary-value">
+              {formatTokenCount(localTokenSummary.enabledStartupTokens)} tokens
+            </strong>
+            <p className="subtitle token-summary-note">
+              Name + description loaded at session start for enabled tools.
+            </p>
+          </article>
+          <article className="token-summary-card">
+            <span className="token-summary-label">Execution cost</span>
+            <strong className="token-summary-value">
+              {formatTokenCount(localTokenSummary.enabledExecutionTokens)} tokens
+            </strong>
+            <p className="subtitle token-summary-note">
+              Full schema upper bound if every enabled tool definition were loaded.
+            </p>
+          </article>
         </div>
         <p className="subtitle settings-summary-note">
-          Baseline estimate for enabled MCP tool definitions ({localTokenSummary.estimateMethod}).
-          All tools enabled would use about {formatTokenCount(localTokenSummary.totalTokens)} tokens.
+          All tools enabled: {formatTokenCount(localTokenSummary.totalStartupTokens)} startup
+          {' · '}
+          {formatTokenCount(localTokenSummary.totalExecutionTokens)} execution.
+          Estimates use chars/4 on compact JSON payloads.
         </p>
       </div>
 
@@ -192,9 +233,11 @@ export function McpToolsSettingsPage() {
                     <h3>{MCP_TOOL_GROUP_LABELS[group.group]}</h3>
                     <p className="subtitle">
                       {group.tools.filter((tool) => tool.enabled).length} of{' '}
-                      {group.tools.length} enabled ·{' '}
-                      {formatTokenCount(group.enabledTokens)} /{' '}
-                      {formatTokenCount(group.totalTokens)} tokens
+                      {group.tools.length} enabled · startup{' '}
+                      {formatTokenCount(group.enabledStartupTokens)} /{' '}
+                      {formatTokenCount(group.totalStartupTokens)} · execution{' '}
+                      {formatTokenCount(group.enabledExecutionTokens)} /{' '}
+                      {formatTokenCount(group.totalExecutionTokens)}
                     </p>
                   </div>
                   <label className="toggle-row">
@@ -223,10 +266,17 @@ export function McpToolsSettingsPage() {
                         <p className="subtitle">{tool.description}</p>
                         <div className="settings-tool-meta">
                           <code className="tool-key">{tool.key}</code>
-                          <span className="token-badge">
-                            {formatTokenCount(tool.estimatedTokens)} tokens
-                            {!tool.enabled ? ' (disabled)' : ''}
+                          <span className="token-badge token-badge-startup">
+                            startup {formatTokenCount(tool.startupTokens)}
                           </span>
+                          <span className="token-badge token-badge-execution">
+                            execution {formatTokenCount(tool.executionTokens)}
+                          </span>
+                          {!tool.enabled ? (
+                            <span className="token-badge token-badge-disabled">
+                              disabled
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                       <label className="toggle-row">

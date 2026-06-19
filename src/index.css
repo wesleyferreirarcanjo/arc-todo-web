@@ -1638,6 +1638,40 @@ textarea {
   margin: 0.45rem 0 0;
 }
 
+.token-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.token-summary-card {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.token-summary-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.token-summary-value {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+}
+
+.token-summary-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+}
+
 .token-total {
   color: var(--text-primary);
   font-weight: 600;
@@ -1660,6 +1694,21 @@ textarea {
   background: var(--bg-elevated);
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.token-badge-startup {
+  border-color: rgba(107, 143, 168, 0.35);
+  color: var(--criticity-low-text);
+}
+
+.token-badge-execution {
+  border-color: rgba(135, 120, 163, 0.35);
+  color: #c4b8d8;
+}
+
+.token-badge-disabled {
+  border-style: dashed;
+  opacity: 0.75;
 }
 
 .settings-group-card {
