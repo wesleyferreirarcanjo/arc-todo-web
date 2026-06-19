@@ -1,47 +1,47 @@
-import type { Todo, TodoPriority, TodoStatus } from '../types/todo';
+import type { Task, TaskPriority, TaskStatus } from '../types/todo';
 import { TaskCard } from './TaskCard';
 
 interface TaskBoardProps {
-  todos: Todo[];
+  tasks: Task[];
   onUpdate: (
     id: string,
     input: Partial<{
       title: string;
       description: string;
-      status: TodoStatus;
-      priority: TodoPriority;
+      status: TaskStatus;
+      priority: TaskPriority;
       dueDate: string | null;
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-const columns: { status: TodoStatus; title: string }[] = [
+const columns: { status: TaskStatus; title: string }[] = [
   { status: 'todo', title: 'To Do' },
   { status: 'in_progress', title: 'In Progress' },
   { status: 'done', title: 'Done' },
 ];
 
-export function TaskBoard({ todos, onUpdate, onDelete }: TaskBoardProps) {
+export function TaskBoard({ tasks, onUpdate, onDelete }: TaskBoardProps) {
   return (
     <div className="task-board">
       {columns.map((column) => {
-        const columnTodos = todos.filter((todo) => todo.status === column.status);
+        const columnTasks = tasks.filter((task) => task.status === column.status);
 
         return (
           <section key={column.status} className="board-column">
             <header className="board-column-header">
               <h2>{column.title}</h2>
-              <span className="count-badge">{columnTodos.length}</span>
+              <span className="count-badge">{columnTasks.length}</span>
             </header>
             <div className="board-column-body">
-              {columnTodos.length === 0 ? (
+              {columnTasks.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
               ) : (
-                columnTodos.map((todo) => (
+                columnTasks.map((task) => (
                   <TaskCard
-                    key={todo.id}
-                    todo={todo}
+                    key={task.id}
+                    task={task}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                   />

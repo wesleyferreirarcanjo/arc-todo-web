@@ -14,6 +14,7 @@ import {
   setStoredUser,
   setToken,
 } from '../lib/auth/tokenStorage';
+import { clearWorkspaceSelection } from '../lib/storage/appStorage';
 import type { LoginInput, User } from '../types/auth';
 
 interface AuthContextValue {
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearAuth();
+    clearWorkspaceSelection();
     setUser(null);
   }, []);
 

@@ -66,9 +66,131 @@ textarea {
 }
 
 .app-main {
-  padding: 1.5rem;
+  padding: 1.5rem 0 0;
   max-width: 1200px;
-  margin: 0 auto;
+}
+
+.app-body {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 88px);
+}
+
+.sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.content-area {
+  padding: 1.5rem;
+}
+
+.sidebar-field,
+.sidebar-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sidebar-note {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.project-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.project-nav-link {
+  display: block;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.project-nav-link:hover,
+.project-nav-link.active {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.breadcrumbs a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.breadcrumb-separator {
+  color: #94a3b8;
+}
+
+.page-shell,
+.tasks-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+}
+
+.page-subtitle {
+  color: #64748b;
+  margin-top: 0.35rem;
+}
+
+.entity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.entity-card {
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.entity-card:hover {
+  border-color: #94a3b8;
+}
+
+.entity-card h3 {
+  font-size: 1.05rem;
+}
+
+.entity-meta,
+.entity-description {
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
 }
 
 .login-page {
@@ -79,6 +201,7 @@ textarea {
 }
 
 .login-card,
+.entity-form,
 .task-form {
   width: 100%;
   max-width: 560px;
@@ -155,12 +278,6 @@ textarea {
 .alert-error {
   background: #fee2e2;
   color: #991b1b;
-}
-
-.tasks-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
 }
 
 .form-row {
@@ -277,6 +394,17 @@ textarea {
 .task-actions select {
   flex: 1;
   min-width: 120px;
+}
+
+@media (max-width: 900px) {
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
 }
 
 @media (max-width: 640px) {

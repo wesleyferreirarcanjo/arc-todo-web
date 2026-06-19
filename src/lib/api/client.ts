@@ -1,4 +1,5 @@
-import { getToken } from '../auth/tokenStorage';
+import { getToken, clearAuth } from '../auth/tokenStorage';
+import { clearWorkspaceSelection } from '../storage/appStorage';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
@@ -41,6 +42,13 @@ export async function apiRequest<T>(
     headers: requestHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  if (response.status === 401) {
+    clearAuth();
+    clearWorkspaceSelection();
+    window.location.assign('/login');
+    throw new ApiError('Unauthorized', 401);
+  }
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`;

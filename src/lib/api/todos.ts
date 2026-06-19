@@ -1,30 +1,57 @@
 import { apiRequest } from './client';
 import type {
-  CreateTodoInput,
-  Todo,
-  UpdateTodoInput,
+  CreateTaskInput,
+  Task,
+  UpdateTaskInput,
 } from '../../types/todo';
 
-export function fetchTodos(): Promise<Todo[]> {
-  return apiRequest<Todo[]>('/todos');
+export function fetchProjectTasks(
+  orgId: string,
+  projectId: string,
+): Promise<Task[]> {
+  return apiRequest<Task[]>(
+    `/organizations/${orgId}/projects/${projectId}/tasks`,
+  );
 }
 
-export function createTodo(input: CreateTodoInput): Promise<Todo> {
-  return apiRequest<Todo>('/todos', {
-    method: 'POST',
-    body: input,
-  });
+export function createProjectTask(
+  orgId: string,
+  projectId: string,
+  input: CreateTaskInput,
+): Promise<Task> {
+  return apiRequest<Task>(
+    `/organizations/${orgId}/projects/${projectId}/tasks`,
+    {
+      method: 'POST',
+      body: input,
+    },
+  );
 }
 
-export function updateTodo(id: string, input: UpdateTodoInput): Promise<Todo> {
-  return apiRequest<Todo>(`/todos/${id}`, {
-    method: 'PATCH',
-    body: input,
-  });
+export function updateProjectTask(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  input: UpdateTaskInput,
+): Promise<Task> {
+  return apiRequest<Task>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}`,
+    {
+      method: 'PATCH',
+      body: input,
+    },
+  );
 }
 
-export function deleteTodo(id: string): Promise<void> {
-  return apiRequest<void>(`/todos/${id}`, {
-    method: 'DELETE',
-  });
+export function deleteProjectTask(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}`,
+    {
+      method: 'DELETE',
+    },
+  );
 }

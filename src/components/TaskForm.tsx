@@ -1,17 +1,17 @@
 import { FormEvent, useState } from 'react';
-import type { CreateTodoInput, TodoPriority, TodoStatus } from '../types/todo';
+import type { CreateTaskInput, TaskPriority, TaskStatus } from '../types/todo';
 
 interface TaskFormProps {
-  onSubmit: (input: CreateTodoInput) => Promise<void>;
+  onSubmit: (input: CreateTaskInput) => Promise<void>;
 }
 
-const statuses: { value: TodoStatus; label: string }[] = [
+const statuses: { value: TaskStatus; label: string }[] = [
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
 ];
 
-const priorities: { value: TodoPriority; label: string }[] = [
+const priorities: { value: TaskPriority; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
@@ -20,8 +20,8 @@ const priorities: { value: TodoPriority; label: string }[] = [
 export function TaskForm({ onSubmit }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<TodoStatus>('todo');
-  const [priority, setPriority] = useState<TodoPriority>('medium');
+  const [status, setStatus] = useState<TaskStatus>('todo');
+  const [priority, setPriority] = useState<TaskPriority>('medium');
   const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(event) => setTitle(event.target.value)}
           placeholder="What needs to be done?"
           required
         />
@@ -73,7 +73,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
         Description
         <textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(event) => setDescription(event.target.value)}
           placeholder="Optional details"
           rows={3}
         />
@@ -84,7 +84,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
           Status
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as TodoStatus)}
+            onChange={(event) => setStatus(event.target.value as TaskStatus)}
           >
             {statuses.map((item) => (
               <option key={item.value} value={item.value}>
@@ -98,7 +98,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
           Priority
           <select
             value={priority}
-            onChange={(e) => setPriority(e.target.value as TodoPriority)}
+            onChange={(event) => setPriority(event.target.value as TaskPriority)}
           >
             {priorities.map((item) => (
               <option key={item.value} value={item.value}>
@@ -113,7 +113,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
           <input
             type="date"
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            onChange={(event) => setDueDate(event.target.value)}
           />
         </label>
       </div>

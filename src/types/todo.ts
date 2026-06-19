@@ -1,29 +1,31 @@
-export type TodoStatus = 'todo' | 'in_progress' | 'done';
-export type TodoPriority = 'low' | 'medium' | 'high';
+export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high';
 
-export interface Todo {
+export interface Task {
   id: string;
   title: string;
   description: string | null;
-  status: TodoStatus;
-  priority: TodoPriority;
+  status: TaskStatus;
+  priority: TaskPriority;
   dueDate: string | null;
+  projectId: string;
+  createdById?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CreateTodoInput {
+export interface CreateTaskInput {
   title: string;
   description?: string;
-  status?: TodoStatus;
-  priority?: TodoPriority;
+  status?: TaskStatus;
+  priority?: TaskPriority;
   dueDate?: string;
 }
 
-export interface UpdateTodoInput {
+export interface UpdateTaskInput {
   title?: string;
   description?: string;
-  status?: TodoStatus;
-  priority?: TodoPriority;
+  status?: TaskStatus;
+  priority?: TaskPriority;
   dueDate?: string | null;
 }

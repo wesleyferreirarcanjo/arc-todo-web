@@ -1,67 +1,69 @@
 import { useState } from 'react';
-import type { Todo, TodoPriority, TodoStatus } from '../types/todo';
+import type { Task, TaskPriority, TaskStatus } from '../types/todo';
 
 interface TaskCardProps {
-  todo: Todo;
+  task: Task;
   onUpdate: (
     id: string,
     input: Partial<{
       title: string;
       description: string;
-      status: TodoStatus;
-      priority: TodoPriority;
+      status: TaskStatus;
+      priority: TaskPriority;
       dueDate: string | null;
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-const statusOptions: { value: TodoStatus; label: string }[] = [
+const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'todo', label: 'To Do' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
 ];
 
-const priorityOptions: { value: TodoPriority; label: string }[] = [
+const priorityOptions: { value: TaskPriority; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
 ];
 
-export function TaskCard({ todo, onUpdate, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
     setDeleting(true);
     try {
-      await onDelete(todo.id);
+      await onDelete(task.id);
     } finally {
       setDeleting(false);
     }
   }
 
   return (
-    <article className={`task-card priority-${todo.priority}`}>
+    <article className={`task-card priority-${task.priority}`}>
       <div className="task-card-header">
-        <h3>{todo.title}</h3>
-        <span className={`priority-badge priority-${todo.priority}`}>
-          {todo.priority}
+        <h3>{task.title}</h3>
+        <span className={`priority-badge priority-${task.priority}`}>
+          {task.priority}
         </span>
       </div>
 
-      {todo.description && <p className="task-description">{todo.description}</p>}
+      {task.description && (
+        <p className="task-description">{task.description}</p>
+      )}
 
       <div className="task-meta">
-        {todo.dueDate && (
-          <span>Due: {new Date(todo.dueDate).toLocaleDateString()}</span>
+        {task.dueDate && (
+          <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
         )}
       </div>
 
       <div className="task-actions">
         <select
-          value={todo.status}
-          onChange={(e) =>
-            onUpdate(todo.id, { status: e.target.value as TodoStatus })
+          value={task.status}
+          onChange={(event) =>
+            onUpdate(task.id, { status: event.target.value as TaskStatus })
           }
         >
           {statusOptions.map((option) => (
@@ -72,9 +74,9 @@ export function TaskCard({ todo, onUpdate, onDelete }: TaskCardProps) {
         </select>
 
         <select
-          value={todo.priority}
-          onChange={(e) =>
-            onUpdate(todo.id, { priority: e.target.value as TodoPriority })
+          value={task.priority}
+          onChange={(event) =>
+            onUpdate(task.id, { priority: event.target.value as TaskPriority })
           }
         >
           {priorityOptions.map((option) => (
