@@ -1,12 +1,14 @@
 const ENTITY_ACCENTS = [
-  '#fafafa',
-  '#d4d4d4',
-  '#a3a3a3',
-  '#737373',
-  '#525252',
+  '#22d3ee',
+  '#a855f7',
+  '#ec4899',
+  '#84cc16',
+  '#f97316',
+  '#38bdf8',
+  '#facc15',
 ];
 
-export const DEFAULT_PROJECT_COLOR = '#737373';
+export const DEFAULT_PROJECT_COLOR = '#a855f7';
 
 function hashString(value: string): number {
   let hash = 0;
