@@ -547,6 +547,78 @@ textarea {
   border-radius: var(--radius-md);
 }
 
+.file-input-field {
+  width: 100%;
+}
+
+.file-input-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem;
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.file-input-control:hover {
+  border-color: var(--border-strong);
+}
+
+.file-input-control:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--ring);
+  outline: none;
+}
+
+.file-input-button {
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.9rem;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.file-input-control:hover .file-input-button {
+  border-color: var(--accent);
+}
+
+.file-input-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.file-input-value.is-placeholder {
+  color: var(--text-muted);
+}
+
+.file-input-field.is-disabled .file-input-control {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-input-field.is-disabled .file-input-button {
+  cursor: not-allowed;
+}
+
 .select-field {
   position: relative;
   width: 100%;

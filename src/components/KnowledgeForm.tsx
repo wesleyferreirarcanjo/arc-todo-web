@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { FileInput } from './FileInput';
 import type { CreateKnowledgeInput } from '../types/knowledge';
 
 interface KnowledgeFormProps {
@@ -13,6 +14,7 @@ export function KnowledgeForm({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +36,7 @@ export function KnowledgeForm({
       setTitle('');
       setContent('');
       setFiles([]);
+      setFileInputKey((current) => current + 1);
     } catch {
       setError('Failed to create knowledge entry.');
     } finally {
@@ -70,8 +73,8 @@ export function KnowledgeForm({
 
       <label>
         Attachments
-        <input
-          type="file"
+        <FileInput
+          key={fileInputKey}
           multiple
           onChange={(event) =>
             setFiles(
@@ -80,12 +83,6 @@ export function KnowledgeForm({
           }
         />
       </label>
-
-      {files.length > 0 && (
-        <p className="knowledge-meta">
-          {files.length} file{files.length === 1 ? '' : 's'} selected
-        </p>
-      )}
 
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Saving...' : submitLabel}

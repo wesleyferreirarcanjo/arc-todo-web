@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FileInput } from './FileInput';
 import {
   deleteKnowledgeAttachment,
   downloadKnowledgeAttachment,
@@ -38,6 +39,7 @@ export function KnowledgeAttachments({
     tag: '',
   });
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const loadAttachments = useCallback(async () => {
     setLoading(true);
@@ -96,6 +98,7 @@ export function KnowledgeAttachments({
       setDescription('');
       setTags('');
       form.reset();
+      setFileInputKey((current) => current + 1);
     } catch {
       setError('Failed to upload one or more files.');
     } finally {
@@ -137,7 +140,7 @@ export function KnowledgeAttachments({
       <form className="knowledge-attachment-upload" onSubmit={handleUpload}>
         <label>
           Files
-          <input type="file" name="files" multiple />
+          <FileInput key={fileInputKey} name="files" multiple />
         </label>
         <label>
           Description
