@@ -20,11 +20,17 @@ export function OrganizationsPage() {
     [refreshOrganizations],
   );
 
+  const handleUpdated = useCallback(async () => {
+    await refreshOrganizations();
+  }, [refreshOrganizations]);
+
   return (
     <div className="page-shell">
       <header className="page-header">
         <h2>Organizations</h2>
-        <p className="page-subtitle">Create and select an organization to manage projects.</p>
+        <p className="page-subtitle">
+          Pick an organization, manage its projects, and edit organization details.
+        </p>
       </header>
 
       <OrganizationForm onSubmit={handleCreate} />
@@ -40,7 +46,10 @@ export function OrganizationsPage() {
       )}
 
       {!loadingOrganizations && organizations.length > 0 && (
-        <OrganizationList organizations={organizations} />
+        <OrganizationList
+          organizations={organizations}
+          onUpdated={handleUpdated}
+        />
       )}
     </div>
   );

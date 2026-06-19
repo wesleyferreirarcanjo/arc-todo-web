@@ -2,31 +2,65 @@ import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { updateProject } from '../lib/api/projects';
 import { getProjectColor } from '../lib/color/entityColor';
-import type { Project } from '../types/project';
+import type { Project, UpdateProjectInput } from '../types/project';
 
 interface ProjectListProps {
   projects: Project[];
-  onColorUpdated?: () => Promise<void>;
+  onUpdated?: () => Promise<void>;
 }
 
-export function ProjectList({ projects, onColorUpdated }: ProjectListProps) {
+export function ProjectList({ projects, onUpdated }: ProjectListProps) {
   const navigate = useNavigate();
   const { orgId } = useParams();
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [color, setColor] = useState('');
+  const [saving, setSaving] = useState(false);
 
   if (!orgId) {
     return null;
   }
 
-  async function handleColorChange(project: Project, nextColor: string) {
-    if (nextColor === project.color) return;
+  function handleStartEdit(project: Project) {
+    setName(project.name);
+    setDescription(project.description ?? '');
+    setColor(getProjectColor(project));
+    setEditingId(project.id);
+  }
 
-    setSavingId(project.id);
+  function handleCancelEdit() {
+    setEditingId(null);
+    setName('');
+    setDescription('');
+    setColor('');
+  }
+
+  async function handleSave(project: Project) {
+    if (!name.trim()) return;
+
+    const input: UpdateProjectInput = {};
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+
+    if (trimmedName !== project.name) input.name = trimmedName;
+    if (trimmedDescription !== (project.description ?? '')) {
+      input.description = trimmedDescription || null;
+    }
+    if (color !== getProjectColor(project)) input.color = color;
+
+    if (Object.keys(input).length === 0) {
+      handleCancelEdit();
+      return;
+    }
+
+    setSaving(true);
     try {
-      await updateProject(orgId!, project.id, { color: nextColor });
-      await onColorUpdated?.();
+      await updateProject(orgId!, project.id, input);
+      await onUpdated?.();
+      handleCancelEdit();
     } finally {
-      setSavingId(null);
+      setSaving(false);
     }
   }
 
@@ -34,40 +68,120 @@ export function ProjectList({ projects, onColorUpdated }: ProjectListProps) {
     <div className="entity-list">
       {projects.map((project) => {
         const accent = getProjectColor(project);
+        const isEditing = editingId === project.id;
+        const cardStyle = { '--entity-accent': accent } as CSSProperties;
 
         return (
-          <div
+          <article
             key={project.id}
-            className="entity-card has-accent project-card"
-            style={{ '--entity-accent': accent } as CSSProperties}
+            className={`entity-card management-card has-accent${isEditing ? ' is-editing' : ''}`}
+            style={cardStyle}
           >
-            <button
-              type="button"
-              className="entity-card-main"
-              onClick={() =>
-                navigate(`/organizations/${orgId}/projects/${project.id}`)
-              }
-            >
-              <h3>{project.name}</h3>
-              {project.description && (
-                <p className="entity-description">{project.description}</p>
-              )}
-            </button>
+            {isEditing ? (
+              <div className="entity-edit">
+                <span className="entity-scope-badge entity-scope-badge-project">
+                  Project
+                </span>
 
-            <label className="project-color-edit" title="Change project color">
-              <span className="sr-only">Project color for {project.name}</span>
-              <input
-                type="color"
-                className="color-picker color-picker-compact"
-                value={accent}
-                disabled={savingId === project.id}
-                onChange={(event) =>
-                  void handleColorChange(project, event.target.value)
-                }
-                onClick={(event) => event.stopPropagation()}
-              />
-            </label>
-          </div>
+                <label>
+                  Name
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Description
+                  <textarea
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    rows={3}
+                    placeholder="Optional project details"
+                  />
+                </label>
+
+                <label className="color-field">
+                  Color
+                  <div className="color-input-row">
+                    <input
+                      type="color"
+                      className="color-picker"
+                      value={color}
+                      onChange={(event) => setColor(event.target.value)}
+                      aria-label="Project color"
+                    />
+                    <span className="color-value">{color}</span>
+                  </div>
+                </label>
+
+                <div className="entity-edit-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={saving || !name.trim()}
+                    onClick={() => void handleSave(project)}
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={saving}
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="entity-scope-badge entity-scope-badge-project">
+                  Project
+                </span>
+
+                <div className="entity-card-header">
+                  <h3>{project.name}</h3>
+                  <span
+                    className="entity-color-swatch"
+                    style={{ backgroundColor: accent }}
+                    title={`Color: ${accent}`}
+                  />
+                </div>
+
+                {project.description ? (
+                  <p className="entity-description">{project.description}</p>
+                ) : (
+                  <p className="entity-meta entity-meta-muted">
+                    No description yet
+                  </p>
+                )}
+
+                <div className="entity-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() =>
+                      navigate(
+                        `/organizations/${orgId}/projects/${project.id}`,
+                      )
+                    }
+                  >
+                    Open tasks
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => handleStartEdit(project)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </>
+            )}
+          </article>
         );
       })}
     </div>

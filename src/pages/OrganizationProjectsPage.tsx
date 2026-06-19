@@ -32,7 +32,7 @@ export function OrganizationProjectsPage() {
     [orgId, refreshProjects],
   );
 
-  const handleColorUpdated = useCallback(async () => {
+  const handleUpdated = useCallback(async () => {
     if (!orgId) return;
     await refreshProjects(orgId);
   }, [orgId, refreshProjects]);
@@ -49,7 +49,9 @@ export function OrganizationProjectsPage() {
     <div className="page-shell">
       <header className="page-header">
         <h2>{currentOrganization?.name ?? 'Projects'}</h2>
-        <p className="page-subtitle">Create and open projects for this organization.</p>
+        <p className="page-subtitle">
+          Manage projects for this organization. Open tasks or edit project details.
+        </p>
         <div className="page-links">
           <Link to={`/organizations/${orgId}/knowledge`} className="text-link">
             Organization knowledge
@@ -71,7 +73,7 @@ export function OrganizationProjectsPage() {
       )}
 
       {!loadingProjects && projects.length > 0 && (
-        <ProjectList projects={projects} onColorUpdated={handleColorUpdated} />
+        <ProjectList projects={projects} onUpdated={handleUpdated} />
       )}
     </div>
   );

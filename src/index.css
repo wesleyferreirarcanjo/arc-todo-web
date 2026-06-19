@@ -447,6 +447,99 @@ textarea:focus-visible {
   font-size: 0.875rem;
 }
 
+.entity-card.management-card {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1rem 1.15rem;
+}
+
+.entity-card.management-card:hover {
+  transform: none;
+}
+
+.entity-card.management-card.is-editing {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lift);
+}
+
+.entity-scope-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 0.65rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entity-scope-badge-project {
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--entity-accent, #8778a3) 8%, var(--bg-surface));
+}
+
+.entity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.entity-color-swatch {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.entity-meta-muted {
+  font-style: italic;
+}
+
+.entity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.entity-actions .btn {
+  margin-top: 0;
+}
+
+.entity-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.entity-edit label {
+  width: 100%;
+}
+
+.entity-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.entity-edit-actions .btn-primary {
+  margin-top: 0;
+}
+
 .login-page {
   position: relative;
   min-height: 100vh;
