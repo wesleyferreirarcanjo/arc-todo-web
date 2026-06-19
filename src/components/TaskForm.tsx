@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import type { CreateTaskInput, TaskCriticity, TaskStatus } from '../types/todo';
+import { Select } from './Select';
 
 interface TaskFormProps {
   onSubmit: (input: CreateTaskInput) => Promise<void>;
@@ -83,30 +84,20 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
       <div className="form-row">
         <label>
           Status
-          <select
+          <Select
             value={status}
-            onChange={(event) => setStatus(event.target.value as TaskStatus)}
-          >
-            {statuses.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+            onChange={(nextStatus) => setStatus(nextStatus as TaskStatus)}
+            options={statuses}
+          />
         </label>
 
         <label>
           Criticity
-          <select
+          <Select
             value={criticity}
-            onChange={(event) => setCriticity(event.target.value as TaskCriticity)}
-          >
-            {criticities.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+            onChange={(nextCriticity) => setCriticity(nextCriticity as TaskCriticity)}
+            options={criticities}
+          />
         </label>
 
         <label>

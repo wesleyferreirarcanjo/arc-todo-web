@@ -12,6 +12,7 @@ import {
 } from '../lib/storage/appStorage';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
 import { TaskForm } from '../components/TaskForm';
+import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateTaskInput,
@@ -146,33 +147,35 @@ export function AllTasksBoardPage() {
       <div className="board-filters">
         <label className="board-filter-field">
           Organization
-          <select
+          <Select
             value={organizationId ?? ''}
-            onChange={(event) => handleOrganizationChange(event.target.value)}
-          >
-            <option value="">All organizations</option>
-            {organizations.map((organization) => (
-              <option key={organization.id} value={organization.id}>
-                {organization.name}
-              </option>
-            ))}
-          </select>
+            placeholder="All organizations"
+            onChange={handleOrganizationChange}
+            options={[
+              { value: '', label: 'All organizations' },
+              ...organizations.map((organization) => ({
+                value: organization.id,
+                label: organization.name,
+              })),
+            ]}
+          />
         </label>
 
         <label className="board-filter-field">
           Project
-          <select
+          <Select
             value={projectId ?? ''}
-            onChange={(event) => handleProjectChange(event.target.value)}
+            placeholder="All projects"
             disabled={!organizationId}
-          >
-            <option value="">All projects</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
+            onChange={handleProjectChange}
+            options={[
+              { value: '', label: 'All projects' },
+              ...projects.map((project) => ({
+                value: project.id,
+                label: project.name,
+              })),
+            ]}
+          />
         </label>
 
         {hasFilters && (

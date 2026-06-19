@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { Select } from './Select';
 
 export function OrgSwitcher() {
   const navigate = useNavigate();
@@ -8,24 +9,24 @@ export function OrgSwitcher() {
   return (
     <label className="sidebar-field">
       Organization
-      <select
+      <Select
         value={currentOrgId ?? ''}
-        onChange={(event) => {
-          const nextOrgId = event.target.value;
+        placeholder="Select organization"
+        onChange={(nextOrgId) => {
           if (nextOrgId) {
             navigate(`/organizations/${nextOrgId}`);
           } else {
             navigate('/organizations');
           }
         }}
-      >
-        <option value="">Select organization</option>
-        {organizations.map((organization) => (
-          <option key={organization.id} value={organization.id}>
-            {organization.name}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: '', label: 'Select organization' },
+          ...organizations.map((organization) => ({
+            value: organization.id,
+            label: organization.name,
+          })),
+        ]}
+      />
     </label>
   );
 }

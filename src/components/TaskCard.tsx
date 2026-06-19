@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type DragEvent } from 'react';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
+import { Select } from './Select';
 
 interface TaskCardProps {
   task: Task;
@@ -109,31 +110,21 @@ export function TaskCard({
       </div>
 
       <div className="task-actions">
-        <select
+        <Select
           value={task.status}
-          onChange={(event) =>
-            onUpdate(task.id, { status: event.target.value as TaskStatus })
+          onChange={(nextStatus) =>
+            onUpdate(task.id, { status: nextStatus as TaskStatus })
           }
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={statusOptions}
+        />
 
-        <select
+        <Select
           value={task.criticity}
-          onChange={(event) =>
-            onUpdate(task.id, { criticity: event.target.value as TaskCriticity })
+          onChange={(nextCriticity) =>
+            onUpdate(task.id, { criticity: nextCriticity as TaskCriticity })
           }
-        >
-          {criticityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={criticityOptions}
+        />
 
         <button
           type="button"
