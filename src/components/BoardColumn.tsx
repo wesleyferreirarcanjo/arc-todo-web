@@ -31,14 +31,28 @@ export function BoardColumn({
     <motion.section
       ref={setNodeRef}
       className="board-column"
-      animate={{
-        borderColor: highlighted
-          ? 'var(--accent)'
-          : 'var(--border)',
-        boxShadow: highlighted ? 'var(--drop-glow)' : 'var(--shadow-card)',
-      }}
+      animate={{ scale: highlighted ? 1.008 : 1 }}
       transition={base}
     >
+      <motion.div
+        className="board-column-drop-highlight"
+        aria-hidden="true"
+        initial={false}
+        animate={{ opacity: highlighted ? 1 : 0 }}
+        transition={base}
+      />
+
+      <motion.div
+        className="board-column-drop-accent"
+        aria-hidden="true"
+        initial={false}
+        animate={{
+          opacity: highlighted ? 1 : 0.35,
+          scaleX: highlighted ? 1 : 0.55,
+        }}
+        transition={base}
+      />
+
       <header className="board-column-header">
         <h2>{title}</h2>
         <span className="count-badge">{taskCount}</span>
