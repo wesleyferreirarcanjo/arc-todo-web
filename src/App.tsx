@@ -9,6 +9,7 @@ import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
 import { LoginPage } from './pages/LoginPage';
+import { McpToolsSettingsPage } from './pages/McpToolsSettingsPage';
 import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
 import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
 import { OrganizationProjectsPage } from './pages/OrganizationProjectsPage';
@@ -40,6 +41,10 @@ export default function App() {
                   element={<GeneralPersonKnowledgePage />}
                 />
                 <Route path="/organizations" element={<OrganizationsPage />} />
+                <Route
+                  path="/settings/mcp-tools"
+                  element={<McpToolsSettingsPage />}
+                />
                 <Route
                   path="/organizations/:orgId"
                   element={<OrganizationProjectsPage />}

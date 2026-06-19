@@ -37,6 +37,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | Resource | UUID | Notes |
 | --- | --- | --- |
 | API `arc-todo-api` | `lmsx2avrg1k29ex12w6e3gce` | `http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io` |
+| MCP `arc-todo-mcp` | *(fill after creating the Coolify resource)* | Streamable HTTP MCP at `/mcp` |
 | PostgreSQL `arc-todo-postgres` | `bibl6ncxa3xkph2r8ubmbl4t` | Used by API only |
 | MinIO `arc-todo-minio` | `jsx5tkzb1b8hj5oz0ydt491u` | Used by API only (knowledge attachments) |
 
@@ -54,6 +55,7 @@ Redeploy the frontend whenever the API public URL changes.
 2. Deploy API first and confirm `GET /health`.
 3. Set `VITE_API_BASE_URL` to the API URL.
 4. Deploy this application.
+5. Configure MCP tools at `/settings/mcp-tools`, then deploy / restart `arc-todo-mcp`.
 
 ## Notes
 
@@ -61,3 +63,4 @@ Redeploy the frontend whenever the API public URL changes.
 - Knowledge attachment files are stored in MinIO by the API; the web app has no MinIO env vars.
 - Git source uses the Coolify deploy key (`private_key_uuid`: `lms2y9fjpybdznft4t7uf3td`).
 - See [../arc-todo-api/coolify.md](../arc-todo-api/coolify.md) for API and Postgres Coolify IDs.
+- See [../arc-todo-mcp/coolify.md](../arc-todo-mcp/coolify.md) for the MCP server Coolify reference.

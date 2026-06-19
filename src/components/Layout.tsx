@@ -58,6 +58,14 @@ export function Layout() {
           >
             Organizations
           </NavLink>
+          <NavLink
+            to="/settings/mcp-tools"
+            className={({ isActive }) =>
+              isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
+            }
+          >
+            MCP Tools
+          </NavLink>
           <ProjectNavList />
           <OrgKnowledgeNav />
         </aside>
