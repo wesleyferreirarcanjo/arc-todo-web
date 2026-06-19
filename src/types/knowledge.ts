@@ -28,7 +28,7 @@ export interface KnowledgeEntryWithContext extends KnowledgeEntry {
   person?: {
     id: string;
     name: string;
-    organizationId: string;
+    organizationId: string | null;
   } | null;
 }
 

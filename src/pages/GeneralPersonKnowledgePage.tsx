@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  createGeneralKnowledge,
-  deleteGeneralKnowledge,
-  fetchGeneralKnowledge,
-  updateGeneralKnowledge,
+  createGeneralPersonKnowledge,
+  deleteGeneralPersonKnowledge,
+  fetchGeneralPersonKnowledge,
+  updateGeneralPersonKnowledge,
 } from '../lib/api/knowledge';
+import { fetchGeneralPerson } from '../lib/api/persons';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
 import type {
@@ -13,56 +14,78 @@ import type {
   KnowledgeEntry,
   UpdateKnowledgeInput,
 } from '../types/knowledge';
+import type { Person } from '../types/person';
 
-export function GeneralKnowledgePage() {
+export function GeneralPersonKnowledgePage() {
+  const { personId } = useParams();
+  const [person, setPerson] = useState<Person | null>(null);
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadEntries = useCallback(async () => {
+  const loadData = useCallback(async () => {
+    if (!personId) return;
+
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchGeneralKnowledge();
-      setEntries(data);
+      const [personData, knowledgeData] = await Promise.all([
+        fetchGeneralPerson(personId),
+        fetchGeneralPersonKnowledge(personId),
+      ]);
+      setPerson(personData);
+      setEntries(knowledgeData);
     } catch {
-      setError('Failed to load knowledge.');
+      setError('Failed to load person knowledge.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [personId]);
 
   useEffect(() => {
-    void loadEntries();
-  }, [loadEntries]);
+    void loadData();
+  }, [loadData]);
 
   async function handleCreate(input: CreateKnowledgeInput) {
-    const created = await createGeneralKnowledge(input);
+    if (!personId) return;
+    const created = await createGeneralPersonKnowledge(personId, input);
     setEntries((prev) => [created, ...prev]);
   }
 
   async function handleUpdate(id: string, input: UpdateKnowledgeInput) {
-    const updated = await updateGeneralKnowledge(id, input);
+    if (!personId) return;
+    const updated = await updateGeneralPersonKnowledge(personId, id, input);
     setEntries((prev) =>
       prev.map((entry) => (entry.id === id ? updated : entry)),
     );
   }
 
   async function handleDelete(id: string) {
-    await deleteGeneralKnowledge(id);
+    if (!personId) return;
+    await deleteGeneralPersonKnowledge(personId, id);
     setEntries((prev) => prev.filter((entry) => entry.id !== id));
+  }
+
+  if (!personId) {
+    return <Navigate to="/people" replace />;
   }
 
   return (
     <div className="page-shell">
       <header className="page-header">
-        <h2>General knowledge</h2>
+        <h2>{person?.name ?? 'Person'} knowledge</h2>
         <p className="page-subtitle">
-          Private notes and knowledge visible only to you.
+          Private knowledge linked to this person in your workspace.
         </p>
+        {person && (
+          <div className="person-profile-meta">
+            {person.title && <span>{person.title}</span>}
+            {person.email && <span>{person.email}</span>}
+          </div>
+        )}
         <div className="page-links">
           <Link to="/people" className="text-link">
-            People
+            Back to people
           </Link>
         </div>
       </header>
@@ -74,7 +97,7 @@ export function GeneralKnowledgePage() {
 
       {!loading && !error && entries.length === 0 && (
         <p className="status-message">
-          No knowledge entries yet. Create your first one above.
+          No person knowledge yet. Create your first entry above.
         </p>
       )}
 

@@ -22,10 +22,40 @@ export function Breadcrumbs() {
     );
   }
 
-  const isOrgKnowledge = location.pathname.endsWith('/knowledge') && !personId && !location.pathname.includes('/projects/');
-  const isProjectKnowledge = location.pathname.includes('/projects/') && location.pathname.endsWith('/knowledge');
-  const isPersonKnowledge = Boolean(personId) && location.pathname.endsWith('/knowledge');
+  if (location.pathname === '/people') {
+    return (
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <span>People</span>
+      </nav>
+    );
+  }
+
+  const isGeneralPersonKnowledge =
+    location.pathname.startsWith('/people/') &&
+    location.pathname.endsWith('/knowledge');
+  const isOrgKnowledge =
+    location.pathname.endsWith('/knowledge') &&
+    !personId &&
+    !location.pathname.includes('/projects/') &&
+    !isGeneralPersonKnowledge;
+  const isProjectKnowledge =
+    location.pathname.includes('/projects/') &&
+    location.pathname.endsWith('/knowledge');
+  const isOrgPersonKnowledge =
+    Boolean(personId) &&
+    location.pathname.endsWith('/knowledge') &&
+    !isGeneralPersonKnowledge;
   const isPersonsPage = location.pathname.endsWith('/persons');
+
+  if (isGeneralPersonKnowledge) {
+    return (
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/people">People</Link>
+        <span className="breadcrumb-separator">/</span>
+        <span>Knowledge</span>
+      </nav>
+    );
+  }
 
   return (
     <nav className="breadcrumbs" aria-label="Breadcrumb">
@@ -54,23 +84,29 @@ export function Breadcrumbs() {
           <span>People</span>
         </>
       )}
-      {currentProject && !isProjectKnowledge && !isPersonKnowledge && !isOrgKnowledge && !isPersonsPage && (
-        <>
-          <span className="breadcrumb-separator">/</span>
-          <span>{currentProject.name}</span>
-        </>
-      )}
+      {currentProject &&
+        !isProjectKnowledge &&
+        !isOrgPersonKnowledge &&
+        !isOrgKnowledge &&
+        !isPersonsPage && (
+          <>
+            <span className="breadcrumb-separator">/</span>
+            <span>{currentProject.name}</span>
+          </>
+        )}
       {isProjectKnowledge && currentProject && (
         <>
           <span className="breadcrumb-separator">/</span>
-          <Link to={`/organizations/${currentOrganization?.id}/projects/${currentProject.id}`}>
+          <Link
+            to={`/organizations/${currentOrganization?.id}/projects/${currentProject.id}`}
+          >
             {currentProject.name}
           </Link>
           <span className="breadcrumb-separator">/</span>
           <span>Knowledge</span>
         </>
       )}
-      {isPersonKnowledge && (
+      {isOrgPersonKnowledge && (
         <>
           <span className="breadcrumb-separator">/</span>
           <Link to={`/organizations/${currentOrganization?.id}/persons`}>

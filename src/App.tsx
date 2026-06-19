@@ -6,6 +6,8 @@ import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
+import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
+import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
 import { LoginPage } from './pages/LoginPage';
 import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
 import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
@@ -32,6 +34,11 @@ export default function App() {
               >
                 <Route path="/board" element={<AllTasksBoardPage />} />
                 <Route path="/knowledge" element={<GeneralKnowledgePage />} />
+                <Route path="/people" element={<GeneralPersonsPage />} />
+                <Route
+                  path="/people/:personId/knowledge"
+                  element={<GeneralPersonKnowledgePage />}
+                />
                 <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route
                   path="/organizations/:orgId"

@@ -1,6 +1,7 @@
 export interface Person {
   id: string;
-  organizationId: string;
+  organizationId: string | null;
+  createdById: string;
   name: string;
   email: string | null;
   title: string | null;

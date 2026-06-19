@@ -43,6 +43,14 @@ export function Layout() {
           >
             Knowledge
           </NavLink>
+          <NavLink
+            to="/people"
+            className={({ isActive }) =>
+              isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
+            }
+          >
+            People
+          </NavLink>
           <OrgSwitcher />
           <ProjectNavList />
           <OrgKnowledgeNav />

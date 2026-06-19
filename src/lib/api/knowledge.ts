@@ -147,6 +147,45 @@ export function deleteProjectKnowledge(
   );
 }
 
+export function fetchGeneralPersonKnowledge(
+  personId: string,
+): Promise<KnowledgeEntry[]> {
+  return apiRequest<KnowledgeEntry[]>(`/persons/${personId}/knowledge`);
+}
+
+export function createGeneralPersonKnowledge(
+  personId: string,
+  input: CreateKnowledgeInput,
+): Promise<KnowledgeEntry> {
+  return apiRequest<KnowledgeEntry>(`/persons/${personId}/knowledge`, {
+    method: 'POST',
+    body: input,
+  });
+}
+
+export function updateGeneralPersonKnowledge(
+  personId: string,
+  knowledgeId: string,
+  input: UpdateKnowledgeInput,
+): Promise<KnowledgeEntry> {
+  return apiRequest<KnowledgeEntry>(
+    `/persons/${personId}/knowledge/${knowledgeId}`,
+    {
+      method: 'PATCH',
+      body: input,
+    },
+  );
+}
+
+export function deleteGeneralPersonKnowledge(
+  personId: string,
+  knowledgeId: string,
+): Promise<void> {
+  return apiRequest<void>(`/persons/${personId}/knowledge/${knowledgeId}`, {
+    method: 'DELETE',
+  });
+}
+
 export function fetchPersonKnowledge(
   orgId: string,
   personId: string,

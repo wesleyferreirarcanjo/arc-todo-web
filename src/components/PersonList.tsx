@@ -1,15 +1,20 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Person } from '../types/person';
 
 interface PersonListProps {
   persons: Person[];
+  scope?: 'general' | 'organization';
+  orgId?: string;
 }
 
-export function PersonList({ persons }: PersonListProps) {
+export function PersonList({
+  persons,
+  scope = 'organization',
+  orgId,
+}: PersonListProps) {
   const navigate = useNavigate();
-  const { orgId } = useParams();
 
-  if (!orgId) {
+  if (scope === 'organization' && !orgId) {
     return null;
   }
 
@@ -22,7 +27,9 @@ export function PersonList({ persons }: PersonListProps) {
             className="entity-card-main"
             onClick={() =>
               navigate(
-                `/organizations/${orgId}/persons/${person.id}/knowledge`,
+                scope === 'general'
+                  ? `/people/${person.id}/knowledge`
+                  : `/organizations/${orgId}/persons/${person.id}/knowledge`,
               )
             }
           >
