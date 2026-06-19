@@ -1,8 +1,12 @@
+import { useCallback } from 'react';
 import type { CSSProperties } from 'react';
+import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { m } from 'framer-motion';
 import type { TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
 import { getEntityAccent, getProjectColor } from '../lib/color/entityColor';
-import { useBoardDragDrop } from '../lib/board/useBoardDragDrop';
-import { TaskCard } from './TaskCard';
+import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
+import { BoardColumn } from './BoardColumn';
+import { TaskCard, TaskCardOverlay } from './TaskCard';
 
 interface UnifiedTaskBoardProps {
   tasks: TaskWithContext[];
@@ -76,40 +80,51 @@ export function UnifiedTaskBoard({
 }: UnifiedTaskBoardProps) {
   const taskById = new Map(tasks.map((task) => [task.id, task]));
 
+  const getTaskStatus = useCallback(
+    (taskId: string) => taskById.get(taskId)?.status,
+    [taskById],
+  );
+
   const {
-    draggingTaskId,
-    dropTargetStatus,
+    activeTaskId,
+    overColumnStatus,
+    sensors,
     handleDragStart,
+    handleDragOver,
     handleDragEnd,
-    handleDragOverColumn,
-    handleDragLeaveColumn,
-    handleDropOnColumn,
-  } = useBoardDragDrop(async (taskId, status) => {
-    const task = taskById.get(taskId);
-    if (!task || task.status === status) return;
-    await onUpdate(task, { status });
+    handleDragCancel,
+  } = useTaskBoardDnd({
+    getTaskStatus,
+    onMoveTask: async (taskId, status) => {
+      const task = taskById.get(taskId);
+      if (!task || task.status === status) return;
+      await onUpdate(task, { status });
+    },
   });
 
-  return (
-    <div className="task-board">
-      {columns.map((column) => {
-        const columnTasks = tasks.filter((task) => task.status === column.status);
-        const grouped = groupTasksByOrgAndProject(columnTasks);
-        const isDropTarget = dropTargetStatus === column.status;
+  const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
 
-        return (
-          <section
-            key={column.status}
-            className={`board-column${isDropTarget ? ' is-drop-target' : ''}`}
-            onDragOver={(event) => handleDragOverColumn(event, column.status)}
-            onDragLeave={(event) => handleDragLeaveColumn(event, column.status)}
-            onDrop={(event) => void handleDropOnColumn(event, column.status)}
-          >
-            <header className="board-column-header">
-              <h2>{column.title}</h2>
-              <span className="count-badge">{columnTasks.length}</span>
-            </header>
-            <div className="board-column-body">
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={(event) => void handleDragEnd(event)}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="task-board">
+        {columns.map((column) => {
+          const columnTasks = tasks.filter((task) => task.status === column.status);
+          const grouped = groupTasksByOrgAndProject(columnTasks);
+
+          return (
+            <BoardColumn
+              key={column.status}
+              status={column.status}
+              title={column.title}
+              taskCount={columnTasks.length}
+              isDropTarget={overColumnStatus === column.status}
+            >
               {columnTasks.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
               ) : (
@@ -140,7 +155,7 @@ export function UnifiedTaskBoard({
                         >
                           {projectGroup.projectName}
                         </h4>
-                        <div className="board-project-tasks">
+                        <m.div layout className="board-project-tasks">
                           {projectGroup.tasks.map((task) => (
                             <TaskCard
                               key={task.id}
@@ -149,23 +164,32 @@ export function UnifiedTaskBoard({
                               projectName={task.project.name}
                               accentColor={projectGroup.projectColor}
                               draggable
-                              isDragging={draggingTaskId === task.id}
-                              onDragStart={handleDragStart}
-                              onDragEnd={handleDragEnd}
+                              isDragging={activeTaskId === task.id}
                               onUpdate={(_id, input) => onUpdate(task, input)}
                               onDelete={() => onDelete(task)}
                             />
                           ))}
-                        </div>
+                        </m.div>
                       </div>
                     ))}
                   </div>
                 ))
               )}
-            </div>
-          </section>
-        );
-      })}
-    </div>
+            </BoardColumn>
+          );
+        })}
+      </div>
+
+      <DragOverlay dropAnimation={{ duration: 200, easing: 'ease-out' }}>
+        {activeTask ? (
+          <TaskCardOverlay
+            task={activeTask}
+            organizationName={activeTask.organization.name}
+            projectName={activeTask.project.name}
+            accentColor={getProjectColor(activeTask.project)}
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

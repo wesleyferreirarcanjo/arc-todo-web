@@ -7,6 +7,9 @@ import {
   type CSSProperties,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, m } from 'framer-motion';
+import { dropdownVariants } from '../lib/motion/variants';
+import { useMotionTransition } from '../lib/motion/useMotionTransition';
 
 export interface SelectOption {
   value: string;
@@ -36,6 +39,7 @@ export function Select({
   className,
   id,
 }: SelectProps) {
+  const { fast } = useMotionTransition();
   const generatedId = useId();
   const selectId = id ?? generatedId;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -113,14 +117,20 @@ export function Select({
     setOpen(false);
   }
 
-  const menu = open
-    ? createPortal(
-        <ul
+  const menu = createPortal(
+    <AnimatePresence>
+      {open && (
+        <m.ul
           ref={menuRef}
           className="select-menu"
           style={menuStyle}
           role="listbox"
           aria-labelledby={selectId}
+          variants={dropdownVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          transition={fast}
         >
           {options.map((option) => (
             <li key={option.value || '__empty__'} role="presentation">
@@ -135,10 +145,11 @@ export function Select({
               </button>
             </li>
           ))}
-        </ul>,
-        document.body,
-      )
-    : null;
+        </m.ul>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
 
   return (
     <>

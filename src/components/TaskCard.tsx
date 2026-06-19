@@ -1,5 +1,11 @@
-import { useState, type CSSProperties, type DragEvent } from 'react';
+import { useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { AnimatePresence, m } from 'framer-motion';
+import type { CSSProperties } from 'react';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
+import { useMotionTransition } from '../lib/motion/useMotionTransition';
+import { expandVariants } from '../lib/motion/variants';
 import { Select } from './Select';
 
 function formatDueDateForInput(dueDate: string | null): string {
@@ -14,8 +20,6 @@ interface TaskCardProps {
   accentColor?: string;
   draggable?: boolean;
   isDragging?: boolean;
-  onDragStart?: (event: DragEvent<HTMLElement>, taskId: string) => void;
-  onDragEnd?: (event: DragEvent<HTMLElement>) => void;
   onUpdate: (
     id: string,
     input: Partial<{
@@ -49,11 +53,10 @@ export function TaskCard({
   accentColor,
   draggable = false,
   isDragging = false,
-  onDragStart,
-  onDragEnd,
   onUpdate,
   onDelete,
 }: TaskCardProps) {
+  const { base } = useMotionTransition();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
@@ -62,6 +65,24 @@ export function TaskCard({
   const [dueDate, setDueDate] = useState(formatDueDateForInput(task.dueDate));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const isDraggable = draggable && !editing;
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging: isDndDragging,
+  } = useDraggable({
+    id: task.id,
+    disabled: !isDraggable,
+  });
+
+  const dragStyle: CSSProperties | undefined =
+    transform && !isDragging
+      ? { transform: CSS.Translate.toString(transform) }
+      : undefined;
 
   function handleStartEdit() {
     setTitle(task.title);
@@ -109,22 +130,33 @@ export function TaskCard({
   }
 
   const cardStyle = accentColor
-    ? ({ '--entity-accent': accentColor } as CSSProperties)
-    : undefined;
+    ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
+    : dragStyle;
 
-  const isDraggable = draggable && !editing;
+  const showAsDragging = isDragging || isDndDragging;
 
   return (
-    <article
-      className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${isDragging ? ' is-dragging' : ''}${editing ? ' is-editing' : ''}`}
+    <m.article
+      ref={setNodeRef}
+      layout
+      className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${editing ? ' is-editing' : ''}`}
       style={cardStyle}
-      draggable={isDraggable}
-      onDragStart={
-        isDraggable && onDragStart
-          ? (event) => onDragStart(event, task.id)
+      animate={{
+        opacity: showAsDragging ? 0.45 : 1,
+        scale: showAsDragging ? 0.98 : 1,
+        boxShadow: showAsDragging ? 'var(--shadow-soft)' : 'var(--shadow-soft)',
+      }}
+      whileHover={
+        !showAsDragging && !editing
+          ? {
+              y: -1,
+              boxShadow: 'var(--shadow-lift)',
+              borderColor: 'var(--border-strong)',
+            }
           : undefined
       }
-      onDragEnd={onDragEnd}
+      transition={base}
+      {...(isDraggable ? { ...attributes, ...listeners } : {})}
     >
       {(organizationName || projectName) && (
         <div className="task-context-badges">
@@ -142,131 +174,199 @@ export function TaskCard({
         </div>
       )}
 
-      {editing ? (
-        <div className="task-edit">
-          <label>
-            Title
-            <input
-              type="text"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-            />
-          </label>
-
-          <label>
-            Description
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              rows={3}
-            />
-          </label>
-
-          <div className="form-row">
+      <AnimatePresence initial={false} mode="wait">
+        {editing ? (
+          <m.div
+            key="edit"
+            className="task-edit"
+            variants={expandVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={base}
+          >
             <label>
-              Status
-              <Select
-                value={status}
-                onChange={(nextStatus) => setStatus(nextStatus as TaskStatus)}
-                options={statusOptions}
+              Title
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                required
               />
             </label>
 
             <label>
-              Criticity
+              Description
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={3}
+              />
+            </label>
+
+            <div className="form-row">
+              <label>
+                Status
+                <Select
+                  value={status}
+                  onChange={(nextStatus) => setStatus(nextStatus as TaskStatus)}
+                  options={statusOptions}
+                />
+              </label>
+
+              <label>
+                Criticity
+                <Select
+                  value={criticity}
+                  onChange={(nextCriticity) =>
+                    setCriticity(nextCriticity as TaskCriticity)
+                  }
+                  options={criticityOptions}
+                />
+              </label>
+
+              <label>
+                Due date
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(event) => setDueDate(event.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="task-edit-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={saving || !title.trim()}
+                onClick={() => void handleSave()}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={saving}
+                onClick={handleCancelEdit}
+              >
+                Cancel
+              </button>
+            </div>
+          </m.div>
+        ) : (
+          <m.div
+            key="view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={base}
+          >
+            <div className="task-card-header">
+              <h3>{task.title}</h3>
+              <span className={`criticity-badge criticity-${task.criticity}`}>
+                {task.criticity}
+              </span>
+            </div>
+
+            {task.description && (
+              <p className="task-description">{task.description}</p>
+            )}
+
+            <div className="task-meta">
+              {task.dueDate && (
+                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+              )}
+            </div>
+
+            <div className="task-actions">
               <Select
-                value={criticity}
+                value={task.status}
+                onChange={(nextStatus) =>
+                  onUpdate(task.id, { status: nextStatus as TaskStatus })
+                }
+                options={statusOptions}
+              />
+
+              <Select
+                value={task.criticity}
                 onChange={(nextCriticity) =>
-                  setCriticity(nextCriticity as TaskCriticity)
+                  onUpdate(task.id, { criticity: nextCriticity as TaskCriticity })
                 }
                 options={criticityOptions}
               />
-            </label>
 
-            <label>
-              Due date
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
-              />
-            </label>
-          </div>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleStartEdit}
+              >
+                Edit
+              </button>
 
-          <div className="task-edit-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={saving || !title.trim()}
-              onClick={() => void handleSave()}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={saving}
-              onClick={handleCancelEdit}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="task-card-header">
-            <h3>{task.title}</h3>
-            <span className={`criticity-badge criticity-${task.criticity}`}>
-              {task.criticity}
-            </span>
-          </div>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
+    </m.article>
+  );
+}
 
-          {task.description && (
-            <p className="task-description">{task.description}</p>
+interface TaskCardOverlayProps {
+  task: Task;
+  organizationName?: string;
+  projectName?: string;
+  accentColor?: string;
+}
+
+export function TaskCardOverlay({
+  task,
+  organizationName,
+  projectName,
+  accentColor,
+}: TaskCardOverlayProps) {
+  const cardStyle = accentColor
+    ? ({ '--entity-accent': accentColor } as CSSProperties)
+    : undefined;
+
+  return (
+    <article
+      className={`task-card task-card-overlay criticity-${task.criticity}${accentColor ? ' has-accent' : ''}`}
+      style={cardStyle}
+    >
+      {(organizationName || projectName) && (
+        <div className="task-context-badges">
+          {organizationName && (
+            <span className="task-badge task-badge-org">{organizationName}</span>
           )}
-
-          <div className="task-meta">
-            {task.dueDate && (
-              <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-            )}
-          </div>
-
-          <div className="task-actions">
-            <Select
-              value={task.status}
-              onChange={(nextStatus) =>
-                onUpdate(task.id, { status: nextStatus as TaskStatus })
-              }
-              options={statusOptions}
-            />
-
-            <Select
-              value={task.criticity}
-              onChange={(nextCriticity) =>
-                onUpdate(task.id, { criticity: nextCriticity as TaskCriticity })
-              }
-              options={criticityOptions}
-            />
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleStartEdit}
+          {projectName && (
+            <span
+              className="task-badge task-badge-project"
+              style={accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : undefined}
             >
-              Edit
-            </button>
+              {projectName}
+            </span>
+          )}
+        </div>
+      )}
 
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
-        </>
+      <div className="task-card-header">
+        <h3>{task.title}</h3>
+        <span className={`criticity-badge criticity-${task.criticity}`}>
+          {task.criticity}
+        </span>
+      </div>
+
+      {task.description && (
+        <p className="task-description">{task.description}</p>
       )}
     </article>
   );

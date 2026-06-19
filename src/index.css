@@ -1081,7 +1081,6 @@ textarea {
   flex-direction: column;
   overflow: hidden;
   box-shadow: var(--shadow-card);
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .board-column::before {
@@ -1197,8 +1196,7 @@ textarea {
   background: var(--bg-elevated);
   cursor: grab;
   box-shadow: var(--shadow-soft);
-  transition: opacity var(--transition-fast), transform var(--transition-base),
-    box-shadow var(--transition-base), border-color var(--transition-base);
+  transition: border-color var(--transition-base);
 }
 
 .task-card::after {
@@ -1213,8 +1211,6 @@ textarea {
 
 .task-card:hover {
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-lift);
-  transform: translateY(-1px);
 }
 
 .task-card:active {
@@ -1222,9 +1218,14 @@ textarea {
 }
 
 .task-card.is-dragging {
-  opacity: 0.5;
-  transform: scale(0.98);
-  box-shadow: var(--shadow-soft);
+  cursor: grabbing;
+}
+
+.task-card-overlay {
+  cursor: grabbing;
+  transform: scale(1.015);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--accent);
 }
 
 .task-card.has-accent {

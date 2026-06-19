@@ -1,6 +1,9 @@
+import { useCallback } from 'react';
+import { DndContext, DragOverlay } from '@dnd-kit/core';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
-import { TaskCard } from './TaskCard';
-import { useBoardDragDrop } from '../lib/board/useBoardDragDrop';
+import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
+import { BoardColumn } from './BoardColumn';
+import { TaskCard, TaskCardOverlay } from './TaskCard';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -25,39 +28,52 @@ const columns: { status: TaskStatus; title: string }[] = [
 ];
 
 export function TaskBoard({ tasks, accentColor, onUpdate, onDelete }: TaskBoardProps) {
+  const getTaskStatus = useCallback(
+    (taskId: string) => tasks.find((task) => task.id === taskId)?.status,
+    [tasks],
+  );
+
   const {
-    draggingTaskId,
-    dropTargetStatus,
+    activeTaskId,
+    overColumnStatus,
+    sensors,
     handleDragStart,
+    handleDragOver,
     handleDragEnd,
-    handleDragOverColumn,
-    handleDragLeaveColumn,
-    handleDropOnColumn,
-  } = useBoardDragDrop(async (taskId, status) => {
-    const task = tasks.find((item) => item.id === taskId);
-    if (!task || task.status === status) return;
-    await onUpdate(taskId, { status });
+    handleDragCancel,
+  } = useTaskBoardDnd({
+    getTaskStatus,
+    onMoveTask: async (taskId, status) => {
+      const task = tasks.find((item) => item.id === taskId);
+      if (!task || task.status === status) return;
+      await onUpdate(taskId, { status });
+    },
   });
 
-  return (
-    <div className="task-board">
-      {columns.map((column) => {
-        const columnTasks = tasks.filter((task) => task.status === column.status);
-        const isDropTarget = dropTargetStatus === column.status;
+  const activeTask = activeTaskId
+    ? tasks.find((task) => task.id === activeTaskId)
+    : undefined;
 
-        return (
-          <section
-            key={column.status}
-            className={`board-column${isDropTarget ? ' is-drop-target' : ''}`}
-            onDragOver={(event) => handleDragOverColumn(event, column.status)}
-            onDragLeave={(event) => handleDragLeaveColumn(event, column.status)}
-            onDrop={(event) => void handleDropOnColumn(event, column.status)}
-          >
-            <header className="board-column-header">
-              <h2>{column.title}</h2>
-              <span className="count-badge">{columnTasks.length}</span>
-            </header>
-            <div className="board-column-body">
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={(event) => void handleDragEnd(event)}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="task-board">
+        {columns.map((column) => {
+          const columnTasks = tasks.filter((task) => task.status === column.status);
+
+          return (
+            <BoardColumn
+              key={column.status}
+              status={column.status}
+              title={column.title}
+              taskCount={columnTasks.length}
+              isDropTarget={overColumnStatus === column.status}
+            >
               {columnTasks.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
               ) : (
@@ -67,18 +83,22 @@ export function TaskBoard({ tasks, accentColor, onUpdate, onDelete }: TaskBoardP
                     task={task}
                     accentColor={accentColor}
                     draggable
-                    isDragging={draggingTaskId === task.id}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
+                    isDragging={activeTaskId === task.id}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                   />
                 ))
               )}
-            </div>
-          </section>
-        );
-      })}
-    </div>
+            </BoardColumn>
+          );
+        })}
+      </div>
+
+      <DragOverlay dropAnimation={{ duration: 200, easing: 'ease-out' }}>
+        {activeTask ? (
+          <TaskCardOverlay task={activeTask} accentColor={accentColor} />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
