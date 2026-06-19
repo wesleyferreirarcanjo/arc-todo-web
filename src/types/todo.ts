@@ -1,12 +1,12 @@
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
-export type TaskPriority = 'low' | 'medium' | 'high';
+export type TaskCriticity = 'low' | 'medium' | 'high' | 'critical';
 
 export interface Task {
   id: string;
   title: string;
   description: string | null;
   status: TaskStatus;
-  priority: TaskPriority;
+  criticity: TaskCriticity;
   dueDate: string | null;
   projectId: string;
   createdById?: string | null;
@@ -19,6 +19,7 @@ export interface TaskWithContext extends Task {
     id: string;
     name: string;
     organizationId: string;
+    color: string;
   };
   organization: {
     id: string;
@@ -31,14 +32,14 @@ export interface ListTasksQuery {
   organizationId?: string;
   projectId?: string;
   status?: TaskStatus;
-  priority?: TaskPriority;
+  criticity?: TaskCriticity;
 }
 
 export interface CreateTaskInput {
   title: string;
   description?: string;
   status?: TaskStatus;
-  priority?: TaskPriority;
+  criticity?: TaskCriticity;
   dueDate?: string;
 }
 
@@ -46,6 +47,6 @@ export interface UpdateTaskInput {
   title?: string;
   description?: string;
   status?: TaskStatus;
-  priority?: TaskPriority;
+  criticity?: TaskCriticity;
   dueDate?: string | null;
 }

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import type { CreateTaskInput, TaskPriority, TaskStatus } from '../types/todo';
+import type { CreateTaskInput, TaskCriticity, TaskStatus } from '../types/todo';
 
 interface TaskFormProps {
   onSubmit: (input: CreateTaskInput) => Promise<void>;
@@ -11,17 +11,18 @@ const statuses: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ];
 
-const priorities: { value: TaskPriority; label: string }[] = [
+const criticities: { value: TaskCriticity; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ];
 
 export function TaskForm({ onSubmit }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('todo');
-  const [priority, setPriority] = useState<TaskPriority>('medium');
+  const [criticity, setCriticity] = useState<TaskCriticity>('medium');
   const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,13 +39,13 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
         title: title.trim(),
         description: description.trim() || undefined,
         status,
-        priority,
+        criticity,
         dueDate: dueDate || undefined,
       });
       setTitle('');
       setDescription('');
       setStatus('todo');
-      setPriority('medium');
+      setCriticity('medium');
       setDueDate('');
     } catch {
       setError('Failed to create task.');
@@ -95,12 +96,12 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
         </label>
 
         <label>
-          Priority
+          Criticity
           <select
-            value={priority}
-            onChange={(event) => setPriority(event.target.value as TaskPriority)}
+            value={criticity}
+            onChange={(event) => setCriticity(event.target.value as TaskCriticity)}
           >
-            {priorities.map((item) => (
+            {criticities.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>

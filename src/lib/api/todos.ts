@@ -14,7 +14,7 @@ function buildTasksQueryString(query?: ListTasksQuery): string {
   if (query.organizationId) params.set('organizationId', query.organizationId);
   if (query.projectId) params.set('projectId', query.projectId);
   if (query.status) params.set('status', query.status);
-  if (query.priority) params.set('priority', query.priority);
+  if (query.criticity) params.set('criticity', query.criticity);
 
   const qs = params.toString();
   return qs ? `?${qs}` : '';

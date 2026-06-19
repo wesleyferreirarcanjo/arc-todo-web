@@ -16,7 +16,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateTaskInput,
   ListTasksQuery,
-  TaskPriority,
+  TaskCriticity,
   TaskStatus,
   TaskWithContext,
 } from '../types/todo';
@@ -105,7 +105,7 @@ export function AllTasksBoardPage() {
       title: string;
       description: string;
       status: TaskStatus;
-      priority: TaskPriority;
+      criticity: TaskCriticity;
       dueDate: string | null;
     }>,
   ) {

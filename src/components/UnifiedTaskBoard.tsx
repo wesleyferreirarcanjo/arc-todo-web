@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
-import type { TaskPriority, TaskStatus, TaskWithContext } from '../types/todo';
-import { getEntityAccent } from '../lib/color/entityColor';
+import type { TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
+import { getEntityAccent, getProjectColor } from '../lib/color/entityColor';
+import { useBoardDragDrop } from '../lib/board/useBoardDragDrop';
 import { TaskCard } from './TaskCard';
 
 interface UnifiedTaskBoardProps {
@@ -11,7 +12,7 @@ interface UnifiedTaskBoardProps {
       title: string;
       description: string;
       status: TaskStatus;
-      priority: TaskPriority;
+      criticity: TaskCriticity;
       dueDate: string | null;
     }>,
   ) => Promise<void>;
@@ -32,7 +33,7 @@ function groupTasksByOrgAndProject(tasks: TaskWithContext[]) {
       orgName: string;
       projects: Map<
         string,
-        { projectId: string; projectName: string; tasks: TaskWithContext[] }
+        { projectId: string; projectName: string; projectColor: string; tasks: TaskWithContext[] }
       >;
     }
   >();
@@ -54,6 +55,7 @@ function groupTasksByOrgAndProject(tasks: TaskWithContext[]) {
       orgEntry.projects.set(projectId, {
         projectId,
         projectName: task.project.name,
+        projectColor: getProjectColor(task.project),
         tasks: [],
       });
     }
@@ -72,14 +74,37 @@ export function UnifiedTaskBoard({
   onUpdate,
   onDelete,
 }: UnifiedTaskBoardProps) {
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+
+  const {
+    draggingTaskId,
+    dropTargetStatus,
+    handleDragStart,
+    handleDragEnd,
+    handleDragOverColumn,
+    handleDragLeaveColumn,
+    handleDropOnColumn,
+  } = useBoardDragDrop(async (taskId, status) => {
+    const task = taskById.get(taskId);
+    if (!task || task.status === status) return;
+    await onUpdate(task, { status });
+  });
+
   return (
     <div className="task-board">
       {columns.map((column) => {
         const columnTasks = tasks.filter((task) => task.status === column.status);
         const grouped = groupTasksByOrgAndProject(columnTasks);
+        const isDropTarget = dropTargetStatus === column.status;
 
         return (
-          <section key={column.status} className="board-column">
+          <section
+            key={column.status}
+            className={`board-column${isDropTarget ? ' is-drop-target' : ''}`}
+            onDragOver={(event) => handleDragOverColumn(event, column.status)}
+            onDragLeave={(event) => handleDragLeaveColumn(event, column.status)}
+            onDrop={(event) => void handleDropOnColumn(event, column.status)}
+          >
             <header className="board-column-header">
               <h2>{column.title}</h2>
               <span className="count-badge">{columnTasks.length}</span>
@@ -109,9 +134,7 @@ export function UnifiedTaskBoard({
                           className="board-project-header"
                           style={
                             {
-                              '--entity-accent': getEntityAccent(
-                                projectGroup.projectId,
-                              ),
+                              '--entity-accent': projectGroup.projectColor,
                             } as CSSProperties
                           }
                         >
@@ -124,7 +147,11 @@ export function UnifiedTaskBoard({
                               task={task}
                               organizationName={task.organization.name}
                               projectName={task.project.name}
-                              accentColor={getEntityAccent(task.project.id)}
+                              accentColor={projectGroup.projectColor}
+                              draggable
+                              isDragging={draggingTaskId === task.id}
+                              onDragStart={handleDragStart}
+                              onDragEnd={handleDragEnd}
                               onUpdate={(_id, input) => onUpdate(task, input)}
                               onDelete={() => onDelete(task)}
                             />

@@ -32,6 +32,11 @@ export function OrganizationProjectsPage() {
     [orgId, refreshProjects],
   );
 
+  const handleColorUpdated = useCallback(async () => {
+    if (!orgId) return;
+    await refreshProjects(orgId);
+  }, [orgId, refreshProjects]);
+
   if (!orgId) {
     return <Navigate to="/organizations" replace />;
   }
@@ -58,7 +63,7 @@ export function OrganizationProjectsPage() {
       )}
 
       {!loadingProjects && projects.length > 0 && (
-        <ProjectList projects={projects} />
+        <ProjectList projects={projects} onColorUpdated={handleColorUpdated} />
       )}
     </div>
   );

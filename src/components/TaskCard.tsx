@@ -1,18 +1,22 @@
-import { useState, type CSSProperties } from 'react';
-import type { Task, TaskPriority, TaskStatus } from '../types/todo';
+import { useState, type CSSProperties, type DragEvent } from 'react';
+import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
 
 interface TaskCardProps {
   task: Task;
   organizationName?: string;
   projectName?: string;
   accentColor?: string;
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (event: DragEvent<HTMLElement>, taskId: string) => void;
+  onDragEnd?: (event: DragEvent<HTMLElement>) => void;
   onUpdate: (
     id: string,
     input: Partial<{
       title: string;
       description: string;
       status: TaskStatus;
-      priority: TaskPriority;
+      criticity: TaskCriticity;
       dueDate: string | null;
     }>,
   ) => Promise<void>;
@@ -25,10 +29,11 @@ const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ];
 
-const priorityOptions: { value: TaskPriority; label: string }[] = [
+const criticityOptions: { value: TaskCriticity; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ];
 
 export function TaskCard({
@@ -36,6 +41,10 @@ export function TaskCard({
   organizationName,
   projectName,
   accentColor,
+  draggable = false,
+  isDragging = false,
+  onDragStart,
+  onDragEnd,
   onUpdate,
   onDelete,
 }: TaskCardProps) {
@@ -56,8 +65,15 @@ export function TaskCard({
 
   return (
     <article
-      className={`task-card priority-${task.priority}${accentColor ? ' has-accent' : ''}`}
+      className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${isDragging ? ' is-dragging' : ''}`}
       style={cardStyle}
+      draggable={draggable}
+      onDragStart={
+        draggable && onDragStart
+          ? (event) => onDragStart(event, task.id)
+          : undefined
+      }
+      onDragEnd={onDragEnd}
     >
       {(organizationName || projectName) && (
         <div className="task-context-badges">
@@ -65,15 +81,20 @@ export function TaskCard({
             <span className="task-badge task-badge-org">{organizationName}</span>
           )}
           {projectName && (
-            <span className="task-badge task-badge-project">{projectName}</span>
+            <span
+              className="task-badge task-badge-project"
+              style={accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : undefined}
+            >
+              {projectName}
+            </span>
           )}
         </div>
       )}
 
       <div className="task-card-header">
         <h3>{task.title}</h3>
-        <span className={`priority-badge priority-${task.priority}`}>
-          {task.priority}
+        <span className={`criticity-badge criticity-${task.criticity}`}>
+          {task.criticity}
         </span>
       </div>
 
@@ -102,12 +123,12 @@ export function TaskCard({
         </select>
 
         <select
-          value={task.priority}
+          value={task.criticity}
           onChange={(event) =>
-            onUpdate(task.id, { priority: event.target.value as TaskPriority })
+            onUpdate(task.id, { criticity: event.target.value as TaskCriticity })
           }
         >
-          {priorityOptions.map((option) => (
+          {criticityOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

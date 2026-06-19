@@ -6,13 +6,14 @@ import {
   fetchProjectTasks,
   updateProjectTask,
 } from '../lib/api/todos';
+import { getProjectColor } from '../lib/color/entityColor';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateTaskInput,
   Task,
-  TaskPriority,
+  TaskCriticity,
   TaskStatus,
 } from '../types/todo';
 
@@ -54,7 +55,7 @@ export function ProjectTasksPage() {
       title: string;
       description: string;
       status: TaskStatus;
-      priority: TaskPriority;
+      criticity: TaskCriticity;
       dueDate: string | null;
     }>,
   ) {
@@ -73,6 +74,10 @@ export function ProjectTasksPage() {
     return <Navigate to="/organizations" replace />;
   }
 
+  const projectAccent = currentProject
+    ? getProjectColor(currentProject)
+    : undefined;
+
   return (
     <div className="tasks-page">
       <header className="page-header">
@@ -90,7 +95,12 @@ export function ProjectTasksPage() {
       )}
 
       {!loading && !error && tasks.length > 0 && (
-        <TaskBoard tasks={tasks} onUpdate={handleUpdate} onDelete={handleDelete} />
+        <TaskBoard
+          tasks={tasks}
+          accentColor={projectAccent}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { DEFAULT_PROJECT_COLOR } from '../lib/color/entityColor';
 import type { CreateProjectInput } from '../types/project';
 
 interface ProjectFormProps {
@@ -8,6 +9,7 @@ interface ProjectFormProps {
 export function ProjectForm({ onSubmit }: ProjectFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [color, setColor] = useState(DEFAULT_PROJECT_COLOR);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,9 +24,11 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
       await onSubmit({
         name: name.trim(),
         description: description.trim() || undefined,
+        color,
       });
       setName('');
       setDescription('');
+      setColor(DEFAULT_PROJECT_COLOR);
     } catch {
       setError('Failed to create project.');
     } finally {
@@ -56,6 +60,20 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
           placeholder="Optional project details"
           rows={3}
         />
+      </label>
+
+      <label className="color-field">
+        Color
+        <div className="color-input-row">
+          <input
+            type="color"
+            className="color-picker"
+            value={color}
+            onChange={(event) => setColor(event.target.value)}
+            aria-label="Project color"
+          />
+          <span className="color-value">{color}</span>
+        </div>
       </label>
 
       <button type="submit" className="btn btn-primary" disabled={loading}>
