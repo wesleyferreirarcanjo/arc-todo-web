@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   createProjectTask,
   deleteProjectTask,
@@ -83,6 +83,14 @@ export function ProjectTasksPage() {
       <header className="page-header">
         <h2>{currentProject?.name ?? 'Project tasks'}</h2>
         <p className="page-subtitle">Manage tasks for this project.</p>
+        <div className="page-links">
+          <Link
+            to={`/organizations/${orgId}/projects/${projectId}/knowledge`}
+            className="text-link"
+          >
+            Project knowledge
+          </Link>
+        </div>
       </header>
 
       <TaskForm onSubmit={handleCreate} />

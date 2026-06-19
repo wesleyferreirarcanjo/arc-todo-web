@@ -5,9 +5,14 @@ import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
+import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { LoginPage } from './pages/LoginPage';
+import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
+import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
 import { OrganizationProjectsPage } from './pages/OrganizationProjectsPage';
 import { OrganizationsPage } from './pages/OrganizationsPage';
+import { PersonKnowledgePage } from './pages/PersonKnowledgePage';
+import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
 
 export default function App() {
@@ -26,14 +31,31 @@ export default function App() {
                 }
               >
                 <Route path="/board" element={<AllTasksBoardPage />} />
+                <Route path="/knowledge" element={<GeneralKnowledgePage />} />
                 <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route
                   path="/organizations/:orgId"
                   element={<OrganizationProjectsPage />}
                 />
                 <Route
+                  path="/organizations/:orgId/knowledge"
+                  element={<OrganizationKnowledgePage />}
+                />
+                <Route
+                  path="/organizations/:orgId/persons"
+                  element={<OrganizationPersonsPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/persons/:personId/knowledge"
+                  element={<PersonKnowledgePage />}
+                />
+                <Route
                   path="/organizations/:orgId/projects/:projectId"
                   element={<ProjectTasksPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/knowledge"
+                  element={<ProjectKnowledgePage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
               </Route>

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Breadcrumbs } from './Breadcrumbs';
+import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { OrgSwitcher } from './OrgSwitcher';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
@@ -34,8 +35,17 @@ export function Layout() {
           >
             All tasks
           </NavLink>
+          <NavLink
+            to="/knowledge"
+            className={({ isActive }) =>
+              isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
+            }
+          >
+            Knowledge
+          </NavLink>
           <OrgSwitcher />
           <ProjectNavList />
+          <OrgKnowledgeNav />
         </aside>
 
         <div className="content-area">

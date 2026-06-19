@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
@@ -50,6 +50,14 @@ export function OrganizationProjectsPage() {
       <header className="page-header">
         <h2>{currentOrganization?.name ?? 'Projects'}</h2>
         <p className="page-subtitle">Create and open projects for this organization.</p>
+        <div className="page-links">
+          <Link to={`/organizations/${orgId}/knowledge`} className="text-link">
+            Organization knowledge
+          </Link>
+          <Link to={`/organizations/${orgId}/persons`} className="text-link">
+            People
+          </Link>
+        </div>
       </header>
 
       <ProjectForm onSubmit={handleCreate} />
