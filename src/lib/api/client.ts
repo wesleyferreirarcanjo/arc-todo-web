@@ -46,7 +46,9 @@ export async function apiRequest<T>(
   if (response.status === 401) {
     clearAuth();
     clearWorkspaceSelection();
-    window.location.assign('/login');
+    if (window.location.pathname !== '/login') {
+      window.location.assign('/login');
+    }
     throw new ApiError('Unauthorized', 401);
   }
 

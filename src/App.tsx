@@ -12,26 +12,30 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <WorkspaceProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<Layout />}>
-                <Route path="/organizations" element={<OrganizationsPage />} />
-                <Route
-                  path="/organizations/:orgId"
-                  element={<OrganizationProjectsPage />}
-                />
-                <Route
-                  path="/organizations/:orgId/projects/:projectId"
-                  element={<ProjectTasksPage />}
-                />
-                <Route path="/" element={<Navigate to="/organizations" replace />} />
-              </Route>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route
+              element={
+                <WorkspaceProvider>
+                  <Layout />
+                </WorkspaceProvider>
+              }
+            >
+              <Route path="/organizations" element={<OrganizationsPage />} />
+              <Route
+                path="/organizations/:orgId"
+                element={<OrganizationProjectsPage />}
+              />
+              <Route
+                path="/organizations/:orgId/projects/:projectId"
+                element={<ProjectTasksPage />}
+              />
+              <Route path="/" element={<Navigate to="/organizations" replace />} />
             </Route>
-            <Route path="*" element={<Navigate to="/organizations" replace />} />
-          </Routes>
-        </WorkspaceProvider>
+          </Route>
+          <Route path="*" element={<Navigate to="/organizations" replace />} />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
