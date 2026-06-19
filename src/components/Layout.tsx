@@ -7,7 +7,7 @@ import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Layout() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
   return (
     <div className="app-shell">
@@ -17,7 +17,6 @@ export function Layout() {
           <p className="subtitle">Organization workspace</p>
         </div>
         <div className="header-actions">
-          <span className="user-badge">{user?.username}</span>
           <ThemeToggle />
           <button type="button" className="btn btn-secondary" onClick={logout}>
             Logout
