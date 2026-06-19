@@ -20,16 +20,16 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | Application UUID | `ifo33mi1s8efs8myb5g441vh` |
 | Repository | [wesleyferreirarcanjo/arc-todo-web](https://github.com/wesleyferreirarcanjo/arc-todo-web) |
 | Branch | `main` |
-| Build pack | Nixpacks (static site via `nginx:alpine`) |
+| Build pack | Dockerfile |
+| Dockerfile | `/Dockerfile` |
 | Public URL | `http://ifo33mi1s8efs8myb5g441vh.72.60.59.203.sslip.io` |
 
-### Build / publish
+### Build / run
 
 | Step | Command / path |
 | --- | --- |
-| Install | `npm ci` |
-| Build | `npm run build` |
-| Publish directory | `/dist` |
+| Build | `docker build -f Dockerfile .` (pass `VITE_API_BASE_URL` as build arg) |
+| Serve | `nginx:1.27-alpine` with SPA fallback (`nginx.conf`) |
 | Port | `80` |
 
 ## Related resources
@@ -37,7 +37,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | Resource | UUID | Notes |
 | --- | --- | --- |
 | API `arc-todo-api` | `lmsx2avrg1k29ex12w6e3gce` | `http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io` |
-| MCP `arc-todo-mcp` | *(fill after creating the Coolify resource)* | Streamable HTTP MCP at `/mcp` |
+| MCP `arc-todo-mcp` | `qv9bek5he3ns8upu71rphbrc` | `http://qv9bek5he3ns8upu71rphbrc.72.60.59.203.sslip.io/mcp` |
 | PostgreSQL `arc-todo-postgres` | `bibl6ncxa3xkph2r8ubmbl4t` | Used by API only |
 | MinIO `arc-todo-minio` | `jsx5tkzb1b8hj5oz0ydt491u` | Used by API only (knowledge attachments) |
 
@@ -45,7 +45,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_BASE_URL` | API URL baked at build time (`http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`) |
+| `VITE_API_BASE_URL` | API URL baked at build time (`http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 
 Redeploy the frontend whenever the API public URL changes.
 
