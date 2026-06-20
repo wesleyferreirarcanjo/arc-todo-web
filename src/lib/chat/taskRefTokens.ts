@@ -1,18 +1,28 @@
 import type { TaskRef } from '../api/conversations';
 
-const TASK_REF_TOKEN_PATTERN =
-  /\[\[ref:([^|\]]+)\|([^|\]]+)\|([^|\]]+)\|([^\]]+)\]\]/g;
+function createTaskRefTokenPattern() {
+  return /\[\[ref:([^|\]]+)\|([^|\]]+)\|([^|\]]+)\|([^\]]+)\]\]/g;
+}
 
 export function formatTaskRefToken(ref: TaskRef): string {
-  const title = ref.title.replace(/\]\]/g, '');
+  const title = encodeURIComponent(ref.title.replace(/\]\]/g, ''));
   return `[[ref:${ref.taskId}|${ref.organizationId}|${ref.projectId}|${title}]]`;
+}
+
+function decodeTaskTitle(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
 }
 
 export function parseTaskRefsFromText(text: string): TaskRef[] {
   const refs: TaskRef[] = [];
   const seen = new Set<string>();
+  const pattern = createTaskRefTokenPattern();
 
-  for (const match of text.matchAll(TASK_REF_TOKEN_PATTERN)) {
+  for (const match of text.matchAll(pattern)) {
     const [, taskId, organizationId, projectId, title] = match;
     if (!taskId || !organizationId || !projectId || seen.has(taskId)) {
       continue;
@@ -23,7 +33,7 @@ export function parseTaskRefsFromText(text: string): TaskRef[] {
       taskId,
       organizationId,
       projectId,
-      title: title.trim(),
+      title: decodeTaskTitle(title.trim()),
     });
   }
 
@@ -39,9 +49,14 @@ export function splitMessageWithTaskRefs(text: string): Array<
     | { type: 'ref'; ref: TaskRef }
   > = [];
 
+  if (!text) {
+    return parts;
+  }
+
+  const pattern = createTaskRefTokenPattern();
   let lastIndex = 0;
 
-  for (const match of text.matchAll(TASK_REF_TOKEN_PATTERN)) {
+  for (const match of text.matchAll(pattern)) {
     const matchIndex = match.index ?? 0;
 
     if (matchIndex > lastIndex) {
@@ -59,7 +74,7 @@ export function splitMessageWithTaskRefs(text: string): Array<
           taskId,
           organizationId,
           projectId,
-          title: title.trim(),
+          title: decodeTaskTitle(title.trim()),
         },
       });
     }
@@ -77,4 +92,8 @@ export function splitMessageWithTaskRefs(text: string): Array<
 export function formatTaskChipLabel(title: string, taskId: string): string {
   const shortId = taskId.slice(0, 8);
   return title.length > 28 ? `${title.slice(0, 25)}...` : title || shortId;
+}
+
+export function messageHasTaskRefTokens(text: string): boolean {
+  return text.includes('[[ref:');
 }

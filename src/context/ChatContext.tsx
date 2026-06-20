@@ -28,10 +28,15 @@ const WELCOME_MESSAGE: ChatMessage = {
     'Hi! I can help you manage Arc Todo tasks. Ctrl+click a task card to insert a task reference in your message.',
 };
 
+export const MAX_VISIBLE_TABS = 3;
+export const MAX_OPEN_CONVERSATIONS = 10;
+
 interface ChatContextValue {
   chatOpen: boolean;
   setChatOpen: (open: boolean) => void;
   conversations: ConversationSummary[];
+  visibleConversations: ConversationSummary[];
+  overflowConversations: ConversationSummary[];
   activeConversationId: string | null;
   messages: ChatMessage[];
   loadingConversations: boolean;
@@ -40,6 +45,7 @@ interface ChatContextValue {
   clearPendingTaskInsert: () => void;
   createNewConversation: () => Promise<string>;
   selectConversation: (conversationId: string) => Promise<void>;
+  selectOverflowConversation: (conversationId: string) => Promise<void>;
   removeConversation: (conversationId: string) => Promise<void>;
   renameActiveConversation: (title: string) => Promise<void>;
   requestTaskInsert: (task: TaskContextInput) => Promise<void>;
@@ -89,9 +95,32 @@ function toTaskRef(task: TaskContextInput): TaskRef {
   };
 }
 
+function sortByRecent(conversations: ConversationSummary[]) {
+  return [...conversations].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  );
+}
+
+function buildInitialVisibleTabIds(conversations: ConversationSummary[]) {
+  return sortByRecent(conversations)
+    .slice(0, MAX_VISIBLE_TABS)
+    .reverse()
+    .map((conversation) => conversation.id);
+}
+
+function pruneVisibleTabIds(
+  tabIds: string[],
+  conversations: ConversationSummary[],
+) {
+  const validIds = new Set(conversations.map((conversation) => conversation.id));
+  return tabIds.filter((id) => validIds.has(id)).slice(0, MAX_VISIBLE_TABS);
+}
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [visibleTabIds, setVisibleTabIds] = useState<string[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     null,
   );
@@ -110,11 +139,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     activeConversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
 
+  const visibleConversations = useMemo(
+    () =>
+      visibleTabIds
+        .map((id) => conversations.find((conversation) => conversation.id === id))
+        .filter((conversation): conversation is ConversationSummary =>
+          Boolean(conversation),
+        ),
+    [conversations, visibleTabIds],
+  );
+
+  const overflowConversations = useMemo(
+    () =>
+      sortByRecent(
+        conversations.filter(
+          (conversation) => !visibleTabIds.includes(conversation.id),
+        ),
+      ),
+    [conversations, visibleTabIds],
+  );
+
   const refreshConversations = useCallback(async () => {
     setLoadingConversations(true);
     try {
-      const next = await listConversations();
+      const next = sortByRecent(await listConversations());
       setConversations(next);
+      setVisibleTabIds((current) => {
+        const pruned = pruneVisibleTabIds(current, next);
+        if (pruned.length > 0) {
+          return pruned;
+        }
+        return buildInitialVisibleTabIds(next);
+      });
     } finally {
       setLoadingConversations(false);
     }
@@ -138,10 +194,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     async function bootstrap() {
       setLoadingConversations(true);
       try {
-        const next = await listConversations();
+        const next = sortByRecent(await listConversations());
         if (cancelled) return;
 
         setConversations(next);
+        setVisibleTabIds(buildInitialVisibleTabIds(next));
+
         if (next.length > 0) {
           const preferredId = activeConversationIdRef.current;
           const initialId =
@@ -182,14 +240,48 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     };
   }, [loadConversationDetail]);
 
+  const removeOldestConversationIfNeeded = useCallback(
+    async (current: ConversationSummary[]) => {
+      if (current.length < MAX_OPEN_CONVERSATIONS) {
+        return current;
+      }
+
+      const oldest = [...current].sort(
+        (left, right) =>
+          new Date(left.updatedAt).getTime() - new Date(right.updatedAt).getTime(),
+      )[0];
+
+      await deleteConversation(oldest.id);
+      setVisibleTabIds((tabIds) => tabIds.filter((id) => id !== oldest.id));
+
+      if (activeConversationIdRef.current === oldest.id) {
+        setActiveConversationId(null);
+        activeConversationIdRef.current = null;
+        setMessages([WELCOME_MESSAGE]);
+      }
+
+      return current.filter((conversation) => conversation.id !== oldest.id);
+    },
+    [],
+  );
+
   const createNewConversation = useCallback(async () => {
+    const pruned = await removeOldestConversationIfNeeded(conversations);
     const created = await createConversation({});
-    setConversations((current) => [created, ...current]);
+    const nextConversations = sortByRecent([created, ...pruned]);
+
+    setConversations(nextConversations);
+    setVisibleTabIds((current) =>
+      [created.id, ...current.filter((id) => id !== created.id)].slice(
+        0,
+        MAX_VISIBLE_TABS,
+      ),
+    );
     setActiveConversationId(created.id);
     activeConversationIdRef.current = created.id;
     setMessages([WELCOME_MESSAGE]);
     return created.id;
-  }, []);
+  }, [conversations, removeOldestConversationIfNeeded]);
 
   const ensureActiveConversation = useCallback(async () => {
     const currentId = activeConversationIdRef.current;
@@ -198,6 +290,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
     return createNewConversation();
   }, [createNewConversation]);
+
+  const promoteOverflowConversation = useCallback((conversationId: string) => {
+    setVisibleTabIds((current) => {
+      if (current.includes(conversationId)) {
+        return current;
+      }
+
+      if (current.length < MAX_VISIBLE_TABS) {
+        return [...current, conversationId];
+      }
+
+      const next = [...current];
+      next[MAX_VISIBLE_TABS - 1] = conversationId;
+      return next;
+    });
+  }, []);
 
   const selectConversation = useCallback(
     async (conversationId: string) => {
@@ -209,28 +317,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [loadConversationDetail],
   );
 
+  const selectOverflowConversation = useCallback(
+    async (conversationId: string) => {
+      promoteOverflowConversation(conversationId);
+      await loadConversationDetail(conversationId);
+    },
+    [loadConversationDetail, promoteOverflowConversation],
+  );
+
   const removeConversation = useCallback(
     async (conversationId: string) => {
       await deleteConversation(conversationId);
 
       const wasActive = activeConversationIdRef.current === conversationId;
-      let nextActiveId: string | null = null;
+      const nextVisible = visibleTabIds.filter((id) => id !== conversationId);
+      const remaining = sortByRecent(
+        conversations.filter((conversation) => conversation.id !== conversationId),
+      );
 
-      setConversations((current) => {
-        const remaining = current.filter(
-          (conversation) => conversation.id !== conversationId,
-        );
-
-        if (wasActive) {
-          nextActiveId = remaining.length > 0 ? remaining[0].id : null;
-        }
-
-        return remaining;
-      });
+      setVisibleTabIds(nextVisible);
+      setConversations(remaining);
 
       if (!wasActive) {
         return;
       }
+
+      const nextActiveId =
+        nextVisible.find((id) => remaining.some((item) => item.id === id)) ??
+        remaining[0]?.id ??
+        null;
 
       if (nextActiveId) {
         await loadConversationDetail(nextActiveId);
@@ -241,7 +356,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       activeConversationIdRef.current = null;
       setMessages([WELCOME_MESSAGE]);
     },
-    [loadConversationDetail],
+    [conversations, loadConversationDetail, visibleTabIds],
   );
 
   const renameActiveConversation = useCallback(
@@ -335,6 +450,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       chatOpen,
       setChatOpen,
       conversations,
+      visibleConversations,
+      overflowConversations,
       activeConversationId,
       messages,
       loadingConversations,
@@ -343,6 +460,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       clearPendingTaskInsert,
       createNewConversation,
       selectConversation,
+      selectOverflowConversation,
       removeConversation,
       renameActiveConversation,
       requestTaskInsert,
@@ -357,6 +475,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [
       chatOpen,
       conversations,
+      visibleConversations,
+      overflowConversations,
       activeConversationId,
       messages,
       loadingConversations,
@@ -365,6 +485,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       clearPendingTaskInsert,
       createNewConversation,
       selectConversation,
+      selectOverflowConversation,
       removeConversation,
       renameActiveConversation,
       requestTaskInsert,

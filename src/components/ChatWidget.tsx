@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sendChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
@@ -8,6 +8,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import {
   formatTaskChipLabel,
+  messageHasTaskRefTokens,
   splitMessageWithTaskRefs,
 } from '../lib/chat/taskRefTokens';
 import {
@@ -17,8 +18,6 @@ import {
   chatWidgetFabVariants,
 } from '../lib/motion/variants';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
-
-const MAX_VISIBLE_TABS = 3;
 
 function AssistantIcon() {
   return (
@@ -107,11 +106,19 @@ function isLocalWelcomeMessage(message: ChatMessage) {
 function MessageBody({ content }: { content: string }) {
   const parts = splitMessageWithTaskRefs(content);
 
+  if (parts.length === 0 && messageHasTaskRefTokens(content)) {
+    return (
+      <p className="chat-widget-message-body">
+        <span className="chat-message-ref">Task reference</span>
+      </p>
+    );
+  }
+
   return (
     <p className="chat-widget-message-body">
       {parts.map((part, index) =>
         part.type === 'text' ? (
-          <span key={`text-${index}`}>{part.value}</span>
+          part.value ? <span key={`text-${index}`}>{part.value}</span> : null
         ) : (
           <span
             key={`ref-${part.ref.taskId}-${index}`}
@@ -126,47 +133,14 @@ function MessageBody({ content }: { content: string }) {
   );
 }
 
-function pickVisibleConversations(
-  conversations: ConversationSummary[],
-  activeConversationId: string | null,
-) {
-  const sorted = [...conversations].sort(
-    (left, right) =>
-      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-  );
-
-  if (sorted.length <= MAX_VISIBLE_TABS) {
-    return sorted;
-  }
-
-  const visible: ConversationSummary[] = [];
-  const active = sorted.find(
-    (conversation) => conversation.id === activeConversationId,
-  );
-
-  if (active) {
-    visible.push(active);
-  }
-
-  for (const conversation of sorted) {
-    if (visible.length >= MAX_VISIBLE_TABS) {
-      break;
-    }
-    if (conversation.id === activeConversationId) {
-      continue;
-    }
-    visible.push(conversation);
-  }
-
-  return visible;
-}
-
 export function ChatWidget() {
   const { currentOrgId, currentProjectId } = useWorkspace();
   const {
     chatOpen,
     setChatOpen,
     conversations,
+    visibleConversations,
+    overflowConversations,
     activeConversationId,
     messages,
     loadingConversations,
@@ -175,6 +149,7 @@ export function ChatWidget() {
     clearPendingTaskInsert,
     createNewConversation,
     selectConversation,
+    selectOverflowConversation,
     removeConversation,
     registerComposer,
     ensureActiveConversation,
@@ -194,20 +169,6 @@ export function ChatWidget() {
   const composerRef = useRef<ChatComposerHandle>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const panelId = 'chat-widget-panel';
-
-  const visibleConversations = useMemo(
-    () => pickVisibleConversations(conversations, activeConversationId),
-    [conversations, activeConversationId],
-  );
-
-  const overflowConversations = useMemo(
-    () =>
-      conversations.filter(
-        (conversation) =>
-          !visibleConversations.some((visible) => visible.id === conversation.id),
-      ),
-    [conversations, visibleConversations],
-  );
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -443,7 +404,7 @@ export function ChatWidget() {
                           }
                           onClick={() => {
                             setOverflowOpen(false);
-                            void selectConversation(conversation.id);
+                            void selectOverflowConversation(conversation.id);
                           }}
                         >
                           {conversation.title}
