@@ -198,17 +198,21 @@ textarea:focus-visible {
 .app-body {
   display: grid;
   grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - 88px);
+  align-items: start;
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  min-height: calc(100vh - 88px);
+  height: calc(100vh - 88px);
+  max-height: calc(100vh - 88px);
+  overflow: hidden;
   backdrop-filter: blur(12px);
 }
 
@@ -216,6 +220,7 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .sidebar-context {
@@ -235,6 +240,7 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .sidebar-settings-link {
@@ -1824,6 +1830,10 @@ textarea {
   }
 
   .sidebar {
+    position: static;
+    height: auto;
+    max-height: none;
+    overflow: visible;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
