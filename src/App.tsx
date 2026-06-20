@@ -5,6 +5,8 @@ import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
+import { ChatPage } from './pages/ChatPage';
+import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
@@ -33,6 +35,7 @@ export default function App() {
                   </WorkspaceProvider>
                 }
               >
+                <Route path="/chat" element={<ChatPage />} />
                 <Route path="/board" element={<AllTasksBoardPage />} />
                 <Route path="/knowledge" element={<GeneralKnowledgePage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />
@@ -41,6 +44,10 @@ export default function App() {
                   element={<GeneralPersonKnowledgePage />}
                 />
                 <Route path="/organizations" element={<OrganizationsPage />} />
+                <Route
+                  path="/settings/chatbot"
+                  element={<ChatbotSettingsPage />}
+                />
                 <Route
                   path="/settings/mcp-tools"
                   element={<McpToolsSettingsPage />}

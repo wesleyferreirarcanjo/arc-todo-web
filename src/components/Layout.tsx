@@ -72,6 +72,14 @@ export function Layout() {
         <aside className="sidebar">
           <nav className="sidebar-primary-nav" aria-label="Main navigation">
             <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
+              }
+            >
+              Chat
+            </NavLink>
+            <NavLink
               to="/board"
               className={({ isActive }) =>
                 isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
@@ -113,6 +121,17 @@ export function Layout() {
 
           <nav className="sidebar-footer" aria-label="Settings">
             <p className="sidebar-label">Settings</p>
+            <NavLink
+              to="/settings/chatbot"
+              className={({ isActive }) =>
+                isActive
+                  ? 'sidebar-settings-link active'
+                  : 'sidebar-settings-link'
+              }
+            >
+              <SettingsIcon />
+              Chatbot
+            </NavLink>
             <NavLink
               to="/settings/mcp-tools"
               className={({ isActive }) =>
