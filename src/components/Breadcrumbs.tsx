@@ -30,6 +30,16 @@ export function Breadcrumbs() {
     );
   }
 
+  if (location.pathname === '/settings/mcp-tools') {
+    return (
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <span>Settings</span>
+        <span className="breadcrumb-separator">/</span>
+        <span>MCP Tools</span>
+      </nav>
+    );
+  }
+
   const isGeneralPersonKnowledge =
     location.pathname.startsWith('/people/') &&
     location.pathname.endsWith('/knowledge');
