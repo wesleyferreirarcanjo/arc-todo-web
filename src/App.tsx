@@ -5,7 +5,6 @@ import { WorkspaceProvider } from './context/WorkspaceContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
-import { ChatPage } from './pages/ChatPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
@@ -35,7 +34,7 @@ export default function App() {
                   </WorkspaceProvider>
                 }
               >
-                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/chat" element={<Navigate to="/board" replace />} />
                 <Route path="/board" element={<AllTasksBoardPage />} />
                 <Route path="/knowledge" element={<GeneralKnowledgePage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />

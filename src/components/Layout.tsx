@@ -5,6 +5,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
+import { ChatWidget } from './ChatWidget';
 
 function SettingsIcon() {
   return (
@@ -71,14 +72,6 @@ export function Layout() {
       <div className="app-body">
         <aside className="sidebar">
           <nav className="sidebar-primary-nav" aria-label="Main navigation">
-            <NavLink
-              to="/chat"
-              className={({ isActive }) =>
-                isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
-              }
-            >
-              Chat
-            </NavLink>
             <NavLink
               to="/board"
               className={({ isActive }) =>
@@ -153,6 +146,8 @@ export function Layout() {
           </main>
         </div>
       </div>
+
+      <ChatWidget />
     </div>
   );
 }

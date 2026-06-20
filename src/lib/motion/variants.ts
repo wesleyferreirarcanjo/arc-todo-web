@@ -39,3 +39,21 @@ export const expandVariants: Variants = {
   visible: { opacity: 1 },
   exit: { opacity: 0 },
 };
+
+export const chatPanelVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.92, y: 16, transformOrigin: 'bottom right' },
+  visible: { opacity: 1, scale: 1, y: 0, transformOrigin: 'bottom right' },
+  exit: { opacity: 0, scale: 0.92, y: 16, transformOrigin: 'bottom right' },
+};
+
+export const chatMessageVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0 },
+};
+
+export const chatWidgetFabVariants: Variants = {
+  rest: { scale: 1 },
+  hover: { scale: 1.06 },
+  tap: { scale: 0.94 },
+  open: { scale: 1 },
+};

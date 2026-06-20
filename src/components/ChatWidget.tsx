@@ -1,0 +1,298 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { sendChatMessage } from '../lib/api/chat';
+import type { ChatMessage } from '../lib/api/chat';
+import { useWorkspace } from '../context/WorkspaceContext';
+import { useMotionTransition } from '../lib/motion/useMotionTransition';
+import {
+  chatMessageVariants,
+  chatPanelVariants,
+  chatWidgetFabVariants,
+} from '../lib/motion/variants';
+
+const WELCOME_MESSAGE: ChatMessage = {
+  role: 'assistant',
+  content:
+    'Hi! I can help you manage Arc Todo tasks. Ask me to list, create, or update tasks.',
+};
+
+function AssistantIcon() {
+  return (
+    <svg
+      className="chat-widget-fab-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3c-4.4 0-8 2.9-8 6.5 0 2.1 1.2 4 3.1 5.2L6.5 19l3.4-1.8c.7.1 1.4.2 2.1.2 4.4 0 8-2.9 8-6.5S16.4 3 12 3z" />
+      <circle cx="9" cy="9.5" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="9.5" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="9.5" r="0.85" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      className="chat-widget-close-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="chat-widget-typing" aria-label="Assistant is typing">
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+export function ChatWidget() {
+  const { currentOrgId, currentProjectId, currentOrganization, currentProject } =
+    useWorkspace();
+  const { base, fast } = useMotionTransition();
+
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const panelId = 'chat-widget-panel';
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      scrollToBottom();
+    }
+  }, [messages, loading, open, scrollToBottom]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (open) {
+      inputRef.current?.focus();
+    }
+  }, [open]);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || loading) {
+      return;
+    }
+
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      { role: 'user', content: trimmed },
+    ];
+    setMessages(nextMessages);
+    setInput('');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await sendChatMessage({
+        messages: nextMessages,
+        organizationId: currentOrgId ?? undefined,
+        projectId: currentProjectId ?? undefined,
+      });
+      setMessages((current) => [
+        ...current,
+        { role: 'assistant', content: response.message },
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Chat request failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const contextLabel =
+    currentProject && currentOrganization
+      ? `${currentOrganization.name} · ${currentProject.name}`
+      : currentOrganization
+        ? currentOrganization.name
+        : 'All workspaces';
+
+  return (
+    <div className="chat-widget-root">
+      <AnimatePresence mode="wait">
+        {open ? (
+          <motion.section
+            key="chat-panel"
+            id={panelId}
+            className="chat-widget-panel"
+            role="dialog"
+            aria-modal="false"
+            aria-label="Arc Todo assistant"
+            variants={chatPanelVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={base}
+          >
+            <header className="chat-widget-header">
+              <div>
+                <h2 className="chat-widget-title">Assistant</h2>
+                <p className="chat-widget-context">{contextLabel}</p>
+              </div>
+              <button
+                type="button"
+                className="chat-widget-close"
+                aria-label="Close assistant"
+                onClick={() => setOpen(false)}
+              >
+                <CloseIcon />
+              </button>
+            </header>
+
+            <div className="chat-widget-messages" aria-live="polite">
+              {messages.map((message, index) => (
+                <motion.article
+                  key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
+                  className={
+                    message.role === 'user'
+                      ? 'chat-widget-message chat-widget-message-user'
+                      : 'chat-widget-message chat-widget-message-assistant'
+                  }
+                  variants={chatMessageVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={fast}
+                >
+                  <span className="chat-widget-message-role">
+                    {message.role === 'user' ? 'You' : 'Assistant'}
+                  </span>
+                  <p>{message.content}</p>
+                </motion.article>
+              ))}
+
+              {loading ? (
+                <motion.article
+                  className="chat-widget-message chat-widget-message-assistant chat-widget-message-loading"
+                  variants={chatMessageVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={fast}
+                  aria-live="assertive"
+                >
+                  <span className="chat-widget-message-role">Assistant</span>
+                  <TypingIndicator />
+                </motion.article>
+              ) : null}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {error ? <p className="chat-widget-error">{error}</p> : null}
+
+            <form
+              className="chat-widget-composer"
+              onSubmit={(event) => void handleSubmit(event)}
+            >
+              <textarea
+                ref={inputRef}
+                className="chat-widget-input"
+                rows={2}
+                value={input}
+                placeholder="Ask about your tasks..."
+                disabled={loading}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleSubmit(event);
+                  }
+                }}
+              />
+              <div className="chat-widget-composer-actions">
+                <button
+                  type="submit"
+                  className="btn btn-primary chat-widget-send"
+                  disabled={loading || !input.trim()}
+                >
+                  {loading ? 'Sending...' : 'Send'}
+                </button>
+              </div>
+            </form>
+          </motion.section>
+        ) : null}
+      </AnimatePresence>
+
+      <motion.button
+        type="button"
+        className="chat-widget-fab"
+        aria-label={open ? 'Close assistant' : 'Open assistant'}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((current) => !current)}
+        variants={chatWidgetFabVariants}
+        initial="rest"
+        whileHover="hover"
+        whileTap="tap"
+        animate={open ? 'open' : 'rest'}
+        transition={fast}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {open ? (
+            <motion.span
+              key="close"
+              className="chat-widget-fab-content"
+              initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
+              transition={fast}
+            >
+              <CloseIcon />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="open"
+              className="chat-widget-fab-content"
+              initial={{ opacity: 0, rotate: 90, scale: 0.8 }}
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, rotate: -90, scale: 0.8 }}
+              transition={fast}
+            >
+              <AssistantIcon />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
+  );
+}
