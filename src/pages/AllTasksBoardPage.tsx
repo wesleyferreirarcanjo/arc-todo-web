@@ -40,21 +40,30 @@ export function AllTasksBoardPage() {
 
   const hasFilters = Boolean(organizationId || projectId);
 
-  const loadTasks = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadTasks = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const data = await fetchAllTasks(query);
       setTasks(data);
+      if (silent) setError(null);
     } catch {
-      setError('Failed to load tasks.');
+      if (!silent) setError('Failed to load tasks.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [query]);
 
   useEffect(() => {
     void loadTasks();
+  }, [loadTasks]);
+
+  useEffect(() => {
+    const id = setInterval(() => void loadTasks({ silent: true }), 10_000);
+    return () => clearInterval(id);
   }, [loadTasks]);
 
   useEffect(() => {
