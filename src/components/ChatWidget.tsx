@@ -1,16 +1,24 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sendChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
+import type { ConversationSummary } from '../lib/api/conversations';
 import { useChat } from '../context/ChatContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
+import {
+  formatTaskChipLabel,
+  splitMessageWithTaskRefs,
+} from '../lib/chat/taskRefTokens';
 import {
   chatMessageVariants,
   chatPanelSpringTransition,
   chatPanelVariants,
   chatWidgetFabVariants,
 } from '../lib/motion/variants';
+import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
+
+const MAX_VISIBLE_TABS = 3;
 
 function AssistantIcon() {
   return (
@@ -64,6 +72,21 @@ function PlusIcon() {
   );
 }
 
+function MoreIcon() {
+  return (
+    <svg
+      className="chat-widget-tab-icon"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="5" cy="12" r="1.75" />
+      <circle cx="12" cy="12" r="1.75" />
+      <circle cx="19" cy="12" r="1.75" />
+    </svg>
+  );
+}
+
 function TypingIndicator() {
   return (
     <div className="chat-widget-typing" aria-label="Assistant is typing">
@@ -74,16 +97,68 @@ function TypingIndicator() {
   );
 }
 
-function formatTaskChipLabel(title: string, taskId: string) {
-  const shortId = taskId.slice(0, 8);
-  return title.length > 28 ? `${title.slice(0, 25)}...` : title || shortId;
-}
-
 function isLocalWelcomeMessage(message: ChatMessage) {
   return (
     message.role === 'assistant' &&
     message.content.startsWith('Hi! I can help you manage Arc Todo tasks.')
   );
+}
+
+function MessageBody({ content }: { content: string }) {
+  const parts = splitMessageWithTaskRefs(content);
+
+  return (
+    <p className="chat-widget-message-body">
+      {parts.map((part, index) =>
+        part.type === 'text' ? (
+          <span key={`text-${index}`}>{part.value}</span>
+        ) : (
+          <span
+            key={`ref-${part.ref.taskId}-${index}`}
+            className="chat-message-ref"
+            title={`${part.ref.title} (${part.ref.taskId})`}
+          >
+            {formatTaskChipLabel(part.ref.title, part.ref.taskId)}
+          </span>
+        ),
+      )}
+    </p>
+  );
+}
+
+function pickVisibleConversations(
+  conversations: ConversationSummary[],
+  activeConversationId: string | null,
+) {
+  const sorted = [...conversations].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+  );
+
+  if (sorted.length <= MAX_VISIBLE_TABS) {
+    return sorted;
+  }
+
+  const visible: ConversationSummary[] = [];
+  const active = sorted.find(
+    (conversation) => conversation.id === activeConversationId,
+  );
+
+  if (active) {
+    visible.push(active);
+  }
+
+  for (const conversation of sorted) {
+    if (visible.length >= MAX_VISIBLE_TABS) {
+      break;
+    }
+    if (conversation.id === activeConversationId) {
+      continue;
+    }
+    visible.push(conversation);
+  }
+
+  return visible;
 }
 
 export function ChatWidget() {
@@ -94,33 +169,70 @@ export function ChatWidget() {
     conversations,
     activeConversationId,
     messages,
-    taskRefs,
     loadingConversations,
     loadingMessages,
+    pendingTaskInsert,
+    clearPendingTaskInsert,
     createNewConversation,
     selectConversation,
     removeConversation,
-    removeTaskContext,
+    registerComposer,
     ensureActiveConversation,
     persistMessage,
     appendLocalMessage,
   } = useChat();
   const { base, fast, reducedMotion } = useMotionTransition();
 
-  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [closingConversationId, setClosingConversationId] = useState<string | null>(
     null,
   );
+  const [overflowOpen, setOverflowOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<ChatComposerHandle>(null);
+  const overflowRef = useRef<HTMLDivElement>(null);
   const panelId = 'chat-widget-panel';
+
+  const visibleConversations = useMemo(
+    () => pickVisibleConversations(conversations, activeConversationId),
+    [conversations, activeConversationId],
+  );
+
+  const overflowConversations = useMemo(
+    () =>
+      conversations.filter(
+        (conversation) =>
+          !visibleConversations.some((visible) => visible.id === conversation.id),
+      ),
+    [conversations, visibleConversations],
+  );
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+
+  useEffect(() => {
+    registerComposer({
+      insertRef: (ref) => composerRef.current?.insertRef(ref),
+      removeRef: (taskId) => composerRef.current?.removeRef(taskId),
+      containsRef: (taskId) => composerRef.current?.containsRef(taskId) ?? false,
+    });
+    return () => registerComposer(null);
+  }, [registerComposer]);
+
+  useEffect(() => {
+    if (pendingTaskInsert && composerRef.current) {
+      composerRef.current.insertRef(pendingTaskInsert);
+      clearPendingTaskInsert();
+      composerRef.current.focus();
+    }
+  }, [clearPendingTaskInsert, pendingTaskInsert]);
+
+  useEffect(() => {
+    composerRef.current?.clear();
+  }, [activeConversationId]);
 
   useEffect(() => {
     if (chatOpen) {
@@ -145,30 +257,51 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (chatOpen) {
-      inputRef.current?.focus();
+      composerRef.current?.focus();
     }
   }, [chatOpen, activeConversationId]);
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || loading) {
+  useEffect(() => {
+    if (!overflowOpen) {
       return;
     }
 
-    const userMessage: ChatMessage = { role: 'user', content: trimmed };
+    function handlePointerDown(event: globalThis.MouseEvent) {
+      if (
+        overflowRef.current &&
+        !overflowRef.current.contains(event.target as Node)
+      ) {
+        setOverflowOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [overflowOpen]);
+
+  async function handleSubmit() {
+    const { text, taskRefs } = composerRef.current?.getContent() ?? {
+      text: '',
+      taskRefs: [],
+    };
+
+    if (!text || loading) {
+      return;
+    }
+
+    const userMessage: ChatMessage = { role: 'user', content: text };
     const conversationMessages = messages.filter(
       (message) => !isLocalWelcomeMessage(message),
     );
     const nextMessages: ChatMessage[] = [...conversationMessages, userMessage];
     appendLocalMessage(userMessage);
-    setInput('');
+    composerRef.current?.clear();
     setLoading(true);
     setError(null);
 
     try {
       const conversationId = await ensureActiveConversation();
-      await persistMessage('user', trimmed);
+      await persistMessage('user', text);
 
       const response = await sendChatMessage({
         messages: nextMessages,
@@ -223,6 +356,39 @@ export function ChatWidget() {
     }
   }
 
+  function renderConversationTab(conversation: ConversationSummary) {
+    return (
+      <div
+        key={conversation.id}
+        className={
+          conversation.id === activeConversationId
+            ? 'chat-widget-tab is-active'
+            : 'chat-widget-tab'
+        }
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={conversation.id === activeConversationId}
+          className="chat-widget-tab-button"
+          onClick={() => void selectConversation(conversation.id)}
+        >
+          {conversation.title}
+        </button>
+        <button
+          type="button"
+          className="chat-widget-tab-close"
+          aria-label={`Close ${conversation.title}`}
+          disabled={closingConversationId === conversation.id}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => void handleCloseConversation(event, conversation.id)}
+        >
+          <CloseIcon />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-widget-root">
       <AnimatePresence mode="wait">
@@ -245,40 +411,49 @@ export function ChatWidget() {
                 {loadingConversations ? (
                   <span className="chat-widget-tab-placeholder">Loading...</span>
                 ) : (
-                  conversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className={
-                        conversation.id === activeConversationId
-                          ? 'chat-widget-tab is-active'
-                          : 'chat-widget-tab'
-                      }
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={conversation.id === activeConversationId}
-                        className="chat-widget-tab-button"
-                        onClick={() => void selectConversation(conversation.id)}
-                      >
-                        {conversation.title}
-                      </button>
-                      <button
-                        type="button"
-                        className="chat-widget-tab-close"
-                        aria-label={`Close ${conversation.title}`}
-                        disabled={closingConversationId === conversation.id}
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onClick={(event) =>
-                          void handleCloseConversation(event, conversation.id)
-                        }
-                      >
-                        <CloseIcon />
-                      </button>
-                    </div>
-                  ))
+                  visibleConversations.map((conversation) =>
+                    renderConversationTab(conversation),
+                  )
                 )}
               </div>
+
+              {overflowConversations.length > 0 ? (
+                <div className="chat-widget-tab-overflow" ref={overflowRef}>
+                  <button
+                    type="button"
+                    className="chat-widget-tab-overflow-trigger"
+                    aria-label="More conversations"
+                    aria-expanded={overflowOpen}
+                    onClick={() => setOverflowOpen((open) => !open)}
+                  >
+                    <MoreIcon />
+                  </button>
+
+                  {overflowOpen ? (
+                    <div className="chat-widget-tab-overflow-menu" role="menu">
+                      {overflowConversations.map((conversation) => (
+                        <button
+                          key={conversation.id}
+                          type="button"
+                          role="menuitem"
+                          className={
+                            conversation.id === activeConversationId
+                              ? 'chat-widget-tab-overflow-item is-active'
+                              : 'chat-widget-tab-overflow-item'
+                          }
+                          onClick={() => {
+                            setOverflowOpen(false);
+                            void selectConversation(conversation.id);
+                          }}
+                        >
+                          {conversation.title}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 className="chat-widget-tab-new"
@@ -309,7 +484,7 @@ export function ChatWidget() {
                     <span className="chat-widget-message-role">
                       {message.role === 'user' ? 'You' : 'Assistant'}
                     </span>
-                    <p>{message.content}</p>
+                    <MessageBody content={message.content} />
                   </motion.article>
                 ))
               )}
@@ -331,57 +506,30 @@ export function ChatWidget() {
               <div ref={messagesEndRef} />
             </div>
 
-            {taskRefs.length > 0 ? (
-              <div className="chat-widget-context-chips" aria-label="Selected task context">
-                {taskRefs.map((ref) => (
-                  <button
-                    key={ref.taskId}
-                    type="button"
-                    className="chat-widget-context-chip"
-                    title={`${ref.title} (${ref.taskId})`}
-                    onClick={() => void removeTaskContext(ref.taskId)}
-                  >
-                    <span className="chat-widget-context-chip-label">
-                      {formatTaskChipLabel(ref.title, ref.taskId)}
-                    </span>
-                    <span className="chat-widget-context-chip-remove" aria-hidden="true">
-                      ×
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
             {error ? <p className="chat-widget-error">{error}</p> : null}
 
             <form
               className="chat-widget-composer"
-              onSubmit={(event) => void handleSubmit(event)}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleSubmit();
+              }}
             >
-              <textarea
-                ref={inputRef}
-                className="chat-widget-input"
-                rows={2}
-                value={input}
+              <ChatComposer
+                ref={composerRef}
                 placeholder={
                   activeConversation
                     ? `Message in ${activeConversation.title}...`
                     : 'Ask about your tasks...'
                 }
                 disabled={loading || loadingMessages}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    void handleSubmit(event);
-                  }
-                }}
+                onSubmit={() => void handleSubmit()}
               />
               <div className="chat-widget-composer-actions">
                 <button
                   type="submit"
                   className="btn btn-primary chat-widget-send"
-                  disabled={loading || loadingMessages || !input.trim()}
+                  disabled={loading || loadingMessages}
                 >
                   {loading ? 'Sending...' : 'Send'}
                 </button>

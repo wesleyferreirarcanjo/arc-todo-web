@@ -118,7 +118,7 @@ export function TaskCard({
   onDelete,
   chatContextScope,
 }: TaskCardProps) {
-  const { addTaskContext, removeTaskContext, isTaskInContext } = useChat();
+  const { requestTaskInsert, requestTaskRemove, isTaskReferenced } = useChat();
   const { base } = useMotionTransition();
   const { shouldAnimateStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
@@ -268,8 +268,8 @@ export function TaskCard({
     if (event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
-      if (isTaskInContext(task.id)) {
-        void removeTaskContext(task.id);
+      if (isTaskReferenced(task.id)) {
+        requestTaskRemove(task.id);
       }
       return;
     }
@@ -277,7 +277,7 @@ export function TaskCard({
     if (event.ctrlKey || event.metaKey) {
       event.preventDefault();
       event.stopPropagation();
-      void addTaskContext(contextTask);
+      void requestTaskInsert(contextTask);
     }
   }
 
@@ -312,7 +312,7 @@ export function TaskCard({
     };
   }, [attributes, isDraggable, listeners]);
 
-  const inChatContext = isTaskInContext(task.id);
+  const inChatContext = isTaskReferenced(task.id);
 
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
@@ -428,7 +428,9 @@ export function TaskCard({
               <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             )}
             {resolveChatContextTask() ? (
-              <span className="task-chat-hint">Ctrl+click context · Shift+click remove</span>
+              <span className="task-chat-hint">
+                Ctrl+click insert reference · Shift+click remove
+              </span>
             ) : null}
           </div>
         </motion.div>

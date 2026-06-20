@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -19,13 +20,12 @@ import {
   type TaskRef,
 } from '../lib/api/conversations';
 import type { ChatMessage } from '../lib/api/chat';
-import { useWorkspace } from './WorkspaceContext';
 import type { Task, TaskWithContext } from '../types/todo';
 
 const WELCOME_MESSAGE: ChatMessage = {
   role: 'assistant',
   content:
-    'Hi! I can help you manage Arc Todo tasks. Ctrl+click a task card to add it as context, Shift+click to remove it.',
+    'Hi! I can help you manage Arc Todo tasks. Ctrl+click a task card to insert a task reference in your message.',
 };
 
 interface ChatContextValue {
@@ -34,16 +34,18 @@ interface ChatContextValue {
   conversations: ConversationSummary[];
   activeConversationId: string | null;
   messages: ChatMessage[];
-  taskRefs: TaskRef[];
   loadingConversations: boolean;
   loadingMessages: boolean;
+  pendingTaskInsert: TaskRef | null;
+  clearPendingTaskInsert: () => void;
   createNewConversation: () => Promise<string>;
   selectConversation: (conversationId: string) => Promise<void>;
   removeConversation: (conversationId: string) => Promise<void>;
   renameActiveConversation: (title: string) => Promise<void>;
-  addTaskContext: (task: TaskContextInput) => Promise<void>;
-  removeTaskContext: (taskId: string) => Promise<void>;
-  isTaskInContext: (taskId: string) => boolean;
+  requestTaskInsert: (task: TaskContextInput) => Promise<void>;
+  requestTaskRemove: (taskId: string) => void;
+  isTaskReferenced: (taskId: string) => boolean;
+  registerComposer: (composer: ComposerRegistration | null) => void;
   ensureActiveConversation: () => Promise<string>;
   persistMessage: (
     role: ChatMessage['role'],
@@ -52,13 +54,18 @@ interface ChatContextValue {
   ) => Promise<void>;
   appendLocalMessage: (message: ChatMessage) => void;
   refreshConversations: () => Promise<void>;
-  syncTaskRefs: (nextTaskRefs: TaskRef[]) => Promise<void>;
 }
 
 type TaskContextInput = TaskWithContext | (Task & {
   organization: { id: string };
   project: { id: string };
 });
+
+type ComposerRegistration = {
+  insertRef: (ref: TaskRef) => void;
+  removeRef: (taskId: string) => void;
+  containsRef: (taskId: string) => boolean;
+};
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
@@ -83,37 +90,43 @@ function toTaskRef(task: TaskContextInput): TaskRef {
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const { currentOrgId, currentProjectId } = useWorkspace();
   const [chatOpen, setChatOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     null,
   );
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
-  const [taskRefs, setTaskRefs] = useState<TaskRef[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [pendingTaskInsert, setPendingTaskInsert] = useState<TaskRef | null>(
+    null,
+  );
+
+  const activeConversationIdRef = useRef<string | null>(null);
+  const composerRef = useRef<ComposerRegistration | null>(null);
+  const referencedTaskIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
   const refreshConversations = useCallback(async () => {
     setLoadingConversations(true);
     try {
-      const next = await listConversations({
-        organizationId: currentOrgId ?? undefined,
-        projectId: currentProjectId ?? undefined,
-      });
+      const next = await listConversations();
       setConversations(next);
     } finally {
       setLoadingConversations(false);
     }
-  }, [currentOrgId, currentProjectId]);
+  }, []);
 
   const loadConversationDetail = useCallback(async (conversationId: string) => {
     setLoadingMessages(true);
     try {
       const detail = await getConversation(conversationId);
       setMessages(toChatMessages(detail));
-      setTaskRefs(detail.taskRefs);
       setActiveConversationId(conversationId);
+      activeConversationIdRef.current = conversationId;
     } finally {
       setLoadingMessages(false);
     }
@@ -125,19 +138,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     async function bootstrap() {
       setLoadingConversations(true);
       try {
-        const next = await listConversations({
-          organizationId: currentOrgId ?? undefined,
-          projectId: currentProjectId ?? undefined,
-        });
+        const next = await listConversations();
         if (cancelled) return;
 
         setConversations(next);
         if (next.length > 0) {
-          await loadConversationDetail(next[0].id);
+          const preferredId = activeConversationIdRef.current;
+          const initialId =
+            preferredId && next.some((conversation) => conversation.id === preferredId)
+              ? preferredId
+              : next[0].id;
+
+          try {
+            await loadConversationDetail(initialId);
+          } catch {
+            const fallbackId = next.find(
+              (conversation) => conversation.id !== initialId,
+            )?.id;
+            if (fallbackId) {
+              await loadConversationDetail(fallbackId);
+            } else {
+              setActiveConversationId(null);
+              activeConversationIdRef.current = null;
+              setMessages([WELCOME_MESSAGE]);
+            }
+          }
         } else {
           setActiveConversationId(null);
+          activeConversationIdRef.current = null;
           setMessages([WELCOME_MESSAGE]);
-          setTaskRefs([]);
         }
       } finally {
         if (!cancelled) {
@@ -151,80 +180,78 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [currentOrgId, currentProjectId, loadConversationDetail]);
+  }, [loadConversationDetail]);
 
   const createNewConversation = useCallback(async () => {
-    const created = await createConversation({
-      organizationId: currentOrgId ?? undefined,
-      projectId: currentProjectId ?? undefined,
-    });
+    const created = await createConversation({});
     setConversations((current) => [created, ...current]);
     setActiveConversationId(created.id);
+    activeConversationIdRef.current = created.id;
     setMessages([WELCOME_MESSAGE]);
-    setTaskRefs([]);
     return created.id;
-  }, [currentOrgId, currentProjectId]);
+  }, []);
 
   const ensureActiveConversation = useCallback(async () => {
-    if (activeConversationId) {
-      return activeConversationId;
+    const currentId = activeConversationIdRef.current;
+    if (currentId) {
+      return currentId;
     }
     return createNewConversation();
-  }, [activeConversationId, createNewConversation]);
+  }, [createNewConversation]);
 
   const selectConversation = useCallback(
     async (conversationId: string) => {
-      if (conversationId === activeConversationId) {
+      if (conversationId === activeConversationIdRef.current) {
         return;
       }
       await loadConversationDetail(conversationId);
     },
-    [activeConversationId, loadConversationDetail],
+    [loadConversationDetail],
   );
 
   const removeConversation = useCallback(
     async (conversationId: string) => {
       await deleteConversation(conversationId);
 
-      let nextConversationId: string | null = null;
+      const wasActive = activeConversationIdRef.current === conversationId;
+      let nextActiveId: string | null = null;
 
       setConversations((current) => {
         const remaining = current.filter(
           (conversation) => conversation.id !== conversationId,
         );
 
-        setActiveConversationId((activeId) => {
-          if (activeId !== conversationId) {
-            return activeId;
-          }
-
-          if (remaining.length > 0) {
-            nextConversationId = remaining[0].id;
-            return remaining[0].id;
-          }
-
-          setMessages([WELCOME_MESSAGE]);
-          setTaskRefs([]);
-          return null;
-        });
+        if (wasActive) {
+          nextActiveId = remaining.length > 0 ? remaining[0].id : null;
+        }
 
         return remaining;
       });
 
-      if (nextConversationId) {
-        await loadConversationDetail(nextConversationId);
+      if (!wasActive) {
+        return;
       }
+
+      if (nextActiveId) {
+        await loadConversationDetail(nextActiveId);
+        return;
+      }
+
+      setActiveConversationId(null);
+      activeConversationIdRef.current = null;
+      setMessages([WELCOME_MESSAGE]);
     },
     [loadConversationDetail],
   );
 
   const renameActiveConversation = useCallback(
     async (title: string) => {
-      if (!activeConversationId) {
+      const conversationId = activeConversationIdRef.current;
+      if (!conversationId) {
         return;
       }
 
-      const updated = await updateConversation(activeConversationId, {
+      const updated = await updateConversation(conversationId, {
         title: title.trim() || 'New conversation',
       });
       setConversations((current) =>
@@ -239,58 +266,48 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ),
       );
     },
-    [activeConversationId],
+    [],
   );
 
-  const syncTaskRefs = useCallback(
-    async (nextTaskRefs: TaskRef[]) => {
-      const conversationId = await ensureActiveConversation();
-      const updated = await updateConversation(conversationId, {
-        taskRefs: nextTaskRefs,
-      });
-      setTaskRefs(updated.taskRefs);
-      setConversations((current) =>
-        current.map((conversation) =>
-          conversation.id === updated.id
-            ? { ...conversation, updatedAt: updated.updatedAt }
-            : conversation,
-        ),
-      );
-    },
-    [ensureActiveConversation],
-  );
+  const registerComposer = useCallback((composer: ComposerRegistration | null) => {
+    composerRef.current = composer;
+  }, []);
 
-  const addTaskContext = useCallback(
+  const clearPendingTaskInsert = useCallback(() => {
+    setPendingTaskInsert(null);
+  }, []);
+
+  const requestTaskInsert = useCallback(
     async (task: TaskContextInput) => {
       const nextRef = toTaskRef(task);
-      const conversationId = await ensureActiveConversation();
-      const detail = await getConversation(conversationId);
-
-      if (detail.taskRefs.some((ref) => ref.taskId === nextRef.taskId)) {
-        setActiveConversationId(conversationId);
-        setTaskRefs(detail.taskRefs);
-        setChatOpen(true);
-        return;
-      }
-
-      const nextTaskRefs = [...detail.taskRefs, nextRef];
-      await syncTaskRefs(nextTaskRefs);
       setChatOpen(true);
-    },
-    [ensureActiveConversation, syncTaskRefs],
-  );
 
-  const removeTaskContext = useCallback(
-    async (taskId: string) => {
-      if (!activeConversationId) {
-        return;
+      if (!activeConversationIdRef.current) {
+        await createNewConversation();
       }
 
-      const nextTaskRefs = taskRefs.filter((ref) => ref.taskId !== taskId);
-      await syncTaskRefs(nextTaskRefs);
+      if (composerRef.current) {
+        composerRef.current.insertRef(nextRef);
+        referencedTaskIdsRef.current.add(nextRef.taskId);
+      } else {
+        setPendingTaskInsert(nextRef);
+        referencedTaskIdsRef.current.add(nextRef.taskId);
+      }
     },
-    [activeConversationId, syncTaskRefs, taskRefs],
+    [createNewConversation],
   );
+
+  const requestTaskRemove = useCallback((taskId: string) => {
+    composerRef.current?.removeRef(taskId);
+    referencedTaskIdsRef.current.delete(taskId);
+  }, []);
+
+  const isTaskReferenced = useCallback((taskId: string) => {
+    if (composerRef.current?.containsRef(taskId)) {
+      return true;
+    }
+    return referencedTaskIdsRef.current.has(taskId);
+  }, []);
 
   const persistMessage = useCallback(
     async (
@@ -309,11 +326,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [ensureActiveConversation, refreshConversations],
   );
 
-  const isTaskInContext = useCallback(
-    (taskId: string) => taskRefs.some((ref) => ref.taskId === taskId),
-    [taskRefs],
-  );
-
   const appendLocalMessage = useCallback((message: ChatMessage) => {
     setMessages((current) => [...current, message]);
   }, []);
@@ -325,42 +337,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       conversations,
       activeConversationId,
       messages,
-      taskRefs,
       loadingConversations,
       loadingMessages,
+      pendingTaskInsert,
+      clearPendingTaskInsert,
       createNewConversation,
       selectConversation,
       removeConversation,
       renameActiveConversation,
-      addTaskContext,
-      removeTaskContext,
-      isTaskInContext,
+      requestTaskInsert,
+      requestTaskRemove,
+      isTaskReferenced,
+      registerComposer,
       ensureActiveConversation,
       persistMessage,
       appendLocalMessage,
       refreshConversations,
-      syncTaskRefs,
     }),
     [
       chatOpen,
       conversations,
       activeConversationId,
       messages,
-      taskRefs,
       loadingConversations,
       loadingMessages,
+      pendingTaskInsert,
+      clearPendingTaskInsert,
       createNewConversation,
       selectConversation,
       removeConversation,
       renameActiveConversation,
-      addTaskContext,
-      removeTaskContext,
-      isTaskInContext,
+      requestTaskInsert,
+      requestTaskRemove,
+      isTaskReferenced,
+      registerComposer,
       ensureActiveConversation,
       persistMessage,
       appendLocalMessage,
       refreshConversations,
-      syncTaskRefs,
     ],
   );
 
