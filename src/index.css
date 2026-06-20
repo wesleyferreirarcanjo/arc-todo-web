@@ -41,6 +41,8 @@
   --radius-blob: 28px 8px 28px 8px;
   --radius-blob-alt: 8px 28px 8px 28px;
   --radius-pill: 999px;
+  --sidebar-width: 260px;
+  --app-header-height: 5.5rem;
   --transition-fast: 0.15s ease;
   --transition-base: 0.22s ease;
   --criticity-low-bg: rgba(107, 143, 168, 0.14);
@@ -146,11 +148,14 @@ textarea:focus-visible {
 }
 
 .app-header {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  min-height: var(--app-header-height);
   padding: 1.25rem 1.5rem;
   background: var(--bg-shell);
   color: var(--text-primary);
@@ -196,22 +201,22 @@ textarea:focus-visible {
 }
 
 .app-body {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  align-items: start;
+  min-height: calc(100dvh - var(--app-header-height));
 }
 
 .sidebar {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: var(--app-header-height);
+  left: 0;
+  bottom: 0;
+  z-index: 20;
+  width: var(--sidebar-width);
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  height: calc(100vh - 88px);
-  max-height: calc(100vh - 88px);
   overflow: hidden;
   backdrop-filter: blur(12px);
 }
@@ -277,7 +282,9 @@ textarea:focus-visible {
 }
 
 .content-area {
+  margin-left: var(--sidebar-width);
   padding: 1.5rem;
+  min-height: calc(100dvh - var(--app-header-height));
 }
 
 .sidebar-field,
@@ -1825,17 +1832,22 @@ textarea {
 }
 
 @media (max-width: 900px) {
-  .app-body {
-    grid-template-columns: 1fr;
-  }
-
   .sidebar {
     position: static;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    width: auto;
     height: auto;
     max-height: none;
     overflow: visible;
     border-right: none;
     border-bottom: 1px solid var(--border);
+  }
+
+  .content-area {
+    margin-left: 0;
+    min-height: 0;
   }
 }
 
