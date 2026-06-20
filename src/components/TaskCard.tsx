@@ -313,6 +313,7 @@ export function TaskCard({
   }, [attributes, isDraggable, listeners]);
 
   const inChatContext = isTaskReferenced(task.id);
+  const chatContextTask = resolveChatContextTask();
 
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
@@ -325,7 +326,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${chatContextTask ? ' has-chat-hint' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
@@ -427,13 +428,14 @@ export function TaskCard({
             {task.dueDate && (
               <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             )}
-            {resolveChatContextTask() ? (
-              <span className="task-chat-hint">
-                Ctrl+click insert reference · Shift+click remove
-              </span>
-            ) : null}
           </div>
         </motion.div>
+
+        {chatContextTask ? (
+          <span className="task-card-tooltip" role="tooltip">
+            Ctrl+click insert reference · Shift+click remove
+          </span>
+        ) : null}
       </motion.article>
 
       <Modal
