@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
@@ -228,8 +228,15 @@ export function TaskCard({
   }
 
   function resolveChatContextTask(): TaskWithContext | null {
-    if ('organization' in task && 'project' in task) {
-      return task as TaskWithContext;
+    const candidate = task as TaskWithContext;
+
+    if (
+      candidate.organization?.id &&
+      candidate.project?.id &&
+      'organization' in task &&
+      'project' in task
+    ) {
+      return candidate;
     }
 
     if (!chatContextScope) {
@@ -252,7 +259,7 @@ export function TaskCard({
     };
   }
 
-  function handleCardClick(event: ReactMouseEvent<HTMLElement>) {
+  function handleChatContextAction(event: ReactMouseEvent<HTMLElement> | ReactPointerEvent<HTMLElement>) {
     const contextTask = resolveChatContextTask();
     if (!contextTask) {
       return;
@@ -274,6 +281,37 @@ export function TaskCard({
     }
   }
 
+  function handleCardPointerDown(event: ReactPointerEvent<HTMLElement>) {
+    if (event.button !== 0) {
+      return;
+    }
+
+    if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      return;
+    }
+
+    handleChatContextAction(event);
+  }
+
+  const draggableProps = useMemo(() => {
+    if (!isDraggable) {
+      return {};
+    }
+
+    return {
+      ...attributes,
+      onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
+        handleCardPointerDown(event);
+
+        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+          return;
+        }
+
+        listeners?.onPointerDown?.(event);
+      },
+    };
+  }, [attributes, isDraggable, listeners]);
+
   const inChatContext = isTaskInContext(task.id);
 
   const cardStyle = accentColor
@@ -289,7 +327,6 @@ export function TaskCard({
         layout={animateStatusMove ? 'position' : false}
         className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}`}
         style={cardStyle}
-        onClick={handleCardClick}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
           !showAsDragging && !isInteractionLocked
@@ -305,7 +342,7 @@ export function TaskCard({
           layout: animateStatusMove ? base : { duration: 0 },
           default: base,
         }}
-        {...(isDraggable ? { ...attributes, ...listeners } : {})}
+        {...draggableProps}
       >
         {(organizationName || projectName) && (
           <div className="task-context-badges">

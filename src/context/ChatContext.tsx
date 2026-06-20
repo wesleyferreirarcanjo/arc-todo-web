@@ -185,25 +185,37 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const removeConversation = useCallback(
     async (conversationId: string) => {
       await deleteConversation(conversationId);
-      const remaining = conversations.filter(
-        (conversation) => conversation.id !== conversationId,
-      );
-      setConversations(remaining);
 
-      if (activeConversationId !== conversationId) {
-        return;
+      let nextConversationId: string | null = null;
+
+      setConversations((current) => {
+        const remaining = current.filter(
+          (conversation) => conversation.id !== conversationId,
+        );
+
+        setActiveConversationId((activeId) => {
+          if (activeId !== conversationId) {
+            return activeId;
+          }
+
+          if (remaining.length > 0) {
+            nextConversationId = remaining[0].id;
+            return remaining[0].id;
+          }
+
+          setMessages([WELCOME_MESSAGE]);
+          setTaskRefs([]);
+          return null;
+        });
+
+        return remaining;
+      });
+
+      if (nextConversationId) {
+        await loadConversationDetail(nextConversationId);
       }
-
-      if (remaining.length > 0) {
-        await loadConversationDetail(remaining[0].id);
-        return;
-      }
-
-      setActiveConversationId(null);
-      setMessages([WELCOME_MESSAGE]);
-      setTaskRefs([]);
     },
-    [activeConversationId, conversations, loadConversationDetail],
+    [loadConversationDetail],
   );
 
   const renameActiveConversation = useCallback(
@@ -252,21 +264,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     async (task: TaskContextInput) => {
       const nextRef = toTaskRef(task);
       const conversationId = await ensureActiveConversation();
-      const currentRefs =
-        activeConversationId === conversationId
-          ? taskRefs
-          : (await getConversation(conversationId)).taskRefs;
+      const detail = await getConversation(conversationId);
 
-      if (currentRefs.some((ref) => ref.taskId === nextRef.taskId)) {
+      if (detail.taskRefs.some((ref) => ref.taskId === nextRef.taskId)) {
+        setActiveConversationId(conversationId);
+        setTaskRefs(detail.taskRefs);
         setChatOpen(true);
         return;
       }
 
-      const nextTaskRefs = [...currentRefs, nextRef];
+      const nextTaskRefs = [...detail.taskRefs, nextRef];
       await syncTaskRefs(nextTaskRefs);
       setChatOpen(true);
     },
-    [activeConversationId, ensureActiveConversation, syncTaskRefs, taskRefs],
+    [ensureActiveConversation, syncTaskRefs],
   );
 
   const removeTaskContext = useCallback(

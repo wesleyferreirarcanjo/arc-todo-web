@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sendChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
@@ -7,6 +7,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import {
   chatMessageVariants,
+  chatPanelSpringTransition,
   chatPanelVariants,
   chatWidgetFabVariants,
 } from '../lib/motion/variants';
@@ -86,8 +87,7 @@ function isLocalWelcomeMessage(message: ChatMessage) {
 }
 
 export function ChatWidget() {
-  const { currentOrgId, currentProjectId, currentOrganization, currentProject } =
-    useWorkspace();
+  const { currentOrgId, currentProjectId } = useWorkspace();
   const {
     chatOpen,
     setChatOpen,
@@ -105,11 +105,14 @@ export function ChatWidget() {
     persistMessage,
     appendLocalMessage,
   } = useChat();
-  const { base, fast } = useMotionTransition();
+  const { base, fast, reducedMotion } = useMotionTransition();
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [closingConversationId, setClosingConversationId] = useState<string | null>(
+    null,
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -188,16 +191,37 @@ export function ChatWidget() {
     }
   }
 
-  const contextLabel =
-    currentProject && currentOrganization
-      ? `${currentOrganization.name} · ${currentProject.name}`
-      : currentOrganization
-        ? currentOrganization.name
-        : 'All workspaces';
-
   const activeConversation = conversations.find(
     (conversation) => conversation.id === activeConversationId,
   );
+
+  const panelTransition = reducedMotion ? base : chatPanelSpringTransition;
+  const fabIconTransition = reducedMotion
+    ? fast
+    : { type: 'spring' as const, stiffness: 520, damping: 28, mass: 0.7 };
+
+  async function handleCloseConversation(
+    event: MouseEvent<HTMLButtonElement>,
+    conversationId: string,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (closingConversationId) {
+      return;
+    }
+
+    setClosingConversationId(conversationId);
+    setError(null);
+
+    try {
+      await removeConversation(conversationId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to close conversation');
+    } finally {
+      setClosingConversationId(null);
+    }
+  }
 
   return (
     <div className="chat-widget-root">
@@ -214,23 +238,8 @@ export function ChatWidget() {
             initial="hidden"
             animate="visible"
             exit="exit"
-            transition={base}
+            transition={panelTransition}
           >
-            <header className="chat-widget-header">
-              <div>
-                <h2 className="chat-widget-title">Assistant</h2>
-                <p className="chat-widget-context">{contextLabel}</p>
-              </div>
-              <button
-                type="button"
-                className="chat-widget-close"
-                aria-label="Close assistant"
-                onClick={() => setChatOpen(false)}
-              >
-                <CloseIcon />
-              </button>
-            </header>
-
             <div className="chat-widget-tabs" role="tablist" aria-label="Conversations">
               <div className="chat-widget-tab-list">
                 {loadingConversations ? (
@@ -258,7 +267,11 @@ export function ChatWidget() {
                         type="button"
                         className="chat-widget-tab-close"
                         aria-label={`Close ${conversation.title}`}
-                        onClick={() => void removeConversation(conversation.id)}
+                        disabled={closingConversationId === conversation.id}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) =>
+                          void handleCloseConversation(event, conversation.id)
+                        }
                       >
                         <CloseIcon />
                       </button>
@@ -397,10 +410,10 @@ export function ChatWidget() {
             <motion.span
               key="close"
               className="chat-widget-fab-content"
-              initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
+              initial={{ opacity: 0, rotate: -120, scale: 0.65 }}
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
-              transition={fast}
+              exit={{ opacity: 0, rotate: 120, scale: 0.65 }}
+              transition={fabIconTransition}
             >
               <CloseIcon />
             </motion.span>
@@ -408,10 +421,10 @@ export function ChatWidget() {
             <motion.span
               key="open"
               className="chat-widget-fab-content"
-              initial={{ opacity: 0, rotate: 90, scale: 0.8 }}
+              initial={{ opacity: 0, rotate: 120, scale: 0.65 }}
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: -90, scale: 0.8 }}
-              transition={fast}
+              exit={{ opacity: 0, rotate: -120, scale: 0.65 }}
+              transition={fabIconTransition}
             >
               <AssistantIcon />
             </motion.span>
