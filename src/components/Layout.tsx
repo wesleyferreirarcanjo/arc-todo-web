@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -25,10 +26,36 @@ function SettingsIcon() {
 
 export function Layout() {
   const { logout } = useAuth();
+  const headerRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const header = headerRef.current;
+    if (!header) {
+      return;
+    }
+
+    const syncHeaderHeight = () => {
+      document.documentElement.style.setProperty(
+        '--app-header-height',
+        `${header.offsetHeight}px`,
+      );
+    };
+
+    syncHeaderHeight();
+
+    const observer = new ResizeObserver(syncHeaderHeight);
+    observer.observe(header);
+    window.addEventListener('resize', syncHeaderHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', syncHeaderHeight);
+    };
+  }, []);
 
   return (
     <div className="app-shell">
-      <header className="app-header">
+      <header ref={headerRef} className="app-header">
         <div>
           <h1>Arc Todo</h1>
           <p className="subtitle">Organization workspace</p>
