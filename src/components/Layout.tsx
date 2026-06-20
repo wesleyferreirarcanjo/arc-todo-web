@@ -5,6 +5,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
+import { ChatProvider } from '../context/ChatContext';
 import { ChatWidget } from './ChatWidget';
 
 function SettingsIcon() {
@@ -139,15 +140,17 @@ export function Layout() {
           </nav>
         </aside>
 
-        <div className="content-area">
-          <Breadcrumbs />
-          <main className="app-main">
-            <Outlet />
-          </main>
-        </div>
-      </div>
+        <ChatProvider>
+          <div className="content-area">
+            <Breadcrumbs />
+            <main className="app-main">
+              <Outlet />
+            </main>
+          </div>
 
-      <ChatWidget />
+          <ChatWidget />
+        </ChatProvider>
+      </div>
     </div>
   );
 }

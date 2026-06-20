@@ -8,10 +8,19 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface TaskRef {
+  taskId: string;
+  organizationId: string;
+  projectId: string;
+  title: string;
+}
+
 export interface ChatRequest {
   messages: ChatMessage[];
   organizationId?: string;
   projectId?: string;
+  conversationId?: string;
+  taskRefs?: TaskRef[];
 }
 
 export interface ChatResponse {

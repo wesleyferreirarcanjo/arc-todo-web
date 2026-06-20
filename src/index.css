@@ -1904,9 +1904,161 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1rem 1rem 0.85rem;
+  padding: 1rem 1rem 0.65rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
+}
+
+.chat-widget-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.chat-widget-tab-list {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.chat-widget-tab-placeholder {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.chat-widget-tab {
+  display: inline-flex;
+  align-items: center;
+  max-width: 9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+}
+
+.chat-widget-tab.is-active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-strong));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+}
+
+.chat-widget-tab-button {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-widget-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-right: 0.15rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.chat-widget-tab-close:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+}
+
+.chat-widget-tab-close .chat-widget-close-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.chat-widget-tab-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.chat-widget-tab-new:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.chat-widget-tab-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.chat-widget-loading {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.chat-widget-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0 1rem 0.65rem;
+}
+
+.chat-widget-context-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+}
+
+.chat-widget-context-chip:hover {
+  border-color: var(--accent);
+}
+
+.chat-widget-context-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-widget-context-chip-remove {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.task-card.is-chat-context {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.task-chat-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
 }
 
 .chat-widget-title {

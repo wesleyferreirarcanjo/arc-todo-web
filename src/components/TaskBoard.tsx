@@ -10,6 +10,8 @@ import { TaskCard, TaskCardOverlay } from './TaskCard';
 interface TaskBoardProps {
   tasks: Task[];
   accentColor?: string;
+  organizationId?: string;
+  projectId?: string;
   onUpdate: (
     id: string,
     input: Partial<{
@@ -29,7 +31,14 @@ const columns: { status: TaskStatus; title: string }[] = [
   { status: 'done', title: 'Done' },
 ];
 
-export function TaskBoard({ tasks, accentColor, onUpdate, onDelete }: TaskBoardProps) {
+export function TaskBoard({
+  tasks,
+  accentColor,
+  organizationId,
+  projectId,
+  onUpdate,
+  onDelete,
+}: TaskBoardProps) {
   const getTaskStatus = useCallback(
     (taskId: string) => tasks.find((task) => task.id === taskId)?.status,
     [tasks],
@@ -88,6 +97,11 @@ export function TaskBoard({ tasks, accentColor, onUpdate, onDelete }: TaskBoardP
                     accentColor={accentColor}
                     draggable
                     isDragging={activeTaskId === task.id}
+                    chatContextScope={
+                      organizationId && projectId
+                        ? { organizationId, projectId }
+                        : undefined
+                    }
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                   />

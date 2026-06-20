@@ -106,6 +106,8 @@ export function ProjectTasksPage() {
         <TaskBoard
           tasks={tasks}
           accentColor={projectAccent}
+          organizationId={orgId}
+          projectId={projectId}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

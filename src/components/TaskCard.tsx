@@ -3,7 +3,8 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
-import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
+import type { Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
+import { useChat } from '../context/ChatContext';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
@@ -87,6 +88,10 @@ interface TaskCardProps {
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  chatContextScope?: {
+    organizationId: string;
+    projectId: string;
+  };
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -111,9 +116,11 @@ export function TaskCard({
   isDragging = false,
   onUpdate,
   onDelete,
+  chatContextScope,
 }: TaskCardProps) {
+  const { addTaskContext, removeTaskContext, isTaskInContext } = useChat();
   const { base } = useMotionTransition();
-  const { markStatusMove, shouldAnimateStatusMove } = useStatusMoveAnimation();
+  const { shouldAnimateStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
   const menuRef = useRef<HTMLDivElement>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -216,16 +223,58 @@ export function TaskCard({
     }
   }
 
-  function handleStatusSelect(nextStatus: string) {
-    if (nextStatus !== task.status) {
-      markStatusMove(task.id);
-    }
-    void onUpdate(task.id, { status: nextStatus as TaskStatus });
-  }
-
   function stopCardPointer(event: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>) {
     event.stopPropagation();
   }
+
+  function resolveChatContextTask(): TaskWithContext | null {
+    if ('organization' in task && 'project' in task) {
+      return task as TaskWithContext;
+    }
+
+    if (!chatContextScope) {
+      return null;
+    }
+
+    return {
+      ...task,
+      organization: {
+        id: chatContextScope.organizationId,
+        name: organizationName ?? '',
+        slug: '',
+      },
+      project: {
+        id: chatContextScope.projectId,
+        name: projectName ?? '',
+        organizationId: chatContextScope.organizationId,
+        color: accentColor ?? '',
+      },
+    };
+  }
+
+  function handleCardClick(event: ReactMouseEvent<HTMLElement>) {
+    const contextTask = resolveChatContextTask();
+    if (!contextTask) {
+      return;
+    }
+
+    if (event.shiftKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (isTaskInContext(task.id)) {
+        void removeTaskContext(task.id);
+      }
+      return;
+    }
+
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      void addTaskContext(contextTask);
+    }
+  }
+
+  const inChatContext = isTaskInContext(task.id);
 
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
@@ -238,8 +287,9 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}`}
         style={cardStyle}
+        onClick={handleCardClick}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
           !showAsDragging && !isInteractionLocked
@@ -340,22 +390,9 @@ export function TaskCard({
             {task.dueDate && (
               <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             )}
-          </div>
-
-          <div className="task-actions">
-            <Select
-              value={task.status}
-              onChange={handleStatusSelect}
-              options={statusOptions}
-            />
-
-            <Select
-              value={task.criticity}
-              onChange={(nextCriticity) =>
-                onUpdate(task.id, { criticity: nextCriticity as TaskCriticity })
-              }
-              options={criticityOptions}
-            />
+            {resolveChatContextTask() ? (
+              <span className="task-chat-hint">Ctrl+click context · Shift+click remove</span>
+            ) : null}
           </div>
         </motion.div>
       </motion.article>
