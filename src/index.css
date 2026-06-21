@@ -198,12 +198,14 @@ textarea:focus-visible {
 .content-area.is-board-page .board-column {
   min-height: 0;
   height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .content-area.is-board-page .board-column-body {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .app-body {
@@ -1511,8 +1513,9 @@ textarea {
 }
 
 .board-column-header {
-  position: relative;
-  z-index: 1;
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1542,7 +1545,6 @@ textarea {
 
 .board-column-body {
   position: relative;
-  z-index: 1;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -1640,6 +1642,12 @@ textarea {
   border: 1px solid transparent;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent) border-box;
   pointer-events: none;
+}
+
+.task-card:hover,
+.task-card.has-menu-open,
+.task-card:focus-within {
+  z-index: 20;
 }
 
 .task-card:hover {
@@ -1907,7 +1915,7 @@ textarea {
     opacity var(--transition-fast),
     visibility var(--transition-fast),
     transform var(--transition-fast);
-  z-index: 12;
+  z-index: 30;
 }
 
 .task-card-action-btn:hover .task-card-action-tooltip,
@@ -2918,7 +2926,7 @@ textarea {
     opacity var(--transition-fast),
     visibility var(--transition-fast),
     transform var(--transition-fast);
-  z-index: 4;
+  z-index: 30;
 }
 
 .task-card.has-chat-hint:not(.is-dragging):not(.has-menu-open):hover:not(:has(.task-card-actions:hover))
@@ -2926,26 +2934,6 @@ textarea {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
-}
-
-/* First card: flip tooltips down — upward ones clip against the column header/scroll area */
-.board-column-body > .task-card:first-child .task-card-tooltip {
-  bottom: auto;
-  top: calc(100% + 0.45rem);
-  transform: translateX(-50%) translateY(-4px);
-}
-
-.board-column-body
-  > .task-card:first-child.has-chat-hint:not(.is-dragging):not(.has-menu-open):hover:not(
-    :has(.task-card-actions:hover)
-  )
-  .task-card-tooltip {
-  transform: translateX(-50%) translateY(0);
-}
-
-.board-column-body > .task-card:first-child .task-card-actions .task-card-action-tooltip {
-  bottom: auto;
-  top: calc(100% + 0.4rem);
 }
 
 .chat-widget-title {
