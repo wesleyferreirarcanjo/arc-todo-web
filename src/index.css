@@ -2580,6 +2580,11 @@ textarea {
   height: 1.35rem;
 }
 
+.chat-widget-fab.is-closed .chat-widget-fab-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
 .chat-widget-fab.is-open .chat-widget-close-icon {
   width: 0.85rem;
   height: 0.85rem;
