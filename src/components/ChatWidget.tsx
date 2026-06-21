@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { sendChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
 import type { ConversationSummary } from '../lib/api/conversations';
@@ -99,7 +99,6 @@ function TypingIndicator() {
 interface ChatLauncherButtonProps {
   chatOpen: boolean;
   panelId: string;
-  reducedMotion: boolean | null;
   fabIconTransition: ReturnType<typeof useMotionTransition>['fast'] | object;
   onToggle: () => void;
 }
@@ -107,31 +106,22 @@ interface ChatLauncherButtonProps {
 function ChatLauncherButton({
   chatOpen,
   panelId,
-  reducedMotion,
   fabIconTransition,
   onToggle,
 }: ChatLauncherButtonProps) {
-  const fabTransition = reducedMotion ? { duration: 0 } : chatPanelSpringTransition;
-
   return (
     <motion.button
       type="button"
-      className="chat-widget-fab"
+      layoutId="chat-widget-launcher"
+      className={`chat-widget-fab${chatOpen ? ' is-open' : ' is-closed'}`}
       aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
       aria-expanded={chatOpen}
       aria-controls={panelId}
       onClick={onToggle}
-      animate={{
-        top: chatOpen
-          ? 'var(--chat-fab-offset)'
-          : 'calc(100dvh - var(--chat-fab-offset) - 3.5rem)',
-        right: 'var(--chat-fab-offset)',
-        scale: chatOpen ? 0.8 : 1.2,
-      }}
       initial={false}
-      whileHover={{ scale: chatOpen ? 0.85 : 1.26 }}
-      whileTap={{ scale: chatOpen ? 0.76 : 1.13 }}
-      transition={fabTransition}
+      whileHover={{ scale: chatOpen ? 1.06 : 1.06 }}
+      whileTap={{ scale: chatOpen ? 0.94 : 0.94 }}
+      transition={chatPanelSpringTransition}
     >
       <AnimatePresence mode="wait" initial={false}>
         {chatOpen ? (
@@ -419,7 +409,7 @@ export function ChatWidget() {
   }
 
   return (
-    <>
+    <LayoutGroup id="chat-widget">
       <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
         <AnimatePresence>
           {chatOpen ? (
@@ -492,6 +482,12 @@ export function ChatWidget() {
               >
                 <PlusIcon />
               </button>
+              <ChatLauncherButton
+                chatOpen={chatOpen}
+                panelId={panelId}
+                fabIconTransition={fabIconTransition}
+                onToggle={() => setChatOpen(!chatOpen)}
+              />
             </div>
 
             <div className="chat-widget-messages" aria-live="polite">
@@ -570,13 +566,14 @@ export function ChatWidget() {
       </AnimatePresence>
       </div>
 
-      <ChatLauncherButton
-        chatOpen={chatOpen}
-        panelId={panelId}
-        reducedMotion={reducedMotion}
-        fabIconTransition={fabIconTransition}
-        onToggle={() => setChatOpen(!chatOpen)}
-      />
-    </>
+      {!chatOpen ? (
+        <ChatLauncherButton
+          chatOpen={chatOpen}
+          panelId={panelId}
+          fabIconTransition={fabIconTransition}
+          onToggle={() => setChatOpen(!chatOpen)}
+        />
+      ) : null}
+    </LayoutGroup>
   );
 }

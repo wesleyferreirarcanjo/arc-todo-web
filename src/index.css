@@ -2525,15 +2525,10 @@ textarea {
 }
 
 .chat-widget-fab {
-  --chat-fab-offset: 1.25rem;
-  position: fixed;
-  z-index: 951;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 3.5rem;
-  height: 3.5rem;
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border-strong));
   border-radius: var(--radius-pill);
@@ -2544,8 +2539,33 @@ textarea {
   transition: box-shadow var(--transition-base), border-color var(--transition-base);
 }
 
+.chat-widget-fab.is-closed {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 951;
+  width: 4.2rem;
+  height: 4.2rem;
+}
+
+.chat-widget-fab.is-open {
+  position: relative;
+  z-index: 1;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
 .chat-widget-fab:hover {
   box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
+}
+
+.chat-widget-fab.is-open:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 .chat-widget-fab-content {
@@ -2558,6 +2578,11 @@ textarea {
 .chat-widget-close-icon {
   width: 1.35rem;
   height: 1.35rem;
+}
+
+.chat-widget-fab.is-open .chat-widget-close-icon {
+  width: 0.85rem;
+  height: 0.85rem;
 }
 
 .chat-widget-panel {
@@ -3151,8 +3176,9 @@ textarea {
     bottom: 0.85rem;
   }
 
-  .chat-widget-fab {
-    --chat-fab-offset: 0.85rem;
+  .chat-widget-fab.is-closed {
+    right: 0.85rem;
+    bottom: 0.85rem;
   }
 
   .chat-widget-root.is-open {
