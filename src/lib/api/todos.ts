@@ -6,6 +6,7 @@ import type {
   Task,
   TaskComment,
   TaskHistoryEntry,
+  TaskResolveResponse,
   TaskWithContext,
   UpdateTaskInput,
 } from '../../types/todo';
@@ -26,6 +27,13 @@ function buildTasksQueryString(query?: ListTasksQuery): string {
 
 export function fetchAllTasks(query?: ListTasksQuery): Promise<TaskWithContext[]> {
   return apiRequest<TaskWithContext[]>(`/tasks${buildTasksQueryString(query)}`);
+}
+
+export function resolveTaskByIdentifier(
+  identifier: string,
+): Promise<TaskResolveResponse> {
+  const params = new URLSearchParams({ identifier });
+  return apiRequest<TaskResolveResponse>(`/tasks/resolve?${params.toString()}`);
 }
 
 export function fetchProjectTasks(

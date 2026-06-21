@@ -89,3 +89,49 @@ export interface TaskHistoryEntry {
 export interface CreateTaskCommentInput {
   body: string;
 }
+
+export interface TaskResolveResponse {
+  id: string;
+  displayId: string;
+  taskNumber: number;
+  organizationId: string;
+  projectId: string;
+  title: string;
+  task: Task;
+}
+
+export interface TaskExportRow {
+  schemaVersion: 1;
+  id: string;
+  displayId: string;
+  organizationId: string;
+  organizationName: string;
+  projectId: string;
+  projectName: string;
+  projectAcronym: string;
+  parentTaskId: string | null;
+  parentDisplayId: string | null;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  criticity: TaskCriticity;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskExportDocument {
+  schemaVersion: 1;
+  exportedAt: string;
+  query?: ListTasksQuery;
+  tasks: TaskExportRow[];
+}
+
+export type TaskExportFormat = 'json' | 'csv' | 'md' | 'xlsx';
+
+export interface TaskImportResult {
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+}

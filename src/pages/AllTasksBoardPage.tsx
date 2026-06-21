@@ -13,6 +13,7 @@ import {
 } from '../lib/storage/appStorage';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
 import { QuickTaskCreate } from '../components/QuickTaskCreate';
+import { TaskImportExportMenu } from '../components/TaskImportExportMenu';
 import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
@@ -214,7 +215,14 @@ export function AllTasksBoardPage() {
           </button>
         )}
 
-        <QuickTaskCreate onCreated={loadTasks} />
+        <div className="board-filter-actions">
+          <TaskImportExportMenu
+            tasks={tasks}
+            query={query}
+            onImported={loadTasks}
+          />
+          <QuickTaskCreate onCreated={loadTasks} />
+        </div>
       </div>
 
       {loading && <p className="status-message">Loading tasks...</p>}
