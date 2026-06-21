@@ -3447,6 +3447,81 @@ textarea {
   background: var(--surface);
 }
 
+.settings-form-card-wide {
+  max-width: min(100%, 64rem);
+}
+
+.settings-section-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.settings-section-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.settings-section-header h3,
+.settings-section-header p {
+  margin: 0;
+}
+
+.settings-section-header p,
+.setting-help {
+  color: var(--text-muted);
+}
+
+.settings-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.setting-field,
+.setting-control {
+  align-self: stretch;
+}
+
+.setting-field-wide {
+  grid-column: 1 / -1;
+}
+
+.setting-control {
+  align-items: start;
+  min-height: 100%;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.setting-control > span {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.setting-label {
+  font-weight: 700;
+}
+
+.setting-help {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.settings-form-actions .btn-primary {
+  margin-top: 0;
+}
+
 .form-field {
   display: grid;
   gap: 0.35rem;
