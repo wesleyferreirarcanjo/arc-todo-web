@@ -28,7 +28,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 
 | Step | Command / path |
 | --- | --- |
-| Build | `docker build -f Dockerfile .` (pass `VITE_API_BASE_URL` and `VITE_CHAT_API_BASE_URL` as build args) |
+| Build | `docker build -f Dockerfile .` (pass `VITE_API_BASE_URL`, `VITE_CHAT_API_BASE_URL`, and `VITE_RAG_API_BASE_URL` as build args) |
 | Serve | `nginx:1.27-alpine` with SPA fallback (`nginx.conf`) |
 | Port | `80` |
 
@@ -39,7 +39,8 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | API `arc-todo-api` | `lmsx2avrg1k29ex12w6e3gce` | `http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io` |
 | MCP `arc-todo-mcp` | `qv9bek5he3ns8upu71rphbrc` | `http://qv9bek5he3ns8upu71rphbrc.72.60.59.203.sslip.io/mcp` |
 | Chatbot `arc-todo-chatbot` | `nyagev0aqp4qow1zri6wise5` | `http://nyagev0aqp4qow1zri6wise5.72.60.59.203.sslip.io` |
-| PostgreSQL `arc-todo-postgres` | `bibl6ncxa3xkph2r8ubmbl4t` | Used by API only |
+| RAG `arc-todo-rag` | `tqfgi4rhtndy3xtgdep04xnd` | `http://tqfgi4rhtndy3xtgdep04xnd.72.60.59.203.sslip.io` |
+| PostgreSQL `arc-todo-postgres-pgvector` | `x420nshn1p0cjzlhomi0cbnk` | Used by API and RAG; image `pgvector/pgvector:pg16` |
 | MinIO `arc-todo-minio` | `jsx5tkzb1b8hj5oz0ydt491u` | Used by API only (knowledge attachments) |
 
 ## Environment variables (production)
@@ -48,18 +49,20 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | --- | --- |
 | `VITE_API_BASE_URL` | API URL baked at build time (`http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 | `VITE_CHAT_API_BASE_URL` | Chatbot service URL baked at build time. Must be **Available at Buildtime** in Coolify. |
+| `VITE_RAG_API_BASE_URL` | RAG service URL baked at build time (`http://tqfgi4rhtndy3xtgdep04xnd.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 
-Redeploy the frontend whenever the API or chatbot public URL changes.
+Redeploy the frontend whenever the API, chatbot, or RAG public URL changes.
 
 ## Deploy order
 
 1. Ensure Postgres and MinIO are healthy.
 2. Deploy API first and confirm `GET /health`.
-3. Deploy / restart `arc-todo-chatbot` after the API is healthy (see [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md)).
-4. Set `VITE_API_BASE_URL` to the API URL and `VITE_CHAT_API_BASE_URL` to the chatbot URL.
-5. Deploy this application.
-6. Configure chatbot settings at `/settings/chatbot` and MCP tools at `/settings/mcp-tools`.
-7. Deploy / restart `arc-todo-mcp` after MCP tools are configured.
+3. Deploy / restart `arc-todo-rag` after Postgres and MinIO are healthy (see [../arc-todo-rag/coolify.md](../arc-todo-rag/coolify.md)).
+4. Deploy / restart `arc-todo-chatbot` after the API is healthy (see [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md)).
+5. Set `VITE_API_BASE_URL` to the API URL, `VITE_CHAT_API_BASE_URL` to the chatbot URL, and `VITE_RAG_API_BASE_URL` to the RAG URL.
+6. Deploy this application.
+7. Configure chatbot settings at `/settings/chatbot`, RAG settings at `/settings/rag`, and MCP tools at `/settings/mcp-tools`.
+8. Deploy / restart `arc-todo-mcp` after MCP tools are configured.
 
 ## Notes
 
@@ -69,3 +72,4 @@ Redeploy the frontend whenever the API or chatbot public URL changes.
 - See [../arc-todo-api/coolify.md](../arc-todo-api/coolify.md) for API and Postgres Coolify IDs.
 - See [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md) for the chatbot service Coolify reference.
 - See [../arc-todo-mcp/coolify.md](../arc-todo-mcp/coolify.md) for the MCP server Coolify reference.
+- See [../arc-todo-rag/coolify.md](../arc-todo-rag/coolify.md) for the RAG service Coolify reference.

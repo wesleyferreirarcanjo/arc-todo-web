@@ -11,6 +11,9 @@ import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
 import { LoginPage } from './pages/LoginPage';
 import { McpToolsSettingsPage } from './pages/McpToolsSettingsPage';
+import { RagSettingsPage } from './pages/RagSettingsPage';
+import { RagTestingPage } from './pages/RagTestingPage';
+import { RagTokenPage } from './pages/RagTokenPage';
 import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
 import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
 import { OrganizationProjectsPage } from './pages/OrganizationProjectsPage';
@@ -50,6 +53,22 @@ export default function App() {
                 <Route
                   path="/settings/mcp-tools"
                   element={<McpToolsSettingsPage />}
+                />
+                <Route
+                  path="/settings/rag/settings"
+                  element={<RagSettingsPage />}
+                />
+                <Route
+                  path="/settings/rag/tokens"
+                  element={<RagTokenPage />}
+                />
+                <Route
+                  path="/settings/rag/testing"
+                  element={<RagTestingPage />}
+                />
+                <Route
+                  path="/settings/rag"
+                  element={<Navigate to="/settings/rag/settings" replace />}
                 />
                 <Route
                   path="/organizations/:orgId"

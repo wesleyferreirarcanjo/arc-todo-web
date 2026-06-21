@@ -87,6 +87,17 @@ function ChatbotIcon() {
   );
 }
 
+function RagIcon() {
+  return (
+    <Icon className="sidebar-menu-item-icon">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <line x1="8" y1="7" x2="16" y2="7" />
+      <line x1="8" y1="11" x2="16" y2="11" />
+    </Icon>
+  );
+}
+
 function McpIcon() {
   return (
     <Icon className="sidebar-menu-item-icon">
@@ -138,7 +149,17 @@ export function Layout() {
   const settingsRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(getSidebarCollapsed);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ragMenuOpen, setRagMenuOpen] = useState(
+    () => location.pathname.startsWith('/settings/rag'),
+  );
   const isBoardPage = location.pathname === '/board';
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/settings/rag')) {
+      setRagMenuOpen(true);
+      setSettingsOpen(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -269,6 +290,61 @@ export function Layout() {
                   <McpIcon />
                   MCP Tools
                 </NavLink>
+                <p className="sidebar-settings-category">RAG</p>
+                <button
+                  type="button"
+                  className={`sidebar-settings-menu-item sidebar-settings-submenu-trigger${
+                    ragMenuOpen ? ' is-open' : ''
+                  }`}
+                  aria-expanded={ragMenuOpen}
+                  onClick={() => setRagMenuOpen((open) => !open)}
+                >
+                  <RagIcon />
+                  RAG
+                  <span className="sidebar-settings-submenu-chevron" aria-hidden="true">
+                    {ragMenuOpen ? '▾' : '▸'}
+                  </span>
+                </button>
+                {ragMenuOpen ? (
+                  <div className="sidebar-settings-submenu">
+                    <NavLink
+                      to="/settings/rag/settings"
+                      role="menuitem"
+                      className={({ isActive }) =>
+                        isActive
+                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                      }
+                      onClick={() => setSettingsOpen(false)}
+                    >
+                      Settings
+                    </NavLink>
+                    <NavLink
+                      to="/settings/rag/tokens"
+                      role="menuitem"
+                      className={({ isActive }) =>
+                        isActive
+                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                      }
+                      onClick={() => setSettingsOpen(false)}
+                    >
+                      Token spend
+                    </NavLink>
+                    <NavLink
+                      to="/settings/rag/testing"
+                      role="menuitem"
+                      className={({ isActive }) =>
+                        isActive
+                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                      }
+                      onClick={() => setSettingsOpen(false)}
+                    >
+                      Testing
+                    </NavLink>
+                  </div>
+                ) : null}
               </div>
             )}
 
