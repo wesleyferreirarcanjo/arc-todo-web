@@ -522,21 +522,23 @@ export function TaskCard({
           )}
         </motion.div>
 
-        <button
-          type="button"
-          className="task-card-action-btn task-card-copy-btn"
-          aria-label={copyTooltip}
-          onPointerDown={stopCardPointer}
-          onClick={(event) => {
-            stopCardPointer(event);
-            void handleCopyTask();
-          }}
-        >
-          <CopyIcon className="task-card-action-icon" />
-          <span className="task-card-action-tooltip" role="tooltip">
-            {copyTooltip}
-          </span>
-        </button>
+        {!compact && (
+          <button
+            type="button"
+            className="task-card-action-btn task-card-copy-btn"
+            aria-label={copyTooltip}
+            onPointerDown={stopCardPointer}
+            onClick={(event) => {
+              stopCardPointer(event);
+              void handleCopyTask();
+            }}
+          >
+            <CopyIcon className="task-card-action-icon" />
+            <span className="task-card-action-tooltip" role="tooltip">
+              {copyTooltip}
+            </span>
+          </button>
+        )}
 
         {chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">

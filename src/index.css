@@ -1322,11 +1322,20 @@ textarea {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: var(--radius-blob-alt);
-  padding: 1.15rem 1.25rem 2.75rem;
+  padding: 1.15rem 1.25rem;
   background: var(--bg-elevated);
   cursor: grab;
   box-shadow: var(--shadow-soft);
   transition: border-color var(--transition-base);
+}
+
+.task-card:not(.is-compact) {
+  padding-bottom: 3.5rem;
+}
+
+.task-card:not(.is-compact) .task-card-content {
+  padding-right: 0.35rem;
+  padding-bottom: 0.35rem;
 }
 
 .task-card-content {
@@ -1375,7 +1384,7 @@ textarea {
 
 .task-card.is-compact {
   min-height: 9rem;
-  padding: 0.9rem 1rem 2.6rem;
+  padding: 0.9rem 1rem;
 }
 
 .task-card.is-compact .task-context-badges {
@@ -1457,8 +1466,8 @@ textarea {
 
 .task-card-copy-btn {
   position: absolute;
-  bottom: 0.55rem;
-  right: 0.65rem;
+  bottom: 0.75rem;
+  right: 0.75rem;
   z-index: 10;
 }
 
