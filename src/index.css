@@ -1618,7 +1618,7 @@ textarea {
   transition: border-color var(--transition-base);
 }
 
-.task-card:not(.is-compact) {
+.task-card:not(.is-compact):not(.is-subtask) {
   padding-bottom: 3.5rem;
 }
 
@@ -1785,9 +1785,33 @@ textarea {
 
 .task-card.is-subtask {
   margin-left: 0.85rem;
-  padding: 0.85rem 1rem;
+  padding: 0.5rem 0.65rem 0.55rem 0.75rem;
   border-left: 2px solid color-mix(in srgb, var(--entity-accent, var(--border)) 55%, var(--border));
   cursor: grab;
+}
+
+.task-card.is-subtask .task-card-header {
+  padding-right: 5.5rem;
+}
+
+.task-card.is-subtask .task-card-header h3 {
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+
+.task-card.is-subtask .task-description {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.task-card.is-subtask .task-card-actions {
+  top: 0.35rem;
+  right: 0.35rem;
 }
 
 .task-card.has-subtasks {

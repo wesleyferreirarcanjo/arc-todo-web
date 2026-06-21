@@ -437,7 +437,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${chatContextTask ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${resolvedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${!isSubtask && chatContextTask ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${resolvedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
@@ -456,31 +456,33 @@ export function TaskCard({
         }}
         {...draggableProps}
       >
-        <div className="task-context-badges">
-          <div className="task-context-badges-main">
-            {organizationName && (
-              <span className="task-badge task-badge-org" title={organizationName}>
-                {formatBadgeLabel(organizationName)}
-              </span>
-            )}
-            {projectName && (
-              <span
-                className="task-badge task-badge-project"
-                title={projectName}
-                style={
-                  accentColor
-                    ? ({ '--entity-accent': accentColor } as CSSProperties)
-                    : undefined
-                }
-              >
-                {formatBadgeLabel(projectName)}
-              </span>
-            )}
+        {!isSubtask && (
+          <div className="task-context-badges">
+            <div className="task-context-badges-main">
+              {organizationName && (
+                <span className="task-badge task-badge-org" title={organizationName}>
+                  {formatBadgeLabel(organizationName)}
+                </span>
+              )}
+              {projectName && (
+                <span
+                  className="task-badge task-badge-project"
+                  title={projectName}
+                  style={
+                    accentColor
+                      ? ({ '--entity-accent': accentColor } as CSSProperties)
+                      : undefined
+                  }
+                >
+                  {formatBadgeLabel(projectName)}
+                </span>
+              )}
+            </div>
+            <span className={`criticity-badge criticity-${task.criticity}`}>
+              {task.criticity}
+            </span>
           </div>
-          <span className={`criticity-badge criticity-${task.criticity}`}>
-            {task.criticity}
-          </span>
-        </div>
+        )}
 
         <div
           className="task-card-actions"
@@ -498,6 +500,23 @@ export function TaskCard({
               <EyeIcon className="task-card-action-icon" />
               <span className="task-card-action-tooltip" role="tooltip">
                 View details
+              </span>
+            </button>
+          )}
+
+          {isSubtask && (
+            <button
+              type="button"
+              className="task-card-action-btn"
+              aria-label={copyTooltip}
+              onClick={(event) => {
+                stopCardPointer(event);
+                void handleCopyTask();
+              }}
+            >
+              <CopyIcon className="task-card-action-icon" />
+              <span className="task-card-action-tooltip" role="tooltip">
+                {copyTooltip}
               </span>
             </button>
           )}
@@ -599,10 +618,6 @@ export function TaskCard({
             )}
           </div>
 
-          {isSubtask && parentTitle && (
-            <p className="task-parent-label">Subtask of {parentTitle}</p>
-          )}
-
           {!isSubtask && compact && resolvedSubtasks.length > 0 && (
             <p className="task-subtask-summary">
               {resolvedSubtasks.length} subtask{resolvedSubtasks.length === 1 ? '' : 's'}
@@ -613,7 +628,7 @@ export function TaskCard({
             <p className="task-description">{task.description}</p>
           )}
 
-          {!compact && (
+          {!compact && !isSubtask && (
             <div className="task-meta">
               {task.dueDate && (
                 <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
@@ -622,7 +637,7 @@ export function TaskCard({
           )}
         </motion.div>
 
-        {!compact && (
+        {!compact && !isSubtask && (
           <button
             type="button"
             className="task-card-action-btn task-card-copy-btn"
@@ -640,7 +655,7 @@ export function TaskCard({
           </button>
         )}
 
-        {chatContextTask ? (
+        {!isSubtask && chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">
             Ctrl+click insert reference · Shift+click remove
           </span>
