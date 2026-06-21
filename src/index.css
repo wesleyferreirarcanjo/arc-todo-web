@@ -1791,7 +1791,41 @@ textarea {
 }
 
 .task-card.is-subtask .task-card-header {
-  padding-right: 5.5rem;
+  padding-right: 8.75rem;
+}
+
+.task-subtask-status-badge {
+  flex-shrink: 0;
+  max-width: 5.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg-surface) 72%, var(--border));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.2rem 0.45rem;
+  line-height: 1.2;
+}
+
+.task-subtask-status-badge.status-todo {
+  color: var(--text-muted);
+}
+
+.task-subtask-status-badge.status-in_progress {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+}
+
+.task-subtask-status-badge.status-done {
+  color: var(--criticity-low-text);
+  border-color: color-mix(in srgb, var(--criticity-low-text) 35%, var(--border));
+  background: color-mix(in srgb, var(--criticity-low-bg) 70%, var(--bg-surface));
 }
 
 .task-card.is-subtask .task-card-header h3 {

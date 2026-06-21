@@ -155,6 +155,16 @@ const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ];
 
+const statusLabels = Object.fromEntries(
+  statusOptions.map((option) => [option.value, option.label]),
+) as Record<TaskStatus, string>;
+
+const subtaskStatusLabels: Record<TaskStatus, string> = {
+  todo: 'To Do',
+  in_progress: 'Doing',
+  done: 'Done',
+};
+
 const criticityOptions: { value: TaskCriticity; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
@@ -490,6 +500,15 @@ export function TaskCard({
           onPointerDown={stopCardPointer}
           onClick={stopCardPointer}
         >
+          {isSubtask && (
+            <span
+              className={`task-subtask-status-badge status-${task.status}`}
+              title={`Status: ${statusLabels[task.status]}`}
+            >
+              {subtaskStatusLabels[task.status]}
+            </span>
+          )}
+
           {canOpenDetails && (
             <button
               type="button"
