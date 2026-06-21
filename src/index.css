@@ -2928,6 +2928,26 @@ textarea {
   transform: translateX(-50%) translateY(0);
 }
 
+/* First card: flip tooltips down — upward ones clip against the column header/scroll area */
+.board-column-body > .task-card:first-child .task-card-tooltip {
+  bottom: auto;
+  top: calc(100% + 0.45rem);
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.board-column-body
+  > .task-card:first-child.has-chat-hint:not(.is-dragging):not(.has-menu-open):hover:not(
+    :has(.task-card-actions:hover)
+  )
+  .task-card-tooltip {
+  transform: translateX(-50%) translateY(0);
+}
+
+.board-column-body > .task-card:first-child .task-card-actions .task-card-action-tooltip {
+  bottom: auto;
+  top: calc(100% + 0.4rem);
+}
+
 .chat-widget-title {
   font-family: var(--font-display);
   font-size: 1.05rem;
