@@ -24,6 +24,53 @@ function formatBadgeLabel(label: string): string {
   return label.length > 15 ? `${label.slice(0, 15)}...` : label;
 }
 
+function SubtaskProgressRing({
+  done,
+  total,
+}: {
+  done: number;
+  total: number;
+}) {
+  const size = 11;
+  const stroke = 1.75;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = total > 0 ? Math.min(Math.max(done / total, 0), 1) : 0;
+  const dashOffset = circumference * (1 - progress);
+  const center = size / 2;
+
+  return (
+    <svg
+      className="subtask-progress-ring"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      aria-hidden="true"
+    >
+      <circle
+        className="subtask-progress-ring-track"
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        strokeWidth={stroke}
+      />
+      <circle
+        className="subtask-progress-ring-fill"
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={dashOffset}
+        transform={`rotate(-90 ${center} ${center})`}
+      />
+    </svg>
+  );
+}
+
 function MoreVerticalIcon() {
   return (
     <svg
@@ -155,16 +202,6 @@ const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'in_progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
 ];
-
-const statusLabels = Object.fromEntries(
-  statusOptions.map((option) => [option.value, option.label]),
-) as Record<TaskStatus, string>;
-
-const subtaskStatusLabels: Record<TaskStatus, string> = {
-  todo: 'To Do',
-  in_progress: 'Doing',
-  done: 'Done',
-};
 
 const criticityOptions: { value: TaskCriticity; label: string }[] = [
   { value: 'low', label: 'Low' },
@@ -512,15 +549,6 @@ export function TaskCard({
           onPointerDown={stopCardPointer}
           onClick={stopCardPointer}
         >
-          {isSubtask && (
-            <span
-              className={`task-subtask-status-badge status-${task.status}`}
-              title={`Status: ${statusLabels[task.status]}`}
-            >
-              {subtaskStatusLabels[task.status]}
-            </span>
-          )}
-
           {canOpenDetails && (
             <button
               type="button"
@@ -643,7 +671,18 @@ export function TaskCard({
           <div className="task-card-header">
             <h3>{task.title}</h3>
             {subtaskProgress && (
-              <span className="subtask-progress-badge">
+              <span
+                className="subtask-progress-badge"
+                style={
+                  accentColor
+                    ? ({ '--entity-accent': accentColor } as CSSProperties)
+                    : undefined
+                }
+              >
+                <SubtaskProgressRing
+                  done={subtaskProgress.done}
+                  total={subtaskProgress.total}
+                />
                 {subtaskProgress.done}/{subtaskProgress.total} done
               </span>
             )}
