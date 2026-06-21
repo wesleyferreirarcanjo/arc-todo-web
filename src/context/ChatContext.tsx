@@ -21,6 +21,10 @@ import {
 } from '../lib/api/conversations';
 import type { ChatMessage } from '../lib/api/chat';
 import type { Task, TaskWithContext } from '../types/todo';
+import {
+  messageHasTaskRefTokens,
+  titleFromTaskRefs,
+} from '../lib/chat/taskRefTokens';
 
 const WELCOME_MESSAGE: ChatMessage = {
   role: 'assistant',
@@ -71,6 +75,7 @@ type ComposerRegistration = {
   insertRef: (ref: TaskRef) => void;
   removeRef: (taskId: string) => void;
   containsRef: (taskId: string) => boolean;
+  getContent: () => { text: string; taskRefs: TaskRef[] };
 };
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -392,6 +397,46 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setPendingTaskInsert(null);
   }, []);
 
+  const syncConversationTaskContext = useCallback(
+    async (taskRefs: TaskRef[], preferredTitle?: string) => {
+      const conversationId = activeConversationIdRef.current;
+      if (!conversationId) {
+        return;
+      }
+
+      const current = conversations.find(
+        (conversation) => conversation.id === conversationId,
+      );
+      const refTitle = titleFromTaskRefs(taskRefs);
+      const shouldReplaceTitle =
+        !current ||
+        current.title === 'New conversation' ||
+        messageHasTaskRefTokens(current.title);
+
+      const title = shouldReplaceTitle
+        ? preferredTitle?.trim() || refTitle
+        : current.title;
+
+      const updated = await updateConversation(conversationId, {
+        title,
+        taskRefs,
+      });
+
+      setConversations((list) =>
+        list.map((conversation) =>
+          conversation.id === updated.id
+            ? {
+                ...conversation,
+                title: updated.title,
+                updatedAt: updated.updatedAt,
+              }
+            : conversation,
+        ),
+      );
+    },
+    [conversations],
+  );
+
   const requestTaskInsert = useCallback(
     async (task: TaskContextInput) => {
       const nextRef = toTaskRef(task);
@@ -404,12 +449,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (composerRef.current) {
         composerRef.current.insertRef(nextRef);
         referencedTaskIdsRef.current.add(nextRef.taskId);
+        const { taskRefs } = composerRef.current.getContent();
+        await syncConversationTaskContext(taskRefs, nextRef.title);
       } else {
         setPendingTaskInsert(nextRef);
         referencedTaskIdsRef.current.add(nextRef.taskId);
+        await syncConversationTaskContext([nextRef], nextRef.title);
       }
     },
-    [createNewConversation],
+    [createNewConversation, syncConversationTaskContext],
   );
 
   const requestTaskRemove = useCallback((taskId: string) => {

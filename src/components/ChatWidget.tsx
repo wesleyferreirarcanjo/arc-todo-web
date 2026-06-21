@@ -7,6 +7,7 @@ import { useChat } from '../context/ChatContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import {
+  formatConversationDisplayTitle,
   formatTaskChipLabel,
   messageHasTaskRefTokens,
   splitMessageWithTaskRefs,
@@ -179,6 +180,8 @@ export function ChatWidget() {
       insertRef: (ref) => composerRef.current?.insertRef(ref),
       removeRef: (taskId) => composerRef.current?.removeRef(taskId),
       containsRef: (taskId) => composerRef.current?.containsRef(taskId) ?? false,
+      getContent: () =>
+        composerRef.current?.getContent() ?? { text: '', taskRefs: [] },
     });
     return () => registerComposer(null);
   }, [registerComposer]);
@@ -334,12 +337,12 @@ export function ChatWidget() {
           className="chat-widget-tab-button"
           onClick={() => void selectConversation(conversation.id)}
         >
-          {conversation.title}
+          {formatConversationDisplayTitle(conversation.title)}
         </button>
         <button
           type="button"
           className="chat-widget-tab-close"
-          aria-label={`Close ${conversation.title}`}
+          aria-label={`Close ${formatConversationDisplayTitle(conversation.title)}`}
           disabled={closingConversationId === conversation.id}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => void handleCloseConversation(event, conversation.id)}
@@ -407,7 +410,7 @@ export function ChatWidget() {
                             void selectOverflowConversation(conversation.id);
                           }}
                         >
-                          {conversation.title}
+                          {formatConversationDisplayTitle(conversation.title)}
                         </button>
                       ))}
                     </div>
@@ -480,7 +483,7 @@ export function ChatWidget() {
                 ref={composerRef}
                 placeholder={
                   activeConversation
-                    ? `Message in ${activeConversation.title}...`
+                    ? `Message in ${formatConversationDisplayTitle(activeConversation.title)}...`
                     : 'Ask about your tasks...'
                 }
                 disabled={loading || loadingMessages}
