@@ -460,18 +460,6 @@ export function TaskCard({
             </button>
           )}
 
-          <button
-            type="button"
-            className="task-card-action-btn"
-            aria-label={copyTooltip}
-            onClick={() => void handleCopyTask()}
-          >
-            <CopyIcon className="task-card-action-icon" />
-            <span className="task-card-action-tooltip" role="tooltip">
-              {copyTooltip}
-            </span>
-          </button>
-
           <div className="task-action-menu">
             <button
               type="button"
@@ -512,6 +500,7 @@ export function TaskCard({
         </div>
 
         <motion.div
+          className="task-card-content"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={base}
@@ -532,6 +521,22 @@ export function TaskCard({
             </div>
           )}
         </motion.div>
+
+        <button
+          type="button"
+          className="task-card-action-btn task-card-copy-btn"
+          aria-label={copyTooltip}
+          onPointerDown={stopCardPointer}
+          onClick={(event) => {
+            stopCardPointer(event);
+            void handleCopyTask();
+          }}
+        >
+          <CopyIcon className="task-card-action-icon" />
+          <span className="task-card-action-tooltip" role="tooltip">
+            {copyTooltip}
+          </span>
+        </button>
 
         {chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">

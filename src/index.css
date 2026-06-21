@@ -1163,8 +1163,8 @@ textarea {
   overflow: hidden;
   box-shadow: var(--shadow-card);
   transform-origin: center top;
-  flex: 0 0 min(100%, 14rem);
-  max-width: min(100%, 14rem);
+  flex: 0 0 min(100%, 28rem);
+  max-width: min(100%, 28rem);
   min-width: 0;
   cursor: pointer;
   transition:
@@ -1175,21 +1175,21 @@ textarea {
 }
 
 .board-column.is-focused {
-  flex: 1 1 min(100%, 24.375rem);
-  max-width: min(100%, 24.375rem);
-  min-width: min(100%, 18rem);
+  flex: 1 1 min(100%, 48.75rem);
+  max-width: min(100%, 48.75rem);
+  min-width: min(100%, 36rem);
   border-color: var(--border-strong);
   box-shadow: var(--shadow-lift);
 }
 
 .board-column.is-compact:not(.is-focused) {
-  flex: 0 0 min(100%, 14rem);
-  max-width: min(100%, 14rem);
+  flex: 0 0 min(100%, 28rem);
+  max-width: min(100%, 28rem);
 }
 
 .board-column.is-empty:not(.is-focused) {
-  flex: 0 0 min(100%, 11rem);
-  max-width: min(100%, 11rem);
+  flex: 0 0 min(100%, 22rem);
+  max-width: min(100%, 22rem);
 }
 
 .board-column:focus-visible {
@@ -1323,13 +1323,22 @@ textarea {
 
 .task-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--border);
   border-radius: var(--radius-blob-alt);
-  padding: 1.15rem 1.25rem;
+  padding: 1.15rem 1.25rem 2.75rem;
   background: var(--bg-elevated);
   cursor: grab;
   box-shadow: var(--shadow-soft);
   transition: border-color var(--transition-base);
+}
+
+.task-card-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .task-card::after {
@@ -1370,24 +1379,23 @@ textarea {
 }
 
 .task-card.is-compact {
-  padding: 0.75rem 0.85rem;
+  min-height: 9rem;
+  padding: 0.9rem 1rem 2.6rem;
 }
 
 .task-card.is-compact .task-context-badges {
-  margin-bottom: 0.45rem;
-  padding-right: 5.25rem;
+  margin-bottom: 0.55rem;
+  padding-right: 4.25rem;
 }
 
-.task-card.is-compact .task-context-badges .task-badge,
-.task-card.is-compact .task-context-badges .criticity-badge {
-  font-size: 0.55rem;
-  padding: 0.12rem 0.38rem;
-  letter-spacing: 0.04em;
+.task-card.is-compact .task-card-header {
+  flex: 1;
 }
 
 .task-card.is-compact .task-card-header h3 {
-  font-size: 0.95rem;
-  -webkit-line-clamp: 2;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  -webkit-line-clamp: 5;
 }
 
 .task-card.is-compact .task-description,
@@ -1396,13 +1404,12 @@ textarea {
 }
 
 .task-context-badges {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.35rem;
+  column-gap: 0.35rem;
   margin-bottom: 0.65rem;
-  padding-right: 6rem;
-  overflow: hidden;
+  padding-right: 4.25rem;
 }
 
 .task-context-badges-main {
@@ -1411,7 +1418,6 @@ textarea {
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
-  flex: 1;
   overflow: hidden;
 }
 
@@ -1429,7 +1435,7 @@ textarea {
 
 .task-context-badges .criticity-badge {
   flex-shrink: 0;
-  margin-left: auto;
+  justify-self: end;
 }
 
 .task-badge {
@@ -1452,6 +1458,18 @@ textarea {
 
 .task-card-header {
   padding-right: 0.5rem;
+}
+
+.task-card-copy-btn {
+  position: absolute;
+  bottom: 0.55rem;
+  right: 0.65rem;
+  z-index: 10;
+}
+
+.task-card-copy-btn .task-card-action-tooltip {
+  bottom: calc(100% + 0.4rem);
+  top: auto;
 }
 
 .task-card-actions {
