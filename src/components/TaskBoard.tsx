@@ -21,10 +21,12 @@ interface TaskBoardProps {
       status: TaskStatus;
       criticity: TaskCriticity;
       dueDate: string | null;
+      parentTaskId: string | null;
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
+  onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
 }
 
 const columns: { status: TaskStatus; title: string }[] = [
@@ -49,6 +51,7 @@ export function TaskBoard({
   onUpdate,
   onDelete,
   onCreateSubtask,
+  onSetParent,
 }: TaskBoardProps) {
   const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
     getDefaultFocusedStatus(tasks),
@@ -135,6 +138,8 @@ export function TaskBoard({
                     onUpdate={onUpdate}
                     onDelete={onDelete}
                     onCreateSubtask={onCreateSubtask}
+                    onSetParent={onSetParent}
+                    parentCandidates={tasks}
                   />
                 ))
               )}

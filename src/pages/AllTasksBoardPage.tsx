@@ -112,6 +112,7 @@ export function AllTasksBoardPage() {
       status: TaskStatus;
       criticity: TaskCriticity;
       dueDate: string | null;
+      parentTaskId: string | null;
     }>,
   ) {
     const updated = await updateProjectTask(
@@ -120,7 +121,7 @@ export function AllTasksBoardPage() {
       task.id,
       input,
     );
-    if (input.status !== undefined) {
+    if (input.status !== undefined || input.parentTaskId !== undefined) {
       await loadTasks({ silent: true });
       return;
     }
@@ -136,6 +137,16 @@ export function AllTasksBoardPage() {
           : item,
       ),
     );
+  }
+
+  async function handleSetParent(
+    task: TaskWithContext,
+    parentId: string | null,
+  ) {
+    await updateProjectTask(task.organization.id, task.project.id, task.id, {
+      parentTaskId: parentId,
+    });
+    await loadTasks({ silent: true });
   }
 
   async function handleCreateSubtask(
@@ -223,6 +234,7 @@ export function AllTasksBoardPage() {
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onCreateSubtask={handleCreateSubtask}
+          onSetParent={handleSetParent}
         />
       )}
     </div>

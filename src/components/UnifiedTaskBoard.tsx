@@ -24,12 +24,17 @@ interface UnifiedTaskBoardProps {
       status: TaskStatus;
       criticity: TaskCriticity;
       dueDate: string | null;
+      parentTaskId: string | null;
     }>,
   ) => Promise<void>;
   onDelete: (task: TaskWithContext) => Promise<void>;
   onCreateSubtask?: (
     task: TaskWithContext,
     input: CreateTaskInput,
+  ) => Promise<void>;
+  onSetParent?: (
+    task: TaskWithContext,
+    parentId: string | null,
   ) => Promise<void>;
 }
 
@@ -58,6 +63,7 @@ export function UnifiedTaskBoard({
   onUpdate,
   onDelete,
   onCreateSubtask,
+  onSetParent,
 }: UnifiedTaskBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const [focusMode, setFocusMode] = useState(false);
@@ -168,6 +174,12 @@ export function UnifiedTaskBoard({
                         ? (_parentId, input) => onCreateSubtask(task, input)
                         : undefined
                     }
+                    onSetParent={
+                      onSetParent
+                        ? (_taskId, parentId) => onSetParent(task, parentId)
+                        : undefined
+                    }
+                    parentCandidates={tasks}
                   />
                 ))
               )}

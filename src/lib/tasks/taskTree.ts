@@ -46,3 +46,16 @@ export function mergeSubtaskProgress(
 export function isTaskWithContext(task: Task): task is TaskWithContext {
   return 'organization' in task && 'project' in task;
 }
+
+export function listParentCandidates<T extends Task>(
+  tasks: T[],
+  taskId: string,
+  projectId?: string,
+): T[] {
+  return tasks.filter(
+    (candidate) =>
+      !candidate.parentTaskId &&
+      candidate.id !== taskId &&
+      (!projectId || candidate.projectId === projectId),
+  );
+}

@@ -67,16 +67,22 @@ export function ProjectTasksPage() {
       status: TaskStatus;
       criticity: TaskCriticity;
       dueDate: string | null;
+      parentTaskId: string | null;
     }>,
   ) {
     if (!orgId || !projectId) return;
     const updated = await updateProjectTask(orgId, projectId, id, input);
-    // ponytail: reload on status change so parent rollup stays in sync
-    if (input.status !== undefined) {
+    if (input.status !== undefined || input.parentTaskId !== undefined) {
       await loadTasks();
       return;
     }
     setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+  }
+
+  async function handleSetParent(taskId: string, parentId: string | null) {
+    if (!orgId || !projectId) return;
+    await updateProjectTask(orgId, projectId, taskId, { parentTaskId: parentId });
+    await loadTasks();
   }
 
   async function handleDelete(id: string) {
@@ -129,6 +135,7 @@ export function ProjectTasksPage() {
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onCreateSubtask={handleCreateSubtask}
+          onSetParent={handleSetParent}
         />
       )}
     </div>

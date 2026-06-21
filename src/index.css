@@ -1804,10 +1804,15 @@ textarea {
 }
 
 .task-parent-label,
-.task-details-parent {
+.task-details-parent,
+.task-subtask-summary {
   margin: 0.15rem 0 0;
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+.task-subtask-summary {
+  font-weight: 600;
 }
 
 .task-add-subtask-btn {

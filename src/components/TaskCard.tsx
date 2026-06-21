@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import type { CreateTaskInput, Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
-import { mergeSubtaskProgress } from '../lib/tasks/taskTree';
+import { mergeSubtaskProgress, listParentCandidates } from '../lib/tasks/taskTree';
 import { useChat } from '../context/ChatContext';
 import { copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -136,10 +136,13 @@ interface TaskCardProps {
       status: TaskStatus;
       criticity: TaskCriticity;
       dueDate: string | null;
+      parentTaskId: string | null;
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
+  onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
+  parentCandidates?: Task[];
   chatContextScope?: {
     organizationId: string;
     projectId: string;
@@ -176,6 +179,8 @@ export function TaskCard({
   onUpdate,
   onDelete,
   onCreateSubtask,
+  onSetParent,
+  parentCandidates = [],
   chatContextScope,
 }: TaskCardProps) {
   const { requestTaskInsert, requestTaskRemove, isTaskReferenced } = useChat();
@@ -186,6 +191,7 @@ export function TaskCard({
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [subtaskModalOpen, setSubtaskModalOpen] = useState(false);
+  const [setParentModalOpen, setSetParentModalOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [title, setTitle] = useState(task.title);
@@ -193,11 +199,17 @@ export function TaskCard({
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [criticity, setCriticity] = useState<TaskCriticity>(task.criticity);
   const [dueDate, setDueDate] = useState(formatDueDateForInput(task.dueDate));
+  const [parentTaskId, setParentTaskId] = useState(task.parentTaskId ?? '');
+  const [selectedParentId, setSelectedParentId] = useState(task.parentTaskId ?? '');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const isInteractionLocked =
-    detailsModalOpen || editModalOpen || subtaskModalOpen || actionMenuOpen;
+    detailsModalOpen ||
+    editModalOpen ||
+    subtaskModalOpen ||
+    setParentModalOpen ||
+    actionMenuOpen;
   const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
   const resolvedProjectId = projectId ?? chatContextScope?.projectId;
   const canOpenDetails = Boolean(resolvedOrganizationId && resolvedProjectId);
@@ -249,6 +261,8 @@ export function TaskCard({
     setStatus(task.status);
     setCriticity(task.criticity);
     setDueDate(formatDueDateForInput(task.dueDate));
+    setParentTaskId(task.parentTaskId ?? '');
+    setSelectedParentId(task.parentTaskId ?? '');
   }
 
   function handleStartEdit() {
@@ -289,6 +303,7 @@ export function TaskCard({
         status,
         criticity,
         dueDate: dueDate || null,
+        parentTaskId: parentTaskId || null,
       });
       setEditModalOpen(false);
     } finally {
@@ -400,6 +415,16 @@ export function TaskCard({
   const subtaskProgress = mergeSubtaskProgress(task.subtaskProgress);
   const resolvedSubtasks =
     subtasks.length > 0 ? subtasks : (task.subtasks ?? []);
+  const availableParents = listParentCandidates(
+    parentCandidates,
+    task.id,
+    task.projectId,
+  );
+  const canSetParent =
+    Boolean(onSetParent) &&
+    resolvedSubtasks.length === 0 &&
+    availableParents.length > 0;
+  const canAddSubtask = Boolean(onCreateSubtask) && !isSubtask;
 
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
@@ -501,6 +526,49 @@ export function TaskCard({
                   Edit
                 </button>
 
+                {canAddSubtask && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="task-action-menu-item"
+                    onClick={() => {
+                      setActionMenuOpen(false);
+                      setSubtaskModalOpen(true);
+                    }}
+                  >
+                    Add subtask
+                  </button>
+                )}
+
+                {canSetParent && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="task-action-menu-item"
+                    onClick={() => {
+                      setActionMenuOpen(false);
+                      setSelectedParentId(task.parentTaskId ?? '');
+                      setSetParentModalOpen(true);
+                    }}
+                  >
+                    Set parent task
+                  </button>
+                )}
+
+                {isSubtask && onSetParent && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="task-action-menu-item"
+                    onClick={() => {
+                      setActionMenuOpen(false);
+                      void onSetParent(task.id, null);
+                    }}
+                  >
+                    Detach from parent
+                  </button>
+                )}
+
                 <button
                   type="button"
                   role="menuitem"
@@ -531,8 +599,14 @@ export function TaskCard({
             )}
           </div>
 
-          {isSubtask && parentTitle && !compact && (
+          {isSubtask && parentTitle && (
             <p className="task-parent-label">Subtask of {parentTitle}</p>
+          )}
+
+          {!isSubtask && compact && resolvedSubtasks.length > 0 && (
+            <p className="task-subtask-summary">
+              {resolvedSubtasks.length} subtask{resolvedSubtasks.length === 1 ? '' : 's'}
+            </p>
           )}
 
           {task.description && !compact && (
@@ -585,19 +659,22 @@ export function TaskCard({
                 organizationName={organizationName}
                 projectName={projectName}
                 accentColor={accentColor}
-                compact={compact}
+                compact={false}
                 draggable
                 isDragging={draggingTaskId === subtask.id}
                 draggingTaskId={draggingTaskId}
                 chatContextScope={chatContextScope}
+                parentCandidates={parentCandidates}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
+                onCreateSubtask={onCreateSubtask}
+                onSetParent={onSetParent}
               />
             ))}
           </div>
         )}
 
-        {!isSubtask && !compact && onCreateSubtask && (
+        {!isSubtask && !compact && canAddSubtask && (
           <button
             type="button"
             className="btn btn-secondary btn-sm task-add-subtask-btn"
@@ -627,7 +704,7 @@ export function TaskCard({
         />
       )}
 
-      {!isSubtask && onCreateSubtask && (
+      {!isSubtask && canAddSubtask && (
         <Modal
           open={subtaskModalOpen}
           onClose={() => setSubtaskModalOpen(false)}
@@ -640,10 +717,51 @@ export function TaskCard({
             submitLabel="Add subtask"
             parentTaskId={task.id}
             onSubmit={async (input) => {
-              await onCreateSubtask(task.id, input);
+              await onCreateSubtask!(task.id, input);
               setSubtaskModalOpen(false);
             }}
           />
+        </Modal>
+      )}
+
+      {canSetParent && (
+        <Modal
+          open={setParentModalOpen}
+          onClose={() => setSetParentModalOpen(false)}
+          title={`Set parent for ${task.title}`}
+          titleId={`set-parent-modal-${task.id}`}
+          className="task-create-modal"
+        >
+          <form
+            className="task-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!selectedParentId) return;
+              void onSetParent!(task.id, selectedParentId).then(() =>
+                setSetParentModalOpen(false),
+              );
+            }}
+          >
+            <label>
+              Parent task
+              <Select
+                value={selectedParentId}
+                placeholder="Choose parent task"
+                onChange={setSelectedParentId}
+                options={availableParents.map((parent) => ({
+                  value: parent.id,
+                  label: parent.title,
+                }))}
+              />
+            </label>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!selectedParentId}
+            >
+              Set parent
+            </button>
+          </form>
         </Modal>
       )}
 
@@ -710,6 +828,24 @@ export function TaskCard({
               />
             </label>
           </div>
+
+          {resolvedSubtasks.length === 0 && availableParents.length > 0 && (
+            <label>
+              Parent task
+              <Select
+                value={parentTaskId}
+                placeholder="No parent (top-level task)"
+                onChange={setParentTaskId}
+                options={[
+                  { value: '', label: 'No parent (top-level task)' },
+                  ...availableParents.map((parent) => ({
+                    value: parent.id,
+                    label: parent.title,
+                  })),
+                ]}
+              />
+            </label>
+          )}
 
           <div className="task-edit-form-actions">
             <button
