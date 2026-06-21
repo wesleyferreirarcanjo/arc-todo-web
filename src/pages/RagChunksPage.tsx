@@ -1,13 +1,80 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
-import { fetchRagChunks } from '../lib/api/rag';
+import { fetchRagChunks, fetchRagIndexStatus, syncRagIndex } from '../lib/api/rag';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
-import type { RagChunkListResult } from '../types/ragSettings';
+import type { RagChunkListResult, RagIndexJob, RagIndexStatus } from '../types/ragSettings';
 
 const PAGE_SIZE = 50;
+const POLL_MS = 4000;
+
+function formatJobLabel(job: RagIndexJob): string {
+  if (job.sourceFilename) {
+    return job.sourceFilename;
+  }
+  if (job.entryTitle) {
+    return job.entryTitle;
+  }
+  return job.jobType === 'attachment' ? 'Attachment job' : 'Knowledge entry job';
+}
+
+function IndexPipeline({ job }: { job: RagIndexJob }) {
+  const steps = job.pipelineSteps;
+  const current = job.pipelineStep;
+
+  return (
+    <div className="rag-index-pipeline" aria-label="Indexing pipeline">
+      {steps.map((step, index) => {
+        const isComplete =
+          job.status === 'completed' ? index <= current : current >= 0 && index < current;
+        const isActive =
+          job.status === 'processing'
+            ? index >= 1 && index <= 3
+            : job.status !== 'completed' && job.status !== 'failed' && index === current;
+        const isFailed = job.status === 'failed';
+
+        return (
+          <div
+            key={step}
+            className={`rag-index-pipeline-step${
+              isFailed && index === 0 ? ' failed' : ''
+            }${isComplete || (job.status === 'completed' && index <= current) ? ' complete' : ''}${
+              isActive ? ' active' : ''
+            }`}
+          >
+            <span className="rag-index-pipeline-dot" aria-hidden="true" />
+            <span className="rag-index-pipeline-label">{step}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function JobStatusCard({ job }: { job: RagIndexJob }) {
+  return (
+    <article className="knowledge-card rag-index-job-card">
+      <div className="rag-index-job-header">
+        <h3>{formatJobLabel(job)}</h3>
+        <span className={`rag-index-status-badge status-${job.status}`}>{job.status}</span>
+      </div>
+      <p className="subtitle">
+        {job.scope ? `${job.scope} · ` : ''}
+        {job.jobType}
+        {job.mimeType ? ` · ${job.mimeType}` : ''}
+        {job.queuePosition ? ` · queue #${job.queuePosition}` : ''}
+        {job.chunkCount > 0 ? ` · ${job.chunkCount} chunks indexed` : ''}
+      </p>
+      {job.status === 'failed' && job.lastError ? (
+        <p className="form-error">{job.lastError}</p>
+      ) : (
+        <IndexPipeline job={job} />
+      )}
+    </article>
+  );
+}
 
 export function RagChunksPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -20,12 +87,22 @@ export function RagChunksPage() {
   const [attachmentId, setAttachmentId] = useState('');
   const [offset, setOffset] = useState(0);
   const [result, setResult] = useState<RagChunkListResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [indexStatus, setIndexStatus] = useState<RagIndexStatus | null>(null);
+  const [chunksLoading, setChunksLoading] = useState(true);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [chunksRefreshing, setChunksRefreshing] = useState(false);
+  const [statusRefreshing, setStatusRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const previousProcessingCount = useRef(0);
 
   const loadChunks = useCallback(
-    async (nextOffset = offset) => {
-      setLoading(true);
+    async (nextOffset = offset, options: { silent?: boolean } = {}) => {
+      if (options.silent) {
+        setChunksRefreshing(true);
+      } else {
+        setChunksLoading(true);
+      }
       setError(null);
       try {
         const data = await fetchRagChunks({
@@ -42,10 +119,41 @@ export function RagChunksPage() {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load chunks');
       } finally {
-        setLoading(false);
+        setChunksLoading(false);
+        setChunksRefreshing(false);
       }
     },
     [attachmentId, knowledgeEntryId, mimeType, offset, organizationId, projectId, scope],
+  );
+
+  const loadIndexStatus = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (options.silent) {
+      setStatusRefreshing(true);
+    } else {
+      setStatusLoading(true);
+    }
+    try {
+      const data = await fetchRagIndexStatus();
+      setIndexStatus(data);
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load index status');
+      return null;
+    } finally {
+      setStatusLoading(false);
+      setStatusRefreshing(false);
+    }
+  }, []);
+
+  const refreshAll = useCallback(
+    async (options: { silent?: boolean } = {}) => {
+      const [status] = await Promise.all([
+        loadIndexStatus(options),
+        loadChunks(offset, options),
+      ]);
+      return status;
+    },
+    [loadChunks, loadIndexStatus, offset],
   );
 
   useEffect(() => {
@@ -74,18 +182,53 @@ export function RagChunksPage() {
   }, [organizationId]);
 
   useEffect(() => {
-    void loadChunks();
-  }, [loadChunks]);
+    void refreshAll();
+  }, [refreshAll]);
 
-  function handleFilterSubmit(event: React.FormEvent) {
+  const hasActiveWork =
+    (indexStatus?.queuedJobs ?? 0) > 0 || (indexStatus?.processingJobs ?? 0) > 0;
+
+  useEffect(() => {
+    if (!hasActiveWork) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      void refreshAll({ silent: true });
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [hasActiveWork, refreshAll]);
+
+  useEffect(() => {
+    const currentProcessing = indexStatus?.processingJobs ?? 0;
+    if (previousProcessingCount.current > 0 && currentProcessing === 0) {
+      void loadChunks(offset, { silent: true });
+    }
+    previousProcessingCount.current = currentProcessing;
+  }, [indexStatus?.processingJobs, loadChunks, offset]);
+
+  async function handleFilterSubmit(event: React.FormEvent) {
     event.preventDefault();
     setOffset(0);
-    void loadChunks(0);
+    await Promise.all([loadChunks(0), loadIndexStatus()]);
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    setError(null);
+    try {
+      await syncRagIndex();
+      await refreshAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to queue sync');
+    } finally {
+      setSyncing(false);
+    }
   }
 
   const total = result?.total ?? 0;
   const pageStart = total === 0 ? 0 : offset + 1;
   const pageEnd = Math.min(offset + PAGE_SIZE, total);
+  const initialLoading = chunksLoading && statusLoading && !result && !indexStatus;
 
   return (
     <section className="page-section">
@@ -93,16 +236,64 @@ export function RagChunksPage() {
         <div>
           <h2>RAG Chunks</h2>
           <p className="subtitle">
-            Browse indexed chunk records for project and reference knowledge, including source file metadata.
+            Browse indexed chunks and track which files are queued, processing, or already embedded.
           </p>
         </div>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={syncing || statusRefreshing}
+          onClick={() => void handleSync()}
+        >
+          {syncing ? 'Queueing sync...' : 'Queue sync'}
+        </button>
       </div>
 
       <RagSettingsNav />
 
       {error ? <p className="form-error">{error}</p> : null}
+      {initialLoading ? <p className="subtitle">Loading chunks and index status...</p> : null}
 
-      <form className="settings-form-card" onSubmit={handleFilterSubmit}>
+      {indexStatus ? (
+        <div className="notice-card rag-index-status-card">
+          <div className="rag-index-status-header">
+            <h3>Index queue</h3>
+            {statusRefreshing ? <span className="subtitle">Refreshing...</span> : null}
+          </div>
+          <p className="subtitle">
+            {indexStatus.totalChunks} indexed chunks · {indexStatus.queuedJobs} queued ·{' '}
+            {indexStatus.processingJobs} processing · {indexStatus.failedJobs} failed
+          </p>
+
+          {indexStatus.processingJob ? (
+            <div style={{ marginTop: '1rem' }}>
+              <p className="subtitle">Currently processing</p>
+              <JobStatusCard job={indexStatus.processingJob} />
+            </div>
+          ) : indexStatus.queuedJobs > 0 ? (
+            <p className="subtitle" style={{ marginTop: '1rem' }}>
+              Worker idle or between jobs. Next file is waiting in the queue.
+            </p>
+          ) : (
+            <p className="subtitle" style={{ marginTop: '1rem' }}>
+              No files are being processed right now.
+            </p>
+          )}
+
+          {indexStatus.activeJobs.length > 1 ? (
+            <div style={{ marginTop: '1rem' }}>
+              <p className="subtitle">Waiting or running jobs</p>
+              {indexStatus.activeJobs
+                .filter((job) => job.id !== indexStatus.processingJob?.id)
+                .map((job) => (
+                  <JobStatusCard key={job.id} job={job} />
+                ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <form className="settings-form-card" onSubmit={(event) => void handleFilterSubmit(event)}>
         <label className="form-field">
           <span>Scope</span>
           <select value={scope} onChange={(event) => setScope(event.target.value)}>
@@ -160,19 +351,26 @@ export function RagChunksPage() {
           />
         </label>
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Loading...' : 'Apply filters'}
+          <button type="submit" className="btn btn-primary" disabled={chunksLoading || statusLoading}>
+            {chunksLoading || statusLoading ? 'Loading...' : 'Apply filters'}
           </button>
         </div>
       </form>
 
       {result ? (
         <div className="notice-card">
-          <p>
-            Showing {pageStart}-{pageEnd} of {total} indexed chunks.
-          </p>
+          <div className="rag-index-status-header">
+            <p>
+              Showing {pageStart}-{pageEnd} of {total} indexed chunks.
+            </p>
+            {chunksRefreshing ? <span className="subtitle">Updating chunks...</span> : null}
+          </div>
           {result.items.length === 0 ? (
-            <p>No chunks found for the current filters.</p>
+            <p>
+              {hasActiveWork
+                ? 'No chunks match these filters yet. Files may still be processing.'
+                : 'No chunks found for the current filters.'}
+            </p>
           ) : (
             result.items.map((chunk) => (
               <article key={chunk.id} className="knowledge-card" style={{ marginTop: '1rem' }}>
@@ -197,7 +395,7 @@ export function RagChunksPage() {
             <button
               type="button"
               className="btn btn-secondary"
-              disabled={loading || offset === 0}
+              disabled={chunksLoading || offset === 0}
               onClick={() => {
                 const nextOffset = Math.max(0, offset - PAGE_SIZE);
                 setOffset(nextOffset);
@@ -209,7 +407,7 @@ export function RagChunksPage() {
             <button
               type="button"
               className="btn btn-secondary"
-              disabled={loading || offset + PAGE_SIZE >= total}
+              disabled={chunksLoading || offset + PAGE_SIZE >= total}
               onClick={() => {
                 const nextOffset = offset + PAGE_SIZE;
                 setOffset(nextOffset);

@@ -62,6 +62,40 @@ export interface RagTokenEstimate {
   estimatedTotalTokens: number;
 }
 
+export interface RagIndexJob {
+  id: string;
+  jobType: string;
+  knowledgeEntryId: string | null;
+  attachmentId: string | null;
+  status: string;
+  attempts: number;
+  lastError: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  lockedAt: string | null;
+  lockedBy: string | null;
+  pipelineStep: number;
+  pipelineSteps: string[];
+  queuePosition: number | null;
+  chunkCount: number;
+  sourceFilename: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  entryTitle: string | null;
+  scope: string | null;
+}
+
+export interface RagIndexStatus {
+  totalChunks: number;
+  queuedJobs: number;
+  processingJobs: number;
+  failedJobs: number;
+  lastReconcileAt: string | null;
+  activeJobs: RagIndexJob[];
+  processingJob: RagIndexJob | null;
+  recentJobs: RagIndexJob[];
+}
+
 export interface RagIndexedChunk {
   id: string;
   scope: string;

@@ -2,6 +2,8 @@ import { apiRequest } from './client';
 import type {
   RagChunkListInput,
   RagChunkListResult,
+  RagIndexJob,
+  RagIndexStatus,
   RagProjectRetrieveInput,
   RagRetrievalResult,
   RagRetrieveInput,
@@ -41,16 +43,12 @@ export function syncRagIndex(): Promise<{ queuedJobs: number }> {
   });
 }
 
-export function fetchRagJobs(): Promise<
-  Array<{
-    id: string;
-    jobType: string;
-    status: string;
-    attempts: number;
-    lastError: string | null;
-  }>
-> {
-  return apiRequest('/rag/index/jobs');
+export function fetchRagJobs(): Promise<RagIndexJob[]> {
+  return apiRequest<RagIndexJob[]>('/rag/index/jobs');
+}
+
+export function fetchRagIndexStatus(): Promise<RagIndexStatus> {
+  return apiRequest<RagIndexStatus>('/rag/index/status');
 }
 
 function buildChunkQuery(input: RagChunkListInput): string {
