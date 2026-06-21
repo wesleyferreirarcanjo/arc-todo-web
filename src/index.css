@@ -1887,7 +1887,7 @@ textarea {
   position: absolute;
   top: 0.65rem;
   right: 0.65rem;
-  z-index: 10;
+  z-index: 15;
   display: flex;
   align-items: center;
   gap: 0.1rem;
@@ -1955,6 +1955,7 @@ textarea {
 
 .task-action-menu {
   position: relative;
+  z-index: 1;
 }
 
 .task-menu-trigger {
@@ -1989,7 +1990,7 @@ textarea {
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
-  z-index: 13;
+  z-index: 20;
   min-width: 9.75rem;
   padding: 0.35rem;
   border: 1px solid var(--border-strong);
