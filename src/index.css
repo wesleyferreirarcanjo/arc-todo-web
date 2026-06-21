@@ -2515,9 +2515,10 @@ textarea {
 
 .chat-widget-root.is-open {
   right: 0;
-  bottom: 0;
-  flex-direction: column-reverse;
-  align-items: flex-start;
+  top: 1.25rem;
+  bottom: auto;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 0.85rem;
   padding: 0;
 }
@@ -3151,7 +3152,8 @@ textarea {
 
   .chat-widget-root.is-open {
     right: 0;
-    bottom: 0;
+    top: 0.85rem;
+    bottom: auto;
     gap: 0.65rem;
     padding: 0;
   }

@@ -125,11 +125,12 @@ function ChatLauncherButton({
       onClick={onToggle}
       variants={chatWidgetFabVariants}
       initial="rest"
-      whileHover="hover"
-      whileTap="tap"
+      whileHover={chatOpen ? 'openHover' : 'hover'}
+      whileTap={chatOpen ? 'openTap' : 'tap'}
       animate={chatOpen ? 'open' : 'rest'}
       transition={{
         layout: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
+        scale: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
         ...fast,
       }}
     >
@@ -420,6 +421,15 @@ export function ChatWidget() {
 
   return (
     <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
+      <ChatLauncherButton
+        chatOpen={chatOpen}
+        panelId={panelId}
+        reducedMotion={reducedMotion}
+        fast={fast}
+        fabIconTransition={fabIconTransition}
+        onToggle={() => setChatOpen(!chatOpen)}
+      />
+
       <AnimatePresence>
         {chatOpen ? (
           <motion.section
@@ -567,15 +577,6 @@ export function ChatWidget() {
           </motion.section>
         ) : null}
       </AnimatePresence>
-
-      <ChatLauncherButton
-        chatOpen={chatOpen}
-        panelId={panelId}
-        reducedMotion={reducedMotion}
-        fast={fast}
-        fabIconTransition={fabIconTransition}
-        onToggle={() => setChatOpen(!chatOpen)}
-      />
     </div>
   );
 }
