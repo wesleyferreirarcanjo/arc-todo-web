@@ -16,7 +16,6 @@ import {
   chatMessageVariants,
   chatPanelSpringTransition,
   chatPanelVariants,
-  chatWidgetFabVariants,
 } from '../lib/motion/variants';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
 
@@ -101,7 +100,6 @@ interface ChatLauncherButtonProps {
   chatOpen: boolean;
   panelId: string;
   reducedMotion: boolean | null;
-  fast: ReturnType<typeof useMotionTransition>['fast'];
   fabIconTransition: ReturnType<typeof useMotionTransition>['fast'] | object;
   onToggle: () => void;
 }
@@ -110,29 +108,30 @@ function ChatLauncherButton({
   chatOpen,
   panelId,
   reducedMotion,
-  fast,
   fabIconTransition,
   onToggle,
 }: ChatLauncherButtonProps) {
+  const fabTransition = reducedMotion ? { duration: 0 } : chatPanelSpringTransition;
+
   return (
     <motion.button
       type="button"
-      layout
       className="chat-widget-fab"
       aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
       aria-expanded={chatOpen}
       aria-controls={panelId}
       onClick={onToggle}
-      variants={chatWidgetFabVariants}
-      initial="rest"
-      whileHover={chatOpen ? 'openHover' : 'hover'}
-      whileTap={chatOpen ? 'openTap' : 'tap'}
-      animate={chatOpen ? 'open' : 'rest'}
-      transition={{
-        layout: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
-        scale: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
-        ...fast,
+      animate={{
+        top: chatOpen
+          ? 'var(--chat-fab-offset)'
+          : 'calc(100dvh - var(--chat-fab-offset) - 3.5rem)',
+        right: 'var(--chat-fab-offset)',
+        scale: chatOpen ? 0.8 : 1.2,
       }}
+      initial={false}
+      whileHover={{ scale: chatOpen ? 0.85 : 1.26 }}
+      whileTap={{ scale: chatOpen ? 0.76 : 1.13 }}
+      transition={fabTransition}
     >
       <AnimatePresence mode="wait" initial={false}>
         {chatOpen ? (
@@ -420,19 +419,11 @@ export function ChatWidget() {
   }
 
   return (
-    <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
-      <ChatLauncherButton
-        chatOpen={chatOpen}
-        panelId={panelId}
-        reducedMotion={reducedMotion}
-        fast={fast}
-        fabIconTransition={fabIconTransition}
-        onToggle={() => setChatOpen(!chatOpen)}
-      />
-
-      <AnimatePresence>
-        {chatOpen ? (
-          <motion.section
+    <>
+      <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
+        <AnimatePresence>
+          {chatOpen ? (
+            <motion.section
               key="chat-panel"
               id={panelId}
               className="chat-widget-panel"
@@ -577,6 +568,15 @@ export function ChatWidget() {
           </motion.section>
         ) : null}
       </AnimatePresence>
-    </div>
+      </div>
+
+      <ChatLauncherButton
+        chatOpen={chatOpen}
+        panelId={panelId}
+        reducedMotion={reducedMotion}
+        fabIconTransition={fabIconTransition}
+        onToggle={() => setChatOpen(!chatOpen)}
+      />
+    </>
   );
 }

@@ -2515,11 +2515,8 @@ textarea {
 
 .chat-widget-root.is-open {
   right: 0;
-  top: 1.25rem;
-  bottom: auto;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.85rem;
+  bottom: 0;
+  top: auto;
   padding: 0;
 }
 
@@ -2528,12 +2525,16 @@ textarea {
 }
 
 .chat-widget-fab {
+  --chat-fab-offset: 1.25rem;
+  position: fixed;
+  z-index: 951;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   width: 3.5rem;
   height: 3.5rem;
+  margin: 0;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border-strong));
   border-radius: var(--radius-pill);
   background: var(--gradient-accent);
@@ -3150,11 +3151,14 @@ textarea {
     bottom: 0.85rem;
   }
 
+  .chat-widget-fab {
+    --chat-fab-offset: 0.85rem;
+  }
+
   .chat-widget-root.is-open {
     right: 0;
-    top: 0.85rem;
-    bottom: auto;
-    gap: 0.65rem;
+    bottom: 0;
+    top: auto;
     padding: 0;
   }
 

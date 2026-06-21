@@ -59,9 +59,9 @@ export const chatMessageVariants: Variants = {
 };
 
 export const chatWidgetFabVariants: Variants = {
-  rest: { scale: 1 },
-  hover: { scale: 1.06 },
-  tap: { scale: 0.94 },
+  rest: { scale: 1.2 },
+  hover: { scale: 1.26 },
+  tap: { scale: 1.13 },
   open: { scale: 0.8 },
   openHover: { scale: 0.85 },
   openTap: { scale: 0.76 },
