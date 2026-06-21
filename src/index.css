@@ -1337,24 +1337,42 @@ textarea {
 }
 
 .task-context-badges {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 0.5rem;
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
+  gap: 0.35rem;
   margin-bottom: 0.65rem;
-  padding-right: 7.25rem;
+  padding-right: 6.85rem;
 }
 
 .task-context-badges-main {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
   min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.task-context-badges .task-badge,
+.task-context-badges .criticity-badge {
+  font-size: 0.58rem;
+  padding: 0.14rem 0.42rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.task-context-badges .task-badge {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .task-context-badges .criticity-badge {
   flex-shrink: 0;
-  justify-self: end;
+  margin-left: auto;
 }
 
 .task-badge {
