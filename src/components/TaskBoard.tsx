@@ -151,7 +151,7 @@ export function TaskBoard({
                       task={item.task}
                       isSubtask
                       isDetachedSubtask
-                      parentTitle={item.parentTitle}
+                      parentDisplayId={item.parentDisplayId}
                       organizationId={organizationId}
                       projectId={projectId}
                       accentColor={accentColor}

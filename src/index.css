@@ -1711,6 +1711,25 @@ textarea {
   display: none;
 }
 
+.task-display-id {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  margin-bottom: 0.45rem;
+}
+
+.task-card.is-subtask:not(.is-detached-subtask) .task-display-id {
+  margin-bottom: 0.35rem;
+}
+
+.task-context-badges-main .task-display-id {
+  margin-bottom: 0;
+}
+
 .task-context-badges {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

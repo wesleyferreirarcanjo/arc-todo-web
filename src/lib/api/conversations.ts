@@ -5,6 +5,7 @@ export interface TaskRef {
   organizationId: string;
   projectId: string;
   title: string;
+  displayId?: string;
 }
 
 export interface ConversationMessage {

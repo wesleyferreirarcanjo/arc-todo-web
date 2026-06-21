@@ -55,7 +55,7 @@ export type BoardColumnItem<T extends Task = Task> =
       kind: 'detached-subtask';
       task: T;
       parentId: string;
-      parentTitle: string;
+      parentDisplayId: string;
     };
 
 export function listBoardColumnItems<T extends Task>(
@@ -75,7 +75,7 @@ export function listBoardColumnItems<T extends Task>(
           kind: 'detached-subtask',
           task: subtask,
           parentId: task.id,
-          parentTitle: task.title,
+          parentDisplayId: task.displayId,
         });
       }
     }

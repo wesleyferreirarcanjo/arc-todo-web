@@ -196,7 +196,7 @@ export function UnifiedTaskBoard({
                       task={item.task}
                       isSubtask
                       isDetachedSubtask
-                      parentTitle={item.parentTitle}
+                      parentDisplayId={item.parentDisplayId}
                       organizationId={contextTask.organization.id}
                       projectId={contextTask.project.id}
                       organizationName={contextTask.organization.name}

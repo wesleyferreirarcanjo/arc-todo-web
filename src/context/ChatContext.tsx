@@ -97,6 +97,7 @@ function toTaskRef(task: TaskContextInput): TaskRef {
     organizationId: task.organization.id,
     projectId: task.project.id,
     title: task.title,
+    displayId: task.displayId,
   };
 }
 

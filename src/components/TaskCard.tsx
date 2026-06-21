@@ -166,7 +166,7 @@ interface TaskCardProps {
   subtasks?: Task[];
   isSubtask?: boolean;
   isDetachedSubtask?: boolean;
-  parentTitle?: string;
+  parentDisplayId?: string;
   organizationId?: string;
   projectId?: string;
   organizationName?: string;
@@ -215,7 +215,7 @@ export function TaskCard({
   subtasks = [],
   isSubtask = false,
   isDetachedSubtask = false,
-  parentTitle,
+  parentDisplayId,
   organizationId,
   projectId,
   organizationName,
@@ -402,6 +402,7 @@ export function TaskCard({
         name: projectName ?? '',
         organizationId: chatContextScope.organizationId,
         color: accentColor ?? '',
+        acronym: task.displayId?.slice(1, 4) ?? '',
       },
     };
   }
@@ -509,6 +510,12 @@ export function TaskCard({
         }}
         {...draggableProps}
       >
+        {task.displayId && (
+          <span className="task-display-id" title={task.displayId}>
+            {task.displayId}
+          </span>
+        )}
+
         {(!isSubtask || isDetachedSubtask) && (
           <div className="task-context-badges">
             <div className="task-context-badges-main">
@@ -537,9 +544,12 @@ export function TaskCard({
           </div>
         )}
 
-        {isDetachedSubtask && parentTitle && (
-          <p className="task-subtask-parent-chip" title={`Subtask of ${parentTitle}`}>
-            Subtask of {parentTitle}
+        {isDetachedSubtask && parentDisplayId && (
+          <p
+            className="task-subtask-parent-chip"
+            title={`Subtask of ${parentDisplayId}`}
+          >
+            Subtask of {parentDisplayId}
           </p>
         )}
 
@@ -749,7 +759,7 @@ export function TaskCard({
                 key={subtask.id}
                 task={subtask}
                 isSubtask
-                parentTitle={task.title}
+                parentDisplayId={task.displayId}
                 organizationId={organizationId}
                 projectId={projectId}
                 organizationName={organizationName}
@@ -796,7 +806,7 @@ export function TaskCard({
           projectName={projectName}
           onEdit={handleStartEdit}
           subtasks={resolvedSubtasks}
-          parentTitle={parentTitle}
+          parentDisplayId={parentDisplayId}
         />
       )}
 
@@ -992,6 +1002,11 @@ export function TaskCardOverlay({
     >
       <div className="task-context-badges">
         <div className="task-context-badges-main">
+          {task.displayId && (
+            <span className="task-display-id" title={task.displayId}>
+              {task.displayId}
+            </span>
+          )}
           {organizationName && (
             <span className="task-badge task-badge-org" title={organizationName}>
               {formatBadgeLabel(organizationName)}

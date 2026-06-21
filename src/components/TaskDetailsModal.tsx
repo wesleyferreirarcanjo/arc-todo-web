@@ -16,7 +16,7 @@ interface TaskDetailsModalProps {
   projectId: string;
   organizationName?: string;
   projectName?: string;
-  parentTitle?: string;
+  parentDisplayId?: string;
   subtasks?: Task[];
   onEdit: () => void;
 }
@@ -49,7 +49,7 @@ export function TaskDetailsModal({
   projectId,
   organizationName,
   projectName,
-  parentTitle,
+  parentDisplayId,
   subtasks = [],
   onEdit,
 }: TaskDetailsModalProps) {
@@ -192,8 +192,8 @@ export function TaskDetailsModal({
 
         <h3 className="task-details-title">{task.title}</h3>
 
-        {parentTitle && (
-          <p className="task-details-parent">Subtask of {parentTitle}</p>
+        {parentDisplayId && (
+          <p className="task-details-parent">Subtask of {parentDisplayId}</p>
         )}
 
         {task.subtaskProgress && task.subtaskProgress.total > 0 && (

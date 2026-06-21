@@ -15,6 +15,8 @@ export interface Task {
   dueDate: string | null;
   projectId: string;
   parentTaskId?: string | null;
+  taskNumber: number;
+  displayId: string;
   subtaskProgress?: SubtaskProgress | null;
   subtasks?: Task[];
   createdById?: string | null;
@@ -28,6 +30,7 @@ export interface TaskWithContext extends Task {
     name: string;
     organizationId: string;
     color: string;
+    acronym: string;
   };
   organization: {
     id: string;
