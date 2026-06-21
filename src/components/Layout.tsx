@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -115,6 +115,16 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
+function LogoutIcon() {
+  return (
+    <Icon className="sidebar-logout-icon">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </Icon>
+  );
+}
+
 const primaryNav = [
   { to: '/board', label: 'All tasks', icon: TasksIcon },
   { to: '/knowledge', label: 'Knowledge', icon: KnowledgeIcon },
@@ -125,36 +135,10 @@ const primaryNav = [
 export function Layout() {
   const { logout } = useAuth();
   const location = useLocation();
-  const headerRef = useRef<HTMLElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(getSidebarCollapsed);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const isBoardPage = location.pathname === '/board';
-
-  useLayoutEffect(() => {
-    const header = headerRef.current;
-    if (!header) {
-      return;
-    }
-
-    const syncHeaderHeight = () => {
-      document.documentElement.style.setProperty(
-        '--app-header-height',
-        `${header.offsetHeight}px`,
-      );
-    };
-
-    syncHeaderHeight();
-
-    const observer = new ResizeObserver(syncHeaderHeight);
-    observer.observe(header);
-    window.addEventListener('resize', syncHeaderHeight);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', syncHeaderHeight);
-    };
-  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -201,19 +185,6 @@ export function Layout() {
 
   return (
     <div className={`app-shell${collapsed ? ' is-sidebar-collapsed' : ''}`}>
-      <header ref={headerRef} className="app-header">
-        <div>
-          <h1>Arc Todo</h1>
-          <p className="subtitle">Organization workspace</p>
-        </div>
-        <div className="header-actions">
-          <ThemeToggle />
-          <button type="button" className="btn btn-secondary" onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </header>
-
       <div className="app-body">
         <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
           <div className="sidebar-header">
@@ -300,6 +271,18 @@ export function Layout() {
                 </NavLink>
               </div>
             )}
+
+            <ThemeToggle variant="sidebar" collapsed={collapsed} />
+            <button
+              type="button"
+              className="sidebar-footer-btn sidebar-logout-btn"
+              aria-label="Logout"
+              data-tooltip={collapsed ? 'Logout' : undefined}
+              onClick={logout}
+            >
+              <LogoutIcon />
+              {!collapsed && <span className="sidebar-nav-label">Logout</span>}
+            </button>
           </div>
         </aside>
 

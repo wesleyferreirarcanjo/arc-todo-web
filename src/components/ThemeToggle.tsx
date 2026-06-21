@@ -1,9 +1,9 @@
 import { useTheme } from '../context/ThemeContext';
 
-function SunIcon() {
+function SunIcon({ className = 'theme-icon' }: { className?: string }) {
   return (
     <svg
-      className="theme-icon"
+      className={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -18,10 +18,10 @@ function SunIcon() {
   );
 }
 
-function MoonIcon() {
+function MoonIcon({ className = 'theme-icon' }: { className?: string }) {
   return (
     <svg
-      className="theme-icon"
+      className={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -35,10 +35,31 @@ function MoonIcon() {
   );
 }
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  variant?: 'header' | 'sidebar';
+  collapsed?: boolean;
+}
+
+export function ThemeToggle({ variant = 'header', collapsed = false }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  const sidebarLabel = isDark ? 'Light mode' : 'Dark mode';
+
+  if (variant === 'sidebar') {
+    return (
+      <button
+        type="button"
+        className="sidebar-footer-btn"
+        onClick={toggleTheme}
+        aria-label={label}
+        data-tooltip={collapsed ? sidebarLabel : undefined}
+      >
+        {isDark ? <SunIcon className="sidebar-nav-icon" /> : <MoonIcon className="sidebar-nav-icon" />}
+        {!collapsed && <span className="sidebar-nav-label">{sidebarLabel}</span>}
+      </button>
+    );
+  }
 
   return (
     <button
