@@ -18,6 +18,10 @@ function formatDueDateForInput(dueDate: string | null): string {
   return new Date(dueDate).toISOString().slice(0, 10);
 }
 
+function formatBadgeLabel(label: string): string {
+  return label.length > 15 ? `${label.slice(0, 15)}...` : label;
+}
+
 function MoreVerticalIcon() {
   return (
     <svg
@@ -411,18 +415,21 @@ export function TaskCard({
         <div className="task-context-badges">
           <div className="task-context-badges-main">
             {organizationName && (
-              <span className="task-badge task-badge-org">{organizationName}</span>
+              <span className="task-badge task-badge-org" title={organizationName}>
+                {formatBadgeLabel(organizationName)}
+              </span>
             )}
             {projectName && (
               <span
                 className="task-badge task-badge-project"
+                title={projectName}
                 style={
                   accentColor
                     ? ({ '--entity-accent': accentColor } as CSSProperties)
                     : undefined
                 }
               >
-                {projectName}
+                {formatBadgeLabel(projectName)}
               </span>
             )}
           </div>
@@ -654,18 +661,21 @@ export function TaskCardOverlay({
       <div className="task-context-badges">
         <div className="task-context-badges-main">
           {organizationName && (
-            <span className="task-badge task-badge-org">{organizationName}</span>
+            <span className="task-badge task-badge-org" title={organizationName}>
+              {formatBadgeLabel(organizationName)}
+            </span>
           )}
           {projectName && (
             <span
               className="task-badge task-badge-project"
+              title={projectName}
               style={
                 accentColor
                   ? ({ '--entity-accent': accentColor } as CSSProperties)
                   : undefined
               }
             >
-              {projectName}
+              {formatBadgeLabel(projectName)}
             </span>
           )}
         </div>

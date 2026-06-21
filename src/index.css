@@ -1147,7 +1147,7 @@ textarea {
 
 .task-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 1.25rem;
 }
 
@@ -1342,7 +1342,8 @@ textarea {
   align-items: center;
   gap: 0.35rem;
   margin-bottom: 0.65rem;
-  padding-right: 6.85rem;
+  padding-right: 6rem;
+  overflow: hidden;
 }
 
 .task-context-badges-main {
@@ -1357,17 +1358,14 @@ textarea {
 
 .task-context-badges .task-badge,
 .task-context-badges .criticity-badge {
-  font-size: 0.58rem;
-  padding: 0.14rem 0.42rem;
-  letter-spacing: 0.04em;
+  font-size: 0.62rem;
+  padding: 0.18rem 0.48rem;
+  letter-spacing: 0.05em;
   white-space: nowrap;
 }
 
 .task-context-badges .task-badge {
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .task-context-badges .criticity-badge {
