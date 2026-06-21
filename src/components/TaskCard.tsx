@@ -409,21 +409,23 @@ export function TaskCard({
         {...draggableProps}
       >
         <div className="task-context-badges">
-          {organizationName && (
-            <span className="task-badge task-badge-org">{organizationName}</span>
-          )}
-          {projectName && (
-            <span
-              className="task-badge task-badge-project"
-              style={
-                accentColor
-                  ? ({ '--entity-accent': accentColor } as CSSProperties)
-                  : undefined
-              }
-            >
-              {projectName}
-            </span>
-          )}
+          <div className="task-context-badges-main">
+            {organizationName && (
+              <span className="task-badge task-badge-org">{organizationName}</span>
+            )}
+            {projectName && (
+              <span
+                className="task-badge task-badge-project"
+                style={
+                  accentColor
+                    ? ({ '--entity-accent': accentColor } as CSSProperties)
+                    : undefined
+                }
+              >
+                {projectName}
+              </span>
+            )}
+          </div>
           <span className={`criticity-badge criticity-${task.criticity}`}>
             {task.criticity}
           </span>
@@ -650,21 +652,23 @@ export function TaskCardOverlay({
       style={cardStyle}
     >
       <div className="task-context-badges">
-        {organizationName && (
-          <span className="task-badge task-badge-org">{organizationName}</span>
-        )}
-        {projectName && (
-          <span
-            className="task-badge task-badge-project"
-            style={
-              accentColor
-                ? ({ '--entity-accent': accentColor } as CSSProperties)
-                : undefined
-            }
-          >
-            {projectName}
-          </span>
-        )}
+        <div className="task-context-badges-main">
+          {organizationName && (
+            <span className="task-badge task-badge-org">{organizationName}</span>
+          )}
+          {projectName && (
+            <span
+              className="task-badge task-badge-project"
+              style={
+                accentColor
+                  ? ({ '--entity-accent': accentColor } as CSSProperties)
+                  : undefined
+              }
+            >
+              {projectName}
+            </span>
+          )}
+        </div>
         <span className={`criticity-badge criticity-${task.criticity}`}>
           {task.criticity}
         </span>

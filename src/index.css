@@ -1337,16 +1337,24 @@ textarea {
 }
 
 .task-context-badges {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  padding-right: 7.25rem;
+}
+
+.task-context-badges-main {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 0.4rem;
-  margin-bottom: 0.65rem;
-  padding-right: 6.75rem;
+  min-width: 0;
 }
 
 .task-context-badges .criticity-badge {
-  margin-left: auto;
+  flex-shrink: 0;
+  justify-self: end;
 }
 
 .task-badge {
