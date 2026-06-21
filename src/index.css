@@ -433,6 +433,9 @@ textarea:focus-visible {
 }
 
 .sidebar-logout-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
   color: var(--danger-text);
 }
 
