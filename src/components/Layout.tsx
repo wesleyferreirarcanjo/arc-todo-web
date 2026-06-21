@@ -100,7 +100,17 @@ function McpIcon() {
 function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
     <Icon className="sidebar-toggle-icon">
-      {expanded ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
+      {expanded ? (
+        <>
+          <path d="M15 18l-6-6 6-6" />
+          <path d="M3 6v12" />
+        </>
+      ) : (
+        <>
+          <path d="M9 18l6-6-6-6" />
+          <path d="M21 6v12" />
+        </>
+      )}
     </Icon>
   );
 }
@@ -206,23 +216,27 @@ export function Layout() {
 
       <div className="app-body">
         <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
-          <button
-            type="button"
-            className="sidebar-toggle"
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            onClick={toggleSidebar}
-          >
-            <ChevronIcon expanded={!collapsed} />
-          </button>
+          <div className="sidebar-header">
+            {!collapsed && <span className="sidebar-header-label">Navigation</span>}
+            <button
+              type="button"
+              className={`sidebar-toggle${collapsed ? ' is-collapsed' : ' is-expanded'}`}
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              data-tooltip={collapsed ? 'Expand sidebar' : undefined}
+              onClick={toggleSidebar}
+            >
+              <ChevronIcon expanded={!collapsed} />
+            </button>
+          </div>
 
           <nav className="sidebar-primary-nav" aria-label="Main navigation">
             {primaryNav.map(({ to, label, icon: NavIcon, ...rest }) => (
               <NavLink
                 key={to}
                 to={to}
-                title={label}
                 aria-label={label}
+                data-tooltip={collapsed ? label : undefined}
                 className={({ isActive }) =>
                   isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
                 }
@@ -248,7 +262,7 @@ export function Layout() {
               aria-expanded={settingsOpen}
               aria-haspopup="menu"
               aria-label="Settings"
-              title="Settings"
+              data-tooltip={collapsed ? 'Settings' : undefined}
               onClick={() => setSettingsOpen((open) => !open)}
             >
               <ConfigIcon />
