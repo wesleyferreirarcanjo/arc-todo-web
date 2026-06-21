@@ -1147,9 +1147,10 @@ textarea {
 
 .task-board {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: stretch;
   gap: 1.25rem;
+  width: 100%;
 }
 
 .board-column {
@@ -1163,33 +1164,27 @@ textarea {
   overflow: hidden;
   box-shadow: var(--shadow-card);
   transform-origin: center top;
-  flex: 0 0 min(100%, 28rem);
-  max-width: min(100%, 28rem);
+  flex: 1 1 0;
   min-width: 0;
   cursor: pointer;
   transition:
-    flex-basis var(--transition-base),
-    max-width var(--transition-base),
+    flex-grow var(--transition-base),
     border-color var(--transition-base),
     box-shadow var(--transition-base);
 }
 
 .board-column.is-focused {
-  flex: 1 1 min(100%, 48.75rem);
-  max-width: min(100%, 48.75rem);
-  min-width: min(100%, 36rem);
+  flex: 2.4 1 0;
   border-color: var(--border-strong);
   box-shadow: var(--shadow-lift);
 }
 
 .board-column.is-compact:not(.is-focused) {
-  flex: 0 0 min(100%, 28rem);
-  max-width: min(100%, 28rem);
+  flex: 1 1 0;
 }
 
 .board-column.is-empty:not(.is-focused) {
-  flex: 0 0 min(100%, 22rem);
-  max-width: min(100%, 22rem);
+  flex: 0.75 1 0;
 }
 
 .board-column:focus-visible {
@@ -2798,6 +2793,10 @@ textarea {
 
   .board-filters {
     padding: 0.85rem;
+  }
+
+  .task-board {
+    flex-wrap: wrap;
   }
 
   .board-column,
