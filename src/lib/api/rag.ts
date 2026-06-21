@@ -1,5 +1,7 @@
 import { apiRequest } from './client';
 import type {
+  RagChunkListInput,
+  RagChunkListResult,
   RagProjectRetrieveInput,
   RagRetrievalResult,
   RagRetrieveInput,
@@ -49,4 +51,23 @@ export function fetchRagJobs(): Promise<
   }>
 > {
   return apiRequest('/rag/index/jobs');
+}
+
+function buildChunkQuery(input: RagChunkListInput): string {
+  const params = new URLSearchParams();
+  if (input.limit !== undefined) params.set('limit', String(input.limit));
+  if (input.offset !== undefined) params.set('offset', String(input.offset));
+  if (input.scope) params.set('scope', input.scope);
+  if (input.organizationId) params.set('organizationId', input.organizationId);
+  if (input.projectId) params.set('projectId', input.projectId);
+  if (input.personId) params.set('personId', input.personId);
+  if (input.knowledgeEntryId) params.set('knowledgeEntryId', input.knowledgeEntryId);
+  if (input.attachmentId) params.set('attachmentId', input.attachmentId);
+  if (input.mimeType) params.set('mimeType', input.mimeType);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+export function fetchRagChunks(input: RagChunkListInput = {}): Promise<RagChunkListResult> {
+  return apiRequest<RagChunkListResult>(`/rag/chunks${buildChunkQuery(input)}`);
 }

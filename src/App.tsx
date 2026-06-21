@@ -11,6 +11,7 @@ import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
 import { LoginPage } from './pages/LoginPage';
 import { McpToolsSettingsPage } from './pages/McpToolsSettingsPage';
+import { RagChunksPage } from './pages/RagChunksPage';
 import { RagSettingsPage } from './pages/RagSettingsPage';
 import { RagTestingPage } from './pages/RagTestingPage';
 import { RagTokenPage } from './pages/RagTokenPage';
@@ -61,6 +62,10 @@ export default function App() {
                 <Route
                   path="/settings/rag/tokens"
                   element={<RagTokenPage />}
+                />
+                <Route
+                  path="/settings/rag/chunks"
+                  element={<RagChunksPage />}
                 />
                 <Route
                   path="/settings/rag/testing"

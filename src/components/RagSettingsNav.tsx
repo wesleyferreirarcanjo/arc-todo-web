@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 const ragTabs = [
   { to: '/settings/rag/settings', label: 'Settings' },
   { to: '/settings/rag/tokens', label: 'Tokens' },
+  { to: '/settings/rag/chunks', label: 'Chunks' },
   { to: '/settings/rag/testing', label: 'Testing' },
 ] as const;
 

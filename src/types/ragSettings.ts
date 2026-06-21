@@ -62,6 +62,43 @@ export interface RagTokenEstimate {
   estimatedTotalTokens: number;
 }
 
+export interface RagIndexedChunk {
+  id: string;
+  scope: string;
+  organizationId: string | null;
+  projectId: string | null;
+  personId: string | null;
+  knowledgeEntryId: string;
+  attachmentId: string | null;
+  chunkIndex: number;
+  title: string;
+  sourceFilename: string | null;
+  mimeType: string | null;
+  text: string;
+  tokenCount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface RagChunkListResult {
+  items: RagIndexedChunk[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface RagChunkListInput {
+  limit?: number;
+  offset?: number;
+  scope?: string;
+  organizationId?: string;
+  projectId?: string;
+  personId?: string;
+  knowledgeEntryId?: string;
+  attachmentId?: string;
+  mimeType?: string;
+}
+
 export interface RagRetrievedChunk {
   id: string;
   scope: string;
