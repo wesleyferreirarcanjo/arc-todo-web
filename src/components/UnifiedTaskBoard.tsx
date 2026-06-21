@@ -8,7 +8,7 @@ import type {
   TaskWithContext,
 } from '../types/todo';
 import { getProjectColor } from '../lib/color/entityColor';
-import { attachSubtasks } from '../lib/tasks/taskTree';
+import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
 import { BoardColumn } from './BoardColumn';
@@ -132,9 +132,7 @@ export function UnifiedTaskBoard({
           className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}
         >
         {columns.map((column) => {
-          const columnTasks = boardTasks.filter(
-            (task) => task.status === column.status,
-          );
+          const columnItems = listBoardColumnItems(boardTasks, column.status);
           const isFocused = focusMode && focusedStatus === column.status;
           const isCompact = focusMode && !isFocused;
 
@@ -143,45 +141,82 @@ export function UnifiedTaskBoard({
               key={column.status}
               status={column.status}
               title={column.title}
-              taskCount={columnTasks.length}
+              taskCount={columnItems.length}
               isDropTarget={overColumnStatus === column.status}
               isFocused={isFocused}
               isCompact={isCompact}
               focusEnabled={focusMode}
               onFocus={() => setFocusedStatus(column.status)}
             >
-              {columnTasks.length === 0 ? (
+              {columnItems.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
               ) : (
-                columnTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    subtasks={task.subtasks}
-                    organizationId={task.organization.id}
-                    projectId={task.project.id}
-                    organizationName={task.organization.name}
-                    projectName={task.project.name}
-                    accentColor={getProjectColor(task.project)}
-                    compact={isCompact}
-                    draggable
-                    isDragging={activeTaskId === task.id}
-                    draggingTaskId={activeTaskId ?? undefined}
-                    onUpdate={(_id, input) => onUpdate(task, input)}
-                    onDelete={() => onDelete(task)}
-                    onCreateSubtask={
-                      onCreateSubtask
-                        ? (_parentId, input) => onCreateSubtask(task, input)
-                        : undefined
-                    }
-                    onSetParent={
-                      onSetParent
-                        ? (_taskId, parentId) => onSetParent(task, parentId)
-                        : undefined
-                    }
-                    parentCandidates={tasks}
-                  />
-                ))
+                columnItems.map((item) => {
+                  if (item.kind === 'parent') {
+                    const task = item.task;
+                    return (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        subtasks={task.subtasks}
+                        organizationId={task.organization.id}
+                        projectId={task.project.id}
+                        organizationName={task.organization.name}
+                        projectName={task.project.name}
+                        accentColor={getProjectColor(task.project)}
+                        compact={isCompact}
+                        draggable
+                        isDragging={activeTaskId === task.id}
+                        draggingTaskId={activeTaskId ?? undefined}
+                        onUpdate={(_id, input) => onUpdate(task, input)}
+                        onDelete={() => onDelete(task)}
+                        onCreateSubtask={
+                          onCreateSubtask
+                            ? (_parentId, input) => onCreateSubtask(task, input)
+                            : undefined
+                        }
+                        onSetParent={
+                          onSetParent
+                            ? (_taskId, parentId) => onSetParent(task, parentId)
+                            : undefined
+                        }
+                        parentCandidates={tasks}
+                      />
+                    );
+                  }
+
+                  const contextTask = taskById.get(item.task.id);
+                  if (!contextTask) {
+                    return null;
+                  }
+
+                  return (
+                    <TaskCard
+                      key={item.task.id}
+                      task={item.task}
+                      isSubtask
+                      isDetachedSubtask
+                      parentTitle={item.parentTitle}
+                      organizationId={contextTask.organization.id}
+                      projectId={contextTask.project.id}
+                      organizationName={contextTask.organization.name}
+                      projectName={contextTask.project.name}
+                      accentColor={getProjectColor(contextTask.project)}
+                      compact={isCompact}
+                      draggable
+                      isDragging={activeTaskId === item.task.id}
+                      draggingTaskId={activeTaskId ?? undefined}
+                      onUpdate={(_id, input) => onUpdate(contextTask, input)}
+                      onDelete={() => onDelete(contextTask)}
+                      onSetParent={
+                        onSetParent
+                          ? (_taskId, parentId) => onSetParent(contextTask, parentId)
+                          : undefined
+                      }
+                      parentCandidates={tasks}
+                    />
+                  );
+                })
               )}
             </BoardColumn>
           );

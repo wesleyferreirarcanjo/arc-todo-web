@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import type { CreateTaskInput, Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
-import { mergeSubtaskProgress, listParentCandidates } from '../lib/tasks/taskTree';
+import { mergeSubtaskProgress, listParentCandidates, splitSubtasksByParentStatus } from '../lib/tasks/taskTree';
 import { useChat } from '../context/ChatContext';
 import { copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -118,6 +118,7 @@ interface TaskCardProps {
   task: Task;
   subtasks?: Task[];
   isSubtask?: boolean;
+  isDetachedSubtask?: boolean;
   parentTitle?: string;
   organizationId?: string;
   projectId?: string;
@@ -176,6 +177,7 @@ export function TaskCard({
   task,
   subtasks = [],
   isSubtask = false,
+  isDetachedSubtask = false,
   parentTitle,
   organizationId,
   projectId,
@@ -425,6 +427,9 @@ export function TaskCard({
   const subtaskProgress = mergeSubtaskProgress(task.subtaskProgress);
   const resolvedSubtasks =
     subtasks.length > 0 ? subtasks : (task.subtasks ?? []);
+  const { nested: nestedSubtasks, detached: detachedSubtasks } =
+    splitSubtasksByParentStatus(task.status, resolvedSubtasks);
+  const detachedSubtaskCount = detachedSubtasks.length;
   const availableParents = listParentCandidates(
     parentCandidates,
     task.id,
@@ -441,13 +446,14 @@ export function TaskCard({
     : dragStyle;
 
   const showAsDragging = isDragging || isDndDragging;
+  const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
 
   return (
     <>
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${!isSubtask && chatContextTask ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${resolvedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
@@ -466,7 +472,7 @@ export function TaskCard({
         }}
         {...draggableProps}
       >
-        {!isSubtask && (
+        {(!isSubtask || isDetachedSubtask) && (
           <div className="task-context-badges">
             <div className="task-context-badges-main">
               {organizationName && (
@@ -492,6 +498,12 @@ export function TaskCard({
               {task.criticity}
             </span>
           </div>
+        )}
+
+        {isDetachedSubtask && parentTitle && (
+          <p className="task-subtask-parent-chip" title={`Subtask of ${parentTitle}`}>
+            Subtask of {parentTitle}
+          </p>
         )}
 
         <div
@@ -635,19 +647,30 @@ export function TaskCard({
                 {subtaskProgress.done}/{subtaskProgress.total} done
               </span>
             )}
+            {detachedSubtaskCount > 0 && (
+              <span
+                className="task-subtask-elsewhere-badge"
+                title={`${detachedSubtaskCount} subtask${detachedSubtaskCount === 1 ? '' : 's'} in other columns`}
+              >
+                {detachedSubtaskCount} elsewhere
+              </span>
+            )}
           </div>
 
           {!isSubtask && compact && resolvedSubtasks.length > 0 && (
             <p className="task-subtask-summary">
               {resolvedSubtasks.length} subtask{resolvedSubtasks.length === 1 ? '' : 's'}
+              {detachedSubtaskCount > 0
+                ? ` · ${detachedSubtaskCount} elsewhere`
+                : ''}
             </p>
           )}
 
-          {task.description && !compact && (
+          {task.description && !compact && (isDetachedSubtask || !isSubtask) && (
             <p className="task-description">{task.description}</p>
           )}
 
-          {!compact && !isSubtask && (
+          {!compact && (!isSubtask || isDetachedSubtask) && (
             <div className="task-meta">
               {task.dueDate && (
                 <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
@@ -656,7 +679,7 @@ export function TaskCard({
           )}
         </motion.div>
 
-        {!compact && !isSubtask && (
+        {!compact && (!isSubtask || isDetachedSubtask) && (
           <button
             type="button"
             className="task-card-action-btn task-card-copy-btn"
@@ -674,15 +697,15 @@ export function TaskCard({
           </button>
         )}
 
-        {!isSubtask && chatContextTask ? (
+        {(!isSubtask || isDetachedSubtask) && chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">
             Ctrl+click insert reference · Shift+click remove
           </span>
         ) : null}
 
-        {!isSubtask && !compact && resolvedSubtasks.length > 0 && (
+        {!compact && !isSubtask && nestedSubtasks.length > 0 && (
           <div className="task-subtasks" onPointerDown={stopCardPointer} onClick={stopCardPointer}>
-            {resolvedSubtasks.map((subtask) => (
+            {nestedSubtasks.map((subtask) => (
               <TaskCard
                 key={subtask.id}
                 task={subtask}

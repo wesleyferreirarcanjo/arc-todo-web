@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { CreateTaskInput, Task, TaskCriticity, TaskStatus } from '../types/todo';
-import { attachSubtasks } from '../lib/tasks/taskTree';
+import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
 import { BoardColumn } from './BoardColumn';
@@ -99,9 +99,7 @@ export function TaskBoard({
       >
         <div className="task-board">
         {columns.map((column) => {
-          const columnTasks = boardTasks.filter(
-            (task) => task.status === column.status,
-          );
+          const columnItems = listBoardColumnItems(boardTasks, column.status);
           const isFocused = focusedStatus === column.status;
 
           return (
@@ -109,39 +107,70 @@ export function TaskBoard({
               key={column.status}
               status={column.status}
               title={column.title}
-              taskCount={columnTasks.length}
+              taskCount={columnItems.length}
               isDropTarget={overColumnStatus === column.status}
               isFocused={isFocused}
               isCompact={!isFocused}
               onFocus={() => setFocusedStatus(column.status)}
             >
-              {columnTasks.length === 0 ? (
+              {columnItems.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
               ) : (
-                columnTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    subtasks={task.subtasks}
-                    organizationId={organizationId}
-                    projectId={projectId}
-                    accentColor={accentColor}
-                    compact={!isFocused}
-                    draggable
-                    isDragging={activeTaskId === task.id}
-                    draggingTaskId={activeTaskId ?? undefined}
-                    chatContextScope={
-                      organizationId && projectId
-                        ? { organizationId, projectId }
-                        : undefined
-                    }
-                    onUpdate={onUpdate}
-                    onDelete={onDelete}
-                    onCreateSubtask={onCreateSubtask}
-                    onSetParent={onSetParent}
-                    parentCandidates={tasks}
-                  />
-                ))
+                columnItems.map((item) => {
+                  if (item.kind === 'parent') {
+                    const task = item.task;
+                    return (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        subtasks={task.subtasks}
+                        organizationId={organizationId}
+                        projectId={projectId}
+                        accentColor={accentColor}
+                        compact={!isFocused}
+                        draggable
+                        isDragging={activeTaskId === task.id}
+                        draggingTaskId={activeTaskId ?? undefined}
+                        chatContextScope={
+                          organizationId && projectId
+                            ? { organizationId, projectId }
+                            : undefined
+                        }
+                        onUpdate={onUpdate}
+                        onDelete={onDelete}
+                        onCreateSubtask={onCreateSubtask}
+                        onSetParent={onSetParent}
+                        parentCandidates={tasks}
+                      />
+                    );
+                  }
+
+                  return (
+                    <TaskCard
+                      key={item.task.id}
+                      task={item.task}
+                      isSubtask
+                      isDetachedSubtask
+                      parentTitle={item.parentTitle}
+                      organizationId={organizationId}
+                      projectId={projectId}
+                      accentColor={accentColor}
+                      compact={!isFocused}
+                      draggable
+                      isDragging={activeTaskId === item.task.id}
+                      draggingTaskId={activeTaskId ?? undefined}
+                      chatContextScope={
+                        organizationId && projectId
+                          ? { organizationId, projectId }
+                          : undefined
+                      }
+                      onUpdate={onUpdate}
+                      onDelete={onDelete}
+                      onSetParent={onSetParent}
+                      parentCandidates={tasks}
+                    />
+                  );
+                })
               )}
             </BoardColumn>
           );
