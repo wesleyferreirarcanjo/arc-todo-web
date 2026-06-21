@@ -1390,6 +1390,15 @@ textarea {
 .task-card.is-compact .task-context-badges {
   margin-bottom: 0.55rem;
   padding-right: 4.25rem;
+  grid-template-columns: 1fr;
+}
+
+.task-card.is-compact .task-context-badges-main {
+  display: none;
+}
+
+.task-card.is-compact .task-context-badges .criticity-badge {
+  justify-self: end;
 }
 
 .task-card.is-compact .task-card-header {
@@ -1464,10 +1473,11 @@ textarea {
   padding-right: 0.5rem;
 }
 
-.task-card-copy-btn {
+.task-card-action-btn.task-card-copy-btn {
   position: absolute;
   bottom: 0.75rem;
   right: 0.75rem;
+  left: auto;
   z-index: 10;
 }
 
