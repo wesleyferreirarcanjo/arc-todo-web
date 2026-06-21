@@ -98,6 +98,7 @@ function TypingIndicator() {
 
 interface ChatLauncherButtonProps {
   chatOpen: boolean;
+  iconOpen: boolean;
   panelId: string;
   fabIconTransition: ReturnType<typeof useMotionTransition>['fast'] | object;
   onToggle: () => void;
@@ -105,6 +106,7 @@ interface ChatLauncherButtonProps {
 
 function ChatLauncherButton({
   chatOpen,
+  iconOpen,
   panelId,
   fabIconTransition,
   onToggle,
@@ -128,7 +130,7 @@ function ChatLauncherButton({
       }}
     >
       <AnimatePresence mode="wait" initial={false}>
-        {chatOpen ? (
+        {iconOpen ? (
           <motion.span
             key="close"
             className="chat-widget-fab-content"
@@ -224,6 +226,7 @@ export function ChatWidget() {
     null,
   );
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [launcherIconOpen, setLauncherIconOpen] = useState(chatOpen);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<ChatComposerHandle>(null);
@@ -283,6 +286,15 @@ export function ChatWidget() {
       composerRef.current?.focus();
     }
   }, [chatOpen, activeConversationId]);
+
+  useEffect(() => {
+    const delayMs = reducedMotion ? 0 : 320;
+    const timeoutId = window.setTimeout(() => {
+      setLauncherIconOpen(chatOpen);
+    }, delayMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [chatOpen, reducedMotion]);
 
   useEffect(() => {
     if (!overflowOpen) {
@@ -488,6 +500,7 @@ export function ChatWidget() {
               </button>
               <ChatLauncherButton
                 chatOpen={chatOpen}
+                iconOpen={launcherIconOpen}
                 panelId={panelId}
                 fabIconTransition={fabIconTransition}
                 onToggle={() => setChatOpen(!chatOpen)}
@@ -573,6 +586,7 @@ export function ChatWidget() {
       {!chatOpen ? (
         <ChatLauncherButton
           chatOpen={chatOpen}
+          iconOpen={launcherIconOpen}
           panelId={panelId}
           fabIconTransition={fabIconTransition}
           onToggle={() => setChatOpen(!chatOpen)}
