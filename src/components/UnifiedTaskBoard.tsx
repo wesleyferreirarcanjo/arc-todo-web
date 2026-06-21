@@ -163,6 +163,8 @@ export function UnifiedTaskBoard({
                             <TaskCard
                               key={task.id}
                               task={task}
+                              organizationId={task.organization.id}
+                              projectId={task.project.id}
                               organizationName={task.organization.name}
                               projectName={task.project.name}
                               accentColor={projectGroup.projectColor}

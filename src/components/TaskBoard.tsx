@@ -94,6 +94,8 @@ export function TaskBoard({
                   <TaskCard
                     key={task.id}
                     task={task}
+                    organizationId={organizationId}
+                    projectId={projectId}
                     accentColor={accentColor}
                     draggable
                     isDragging={activeTaskId === task.id}

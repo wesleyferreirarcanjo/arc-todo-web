@@ -1,8 +1,11 @@
 import { apiRequest } from './client';
 import type {
+  CreateTaskCommentInput,
   CreateTaskInput,
   ListTasksQuery,
   Task,
+  TaskComment,
+  TaskHistoryEntry,
   TaskWithContext,
   UpdateTaskInput,
 } from '../../types/todo';
@@ -72,5 +75,40 @@ export function deleteProjectTask(
     {
       method: 'DELETE',
     },
+  );
+}
+
+export function fetchTaskComments(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+): Promise<TaskComment[]> {
+  return apiRequest<TaskComment[]>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/comments`,
+  );
+}
+
+export function createTaskComment(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  input: CreateTaskCommentInput,
+): Promise<TaskComment> {
+  return apiRequest<TaskComment>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/comments`,
+    {
+      method: 'POST',
+      body: input,
+    },
+  );
+}
+
+export function fetchTaskHistory(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+): Promise<TaskHistoryEntry[]> {
+  return apiRequest<TaskHistoryEntry[]>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/history`,
   );
 }

@@ -50,3 +50,28 @@ export interface UpdateTaskInput {
   criticity?: TaskCriticity;
   dueDate?: string | null;
 }
+
+export type TaskHistoryField = 'title' | 'description' | 'dueDate';
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  body: string;
+  createdById: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskHistoryEntry {
+  id: string;
+  taskId: string;
+  field: TaskHistoryField;
+  oldValue: string | null;
+  newValue: string | null;
+  changedById: string | null;
+  createdAt: string;
+}
+
+export interface CreateTaskCommentInput {
+  body: string;
+}

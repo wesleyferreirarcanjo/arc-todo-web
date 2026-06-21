@@ -5,11 +5,13 @@ import { motion } from 'framer-motion';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import type { Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
 import { useChat } from '../context/ChatContext';
+import { copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
 import { Modal } from './Modal';
 import { Select } from './Select';
+import { TaskDetailsModal } from './TaskDetailsModal';
 
 function formatDueDateForInput(dueDate: string | null): string {
   if (!dueDate) return '';
@@ -70,8 +72,46 @@ function TrashIcon() {
   );
 }
 
+function CopyIcon() {
+  return (
+    <svg
+      className="task-menu-item-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      className="task-menu-item-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 interface TaskCardProps {
   task: Task;
+  organizationId?: string;
+  projectId?: string;
   organizationName?: string;
   projectName?: string;
   accentColor?: string;
@@ -109,6 +149,8 @@ const criticityOptions: { value: TaskCriticity; label: string }[] = [
 
 export function TaskCard({
   task,
+  organizationId,
+  projectId,
   organizationName,
   projectName,
   accentColor,
@@ -123,8 +165,10 @@ export function TaskCard({
   const { shouldAnimateStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -133,7 +177,10 @@ export function TaskCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const isInteractionLocked = editModalOpen || actionMenuOpen;
+  const isInteractionLocked = detailsModalOpen || editModalOpen || actionMenuOpen;
+  const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
+  const resolvedProjectId = projectId ?? chatContextScope?.projectId;
+  const canOpenDetails = Boolean(resolvedOrganizationId && resolvedProjectId);
   const isDraggable = draggable && !isInteractionLocked;
 
   const {
@@ -187,7 +234,25 @@ export function TaskCard({
   function handleStartEdit() {
     resetEditFields();
     setActionMenuOpen(false);
+    setDetailsModalOpen(false);
     setEditModalOpen(true);
+  }
+
+  function handleOpenDetails() {
+    setActionMenuOpen(false);
+    setDetailsModalOpen(true);
+  }
+
+  async function handleCopyTask() {
+    setActionMenuOpen(false);
+    try {
+      await copyTaskToClipboard(task);
+      setCopyFeedback('Copied');
+      window.setTimeout(() => setCopyFeedback(null), 2000);
+    } catch {
+      setCopyFeedback('Copy failed');
+      window.setTimeout(() => setCopyFeedback(null), 2500);
+    }
   }
 
   function handleCancelEdit() {
@@ -384,6 +449,28 @@ export function TaskCard({
 
           {actionMenuOpen && (
             <div className="task-action-menu-panel" role="menu">
+              {canOpenDetails && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="task-action-menu-item"
+                  onClick={handleOpenDetails}
+                >
+                  <EyeIcon />
+                  View details
+                </button>
+              )}
+
+              <button
+                type="button"
+                role="menuitem"
+                className="task-action-menu-item"
+                onClick={() => void handleCopyTask()}
+              >
+                <CopyIcon />
+                Copy
+              </button>
+
               <button
                 type="button"
                 role="menuitem"
@@ -431,12 +518,29 @@ export function TaskCard({
           </div>
         </motion.div>
 
+        {copyFeedback ? (
+          <span className="task-card-copy-feedback" role="status">{copyFeedback}</span>
+        ) : null}
+
         {chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">
             Ctrl+click insert reference · Shift+click remove
           </span>
         ) : null}
       </motion.article>
+
+      {canOpenDetails && (
+        <TaskDetailsModal
+          open={detailsModalOpen}
+          onClose={() => setDetailsModalOpen(false)}
+          task={task}
+          organizationId={resolvedOrganizationId!}
+          projectId={resolvedProjectId!}
+          organizationName={organizationName}
+          projectName={projectName}
+          onEdit={handleStartEdit}
+        />
+      )}
 
       <Modal
         open={editModalOpen}
