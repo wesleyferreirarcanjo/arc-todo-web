@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { sendChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
 import type { ConversationSummary } from '../lib/api/conversations';
@@ -117,8 +117,8 @@ function ChatLauncherButton({
   return (
     <motion.button
       type="button"
-      layoutId="chat-widget-launcher"
-      className={`chat-widget-fab${chatOpen ? ' is-attached' : ''}`}
+      layout
+      className="chat-widget-fab"
       aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
       aria-expanded={chatOpen}
       aria-controls={panelId}
@@ -419,11 +419,10 @@ export function ChatWidget() {
   }
 
   return (
-    <LayoutGroup id="chat-widget">
-      <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
-        <AnimatePresence>
-          {chatOpen ? (
-            <motion.section
+    <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
+      <AnimatePresence>
+        {chatOpen ? (
+          <motion.section
               key="chat-panel"
               id={panelId}
               className="chat-widget-panel"
@@ -555,41 +554,28 @@ export function ChatWidget() {
                 disabled={loading || loadingMessages}
                 onSubmit={() => void handleSubmit()}
               />
-              <div className="chat-widget-composer-footer">
-                <ChatLauncherButton
-                  chatOpen={chatOpen}
-                  panelId={panelId}
-                  reducedMotion={reducedMotion}
-                  fast={fast}
-                  fabIconTransition={fabIconTransition}
-                  onToggle={() => setChatOpen(!chatOpen)}
-                />
-                <div className="chat-widget-composer-actions">
-                  <button
-                    type="submit"
-                    className="btn btn-primary chat-widget-send"
-                    disabled={loading || loadingMessages}
-                  >
-                    {loading ? 'Sending...' : 'Send'}
-                  </button>
-                </div>
+              <div className="chat-widget-composer-actions">
+                <button
+                  type="submit"
+                  className="btn btn-primary chat-widget-send"
+                  disabled={loading || loadingMessages}
+                >
+                  {loading ? 'Sending...' : 'Send'}
+                </button>
               </div>
             </form>
           </motion.section>
         ) : null}
       </AnimatePresence>
 
-      {!chatOpen ? (
-        <ChatLauncherButton
-          chatOpen={chatOpen}
-          panelId={panelId}
-          reducedMotion={reducedMotion}
-          fast={fast}
-          fabIconTransition={fabIconTransition}
-          onToggle={() => setChatOpen(!chatOpen)}
-        />
-      ) : null}
-      </div>
-    </LayoutGroup>
+      <ChatLauncherButton
+        chatOpen={chatOpen}
+        panelId={panelId}
+        reducedMotion={reducedMotion}
+        fast={fast}
+        fabIconTransition={fabIconTransition}
+        onToggle={() => setChatOpen(!chatOpen)}
+      />
+    </div>
   );
 }
