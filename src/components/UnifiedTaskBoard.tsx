@@ -1,8 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
-import type { TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
+import type {
+  CreateTaskInput,
+  TaskCriticity,
+  TaskStatus,
+  TaskWithContext,
+} from '../types/todo';
 import { getProjectColor } from '../lib/color/entityColor';
+import { attachSubtasks } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
 import { BoardColumn } from './BoardColumn';
@@ -21,6 +27,10 @@ interface UnifiedTaskBoardProps {
     }>,
   ) => Promise<void>;
   onDelete: (task: TaskWithContext) => Promise<void>;
+  onCreateSubtask?: (
+    task: TaskWithContext,
+    input: CreateTaskInput,
+  ) => Promise<void>;
 }
 
 const columns: { status: TaskStatus; title: string }[] = [
@@ -37,8 +47,9 @@ const FULL_BOARD_WIDTH =
 
 function getDefaultFocusedStatus(tasks: TaskWithContext[]): TaskStatus | null {
   return (
-    columns.find((column) => tasks.some((task) => task.status === column.status))?.status ??
-    null
+    columns.find((column) =>
+      tasks.some((task) => !task.parentTaskId && task.status === column.status),
+    )?.status ?? null
   );
 }
 
@@ -46,13 +57,19 @@ export function UnifiedTaskBoard({
   tasks,
   onUpdate,
   onDelete,
+  onCreateSubtask,
 }: UnifiedTaskBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
     getDefaultFocusedStatus(tasks),
   );
-  const taskById = new Map(tasks.map((task) => [task.id, task]));
+
+  const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
+  const taskById = useMemo(
+    () => new Map(tasks.map((task) => [task.id, task])),
+    [tasks],
+  );
 
   useEffect(() => {
     const board = boardRef.current;
@@ -109,7 +126,9 @@ export function UnifiedTaskBoard({
           className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}
         >
         {columns.map((column) => {
-          const columnTasks = tasks.filter((task) => task.status === column.status);
+          const columnTasks = boardTasks.filter(
+            (task) => task.status === column.status,
+          );
           const isFocused = focusMode && focusedStatus === column.status;
           const isCompact = focusMode && !isFocused;
 
@@ -132,6 +151,7 @@ export function UnifiedTaskBoard({
                   <TaskCard
                     key={task.id}
                     task={task}
+                    subtasks={task.subtasks}
                     organizationId={task.organization.id}
                     projectId={task.project.id}
                     organizationName={task.organization.name}
@@ -140,8 +160,14 @@ export function UnifiedTaskBoard({
                     compact={isCompact}
                     draggable
                     isDragging={activeTaskId === task.id}
+                    draggingTaskId={activeTaskId ?? undefined}
                     onUpdate={(_id, input) => onUpdate(task, input)}
                     onDelete={() => onDelete(task)}
+                    onCreateSubtask={
+                      onCreateSubtask
+                        ? (_parentId, input) => onCreateSubtask(task, input)
+                        : undefined
+                    }
                   />
                 ))
               )}

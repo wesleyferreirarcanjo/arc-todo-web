@@ -18,6 +18,7 @@ function buildTasksQueryString(query?: ListTasksQuery): string {
   if (query.projectId) params.set('projectId', query.projectId);
   if (query.status) params.set('status', query.status);
   if (query.criticity) params.set('criticity', query.criticity);
+  if (query.parentTaskId) params.set('parentTaskId', query.parentTaskId);
 
   const qs = params.toString();
   return qs ? `?${qs}` : '';

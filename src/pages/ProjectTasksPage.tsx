@@ -6,6 +6,7 @@ import {
   fetchProjectTasks,
   updateProjectTask,
 } from '../lib/api/todos';
+import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
@@ -45,8 +46,17 @@ export function ProjectTasksPage() {
 
   async function handleCreate(input: CreateTaskInput) {
     if (!orgId || !projectId) return;
-    const created = await createProjectTask(orgId, projectId, input);
-    setTasks((prev) => [created, ...prev]);
+    await createProjectTask(orgId, projectId, input);
+    await loadTasks();
+  }
+
+  async function handleCreateSubtask(parentId: string, input: CreateTaskInput) {
+    if (!orgId || !projectId) return;
+    await createProjectTask(orgId, projectId, {
+      ...input,
+      parentTaskId: parentId,
+    });
+    await loadTasks();
   }
 
   async function handleUpdate(
@@ -61,13 +71,19 @@ export function ProjectTasksPage() {
   ) {
     if (!orgId || !projectId) return;
     const updated = await updateProjectTask(orgId, projectId, id, input);
+    // ponytail: reload on status change so parent rollup stays in sync
+    if (input.status !== undefined) {
+      await loadTasks();
+      return;
+    }
     setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
   }
 
   async function handleDelete(id: string) {
     if (!orgId || !projectId) return;
     await deleteProjectTask(orgId, projectId, id);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    const removeIds = new Set(collectDescendantIds(tasks, id));
+    setTasks((prev) => prev.filter((task) => !removeIds.has(task.id)));
   }
 
   if (!orgId || !projectId) {
@@ -77,6 +93,8 @@ export function ProjectTasksPage() {
   const projectAccent = currentProject
     ? getProjectColor(currentProject)
     : undefined;
+
+  const topLevelCount = tasks.filter((task) => !task.parentTaskId).length;
 
   return (
     <div className="tasks-page">
@@ -98,11 +116,11 @@ export function ProjectTasksPage() {
       {loading && <p className="status-message">Loading tasks...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && tasks.length === 0 && (
+      {!loading && !error && topLevelCount === 0 && (
         <p className="status-message">No tasks yet. Create your first one above.</p>
       )}
 
-      {!loading && !error && tasks.length > 0 && (
+      {!loading && !error && topLevelCount > 0 && (
         <TaskBoard
           tasks={tasks}
           accentColor={projectAccent}
@@ -110,6 +128,7 @@ export function ProjectTasksPage() {
           projectId={projectId}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
+          onCreateSubtask={handleCreateSubtask}
         />
       )}
     </div>

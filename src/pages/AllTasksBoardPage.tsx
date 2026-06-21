@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
+  createProjectTask,
   deleteProjectTask,
   fetchAllTasks,
   updateProjectTask,
 } from '../lib/api/todos';
+import { collectDescendantIds } from '../lib/tasks/taskTree';
 import {
   setLastOrganizationId,
   setLastProjectId,
@@ -14,6 +16,7 @@ import { QuickTaskCreate } from '../components/QuickTaskCreate';
 import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
+  CreateTaskInput,
   ListTasksQuery,
   TaskCriticity,
   TaskStatus,
@@ -117,6 +120,10 @@ export function AllTasksBoardPage() {
       task.id,
       input,
     );
+    if (input.status !== undefined) {
+      await loadTasks({ silent: true });
+      return;
+    }
     setTasks((prev) =>
       prev.map((item) =>
         item.id === task.id
@@ -131,10 +138,24 @@ export function AllTasksBoardPage() {
     );
   }
 
+  async function handleCreateSubtask(
+    task: TaskWithContext,
+    input: CreateTaskInput,
+  ) {
+    await createProjectTask(task.organization.id, task.project.id, {
+      ...input,
+      parentTaskId: task.id,
+    });
+    await loadTasks({ silent: true });
+  }
+
   async function handleDelete(task: TaskWithContext) {
     await deleteProjectTask(task.organization.id, task.project.id, task.id);
-    setTasks((prev) => prev.filter((item) => item.id !== task.id));
+    const removeIds = new Set(collectDescendantIds(tasks, task.id));
+    setTasks((prev) => prev.filter((item) => !removeIds.has(item.id)));
   }
+
+  const topLevelCount = tasks.filter((task) => !task.parentTaskId).length;
 
   return (
     <div className="tasks-page">
@@ -188,7 +209,7 @@ export function AllTasksBoardPage() {
       {loading && <p className="status-message">Loading tasks...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && tasks.length === 0 && (
+      {!loading && !error && topLevelCount === 0 && (
         <p className="status-message">
           {hasFilters
             ? 'No tasks match this focus.'
@@ -196,11 +217,12 @@ export function AllTasksBoardPage() {
         </p>
       )}
 
-      {!loading && !error && tasks.length > 0 && (
+      {!loading && !error && topLevelCount > 0 && (
         <UnifiedTaskBoard
           tasks={tasks}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
+          onCreateSubtask={handleCreateSubtask}
         />
       )}
     </div>

@@ -1,6 +1,11 @@
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export type TaskCriticity = 'low' | 'medium' | 'high' | 'critical';
 
+export interface SubtaskProgress {
+  total: number;
+  done: number;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -9,6 +14,9 @@ export interface Task {
   criticity: TaskCriticity;
   dueDate: string | null;
   projectId: string;
+  parentTaskId?: string | null;
+  subtaskProgress?: SubtaskProgress | null;
+  subtasks?: Task[];
   createdById?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -33,6 +41,7 @@ export interface ListTasksQuery {
   projectId?: string;
   status?: TaskStatus;
   criticity?: TaskCriticity;
+  parentTaskId?: string;
 }
 
 export interface CreateTaskInput {
@@ -41,6 +50,7 @@ export interface CreateTaskInput {
   status?: TaskStatus;
   criticity?: TaskCriticity;
   dueDate?: string;
+  parentTaskId?: string;
 }
 
 export interface UpdateTaskInput {
@@ -49,6 +59,7 @@ export interface UpdateTaskInput {
   status?: TaskStatus;
   criticity?: TaskCriticity;
   dueDate?: string | null;
+  parentTaskId?: string | null;
 }
 
 export type TaskHistoryField = 'title' | 'description' | 'dueDate';

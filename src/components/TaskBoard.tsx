@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
-import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
+import type { CreateTaskInput, Task, TaskCriticity, TaskStatus } from '../types/todo';
+import { attachSubtasks } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
 import { BoardColumn } from './BoardColumn';
@@ -23,6 +24,7 @@ interface TaskBoardProps {
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
 }
 
 const columns: { status: TaskStatus; title: string }[] = [
@@ -33,8 +35,9 @@ const columns: { status: TaskStatus; title: string }[] = [
 
 function getDefaultFocusedStatus(tasks: Task[]): TaskStatus | null {
   return (
-    columns.find((column) => tasks.some((task) => task.status === column.status))?.status ??
-    null
+    columns.find((column) =>
+      tasks.some((task) => !task.parentTaskId && task.status === column.status),
+    )?.status ?? null
   );
 }
 
@@ -45,14 +48,21 @@ export function TaskBoard({
   projectId,
   onUpdate,
   onDelete,
+  onCreateSubtask,
 }: TaskBoardProps) {
   const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
     getDefaultFocusedStatus(tasks),
   );
 
-  const getTaskStatus = useCallback(
-    (taskId: string) => tasks.find((task) => task.id === taskId)?.status,
+  const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
+  const taskById = useMemo(
+    () => new Map(tasks.map((task) => [task.id, task])),
     [tasks],
+  );
+
+  const getTaskStatus = useCallback(
+    (taskId: string) => taskById.get(taskId)?.status,
+    [taskById],
   );
 
   const {
@@ -66,15 +76,13 @@ export function TaskBoard({
   } = useTaskBoardDnd({
     getTaskStatus,
     onMoveTask: async (taskId, status) => {
-      const task = tasks.find((item) => item.id === taskId);
+      const task = taskById.get(taskId);
       if (!task || task.status === status) return;
       await onUpdate(taskId, { status });
     },
   });
 
-  const activeTask = activeTaskId
-    ? tasks.find((task) => task.id === activeTaskId)
-    : undefined;
+  const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
 
   return (
     <StatusMoveAnimationProvider>
@@ -88,7 +96,9 @@ export function TaskBoard({
       >
         <div className="task-board">
         {columns.map((column) => {
-          const columnTasks = tasks.filter((task) => task.status === column.status);
+          const columnTasks = boardTasks.filter(
+            (task) => task.status === column.status,
+          );
           const isFocused = focusedStatus === column.status;
 
           return (
@@ -109,12 +119,14 @@ export function TaskBoard({
                   <TaskCard
                     key={task.id}
                     task={task}
+                    subtasks={task.subtasks}
                     organizationId={organizationId}
                     projectId={projectId}
                     accentColor={accentColor}
                     compact={!isFocused}
                     draggable
                     isDragging={activeTaskId === task.id}
+                    draggingTaskId={activeTaskId ?? undefined}
                     chatContextScope={
                       organizationId && projectId
                         ? { organizationId, projectId }
@@ -122,6 +134,7 @@ export function TaskBoard({
                     }
                     onUpdate={onUpdate}
                     onDelete={onDelete}
+                    onCreateSubtask={onCreateSubtask}
                   />
                 ))
               )}

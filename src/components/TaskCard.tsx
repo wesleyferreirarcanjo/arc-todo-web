@@ -3,7 +3,8 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
-import type { Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
+import type { CreateTaskInput, Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
+import { mergeSubtaskProgress } from '../lib/tasks/taskTree';
 import { useChat } from '../context/ChatContext';
 import { copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -12,6 +13,7 @@ import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext
 import { Modal } from './Modal';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
+import { TaskForm } from './TaskForm';
 
 function formatDueDateForInput(dueDate: string | null): string {
   if (!dueDate) return '';
@@ -114,6 +116,9 @@ function EyeIcon({ className = 'task-menu-item-icon' }: { className?: string }) 
 
 interface TaskCardProps {
   task: Task;
+  subtasks?: Task[];
+  isSubtask?: boolean;
+  parentTitle?: string;
   organizationId?: string;
   projectId?: string;
   organizationName?: string;
@@ -121,6 +126,7 @@ interface TaskCardProps {
   accentColor?: string;
   draggable?: boolean;
   isDragging?: boolean;
+  draggingTaskId?: string;
   compact?: boolean;
   onUpdate: (
     id: string,
@@ -133,6 +139,7 @@ interface TaskCardProps {
     }>,
   ) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
   chatContextScope?: {
     organizationId: string;
     projectId: string;
@@ -154,6 +161,9 @@ const criticityOptions: { value: TaskCriticity; label: string }[] = [
 
 export function TaskCard({
   task,
+  subtasks = [],
+  isSubtask = false,
+  parentTitle,
   organizationId,
   projectId,
   organizationName,
@@ -161,9 +171,11 @@ export function TaskCard({
   accentColor,
   draggable = false,
   isDragging = false,
+  draggingTaskId,
   compact = false,
   onUpdate,
   onDelete,
+  onCreateSubtask,
   chatContextScope,
 }: TaskCardProps) {
   const { requestTaskInsert, requestTaskRemove, isTaskReferenced } = useChat();
@@ -173,6 +185,7 @@ export function TaskCard({
   const menuRef = useRef<HTMLDivElement>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [subtaskModalOpen, setSubtaskModalOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [title, setTitle] = useState(task.title);
@@ -183,7 +196,8 @@ export function TaskCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const isInteractionLocked = detailsModalOpen || editModalOpen || actionMenuOpen;
+  const isInteractionLocked =
+    detailsModalOpen || editModalOpen || subtaskModalOpen || actionMenuOpen;
   const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
   const resolvedProjectId = projectId ?? chatContextScope?.projectId;
   const canOpenDetails = Boolean(resolvedOrganizationId && resolvedProjectId);
@@ -383,6 +397,9 @@ export function TaskCard({
 
   const inChatContext = isTaskReferenced(task.id);
   const chatContextTask = resolveChatContextTask();
+  const subtaskProgress = mergeSubtaskProgress(task.subtaskProgress);
+  const resolvedSubtasks =
+    subtasks.length > 0 ? subtasks : (task.subtasks ?? []);
 
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
@@ -395,7 +412,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${chatContextTask ? ' has-chat-hint' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${chatContextTask ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${resolvedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
@@ -507,7 +524,16 @@ export function TaskCard({
         >
           <div className="task-card-header">
             <h3>{task.title}</h3>
+            {subtaskProgress && (
+              <span className="subtask-progress-badge">
+                {subtaskProgress.done}/{subtaskProgress.total} done
+              </span>
+            )}
           </div>
+
+          {isSubtask && parentTitle && !compact && (
+            <p className="task-parent-label">Subtask of {parentTitle}</p>
+          )}
 
           {task.description && !compact && (
             <p className="task-description">{task.description}</p>
@@ -545,6 +571,45 @@ export function TaskCard({
             Ctrl+click insert reference · Shift+click remove
           </span>
         ) : null}
+
+        {!isSubtask && !compact && resolvedSubtasks.length > 0 && (
+          <div className="task-subtasks" onPointerDown={stopCardPointer} onClick={stopCardPointer}>
+            {resolvedSubtasks.map((subtask) => (
+              <TaskCard
+                key={subtask.id}
+                task={subtask}
+                isSubtask
+                parentTitle={task.title}
+                organizationId={organizationId}
+                projectId={projectId}
+                organizationName={organizationName}
+                projectName={projectName}
+                accentColor={accentColor}
+                compact={compact}
+                draggable
+                isDragging={draggingTaskId === subtask.id}
+                draggingTaskId={draggingTaskId}
+                chatContextScope={chatContextScope}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
+        )}
+
+        {!isSubtask && !compact && onCreateSubtask && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm task-add-subtask-btn"
+            onPointerDown={stopCardPointer}
+            onClick={(event) => {
+              stopCardPointer(event);
+              setSubtaskModalOpen(true);
+            }}
+          >
+            Add subtask
+          </button>
+        )}
       </motion.article>
 
       {canOpenDetails && (
@@ -557,7 +622,29 @@ export function TaskCard({
           organizationName={organizationName}
           projectName={projectName}
           onEdit={handleStartEdit}
+          subtasks={resolvedSubtasks}
+          parentTitle={parentTitle}
         />
+      )}
+
+      {!isSubtask && onCreateSubtask && (
+        <Modal
+          open={subtaskModalOpen}
+          onClose={() => setSubtaskModalOpen(false)}
+          title={`Add subtask to ${task.title}`}
+          titleId={`subtask-modal-${task.id}`}
+          className="task-create-modal"
+        >
+          <TaskForm
+            heading="New subtask"
+            submitLabel="Add subtask"
+            parentTaskId={task.id}
+            onSubmit={async (input) => {
+              await onCreateSubtask(task.id, input);
+              setSubtaskModalOpen(false);
+            }}
+          />
+        </Modal>
       )}
 
       <Modal

@@ -16,6 +16,8 @@ interface TaskDetailsModalProps {
   projectId: string;
   organizationName?: string;
   projectName?: string;
+  parentTitle?: string;
+  subtasks?: Task[];
   onEdit: () => void;
 }
 
@@ -47,6 +49,8 @@ export function TaskDetailsModal({
   projectId,
   organizationName,
   projectName,
+  parentTitle,
+  subtasks = [],
   onEdit,
 }: TaskDetailsModalProps) {
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -188,6 +192,16 @@ export function TaskDetailsModal({
 
         <h3 className="task-details-title">{task.title}</h3>
 
+        {parentTitle && (
+          <p className="task-details-parent">Subtask of {parentTitle}</p>
+        )}
+
+        {task.subtaskProgress && task.subtaskProgress.total > 0 && (
+          <p className="task-details-subtask-progress">
+            Subtasks: {task.subtaskProgress.done}/{task.subtaskProgress.total} done
+          </p>
+        )}
+
         <section className="task-details-section">
           <h4>Description</h4>
           <p className="task-details-description">
@@ -209,6 +223,22 @@ export function TaskDetailsModal({
             <dd>{formatDisplayDate(task.updatedAt)}</dd>
           </div>
         </dl>
+
+        {subtasks.length > 0 && (
+          <section className="task-details-section">
+            <h4>Subtasks</h4>
+            <ul className="task-details-subtask-list">
+              {subtasks.map((subtask) => (
+                <li key={subtask.id}>
+                  <span>{subtask.title}</span>
+                  <span className="task-details-status">
+                    {subtask.status.replace('_', ' ')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {error && <p className="task-details-error">{error}</p>}
 

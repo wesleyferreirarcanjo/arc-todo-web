@@ -4,6 +4,9 @@ import { Select } from './Select';
 
 interface TaskFormProps {
   onSubmit: (input: CreateTaskInput) => Promise<void>;
+  parentTaskId?: string;
+  heading?: string;
+  submitLabel?: string;
 }
 
 const statuses: { value: TaskStatus; label: string }[] = [
@@ -19,7 +22,12 @@ const criticities: { value: TaskCriticity; label: string }[] = [
   { value: 'critical', label: 'Critical' },
 ];
 
-export function TaskForm({ onSubmit }: TaskFormProps) {
+export function TaskForm({
+  onSubmit,
+  parentTaskId,
+  heading = 'New task',
+  submitLabel = 'Add task',
+}: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('todo');
@@ -42,6 +50,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
         status,
         criticity,
         dueDate: dueDate || undefined,
+        parentTaskId,
       });
       setTitle('');
       setDescription('');
@@ -57,7 +66,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
 
   return (
     <form className="task-form" onSubmit={handleSubmit}>
-      <h2>New task</h2>
+      <h2>{heading}</h2>
       {error && <div className="alert alert-error">{error}</div>}
 
       <label>
@@ -111,7 +120,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
       </div>
 
       <button type="submit" className="btn btn-primary" disabled={loading}>
-        {loading ? 'Adding...' : 'Add task'}
+        {loading ? 'Adding...' : submitLabel}
       </button>
     </form>
   );
