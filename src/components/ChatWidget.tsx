@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { sendChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
 import type { ConversationSummary } from '../lib/api/conversations';
@@ -94,6 +94,71 @@ function TypingIndicator() {
       <span />
       <span />
     </div>
+  );
+}
+
+interface ChatLauncherButtonProps {
+  chatOpen: boolean;
+  panelId: string;
+  reducedMotion: boolean | null;
+  fast: ReturnType<typeof useMotionTransition>['fast'];
+  fabIconTransition: ReturnType<typeof useMotionTransition>['fast'] | object;
+  onToggle: () => void;
+}
+
+function ChatLauncherButton({
+  chatOpen,
+  panelId,
+  reducedMotion,
+  fast,
+  fabIconTransition,
+  onToggle,
+}: ChatLauncherButtonProps) {
+  return (
+    <motion.button
+      type="button"
+      layoutId="chat-widget-launcher"
+      className={`chat-widget-fab${chatOpen ? ' is-attached' : ''}`}
+      aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
+      aria-expanded={chatOpen}
+      aria-controls={panelId}
+      onClick={onToggle}
+      variants={chatWidgetFabVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="tap"
+      animate={chatOpen ? 'open' : 'rest'}
+      transition={{
+        layout: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
+        ...fast,
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {chatOpen ? (
+          <motion.span
+            key="close"
+            className="chat-widget-fab-content"
+            initial={{ opacity: 0, rotate: -120, scale: 0.65 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: 120, scale: 0.65 }}
+            transition={fabIconTransition}
+          >
+            <CloseIcon />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="open"
+            className="chat-widget-fab-content"
+            initial={{ opacity: 0, rotate: 120, scale: 0.65 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: -120, scale: 0.65 }}
+            transition={fabIconTransition}
+          >
+            <AssistantIcon />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
   );
 }
 
@@ -354,22 +419,23 @@ export function ChatWidget() {
   }
 
   return (
-    <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
-      <AnimatePresence>
-        {chatOpen ? (
-          <motion.section
-            key="chat-panel"
-            id={panelId}
-            className="chat-widget-panel"
-            role="dialog"
-            aria-modal="false"
-            aria-label="Arc Todo assistant"
-            variants={chatPanelVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={panelTransition}
-          >
+    <LayoutGroup id="chat-widget">
+      <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
+        <AnimatePresence>
+          {chatOpen ? (
+            <motion.section
+              key="chat-panel"
+              id={panelId}
+              className="chat-widget-panel"
+              role="dialog"
+              aria-modal="false"
+              aria-label="Arc Todo assistant"
+              variants={chatPanelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={panelTransition}
+            >
             <div className="chat-widget-tabs" role="tablist" aria-label="Conversations">
               <div className="chat-widget-tab-list">
                 {loadingConversations ? (
@@ -489,64 +555,41 @@ export function ChatWidget() {
                 disabled={loading || loadingMessages}
                 onSubmit={() => void handleSubmit()}
               />
-              <div className="chat-widget-composer-actions">
-                <button
-                  type="submit"
-                  className="btn btn-primary chat-widget-send"
-                  disabled={loading || loadingMessages}
-                >
-                  {loading ? 'Sending...' : 'Send'}
-                </button>
+              <div className="chat-widget-composer-footer">
+                <ChatLauncherButton
+                  chatOpen={chatOpen}
+                  panelId={panelId}
+                  reducedMotion={reducedMotion}
+                  fast={fast}
+                  fabIconTransition={fabIconTransition}
+                  onToggle={() => setChatOpen(!chatOpen)}
+                />
+                <div className="chat-widget-composer-actions">
+                  <button
+                    type="submit"
+                    className="btn btn-primary chat-widget-send"
+                    disabled={loading || loadingMessages}
+                  >
+                    {loading ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
               </div>
             </form>
           </motion.section>
         ) : null}
       </AnimatePresence>
 
-      <motion.button
-        type="button"
-        className="chat-widget-fab"
-        layout
-        aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
-        aria-expanded={chatOpen}
-        aria-controls={panelId}
-        onClick={() => setChatOpen(!chatOpen)}
-        variants={chatWidgetFabVariants}
-        initial="rest"
-        whileHover="hover"
-        whileTap="tap"
-        animate={chatOpen ? 'open' : 'rest'}
-        transition={{
-          ...fast,
-          layout: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
-        }}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {chatOpen ? (
-            <motion.span
-              key="close"
-              className="chat-widget-fab-content"
-              initial={{ opacity: 0, rotate: -120, scale: 0.65 }}
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: 120, scale: 0.65 }}
-              transition={fabIconTransition}
-            >
-              <CloseIcon />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="open"
-              className="chat-widget-fab-content"
-              initial={{ opacity: 0, rotate: 120, scale: 0.65 }}
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-              exit={{ opacity: 0, rotate: -120, scale: 0.65 }}
-              transition={fabIconTransition}
-            >
-              <AssistantIcon />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </motion.button>
-    </div>
+      {!chatOpen ? (
+        <ChatLauncherButton
+          chatOpen={chatOpen}
+          panelId={panelId}
+          reducedMotion={reducedMotion}
+          fast={fast}
+          fabIconTransition={fabIconTransition}
+          onToggle={() => setChatOpen(!chatOpen)}
+        />
+      ) : null}
+      </div>
+    </LayoutGroup>
   );
 }
