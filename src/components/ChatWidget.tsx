@@ -354,8 +354,8 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="chat-widget-root">
-      <AnimatePresence mode="wait">
+    <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
+      <AnimatePresence>
         {chatOpen ? (
           <motion.section
             key="chat-panel"
@@ -506,6 +506,7 @@ export function ChatWidget() {
       <motion.button
         type="button"
         className="chat-widget-fab"
+        layout
         aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
         aria-expanded={chatOpen}
         aria-controls={panelId}
@@ -515,7 +516,10 @@ export function ChatWidget() {
         whileHover="hover"
         whileTap="tap"
         animate={chatOpen ? 'open' : 'rest'}
-        transition={fast}
+        transition={{
+          ...fast,
+          layout: reducedMotion ? { duration: 0 } : chatPanelSpringTransition,
+        }}
       >
         <AnimatePresence mode="wait" initial={false}>
           {chatOpen ? (

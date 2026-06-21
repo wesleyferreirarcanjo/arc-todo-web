@@ -41,9 +41,9 @@ export const expandVariants: Variants = {
 };
 
 export const chatPanelVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.86, y: 28, transformOrigin: 'bottom right' },
-  visible: { opacity: 1, scale: 1, y: 0, transformOrigin: 'bottom right' },
-  exit: { opacity: 0, scale: 0.94, y: 14, transformOrigin: 'bottom right' },
+  hidden: { opacity: 0, x: '100%' },
+  visible: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: '100%' },
 };
 
 export const chatPanelSpringTransition: Transition = {
