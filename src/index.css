@@ -1373,7 +1373,7 @@ textarea {
   position: absolute;
   top: 0.65rem;
   right: 0.65rem;
-  z-index: 3;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 0.1rem;
@@ -1430,7 +1430,7 @@ textarea {
     opacity var(--transition-fast),
     visibility var(--transition-fast),
     transform var(--transition-fast);
-  z-index: 6;
+  z-index: 12;
 }
 
 .task-card-action-btn:hover .task-card-action-tooltip,
@@ -1475,6 +1475,7 @@ textarea {
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
+  z-index: 13;
   min-width: 9.75rem;
   padding: 0.35rem;
   border: 1px solid var(--border-strong);
@@ -2382,10 +2383,10 @@ textarea {
     opacity var(--transition-fast),
     visibility var(--transition-fast),
     transform var(--transition-fast);
-  z-index: 6;
+  z-index: 4;
 }
 
-.task-card.has-chat-hint:not(.is-dragging):not(.has-menu-open):hover
+.task-card.has-chat-hint:not(.is-dragging):not(.has-menu-open):hover:not(:has(.task-card-actions:hover))
   .task-card-tooltip {
   opacity: 1;
   visibility: visible;

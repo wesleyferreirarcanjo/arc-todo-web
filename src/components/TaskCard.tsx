@@ -434,6 +434,32 @@ export function TaskCard({
           onPointerDown={stopCardPointer}
           onClick={stopCardPointer}
         >
+          {canOpenDetails && (
+            <button
+              type="button"
+              className="task-card-action-btn"
+              aria-label="View details"
+              onClick={handleOpenDetails}
+            >
+              <EyeIcon className="task-card-action-icon" />
+              <span className="task-card-action-tooltip" role="tooltip">
+                View details
+              </span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="task-card-action-btn"
+            aria-label={copyTooltip}
+            onClick={() => void handleCopyTask()}
+          >
+            <CopyIcon className="task-card-action-icon" />
+            <span className="task-card-action-tooltip" role="tooltip">
+              {copyTooltip}
+            </span>
+          </button>
+
           <div className="task-action-menu">
             <button
               type="button"
@@ -471,32 +497,6 @@ export function TaskCard({
               </div>
             )}
           </div>
-
-          {canOpenDetails && (
-            <button
-              type="button"
-              className="task-card-action-btn"
-              aria-label="View details"
-              onClick={handleOpenDetails}
-            >
-              <EyeIcon className="task-card-action-icon" />
-              <span className="task-card-action-tooltip" role="tooltip">
-                View details
-              </span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="task-card-action-btn"
-            aria-label={copyTooltip}
-            onClick={() => void handleCopyTask()}
-          >
-            <CopyIcon className="task-card-action-icon" />
-            <span className="task-card-action-tooltip" role="tooltip">
-              {copyTooltip}
-            </span>
-          </button>
         </div>
 
         <motion.div
