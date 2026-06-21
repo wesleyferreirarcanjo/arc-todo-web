@@ -871,6 +871,7 @@ textarea:focus-visible {
 
 .board-filters .quick-create-trigger {
   margin-left: 0;
+  margin-top: 0;
 }
 
 .task-import-export {
