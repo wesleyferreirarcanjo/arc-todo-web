@@ -28,7 +28,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 
 | Step | Command / path |
 | --- | --- |
-| Build | `docker build -f Dockerfile .` (pass `VITE_API_BASE_URL`, `VITE_CHAT_API_BASE_URL`, and `VITE_RAG_API_BASE_URL` as build args) |
+| Build | `docker build -f Dockerfile .` (pass `VITE_API_BASE_URL` and `VITE_CHAT_API_BASE_URL` as build args) |
 | Serve | `nginx:1.27-alpine` with SPA fallback (`nginx.conf`) |
 | Port | `80` |
 
@@ -49,9 +49,8 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | --- | --- |
 | `VITE_API_BASE_URL` | API URL baked at build time (`http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 | `VITE_CHAT_API_BASE_URL` | Chatbot service URL baked at build time. Must be **Available at Buildtime** in Coolify. |
-| `VITE_RAG_API_BASE_URL` | RAG service URL baked at build time (`http://tqfgi4rhtndy3xtgdep04xnd.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 
-Redeploy the frontend whenever the API, chatbot, or RAG public URL changes.
+Redeploy the frontend whenever the API or chatbot public URL changes.
 
 ## Deploy order
 
@@ -59,7 +58,7 @@ Redeploy the frontend whenever the API, chatbot, or RAG public URL changes.
 2. Deploy API first and confirm `GET /health`.
 3. Deploy / restart `arc-todo-rag` after Postgres and MinIO are healthy (see [../arc-todo-rag/coolify.md](../arc-todo-rag/coolify.md)).
 4. Deploy / restart `arc-todo-chatbot` after the API is healthy (see [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md)).
-5. Set `VITE_API_BASE_URL` to the API URL, `VITE_CHAT_API_BASE_URL` to the chatbot URL, and `VITE_RAG_API_BASE_URL` to the RAG URL.
+5. Set `VITE_API_BASE_URL` to the API URL and `VITE_CHAT_API_BASE_URL` to the chatbot URL.
 6. Deploy this application.
 7. Configure chatbot settings at `/settings/chatbot`, RAG settings at `/settings/rag`, and MCP tools at `/settings/mcp-tools`.
 8. Deploy / restart `arc-todo-mcp` after MCP tools are configured.

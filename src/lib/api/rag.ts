@@ -1,5 +1,4 @@
-import { getToken } from '../auth/tokenStorage';
-import { ApiError } from './client';
+import { apiRequest } from './client';
 import type {
   RagProjectRetrieveInput,
   RagRetrievalResult,
@@ -8,43 +7,8 @@ import type {
   RagTokenEstimateInput,
 } from '../../types/ragSettings';
 
-const RAG_API_BASE_URL =
-  import.meta.env.VITE_RAG_API_BASE_URL ?? 'http://localhost:8020';
-
-async function ragRequest<T>(
-  path: string,
-  options: { method?: string; body?: unknown } = {},
-): Promise<T> {
-  const token = getToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${RAG_API_BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
-
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const data = (await response.json()) as { detail?: string; message?: string };
-      message = data.detail ?? data.message ?? message;
-    } catch {
-      // ignore
-    }
-    throw new ApiError(message, response.status);
-  }
-
-  return response.json() as Promise<T>;
-}
-
 export function retrieveGeneral(input: RagRetrieveInput): Promise<RagRetrievalResult> {
-  return ragRequest<RagRetrievalResult>('/retrieve/general', {
+  return apiRequest<RagRetrievalResult>('/rag/retrieve/general', {
     method: 'POST',
     body: input,
   });
@@ -53,7 +17,7 @@ export function retrieveGeneral(input: RagRetrieveInput): Promise<RagRetrievalRe
 export function retrieveProject(
   input: RagProjectRetrieveInput,
 ): Promise<RagRetrievalResult> {
-  return ragRequest<RagRetrievalResult>('/retrieve/project', {
+  return apiRequest<RagRetrievalResult>('/rag/retrieve/project', {
     method: 'POST',
     body: input,
   });
@@ -62,14 +26,14 @@ export function retrieveProject(
 export function estimateRagTokens(
   input: RagTokenEstimateInput,
 ): Promise<RagTokenEstimate> {
-  return ragRequest<RagTokenEstimate>('/tokens/estimate', {
+  return apiRequest<RagTokenEstimate>('/rag/tokens/estimate', {
     method: 'POST',
     body: input,
   });
 }
 
 export function syncRagIndex(): Promise<{ queuedJobs: number }> {
-  return ragRequest<{ queuedJobs: number }>('/index/sync', {
+  return apiRequest<{ queuedJobs: number }>('/rag/index/sync', {
     method: 'POST',
     body: {},
   });
@@ -84,5 +48,5 @@ export function fetchRagJobs(): Promise<
     lastError: string | null;
   }>
 > {
-  return ragRequest('/index/jobs');
+  return apiRequest('/rag/index/jobs');
 }
