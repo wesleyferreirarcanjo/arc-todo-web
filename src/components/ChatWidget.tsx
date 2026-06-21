@@ -112,6 +112,7 @@ function ChatLauncherButton({
   return (
     <motion.button
       type="button"
+      layout
       layoutId="chat-widget-launcher"
       className={`chat-widget-fab${chatOpen ? ' is-open' : ' is-closed'}`}
       aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
@@ -119,9 +120,12 @@ function ChatLauncherButton({
       aria-controls={panelId}
       onClick={onToggle}
       initial={false}
-      whileHover={{ scale: chatOpen ? 1.06 : 1.06 }}
-      whileTap={{ scale: chatOpen ? 0.94 : 0.94 }}
-      transition={chatPanelSpringTransition}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.94 }}
+      transition={{
+        ...chatPanelSpringTransition,
+        layout: chatPanelSpringTransition,
+      }}
     >
       <AnimatePresence mode="wait" initial={false}>
         {chatOpen ? (

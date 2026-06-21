@@ -2553,9 +2553,9 @@ textarea {
   z-index: 1;
   width: 1.75rem;
   height: 1.75rem;
-  background: var(--bg-surface);
-  color: var(--text-muted);
-  box-shadow: none;
+  background: var(--gradient-accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow-soft);
 }
 
 .chat-widget-fab:hover {
@@ -2564,8 +2564,8 @@ textarea {
 
 .chat-widget-fab.is-open:hover {
   border-color: var(--accent);
-  color: var(--text-primary);
-  box-shadow: none;
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow-soft), 0 0 0 2px var(--ring);
 }
 
 .chat-widget-fab-content {
