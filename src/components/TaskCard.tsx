@@ -408,25 +408,26 @@ export function TaskCard({
         }}
         {...draggableProps}
       >
-        {(organizationName || projectName) && (
-          <div className="task-context-badges">
-            {organizationName && (
-              <span className="task-badge task-badge-org">{organizationName}</span>
-            )}
-            {projectName && (
-              <span
-                className="task-badge task-badge-project"
-                style={
-                  accentColor
-                    ? ({ '--entity-accent': accentColor } as CSSProperties)
-                    : undefined
-                }
-              >
-                {projectName}
-              </span>
-            )}
-          </div>
-        )}
+        <div className="task-context-badges">
+          {organizationName && (
+            <span className="task-badge task-badge-org">{organizationName}</span>
+          )}
+          {projectName && (
+            <span
+              className="task-badge task-badge-project"
+              style={
+                accentColor
+                  ? ({ '--entity-accent': accentColor } as CSSProperties)
+                  : undefined
+              }
+            >
+              {projectName}
+            </span>
+          )}
+          <span className={`criticity-badge criticity-${task.criticity}`}>
+            {task.criticity}
+          </span>
+        </div>
 
         <div
           className="task-card-actions"
@@ -506,9 +507,6 @@ export function TaskCard({
         >
           <div className="task-card-header">
             <h3>{task.title}</h3>
-            <span className={`criticity-badge criticity-${task.criticity}`}>
-              {task.criticity}
-            </span>
           </div>
 
           {task.description && (
@@ -651,31 +649,29 @@ export function TaskCardOverlay({
       className={`task-card task-card-overlay criticity-${task.criticity}${accentColor ? ' has-accent' : ''}`}
       style={cardStyle}
     >
-      {(organizationName || projectName) && (
-        <div className="task-context-badges">
-          {organizationName && (
-            <span className="task-badge task-badge-org">{organizationName}</span>
-          )}
-          {projectName && (
-            <span
-              className="task-badge task-badge-project"
-              style={
-                accentColor
-                  ? ({ '--entity-accent': accentColor } as CSSProperties)
-                  : undefined
-              }
-            >
-              {projectName}
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="task-card-header">
-        <h3>{task.title}</h3>
+      <div className="task-context-badges">
+        {organizationName && (
+          <span className="task-badge task-badge-org">{organizationName}</span>
+        )}
+        {projectName && (
+          <span
+            className="task-badge task-badge-project"
+            style={
+              accentColor
+                ? ({ '--entity-accent': accentColor } as CSSProperties)
+                : undefined
+            }
+          >
+            {projectName}
+          </span>
+        )}
         <span className={`criticity-badge criticity-${task.criticity}`}>
           {task.criticity}
         </span>
+      </div>
+
+      <div className="task-card-header">
+        <h3>{task.title}</h3>
       </div>
 
       {task.description && (
