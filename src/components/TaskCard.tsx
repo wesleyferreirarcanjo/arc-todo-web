@@ -72,10 +72,10 @@ function TrashIcon() {
   );
 }
 
-function CopyIcon() {
+function CopyIcon({ className = 'task-menu-item-icon' }: { className?: string }) {
   return (
     <svg
-      className="task-menu-item-icon"
+      className={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -90,10 +90,10 @@ function CopyIcon() {
   );
 }
 
-function EyeIcon() {
+function EyeIcon({ className = 'task-menu-item-icon' }: { className?: string }) {
   return (
     <svg
-      className="task-menu-item-icon"
+      className={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -168,7 +168,7 @@ export function TaskCard({
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -239,19 +239,17 @@ export function TaskCard({
   }
 
   function handleOpenDetails() {
-    setActionMenuOpen(false);
     setDetailsModalOpen(true);
   }
 
   async function handleCopyTask() {
-    setActionMenuOpen(false);
     try {
       await copyTaskToClipboard(task);
-      setCopyFeedback('Copied');
-      window.setTimeout(() => setCopyFeedback(null), 2000);
+      setCopyTooltip('Copied');
+      window.setTimeout(() => setCopyTooltip('Copy task'), 2000);
     } catch {
-      setCopyFeedback('Copy failed');
-      window.setTimeout(() => setCopyFeedback(null), 2500);
+      setCopyTooltip('Copy failed');
+      window.setTimeout(() => setCopyTooltip('Copy task'), 2500);
     }
   }
 
@@ -431,68 +429,74 @@ export function TaskCard({
         )}
 
         <div
-          className="task-action-menu"
+          className="task-card-actions"
           ref={menuRef}
           onPointerDown={stopCardPointer}
           onClick={stopCardPointer}
         >
-          <button
-            type="button"
-            className="task-menu-trigger"
-            aria-label="Task actions"
-            aria-haspopup="menu"
-            aria-expanded={actionMenuOpen}
-            onClick={() => setActionMenuOpen((open) => !open)}
-          >
-            <MoreVerticalIcon />
-          </button>
+          <div className="task-action-menu">
+            <button
+              type="button"
+              className="task-menu-trigger"
+              aria-label="Task actions"
+              aria-haspopup="menu"
+              aria-expanded={actionMenuOpen}
+              onClick={() => setActionMenuOpen((open) => !open)}
+            >
+              <MoreVerticalIcon />
+            </button>
 
-          {actionMenuOpen && (
-            <div className="task-action-menu-panel" role="menu">
-              {canOpenDetails && (
+            {actionMenuOpen && (
+              <div className="task-action-menu-panel" role="menu">
                 <button
                   type="button"
                   role="menuitem"
                   className="task-action-menu-item"
-                  onClick={handleOpenDetails}
+                  onClick={handleStartEdit}
                 >
-                  <EyeIcon />
-                  View details
+                  <PencilIcon />
+                  Edit
                 </button>
-              )}
 
-              <button
-                type="button"
-                role="menuitem"
-                className="task-action-menu-item"
-                onClick={() => void handleCopyTask()}
-              >
-                <CopyIcon />
-                Copy
-              </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="task-action-menu-item task-action-menu-item-danger"
+                  disabled={deleting}
+                  onClick={() => void handleDelete()}
+                >
+                  <TrashIcon />
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            )}
+          </div>
 
-              <button
-                type="button"
-                role="menuitem"
-                className="task-action-menu-item"
-                onClick={handleStartEdit}
-              >
-                <PencilIcon />
-                Edit
-              </button>
-
-              <button
-                type="button"
-                role="menuitem"
-                className="task-action-menu-item task-action-menu-item-danger"
-                disabled={deleting}
-                onClick={() => void handleDelete()}
-              >
-                <TrashIcon />
-                {deleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
+          {canOpenDetails && (
+            <button
+              type="button"
+              className="task-card-action-btn"
+              aria-label="View details"
+              onClick={handleOpenDetails}
+            >
+              <EyeIcon className="task-card-action-icon" />
+              <span className="task-card-action-tooltip" role="tooltip">
+                View details
+              </span>
+            </button>
           )}
+
+          <button
+            type="button"
+            className="task-card-action-btn"
+            aria-label={copyTooltip}
+            onClick={() => void handleCopyTask()}
+          >
+            <CopyIcon className="task-card-action-icon" />
+            <span className="task-card-action-tooltip" role="tooltip">
+              {copyTooltip}
+            </span>
+          </button>
         </div>
 
         <motion.div
@@ -517,10 +521,6 @@ export function TaskCard({
             )}
           </div>
         </motion.div>
-
-        {copyFeedback ? (
-          <span className="task-card-copy-feedback" role="status">{copyFeedback}</span>
-        ) : null}
 
         {chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">

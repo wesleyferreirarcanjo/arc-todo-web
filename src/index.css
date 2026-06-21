@@ -1366,14 +1366,81 @@ textarea {
   justify-content: space-between;
   gap: 0.5rem;
   align-items: start;
-  padding-right: 2rem;
+  padding-right: 6.75rem;
 }
 
-.task-action-menu {
+.task-card-actions {
   position: absolute;
   top: 0.65rem;
   right: 0.65rem;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.task-card-action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.task-card-action-btn:hover,
+.task-card-action-btn:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.task-card-action-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.task-card-action-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  padding: 0.35rem 0.55rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--transition-fast),
+    visibility var(--transition-fast),
+    transform var(--transition-fast);
+  z-index: 6;
+}
+
+.task-card-action-btn:hover .task-card-action-tooltip,
+.task-card-action-btn:focus-visible .task-card-action-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.task-action-menu {
+  position: relative;
 }
 
 .task-menu-trigger {
@@ -1745,17 +1812,6 @@ textarea {
 
 .task-history-arrow {
   color: var(--text-muted);
-}
-
-.task-card-copy-feedback {
-  position: absolute;
-  left: 0.75rem;
-  bottom: 0.55rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--accent);
 }
 
 .page-links {
