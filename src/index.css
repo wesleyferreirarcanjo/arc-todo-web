@@ -3470,8 +3470,7 @@ textarea {
   margin: 0;
 }
 
-.settings-section-header p,
-.setting-help {
+.settings-section-header p {
   color: var(--text-muted);
 }
 
@@ -3493,6 +3492,7 @@ textarea {
 }
 
 .setting-control {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -3505,9 +3505,8 @@ textarea {
   white-space: normal;
 }
 
-.setting-control > span {
-  display: grid;
-  gap: 0.35rem;
+.setting-control > span:not(.setting-input-tooltip) {
+  display: block;
 }
 
 .setting-label {
@@ -3515,13 +3514,48 @@ textarea {
   font-weight: 700;
 }
 
-.setting-help {
-  display: block;
-  font-size: 0.8rem;
+.setting-input-wrap {
+  position: relative;
+}
+
+.setting-input-tooltip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 0.45rem);
+  z-index: 25;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.78rem;
   font-weight: 500;
   line-height: 1.4;
   letter-spacing: normal;
   text-transform: none;
+  color: var(--text-muted);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--transition-fast),
+    visibility var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.setting-control-tooltip {
+  left: 0.85rem;
+  right: 0.85rem;
+}
+
+.setting-input-wrap:focus-within .setting-input-tooltip,
+.setting-input-wrap:hover .setting-input-tooltip,
+.setting-control:focus-within .setting-control-tooltip,
+.setting-control:hover .setting-control-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-2px);
 }
 
 .setting-control input[type='checkbox'] {

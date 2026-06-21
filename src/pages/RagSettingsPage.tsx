@@ -1,10 +1,52 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type InputHTMLAttributes } from 'react';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchRagSettings, updateRagSettings } from '../lib/api/ragSettings';
 import type { RagSettings } from '../types/ragSettings';
 
-function SettingHelp({ children }: { children: ReactNode }) {
-  return <small className="setting-help">{children}</small>;
+function SettingField({
+  label,
+  tooltip,
+  wide,
+  inputProps,
+}: {
+  label: string;
+  tooltip: string;
+  wide?: boolean;
+  inputProps: InputHTMLAttributes<HTMLInputElement>;
+}) {
+  return (
+    <label className={`form-field setting-field${wide ? ' setting-field-wide' : ''}`}>
+      <span>{label}</span>
+      <div className="setting-input-wrap">
+        <input {...inputProps} />
+        <span className="setting-input-tooltip" role="tooltip">
+          {tooltip}
+        </span>
+      </div>
+    </label>
+  );
+}
+
+function SettingToggle({
+  label,
+  tooltip,
+  checked,
+  onChange,
+}: {
+  label: string;
+  tooltip: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="toggle-row setting-control">
+      <span className="setting-label">{label}</span>
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <span className="setting-input-tooltip setting-control-tooltip" role="tooltip">
+        {tooltip}
+      </span>
+    </label>
+  );
 }
 
 export function RagSettingsPage() {
@@ -113,17 +155,12 @@ export function RagSettingsPage() {
               <p>Controls whether knowledge retrieval is available to the app.</p>
             </div>
             <div className="settings-fields-grid">
-              <label className="toggle-row setting-control">
-                <span>
-                  <span className="setting-label">Enabled</span>
-                  <SettingHelp>Turns RAG on for searches and assistant context. Turn it off to pause retrieval without deleting settings.</SettingHelp>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.enabled)}
-                  onChange={(event) => updateField('enabled', event.target.checked)}
-                />
-              </label>
+              <SettingToggle
+                label="Enabled"
+                tooltip="When off, RAG searches and assistant context stop immediately. Indexed knowledge and saved settings remain intact."
+                checked={Boolean(form.enabled)}
+                onChange={(checked) => updateField('enabled', checked)}
+              />
             </div>
           </section>
 
@@ -133,58 +170,61 @@ export function RagSettingsPage() {
               <p>Defines how uploaded knowledge files are split and how much context retrieval sends forward.</p>
             </div>
             <div className="settings-fields-grid">
-              <label className="form-field setting-field">
-                <span>Chunk size tokens</span>
-                <SettingHelp>Approximate size of each indexed text chunk. Larger chunks keep more context together; smaller chunks retrieve more precisely.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.chunkSizeTokens ?? ''}
-                  onChange={(event) => updateField('chunkSizeTokens', Number(event.target.value))}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Chunk overlap tokens</span>
-                <SettingHelp>Tokens repeated between neighboring chunks so useful text is not lost at chunk boundaries.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.chunkOverlapTokens ?? ''}
-                  onChange={(event) => updateField('chunkOverlapTokens', Number(event.target.value))}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Top K default</span>
-                <SettingHelp>Default number of matching chunks to retrieve for a question. Higher values add coverage but cost more context.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.topKDefault ?? ''}
-                  onChange={(event) => updateField('topKDefault', Number(event.target.value))}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Max context tokens</span>
-                <SettingHelp>Upper limit for retrieved text sent to the helper/model. Keeps answers focused and prevents oversized prompts.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.maxContextTokens ?? ''}
-                  onChange={(event) => updateField('maxContextTokens', Number(event.target.value))}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Max file bytes for indexing</span>
-                <SettingHelp>Largest file accepted by the indexer. This protects the worker from huge uploads.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.maxFileBytesForIndexing ?? ''}
-                  onChange={(event) =>
-                    updateField('maxFileBytesForIndexing', Number(event.target.value))
-                  }
-                />
-              </label>
-              <label className="form-field setting-field setting-field-wide">
-                <span>Enabled MIME types</span>
-                <SettingHelp>Comma-separated file types that can be indexed, such as plain text, Markdown, CSV, and JSON.</SettingHelp>
-                <input value={enabledMimeTypes} onChange={(event) => setEnabledMimeTypes(event.target.value)} />
-              </label>
+              <SettingField
+                label="Chunk size tokens"
+                tooltip="Larger chunks keep more surrounding context together but can reduce match precision. Smaller chunks improve precision but may split related ideas."
+                inputProps={{
+                  type: 'number',
+                  value: form.chunkSizeTokens ?? '',
+                  onChange: (event) => updateField('chunkSizeTokens', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Chunk overlap tokens"
+                tooltip="Shared tokens between adjacent chunks. Increasing overlap reduces missed context at boundaries but creates more indexed data and storage."
+                inputProps={{
+                  type: 'number',
+                  value: form.chunkOverlapTokens ?? '',
+                  onChange: (event) => updateField('chunkOverlapTokens', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Top K default"
+                tooltip="How many matching chunks are retrieved by default. Higher values improve recall but send more text to the model and increase token cost."
+                inputProps={{
+                  type: 'number',
+                  value: form.topKDefault ?? '',
+                  onChange: (event) => updateField('topKDefault', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Max context tokens"
+                tooltip="Hard cap on retrieved text included in a prompt. Lower values keep answers focused; higher values allow broader answers but risk slower, costlier responses."
+                inputProps={{
+                  type: 'number',
+                  value: form.maxContextTokens ?? '',
+                  onChange: (event) => updateField('maxContextTokens', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Max file bytes for indexing"
+                tooltip="Maximum upload size the indexer accepts. Lower values reject large files early; higher values allow bigger documents but increase worker load and memory use."
+                inputProps={{
+                  type: 'number',
+                  value: form.maxFileBytesForIndexing ?? '',
+                  onChange: (event) =>
+                    updateField('maxFileBytesForIndexing', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Enabled MIME types"
+                tooltip="File types allowed into the index. Removing a type stops new files of that type from being indexed; existing indexed content is not removed automatically."
+                wide
+                inputProps={{
+                  value: enabledMimeTypes,
+                  onChange: (event) => setEnabledMimeTypes(event.target.value),
+                }}
+              />
             </div>
           </section>
 
@@ -194,46 +234,40 @@ export function RagSettingsPage() {
               <p>Controls the background worker that turns uploaded files into searchable chunks.</p>
             </div>
             <div className="settings-fields-grid">
-              <label className="toggle-row setting-control">
-                <span>
-                  <span className="setting-label">Worker enabled</span>
-                  <SettingHelp>Allows queued indexing jobs to run. Turn it off to stop processing new knowledge temporarily.</SettingHelp>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.workerEnabled)}
-                  onChange={(event) => updateField('workerEnabled', event.target.checked)}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Worker concurrency</span>
-                <SettingHelp>How many indexing jobs may run at the same time. Increase only if the server has spare CPU and memory.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.workerConcurrency ?? ''}
-                  onChange={(event) => updateField('workerConcurrency', Number(event.target.value))}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Job batch size</span>
-                <SettingHelp>How many jobs the worker claims at once. Small batches keep scheduling predictable.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.jobBatchSize ?? ''}
-                  onChange={(event) => updateField('jobBatchSize', Number(event.target.value))}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Min seconds between jobs</span>
-                <SettingHelp>Delay between jobs to avoid overloading the API, database, or embedding service.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.minSecondsBetweenJobs ?? ''}
-                  onChange={(event) =>
-                    updateField('minSecondsBetweenJobs', Number(event.target.value))
-                  }
-                />
-              </label>
+              <SettingToggle
+                label="Worker enabled"
+                tooltip="When off, queued indexing jobs stop running. New uploads wait in the queue until the worker is enabled again."
+                checked={Boolean(form.workerEnabled)}
+                onChange={(checked) => updateField('workerEnabled', checked)}
+              />
+              <SettingField
+                label="Worker concurrency"
+                tooltip="Parallel indexing jobs. Increasing this speeds up backlog processing but raises CPU, memory, and database load."
+                inputProps={{
+                  type: 'number',
+                  value: form.workerConcurrency ?? '',
+                  onChange: (event) => updateField('workerConcurrency', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Job batch size"
+                tooltip="Jobs claimed per worker cycle. Larger batches reduce scheduling overhead; very large batches can cause uneven load spikes."
+                inputProps={{
+                  type: 'number',
+                  value: form.jobBatchSize ?? '',
+                  onChange: (event) => updateField('jobBatchSize', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Min seconds between jobs"
+                tooltip="Cooldown between jobs. Higher values protect the API and database during heavy uploads; lower values process queues faster."
+                inputProps={{
+                  type: 'number',
+                  value: form.minSecondsBetweenJobs ?? '',
+                  onChange: (event) =>
+                    updateField('minSecondsBetweenJobs', Number(event.target.value)),
+                }}
+              />
             </div>
           </section>
 
@@ -243,31 +277,31 @@ export function RagSettingsPage() {
               <p>Sets the local embedding model used to compare questions with indexed knowledge.</p>
             </div>
             <div className="settings-fields-grid">
-              <label className="form-field setting-field">
-                <span>Provider</span>
-                <SettingHelp>Embedding backend name used by the RAG service.</SettingHelp>
-                <input
-                  value={form.embeddingProvider ?? ''}
-                  onChange={(event) => updateField('embeddingProvider', event.target.value)}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Model</span>
-                <SettingHelp>Embedding model identifier. It must match what the RAG service has available.</SettingHelp>
-                <input
-                  value={form.embeddingModel ?? ''}
-                  onChange={(event) => updateField('embeddingModel', event.target.value)}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Dimensions</span>
-                <SettingHelp>Vector size produced by the embedding model. Keep this aligned with the database index.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.embeddingDimensions ?? ''}
-                  onChange={(event) => updateField('embeddingDimensions', Number(event.target.value))}
-                />
-              </label>
+              <SettingField
+                label="Provider"
+                tooltip="Embedding backend used for vector search. Changing this without matching service support will break indexing and retrieval."
+                inputProps={{
+                  value: form.embeddingProvider ?? '',
+                  onChange: (event) => updateField('embeddingProvider', event.target.value),
+                }}
+              />
+              <SettingField
+                label="Model"
+                tooltip="Embedding model identifier. A mismatch with the running RAG service causes failed indexing or poor search quality."
+                inputProps={{
+                  value: form.embeddingModel ?? '',
+                  onChange: (event) => updateField('embeddingModel', event.target.value),
+                }}
+              />
+              <SettingField
+                label="Dimensions"
+                tooltip="Vector size stored in the database. Changing this requires re-indexing because existing vectors will no longer align."
+                inputProps={{
+                  type: 'number',
+                  value: form.embeddingDimensions ?? '',
+                  onChange: (event) => updateField('embeddingDimensions', Number(event.target.value)),
+                }}
+              />
             </div>
           </section>
 
@@ -277,105 +311,78 @@ export function RagSettingsPage() {
               <p>Optional helper for improving retrieval quality. It rewrites, reranks, or compresses context; it is not acting as an autonomous agent here.</p>
             </div>
             <div className="settings-fields-grid">
-              <label className="toggle-row setting-control">
-                <span>
-                  <span className="setting-label">DeepSeek helper enabled</span>
-                  <SettingHelp>Enables DeepSeek-assisted retrieval improvements before the final answer is built.</SettingHelp>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.deepseekEnabled)}
-                  onChange={(event) => updateField('deepseekEnabled', event.target.checked)}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Base URL</span>
-                <SettingHelp>DeepSeek-compatible API endpoint used by the helper.</SettingHelp>
-                <input
-                  value={form.deepseekBaseUrl ?? ''}
-                  onChange={(event) => updateField('deepseekBaseUrl', event.target.value)}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Model</span>
-                <SettingHelp>Model used for rewrite, rerank, and compression steps.</SettingHelp>
-                <input
-                  value={form.deepseekModel ?? ''}
-                  onChange={(event) => updateField('deepseekModel', event.target.value)}
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Temperature</span>
-                <SettingHelp>Lower values make helper output more stable. Retrieval helpers usually work best near zero.</SettingHelp>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={form.deepseekTemperature ?? ''}
-                  onChange={(event) =>
-                    updateField('deepseekTemperature', Number(event.target.value))
-                  }
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>Max helper tokens</span>
-                <SettingHelp>Token budget for helper calls. Higher budgets allow richer rewrites or summaries but cost more.</SettingHelp>
-                <input
-                  type="number"
-                  value={form.deepseekMaxHelperTokens ?? ''}
-                  onChange={(event) =>
-                    updateField('deepseekMaxHelperTokens', Number(event.target.value))
-                  }
-                />
-              </label>
-              <label className="form-field setting-field">
-                <span>API key</span>
-                <SettingHelp>Secret used to call DeepSeek. Leave blank to keep the saved key.</SettingHelp>
-                <input
-                  type="password"
-                  value={deepseekApiKey}
-                  placeholder={
-                    settings?.hasDeepseekApiKey ? 'Saved - enter a new key to replace' : 'Enter API key'
-                  }
-                  onChange={(event) => setDeepseekApiKey(event.target.value)}
-                />
-              </label>
-              <label className="toggle-row setting-control">
-                <span>
-                  <span className="setting-label">Use query rewrite</span>
-                  <SettingHelp>Rephrases user questions into search-friendly queries before retrieval.</SettingHelp>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.deepseekUseQueryRewrite)}
-                  onChange={(event) =>
-                    updateField('deepseekUseQueryRewrite', event.target.checked)
-                  }
-                />
-              </label>
-              <label className="toggle-row setting-control">
-                <span>
-                  <span className="setting-label">Use rerank</span>
-                  <SettingHelp>Lets the helper reorder retrieved chunks so the most relevant context comes first.</SettingHelp>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.deepseekUseRerank)}
-                  onChange={(event) => updateField('deepseekUseRerank', event.target.checked)}
-                />
-              </label>
-              <label className="toggle-row setting-control">
-                <span>
-                  <span className="setting-label">Use compression</span>
-                  <SettingHelp>Summarizes retrieved chunks to fit more useful information into the context budget.</SettingHelp>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(form.deepseekUseCompression)}
-                  onChange={(event) =>
-                    updateField('deepseekUseCompression', event.target.checked)
-                  }
-                />
-              </label>
+              <SettingToggle
+                label="DeepSeek helper enabled"
+                tooltip="When on, retrieval can use DeepSeek for rewrite, rerank, and compression. When off, only local embeddings drive retrieval."
+                checked={Boolean(form.deepseekEnabled)}
+                onChange={(checked) => updateField('deepseekEnabled', checked)}
+              />
+              <SettingField
+                label="Base URL"
+                tooltip="API endpoint for DeepSeek helper calls. An invalid URL causes helper steps to fail and retrieval to fall back or error."
+                inputProps={{
+                  value: form.deepseekBaseUrl ?? '',
+                  onChange: (event) => updateField('deepseekBaseUrl', event.target.value),
+                }}
+              />
+              <SettingField
+                label="Model"
+                tooltip="Model used for helper steps. Changing it affects helper quality, latency, and token cost."
+                inputProps={{
+                  value: form.deepseekModel ?? '',
+                  onChange: (event) => updateField('deepseekModel', event.target.value),
+                }}
+              />
+              <SettingField
+                label="Temperature"
+                tooltip="Randomness of helper output. Higher values create more varied rewrites; lower values keep retrieval behavior stable."
+                inputProps={{
+                  type: 'number',
+                  step: '0.1',
+                  value: form.deepseekTemperature ?? '',
+                  onChange: (event) =>
+                    updateField('deepseekTemperature', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="Max helper tokens"
+                tooltip="Token budget per helper call. Higher budgets allow richer rewrites and summaries but increase API cost."
+                inputProps={{
+                  type: 'number',
+                  value: form.deepseekMaxHelperTokens ?? '',
+                  onChange: (event) =>
+                    updateField('deepseekMaxHelperTokens', Number(event.target.value)),
+                }}
+              />
+              <SettingField
+                label="API key"
+                tooltip="Credential for DeepSeek helper calls. Leave blank to keep the saved key; entering a new key replaces it on save."
+                inputProps={{
+                  type: 'password',
+                  value: deepseekApiKey,
+                  placeholder:
+                    settings?.hasDeepseekApiKey ? 'Saved - enter a new key to replace' : 'Enter API key',
+                  onChange: (event) => setDeepseekApiKey(event.target.value),
+                }}
+              />
+              <SettingToggle
+                label="Use query rewrite"
+                tooltip="Rewrites user questions before search. Can improve recall on vague questions but adds helper latency and token usage."
+                checked={Boolean(form.deepseekUseQueryRewrite)}
+                onChange={(checked) => updateField('deepseekUseQueryRewrite', checked)}
+              />
+              <SettingToggle
+                label="Use rerank"
+                tooltip="Reorders retrieved chunks by relevance. Usually improves answer quality but adds an extra helper call."
+                checked={Boolean(form.deepseekUseRerank)}
+                onChange={(checked) => updateField('deepseekUseRerank', checked)}
+              />
+              <SettingToggle
+                label="Use compression"
+                tooltip="Summarizes retrieved chunks to fit more information into the context budget. Useful for long documents but may drop fine details."
+                checked={Boolean(form.deepseekUseCompression)}
+                onChange={(checked) => updateField('deepseekUseCompression', checked)}
+              />
             </div>
           </section>
 
