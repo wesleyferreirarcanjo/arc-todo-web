@@ -563,7 +563,7 @@ export function TaskCard({
             </button>
           )}
 
-          {isSubtask && (
+          {isSubtask && !isDetachedSubtask && (
             <button
               type="button"
               className="task-card-action-btn"

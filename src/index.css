@@ -1833,10 +1833,19 @@ textarea {
 
 .task-card.is-subtask.is-detached-subtask {
   margin-left: 0;
-  padding: 0.75rem 0.85rem 0.85rem 0.95rem;
+  padding: 0.75rem 0.85rem 3.5rem 0.95rem;
   border-style: dashed;
   border-left-width: 3px;
   cursor: grab;
+}
+
+.task-card.is-subtask.is-detached-subtask .task-card-actions {
+  top: 0.65rem;
+  right: 0.65rem;
+}
+
+.task-card.is-subtask.is-detached-subtask .task-context-badges {
+  padding-right: 4.25rem;
 }
 
 .task-card.is-subtask.is-detached-subtask .task-card-header {
