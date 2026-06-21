@@ -12,6 +12,7 @@ interface BoardColumnProps {
   isDropTarget: boolean;
   isFocused: boolean;
   isCompact: boolean;
+  focusEnabled?: boolean;
   onFocus: () => void;
   children: ReactNode;
 }
@@ -23,6 +24,7 @@ export function BoardColumn({
   isDropTarget,
   isFocused,
   isCompact,
+  focusEnabled = true,
   onFocus,
   children,
 }: BoardColumnProps) {
@@ -35,6 +37,9 @@ export function BoardColumn({
   const isEmpty = taskCount === 0;
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (!focusEnabled) {
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       onFocus();
@@ -45,11 +50,11 @@ export function BoardColumn({
     <motion.section
       ref={setNodeRef}
       className={`board-column${isFocused ? ' is-focused' : ''}${isCompact ? ' is-compact' : ''}${isEmpty ? ' is-empty' : ''}${highlighted ? ' is-drop-target' : ''}`}
-      tabIndex={0}
-      role="button"
-      aria-pressed={isFocused}
+      tabIndex={focusEnabled ? 0 : undefined}
+      role={focusEnabled ? 'button' : undefined}
+      aria-pressed={focusEnabled ? isFocused : undefined}
       aria-label={`${title} column, ${taskCount} tasks`}
-      onClick={onFocus}
+      onClick={focusEnabled ? onFocus : undefined}
       onKeyDown={handleKeyDown}
       animate={{ scale: highlighted ? 1.008 : 1 }}
       transition={base}

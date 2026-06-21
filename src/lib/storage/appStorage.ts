@@ -1,6 +1,7 @@
 const ORG_KEY = 'arc_todo_last_org';
 const PROJECT_KEY = 'arc_todo_last_project';
 const THEME_KEY = 'arc_todo_theme';
+const SIDEBAR_COLLAPSED_KEY = 'arc_todo_sidebar_collapsed';
 
 export type Theme = 'dark' | 'light';
 
@@ -40,4 +41,13 @@ export function getTheme(): Theme {
 
 export function setTheme(theme: Theme): void {
   localStorage.setItem(THEME_KEY, theme);
+}
+
+export function getSidebarCollapsed(): boolean {
+  const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+  return stored !== 'false';
+}
+
+export function setSidebarCollapsed(collapsed: boolean): void {
+  localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
 }

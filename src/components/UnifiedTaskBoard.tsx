@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
@@ -29,6 +29,12 @@ const columns: { status: TaskStatus; title: string }[] = [
   { status: 'done', title: 'Done' },
 ];
 
+// ponytail: fixed px threshold; upgrade path = measure card content width
+const MIN_FULL_COLUMN_WIDTH = 280;
+const COLUMN_GAP_PX = 20;
+const FULL_BOARD_WIDTH =
+  MIN_FULL_COLUMN_WIDTH * columns.length + COLUMN_GAP_PX * (columns.length - 1);
+
 function getDefaultFocusedStatus(tasks: TaskWithContext[]): TaskStatus | null {
   return (
     columns.find((column) => tasks.some((task) => task.status === column.status))?.status ??
@@ -41,10 +47,28 @@ export function UnifiedTaskBoard({
   onUpdate,
   onDelete,
 }: UnifiedTaskBoardProps) {
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [focusMode, setFocusMode] = useState(false);
   const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
     getDefaultFocusedStatus(tasks),
   );
   const taskById = new Map(tasks.map((task) => [task.id, task]));
+
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) {
+      return;
+    }
+
+    const syncFocusMode = () => {
+      setFocusMode(board.clientWidth < FULL_BOARD_WIDTH);
+    };
+
+    syncFocusMode();
+    const observer = new ResizeObserver(syncFocusMode);
+    observer.observe(board);
+    return () => observer.disconnect();
+  }, []);
 
   const getTaskStatus = useCallback(
     (taskId: string) => taskById.get(taskId)?.status,
@@ -80,10 +104,14 @@ export function UnifiedTaskBoard({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        <div className="task-board">
+        <div
+          ref={boardRef}
+          className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}
+        >
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.status === column.status);
-          const isFocused = focusedStatus === column.status;
+          const isFocused = focusMode && focusedStatus === column.status;
+          const isCompact = focusMode && !isFocused;
 
           return (
             <BoardColumn
@@ -93,7 +121,8 @@ export function UnifiedTaskBoard({
               taskCount={columnTasks.length}
               isDropTarget={overColumnStatus === column.status}
               isFocused={isFocused}
-              isCompact={!isFocused}
+              isCompact={isCompact}
+              focusEnabled={focusMode}
               onFocus={() => setFocusedStatus(column.status)}
             >
               {columnTasks.length === 0 ? (
@@ -108,7 +137,7 @@ export function UnifiedTaskBoard({
                     organizationName={task.organization.name}
                     projectName={task.project.name}
                     accentColor={getProjectColor(task.project)}
-                    compact={!isFocused}
+                    compact={isCompact}
                     draggable
                     isDragging={activeTaskId === task.id}
                     onUpdate={(_id, input) => onUpdate(task, input)}
@@ -128,7 +157,7 @@ export function UnifiedTaskBoard({
             organizationName={activeTask.organization.name}
             projectName={activeTask.project.name}
             accentColor={getProjectColor(activeTask.project)}
-            compact={focusedStatus !== activeTask.status}
+            compact={focusMode && focusedStatus !== activeTask.status}
           />
         ) : null}
       </DragOverlay>

@@ -7,11 +7,7 @@ export function Breadcrumbs() {
   const { currentOrganization, currentProject } = useWorkspace();
 
   if (location.pathname === '/board') {
-    return (
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <span>All tasks</span>
-      </nav>
-    );
+    return null;
   }
 
   if (location.pathname === '/knowledge') {

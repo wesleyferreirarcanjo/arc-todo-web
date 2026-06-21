@@ -138,16 +138,6 @@ export function AllTasksBoardPage() {
 
   return (
     <div className="tasks-page">
-      <header className="page-header page-header-with-actions">
-        <div>
-          <h2>All tasks</h2>
-          <p className="page-subtitle">
-            Tasks across your organizations and projects.
-          </p>
-        </div>
-        <QuickTaskCreate onCreated={loadTasks} />
-      </header>
-
       <div className="board-filters">
         <label className="board-filter-field">
           Organization
@@ -191,6 +181,8 @@ export function AllTasksBoardPage() {
             Clear focus
           </button>
         )}
+
+        <QuickTaskCreate onCreated={loadTasks} />
       </div>
 
       {loading && <p className="status-message">Loading tasks...</p>}
@@ -200,7 +192,7 @@ export function AllTasksBoardPage() {
         <p className="status-message">
           {hasFilters
             ? 'No tasks match this focus.'
-            : 'No tasks yet. Use New task above to create one.'}
+            : 'No tasks yet. Use New task in the filters to create one.'}
         </p>
       )}
 
