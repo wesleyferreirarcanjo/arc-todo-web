@@ -1146,8 +1146,9 @@ textarea {
 }
 
 .task-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24.375rem), 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: 1.25rem;
 }
 
@@ -1162,6 +1163,38 @@ textarea {
   overflow: hidden;
   box-shadow: var(--shadow-card);
   transform-origin: center top;
+  flex: 0 0 min(100%, 14rem);
+  max-width: min(100%, 14rem);
+  min-width: 0;
+  cursor: pointer;
+  transition:
+    flex-basis var(--transition-base),
+    max-width var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.board-column.is-focused {
+  flex: 1 1 min(100%, 24.375rem);
+  max-width: min(100%, 24.375rem);
+  min-width: min(100%, 18rem);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lift);
+}
+
+.board-column.is-compact:not(.is-focused) {
+  flex: 0 0 min(100%, 14rem);
+  max-width: min(100%, 14rem);
+}
+
+.board-column.is-empty:not(.is-focused) {
+  flex: 0 0 min(100%, 11rem);
+  max-width: min(100%, 11rem);
+}
+
+.board-column:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .board-column-drop-highlight {
@@ -1333,6 +1366,32 @@ textarea {
 }
 
 .task-card.has-accent::before {
+  display: none;
+}
+
+.task-card.is-compact {
+  padding: 0.75rem 0.85rem;
+}
+
+.task-card.is-compact .task-context-badges {
+  margin-bottom: 0.45rem;
+  padding-right: 5.25rem;
+}
+
+.task-card.is-compact .task-context-badges .task-badge,
+.task-card.is-compact .task-context-badges .criticity-badge {
+  font-size: 0.55rem;
+  padding: 0.12rem 0.38rem;
+  letter-spacing: 0.04em;
+}
+
+.task-card.is-compact .task-card-header h3 {
+  font-size: 0.95rem;
+  -webkit-line-clamp: 2;
+}
+
+.task-card.is-compact .task-description,
+.task-card.is-compact .task-meta {
   display: none;
 }
 
@@ -2721,6 +2780,15 @@ textarea {
 
   .board-filters {
     padding: 0.85rem;
+  }
+
+  .board-column,
+  .board-column.is-focused,
+  .board-column.is-compact,
+  .board-column.is-empty {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .chat-widget-root {

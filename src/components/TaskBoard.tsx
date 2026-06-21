@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { Task, TaskCriticity, TaskStatus } from '../types/todo';
@@ -31,6 +31,13 @@ const columns: { status: TaskStatus; title: string }[] = [
   { status: 'done', title: 'Done' },
 ];
 
+function getDefaultFocusedStatus(tasks: Task[]): TaskStatus | null {
+  return (
+    columns.find((column) => tasks.some((task) => task.status === column.status))?.status ??
+    null
+  );
+}
+
 export function TaskBoard({
   tasks,
   accentColor,
@@ -39,6 +46,10 @@ export function TaskBoard({
   onUpdate,
   onDelete,
 }: TaskBoardProps) {
+  const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
+    getDefaultFocusedStatus(tasks),
+  );
+
   const getTaskStatus = useCallback(
     (taskId: string) => tasks.find((task) => task.id === taskId)?.status,
     [tasks],
@@ -78,6 +89,7 @@ export function TaskBoard({
         <div className="task-board">
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.status === column.status);
+          const isFocused = focusedStatus === column.status;
 
           return (
             <BoardColumn
@@ -86,6 +98,9 @@ export function TaskBoard({
               title={column.title}
               taskCount={columnTasks.length}
               isDropTarget={overColumnStatus === column.status}
+              isFocused={isFocused}
+              isCompact={!isFocused}
+              onFocus={() => setFocusedStatus(column.status)}
             >
               {columnTasks.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
@@ -97,6 +112,7 @@ export function TaskBoard({
                     organizationId={organizationId}
                     projectId={projectId}
                     accentColor={accentColor}
+                    compact={!isFocused}
                     draggable
                     isDragging={activeTaskId === task.id}
                     chatContextScope={
@@ -116,7 +132,11 @@ export function TaskBoard({
 
       <DragOverlay dropAnimation={null}>
         {activeTask ? (
-          <TaskCardOverlay task={activeTask} accentColor={accentColor} />
+          <TaskCardOverlay
+            task={activeTask}
+            accentColor={accentColor}
+            compact={focusedStatus !== activeTask.status}
+          />
         ) : null}
       </DragOverlay>
       </DndContext>

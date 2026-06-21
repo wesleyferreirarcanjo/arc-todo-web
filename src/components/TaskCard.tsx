@@ -121,6 +121,7 @@ interface TaskCardProps {
   accentColor?: string;
   draggable?: boolean;
   isDragging?: boolean;
+  compact?: boolean;
   onUpdate: (
     id: string,
     input: Partial<{
@@ -160,6 +161,7 @@ export function TaskCard({
   accentColor,
   draggable = false,
   isDragging = false,
+  compact = false,
   onUpdate,
   onDelete,
   chatContextScope,
@@ -393,7 +395,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${chatContextTask ? ' has-chat-hint' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${chatContextTask ? ' has-chat-hint' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging ? 0.45 : 1 }}
         whileHover={
@@ -518,15 +520,17 @@ export function TaskCard({
             <h3>{task.title}</h3>
           </div>
 
-          {task.description && (
+          {task.description && !compact && (
             <p className="task-description">{task.description}</p>
           )}
 
-          <div className="task-meta">
-            {task.dueDate && (
-              <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-            )}
-          </div>
+          {!compact && (
+            <div className="task-meta">
+              {task.dueDate && (
+                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {chatContextTask ? (
@@ -641,6 +645,7 @@ interface TaskCardOverlayProps {
   organizationName?: string;
   projectName?: string;
   accentColor?: string;
+  compact?: boolean;
 }
 
 export function TaskCardOverlay({
@@ -648,6 +653,7 @@ export function TaskCardOverlay({
   organizationName,
   projectName,
   accentColor,
+  compact = false,
 }: TaskCardOverlayProps) {
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor } as CSSProperties)
@@ -655,7 +661,7 @@ export function TaskCardOverlay({
 
   return (
     <article
-      className={`task-card task-card-overlay criticity-${task.criticity}${accentColor ? ' has-accent' : ''}`}
+      className={`task-card task-card-overlay criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}`}
       style={cardStyle}
     >
       <div className="task-context-badges">
@@ -688,7 +694,7 @@ export function TaskCardOverlay({
         <h3>{task.title}</h3>
       </div>
 
-      {task.description && (
+      {task.description && !compact && (
         <p className="task-description">{task.description}</p>
       )}
     </article>

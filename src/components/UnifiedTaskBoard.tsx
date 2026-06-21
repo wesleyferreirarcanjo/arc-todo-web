@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
@@ -74,11 +74,21 @@ function groupTasksByOrgAndProject(tasks: TaskWithContext[]) {
   }));
 }
 
+function getDefaultFocusedStatus(tasks: TaskWithContext[]): TaskStatus | null {
+  return (
+    columns.find((column) => tasks.some((task) => task.status === column.status))?.status ??
+    null
+  );
+}
+
 export function UnifiedTaskBoard({
   tasks,
   onUpdate,
   onDelete,
 }: UnifiedTaskBoardProps) {
+  const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
+    getDefaultFocusedStatus(tasks),
+  );
   const taskById = new Map(tasks.map((task) => [task.id, task]));
 
   const getTaskStatus = useCallback(
@@ -119,6 +129,7 @@ export function UnifiedTaskBoard({
         {columns.map((column) => {
           const columnTasks = tasks.filter((task) => task.status === column.status);
           const grouped = groupTasksByOrgAndProject(columnTasks);
+          const isFocused = focusedStatus === column.status;
 
           return (
             <BoardColumn
@@ -127,6 +138,9 @@ export function UnifiedTaskBoard({
               title={column.title}
               taskCount={columnTasks.length}
               isDropTarget={overColumnStatus === column.status}
+              isFocused={isFocused}
+              isCompact={!isFocused}
+              onFocus={() => setFocusedStatus(column.status)}
             >
               {columnTasks.length === 0 ? (
                 <p className="empty-column">No tasks here yet.</p>
@@ -168,6 +182,7 @@ export function UnifiedTaskBoard({
                               organizationName={task.organization.name}
                               projectName={task.project.name}
                               accentColor={projectGroup.projectColor}
+                              compact={!isFocused}
                               draggable
                               isDragging={activeTaskId === task.id}
                               onUpdate={(_id, input) => onUpdate(task, input)}
@@ -192,6 +207,7 @@ export function UnifiedTaskBoard({
             organizationName={activeTask.organization.name}
             projectName={activeTask.project.name}
             accentColor={getProjectColor(activeTask.project)}
+            compact={focusedStatus !== activeTask.status}
           />
         ) : null}
       </DragOverlay>
