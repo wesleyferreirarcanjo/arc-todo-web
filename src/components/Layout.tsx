@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -157,9 +157,23 @@ export function Layout() {
   useEffect(() => {
     if (location.pathname.startsWith('/settings/rag')) {
       setRagMenuOpen(true);
-      setSettingsOpen(true);
     }
   }, [location.pathname]);
+
+  function closeSettingsMenu() {
+    setSettingsOpen(false);
+  }
+
+  function handleSettingsFlyoutBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!settingsOpen) {
+      return;
+    }
+    const next = event.relatedTarget;
+    if (next instanceof Node && event.currentTarget.contains(next)) {
+      return;
+    }
+    closeSettingsMenu();
+  }
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -175,13 +189,13 @@ export function Layout() {
 
     function handlePointerDown(event: MouseEvent) {
       if (!settingsRef.current?.contains(event.target as Node)) {
-        setSettingsOpen(false);
+        closeSettingsMenu();
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setSettingsOpen(false);
+        closeSettingsMenu();
       }
     }
 
@@ -198,7 +212,7 @@ export function Layout() {
       const next = !prev;
       setSidebarCollapsed(next);
       if (next) {
-        setSettingsOpen(false);
+        closeSettingsMenu();
       }
       return next;
     });
@@ -247,22 +261,27 @@ export function Layout() {
             </div>
           )}
 
-          <div className="sidebar-footer" ref={settingsRef}>
-            <button
-              type="button"
-              className="sidebar-settings-trigger"
-              aria-expanded={settingsOpen}
-              aria-haspopup="menu"
-              aria-label="Settings"
-              data-tooltip={collapsed ? 'Settings' : undefined}
-              onClick={() => setSettingsOpen((open) => !open)}
+          <div className="sidebar-footer">
+            <div
+              className="sidebar-settings-flyout"
+              ref={settingsRef}
+              onBlur={handleSettingsFlyoutBlur}
             >
-              <ConfigIcon />
-              {!collapsed && <span className="sidebar-nav-label">Settings</span>}
-            </button>
+              <button
+                type="button"
+                className="sidebar-settings-trigger"
+                aria-expanded={settingsOpen}
+                aria-haspopup="menu"
+                aria-label="Settings"
+                data-tooltip={collapsed ? 'Settings' : undefined}
+                onClick={() => setSettingsOpen((open) => !open)}
+              >
+                <ConfigIcon />
+                {!collapsed && <span className="sidebar-nav-label">Settings</span>}
+              </button>
 
-            {settingsOpen && (
-              <div className="sidebar-settings-menu" role="menu">
+              {settingsOpen ? (
+                <div className="sidebar-settings-menu" role="menu">
                 <p className="sidebar-settings-category">AI</p>
                 <NavLink
                   to="/settings/chatbot"
@@ -272,7 +291,7 @@ export function Layout() {
                       ? 'sidebar-settings-menu-item active'
                       : 'sidebar-settings-menu-item'
                   }
-                  onClick={() => setSettingsOpen(false)}
+                  onClick={closeSettingsMenu}
                 >
                   <ChatbotIcon />
                   Chatbot
@@ -285,7 +304,7 @@ export function Layout() {
                       ? 'sidebar-settings-menu-item active'
                       : 'sidebar-settings-menu-item'
                   }
-                  onClick={() => setSettingsOpen(false)}
+                  onClick={closeSettingsMenu}
                 >
                   <McpIcon />
                   MCP Tools
@@ -315,7 +334,7 @@ export function Layout() {
                           ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
                           : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
                       }
-                      onClick={() => setSettingsOpen(false)}
+                      onClick={closeSettingsMenu}
                     >
                       Settings
                     </NavLink>
@@ -327,7 +346,7 @@ export function Layout() {
                           ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
                           : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
                       }
-                      onClick={() => setSettingsOpen(false)}
+                      onClick={closeSettingsMenu}
                     >
                       Token spend
                     </NavLink>
@@ -339,7 +358,7 @@ export function Layout() {
                           ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
                           : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
                       }
-                      onClick={() => setSettingsOpen(false)}
+                      onClick={closeSettingsMenu}
                     >
                       Chunks
                     </NavLink>
@@ -351,14 +370,15 @@ export function Layout() {
                           ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
                           : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
                       }
-                      onClick={() => setSettingsOpen(false)}
+                      onClick={closeSettingsMenu}
                     >
                       Testing
                     </NavLink>
                   </div>
                 ) : null}
-              </div>
-            )}
+                </div>
+              ) : null}
+            </div>
 
             <ThemeToggle variant="sidebar" collapsed={collapsed} />
             <button

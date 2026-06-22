@@ -376,6 +376,10 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
+.sidebar-settings-flyout {
+  position: relative;
+}
+
 .sidebar-settings-trigger {
   display: flex;
   align-items: center;
