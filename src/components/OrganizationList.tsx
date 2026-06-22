@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateOrganization } from '../lib/api/organizations';
-import { getEntityAccent } from '../lib/color/entityColor';
+import { getOrganizationColor } from '../lib/color/entityColor';
 import type { Organization, UpdateOrganizationInput } from '../types/organization';
 
 interface OrganizationListProps {
@@ -62,7 +62,7 @@ export function OrganizationList({
   return (
     <div className="entity-list">
       {organizations.map((organization) => {
-        const accent = getEntityAccent(organization.id);
+        const accent = getOrganizationColor(organization);
         const isEditing = editingId === organization.id;
         const cardStyle = { '--entity-accent': accent } as CSSProperties;
 

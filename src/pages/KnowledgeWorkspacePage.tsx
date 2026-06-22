@@ -10,7 +10,7 @@ import {
   entryScopeLabel,
   updateKnowledgeEntry,
 } from '../lib/knowledge/scope';
-import { getProjectColor } from '../lib/color/entityColor';
+import { getKnowledgeAccentColor } from '../lib/color/entityColor';
 import { KnowledgeList } from '../components/KnowledgeList';
 import { QuickKnowledgeCreate } from '../components/QuickKnowledgeCreate';
 import type { KnowledgeSaveTarget } from '../components/QuickKnowledgeCreate';
@@ -316,9 +316,7 @@ export function KnowledgeWorkspacePage({
         <KnowledgeList
           entries={entries}
           getScopeLabel={entryScopeLabel}
-          getAccentColor={(entry) =>
-            entry.project ? getProjectColor(entry.project) : undefined
-          }
+          getAccentColor={getKnowledgeAccentColor}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

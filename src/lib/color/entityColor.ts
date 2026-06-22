@@ -1,3 +1,5 @@
+import type { KnowledgeEntryWithContext } from '../../types/knowledge';
+
 const ENTITY_ACCENTS = [
   '#6b8fa8',
   '#8778a3',
@@ -29,4 +31,26 @@ export function getProjectColor(project: { id: string; color?: string | null }):
     return project.color;
   }
   return getEntityAccent(project.id);
+}
+
+export function getOrganizationColor(organization: {
+  id: string;
+  color?: string | null;
+}): string {
+  if (organization.color && /^#[0-9A-Fa-f]{6}$/.test(organization.color)) {
+    return organization.color;
+  }
+  return getEntityAccent(organization.id);
+}
+
+export function getKnowledgeAccentColor(
+  entry: KnowledgeEntryWithContext,
+): string | undefined {
+  if (entry.scope === 'project' && entry.project) {
+    return getProjectColor(entry.project);
+  }
+  if (entry.scope === 'organization' && entry.organization) {
+    return getOrganizationColor(entry.organization);
+  }
+  return undefined;
 }
