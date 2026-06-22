@@ -568,12 +568,12 @@ textarea:focus-visible {
 
 .settings-page-tab:first-child:hover:not(.active),
 .settings-page-tab:first-child.active {
-  border-radius: 22px 6px 6px 8px;
+  border-radius: 24px 0 0 8px;
 }
 
 .settings-page-tab:last-child:hover:not(.active),
 .settings-page-tab:last-child.active {
-  border-radius: 6px 22px 8px 6px;
+  border-radius: 0 8px 24px 0;
 }
 
 .settings-page-tab:not(:first-child):not(:last-child):hover:not(.active),
