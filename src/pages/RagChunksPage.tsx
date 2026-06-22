@@ -231,7 +231,7 @@ export function RagChunksPage() {
   const initialLoading = chunksLoading && statusLoading && !result && !indexStatus;
 
   return (
-    <section className="page-section">
+    <section className="page-section rag-chunks-page">
       <RagSettingsNav />
 
       {error ? <p className="form-error">{error}</p> : null}

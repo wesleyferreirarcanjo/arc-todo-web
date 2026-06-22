@@ -3490,7 +3490,9 @@ textarea {
   padding: 1.25rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-blob);
-  background: var(--surface);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
 }
 
 .settings-form-card-wide {
@@ -3668,6 +3670,64 @@ textarea {
 .form-actions {
   display: flex;
   justify-content: flex-start;
+}
+
+.rag-chunks-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.rag-chunks-page .notice-card,
+.rag-chunks-page .settings-form-card {
+  position: relative;
+  margin-bottom: 0;
+  border-color: var(--border);
+  border-radius: var(--radius-blob);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.rag-chunks-page .notice-card::before,
+.rag-chunks-page .settings-form-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 48%);
+  pointer-events: none;
+}
+
+.rag-chunks-page .settings-form-card {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  max-width: none;
+  padding: 1.25rem;
+}
+
+.rag-chunks-page .settings-form-card > *,
+.rag-chunks-page .notice-card > * {
+  position: relative;
+}
+
+.rag-chunks-page .settings-form-card label {
+  margin-top: 0;
+}
+
+.rag-chunks-page .settings-form-card .form-actions {
+  align-self: end;
+  align-items: end;
+}
+
+.rag-chunks-page .settings-form-card .btn-primary {
+  margin-top: 0;
+}
+
+.rag-chunks-page .notice-card {
+  padding: 1rem 1.15rem;
+}
+
+.rag-chunks-page .notice-card:not(.rag-index-status-card) {
+  border-radius: var(--radius-blob-alt);
 }
 
 @media (max-width: 900px) {
