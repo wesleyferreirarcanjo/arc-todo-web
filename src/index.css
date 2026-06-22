@@ -578,12 +578,7 @@ textarea:focus-visible {
 
 .settings-page-tab:not(:first-child):not(:last-child):hover:not(.active),
 .settings-page-tab:not(:first-child):not(:last-child).active {
-  border-radius: 14px 5px 14px 5px;
-}
-
-.settings-page-tab:not(:first-child):not(:last-child):nth-child(even):hover:not(.active),
-.settings-page-tab:not(:first-child):not(:last-child).active:nth-child(even) {
-  border-radius: 5px 14px 5px 14px;
+  border-radius: 0;
 }
 
 .settings-page-tab:has(+ .settings-page-tab.active) {
@@ -3784,6 +3779,27 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.rag-index-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.rag-sync-btn {
+  margin: 0;
+  border: none;
+  border-radius: 12px 4px 12px 4px;
+  background: var(--gradient-accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow-soft);
+}
+
+.rag-sync-btn:hover:not(:disabled) {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
 }
 
 .rag-index-job-card {

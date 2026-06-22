@@ -61,15 +61,6 @@ export function RagTokenPage() {
 
   return (
     <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>RAG Tokens</h2>
-          <p className="subtitle">
-            Estimate local embedding tokens, DeepSeek helper tokens, and retrieval context budget.
-          </p>
-        </div>
-      </div>
-
       <RagSettingsNav />
 
       {loading ? <p className="subtitle">Loading settings...</p> : null}

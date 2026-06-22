@@ -232,64 +232,64 @@ export function RagChunksPage() {
 
   return (
     <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>RAG Chunks</h2>
-          <p className="subtitle">
-            Browse indexed chunks and track which files are queued, processing, or already embedded.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={syncing || statusRefreshing}
-          onClick={() => void handleSync()}
-        >
-          {syncing ? 'Queueing sync...' : 'Queue sync'}
-        </button>
-      </div>
-
       <RagSettingsNav />
 
       {error ? <p className="form-error">{error}</p> : null}
       {initialLoading ? <p className="subtitle">Loading chunks and index status...</p> : null}
 
-      {indexStatus ? (
+      {!initialLoading ? (
         <div className="notice-card rag-index-status-card">
           <div className="rag-index-status-header">
             <h3>Index queue</h3>
-            {statusRefreshing ? <span className="subtitle">Refreshing...</span> : null}
+            <div className="rag-index-status-actions">
+              {statusRefreshing ? <span className="subtitle">Refreshing...</span> : null}
+              <button
+                type="button"
+                className="btn btn-sm rag-sync-btn"
+                disabled={syncing || statusRefreshing}
+                onClick={() => void handleSync()}
+              >
+                {syncing ? 'Queueing sync...' : 'Queue sync'}
+              </button>
+            </div>
           </div>
-          <p className="subtitle">
-            {indexStatus.totalChunks} indexed chunks · {indexStatus.queuedJobs} queued ·{' '}
-            {indexStatus.processingJobs} processing · {indexStatus.failedJobs} failed
-          </p>
 
-          {indexStatus.processingJob ? (
-            <div style={{ marginTop: '1rem' }}>
-              <p className="subtitle">Currently processing</p>
-              <JobStatusCard job={indexStatus.processingJob} />
-            </div>
-          ) : indexStatus.queuedJobs > 0 ? (
-            <p className="subtitle" style={{ marginTop: '1rem' }}>
-              Worker idle or between jobs. Next file is waiting in the queue.
-            </p>
+          {indexStatus ? (
+            <>
+              <p className="subtitle">
+                {indexStatus.totalChunks} indexed chunks · {indexStatus.queuedJobs} queued ·{' '}
+                {indexStatus.processingJobs} processing · {indexStatus.failedJobs} failed
+              </p>
+
+              {indexStatus.processingJob ? (
+                <div style={{ marginTop: '1rem' }}>
+                  <p className="subtitle">Currently processing</p>
+                  <JobStatusCard job={indexStatus.processingJob} />
+                </div>
+              ) : indexStatus.queuedJobs > 0 ? (
+                <p className="subtitle" style={{ marginTop: '1rem' }}>
+                  Worker idle or between jobs. Next file is waiting in the queue.
+                </p>
+              ) : (
+                <p className="subtitle" style={{ marginTop: '1rem' }}>
+                  No files are being processed right now.
+                </p>
+              )}
+
+              {indexStatus.activeJobs.length > 1 ? (
+                <div style={{ marginTop: '1rem' }}>
+                  <p className="subtitle">Waiting or running jobs</p>
+                  {indexStatus.activeJobs
+                    .filter((job) => job.id !== indexStatus.processingJob?.id)
+                    .map((job) => (
+                      <JobStatusCard key={job.id} job={job} />
+                    ))}
+                </div>
+              ) : null}
+            </>
           ) : (
-            <p className="subtitle" style={{ marginTop: '1rem' }}>
-              No files are being processed right now.
-            </p>
+            <p className="subtitle">Index status unavailable.</p>
           )}
-
-          {indexStatus.activeJobs.length > 1 ? (
-            <div style={{ marginTop: '1rem' }}>
-              <p className="subtitle">Waiting or running jobs</p>
-              {indexStatus.activeJobs
-                .filter((job) => job.id !== indexStatus.processingJob?.id)
-                .map((job) => (
-                  <JobStatusCard key={job.id} job={job} />
-                ))}
-            </div>
-          ) : null}
         </div>
       ) : null}
 
