@@ -67,6 +67,14 @@ export type KnowledgeIndexPipelineStep =
   | 'embedding'
   | 'indexed';
 
+export interface KnowledgeIndexMetadata {
+  indexStatus: KnowledgeIndexStatus;
+  indexPipelineStep: KnowledgeIndexPipelineStep | null;
+  chunkCount: number;
+  tokenCount: number;
+  lastIndexError: string | null;
+}
+
 export interface KnowledgeAttachment {
   id: string;
   knowledgeEntryId: string;

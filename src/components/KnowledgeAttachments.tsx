@@ -8,10 +8,13 @@ import {
 } from '../lib/api/knowledge';
 import type {
   KnowledgeAttachment,
-  KnowledgeIndexStatus,
   KnowledgeScopeContext,
   ListAttachmentQuery,
 } from '../types/knowledge';
+import {
+  indexStatusLabel,
+  isActiveIndexStatus,
+} from '../lib/knowledge/indexStatus';
 
 interface KnowledgeAttachmentsProps {
   knowledgeId: string;
@@ -27,32 +30,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function indexStatusLabel(
-  status: KnowledgeIndexStatus,
-  pipelineStep: KnowledgeAttachment['indexPipelineStep'],
-): string {
-  if (status === 'queued') return 'Queued for embedding';
-  if (status === 'processing') {
-    switch (pipelineStep) {
-      case 'extracting':
-        return 'Extracting text';
-      case 'chunking':
-        return 'Chunking';
-      case 'embedding':
-        return 'Processing embedding';
-      default:
-        return 'Processing embedding';
-    }
-  }
-  if (status === 'completed') return 'Indexed';
-  if (status === 'failed') return 'Indexing failed';
-  return 'Indexing unavailable';
-}
-
-function isActiveIndexStatus(status: KnowledgeIndexStatus): boolean {
-  return status === 'queued' || status === 'processing';
 }
 
 export function KnowledgeAttachments({

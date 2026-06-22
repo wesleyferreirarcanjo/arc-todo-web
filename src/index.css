@@ -2653,6 +2653,17 @@ textarea {
   margin-top: 1.5rem;
 }
 
+.knowledge-entry-index {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.knowledge-entry-index h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
 .knowledge-card.has-accent {
   border-left: 3px solid var(--entity-accent, var(--accent));
 }

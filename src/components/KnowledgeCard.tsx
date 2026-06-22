@@ -5,6 +5,7 @@ import type {
   UpdateKnowledgeInput,
 } from '../types/knowledge';
 import { KnowledgeAttachments } from './KnowledgeAttachments';
+import { KnowledgeEntryIndex } from './KnowledgeEntryIndex';
 
 interface KnowledgeCardProps {
   entry: KnowledgeEntry;
@@ -28,6 +29,7 @@ export function KnowledgeCard({
   const [content, setContent] = useState(entry.content);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reindexVersion, setReindexVersion] = useState(0);
 
   async function handleSave() {
     if (!title.trim() || !content.trim()) return;
@@ -39,6 +41,7 @@ export function KnowledgeCard({
         content: content.trim(),
       });
       setEditing(false);
+      setReindexVersion((current) => current + 1);
     } finally {
       setSaving(false);
     }
@@ -114,6 +117,10 @@ export function KnowledgeCard({
           <p className="knowledge-meta">
             Updated {new Date(entry.updatedAt).toLocaleString()}
           </p>
+          <KnowledgeEntryIndex
+            knowledgeId={entry.id}
+            reindexVersion={reindexVersion}
+          />
           <div className="knowledge-actions">
             <button
               type="button"

@@ -9,6 +9,7 @@ import type {
   ListKnowledgeQuery,
   UpdateKnowledgeInput,
   UploadAttachmentInput,
+  KnowledgeIndexMetadata,
 } from '../../types/knowledge';
 
 function buildKnowledgeQueryString(query?: ListKnowledgeQuery): string {
@@ -120,6 +121,14 @@ export function fetchAllKnowledge(
 ): Promise<KnowledgeEntryWithContext[]> {
   return apiRequest<KnowledgeEntryWithContext[]>(
     `/knowledge${buildKnowledgeQueryString(query)}`,
+  );
+}
+
+export function fetchKnowledgeEntryIndex(
+  knowledgeId: string,
+): Promise<KnowledgeIndexMetadata> {
+  return apiRequest<KnowledgeIndexMetadata>(
+    `/knowledge/${knowledgeId}/index-metadata`,
   );
 }
 
