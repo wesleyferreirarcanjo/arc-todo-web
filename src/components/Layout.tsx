@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Breadcrumbs } from './Breadcrumbs';
 import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
@@ -153,6 +152,13 @@ export function Layout() {
     () => location.pathname.startsWith('/settings/rag'),
   );
   const isBoardPage = location.pathname === '/board';
+  const isKnowledgePage =
+    location.pathname === '/knowledge' ||
+    /^\/organizations\/[^/]+\/knowledge$/.test(location.pathname) ||
+    /^\/organizations\/[^/]+\/projects\/[^/]+\/knowledge$/.test(
+      location.pathname,
+    );
+  const isWorkspacePage = isBoardPage || isKnowledgePage;
 
   useEffect(() => {
     if (location.pathname.startsWith('/settings/rag')) {
@@ -396,9 +402,8 @@ export function Layout() {
         </aside>
 
         <ChatProvider>
-          <div className={`content-area${isBoardPage ? ' is-board-page' : ''}`}>
-            <Breadcrumbs />
-            <main className={`app-main${isBoardPage ? ' is-board-page' : ''}`}>
+          <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
+            <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
               <Outlet />
             </main>
           </div>

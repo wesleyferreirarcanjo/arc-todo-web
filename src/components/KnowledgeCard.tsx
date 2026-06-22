@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type {
   KnowledgeEntry,
   KnowledgeScopeContext,
@@ -10,6 +10,7 @@ interface KnowledgeCardProps {
   entry: KnowledgeEntry;
   scope: KnowledgeScopeContext;
   scopeLabel?: string;
+  accentColor?: string;
   onUpdate: (id: string, input: UpdateKnowledgeInput) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
@@ -18,6 +19,7 @@ export function KnowledgeCard({
   entry,
   scope,
   scopeLabel,
+  accentColor,
   onUpdate,
   onDelete,
 }: KnowledgeCardProps) {
@@ -58,7 +60,14 @@ export function KnowledgeCard({
   }
 
   return (
-    <article className="entity-card knowledge-card">
+    <article
+      className={`entity-card knowledge-card${accentColor ? ' has-accent' : ''}`}
+      style={
+        accentColor
+          ? ({ '--entity-accent': accentColor } as CSSProperties)
+          : undefined
+      }
+    >
       {scopeLabel && <span className="knowledge-scope-badge">{scopeLabel}</span>}
 
       {editing ? (

@@ -15,6 +15,7 @@ function buildKnowledgeQueryString(query?: ListKnowledgeQuery): string {
   if (!query) return '';
 
   const params = new URLSearchParams();
+  if (query.all) params.set('all', 'true');
   if (query.scope) params.set('scope', query.scope);
   if (query.organizationId) params.set('organizationId', query.organizationId);
   if (query.projectId) params.set('projectId', query.projectId);

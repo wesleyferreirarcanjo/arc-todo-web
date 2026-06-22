@@ -43,6 +43,7 @@ export interface UpdateKnowledgeInput {
 }
 
 export interface ListKnowledgeQuery {
+  all?: boolean;
   scope?: KnowledgeScope;
   organizationId?: string;
   projectId?: string;
@@ -51,6 +52,20 @@ export interface ListKnowledgeQuery {
   mimeType?: string;
   hasAttachments?: boolean;
 }
+
+export type KnowledgeIndexStatus =
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'unavailable';
+
+export type KnowledgeIndexPipelineStep =
+  | 'queued'
+  | 'extracting'
+  | 'chunking'
+  | 'embedding'
+  | 'indexed';
 
 export interface KnowledgeAttachment {
   id: string;
@@ -62,6 +77,11 @@ export interface KnowledgeAttachment {
   tags: string[];
   uploadedById: string;
   createdAt: string;
+  indexStatus: KnowledgeIndexStatus;
+  indexPipelineStep: KnowledgeIndexPipelineStep | null;
+  chunkCount: number;
+  tokenCount: number;
+  lastIndexError: string | null;
 }
 
 export interface UploadAttachmentInput {

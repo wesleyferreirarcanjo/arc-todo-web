@@ -183,12 +183,21 @@ textarea:focus-visible {
   padding: 0;
 }
 
-.content-area.is-board-page .tasks-page {
+.content-area.is-board-page .tasks-page,
+.content-area.is-board-page .knowledge-workspace {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   gap: 1rem;
+}
+
+.content-area.is-board-page .knowledge-workspace {
+  overflow: auto;
+}
+
+.content-area.is-board-page .knowledge-list {
+  margin-top: 0;
 }
 
 .content-area.is-board-page .task-board {
@@ -2642,6 +2651,74 @@ textarea {
 
 .knowledge-list {
   margin-top: 1.5rem;
+}
+
+.knowledge-card.has-accent {
+  border-left: 3px solid var(--entity-accent, var(--accent));
+}
+
+.knowledge-create-modal .knowledge-form {
+  max-width: none;
+  width: 100%;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.knowledge-create-modal .knowledge-form h2 {
+  display: none;
+}
+
+.knowledge-save-target-hint {
+  margin: 0 0 0.75rem;
+}
+
+.knowledge-filter-toggle input {
+  width: auto;
+  margin-top: 0.35rem;
+}
+
+.knowledge-index-status {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.knowledge-index-status.is-queued,
+.knowledge-index-status.is-processing {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+
+.knowledge-index-status.is-completed {
+  background: color-mix(in srgb, var(--success-text, #2f855a) 12%, transparent);
+  color: var(--success-text, #2f855a);
+}
+
+.knowledge-index-status.is-failed {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.knowledge-index-status.is-unavailable {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+.knowledge-file-stats {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.knowledge-attachment-item.is-uploading {
+  opacity: 0.85;
 }
 
 .knowledge-card {

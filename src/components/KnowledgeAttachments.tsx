@@ -8,6 +8,7 @@ import {
 } from '../lib/api/knowledge';
 import type {
   KnowledgeAttachment,
+  KnowledgeIndexStatus,
   KnowledgeScopeContext,
   ListAttachmentQuery,
 } from '../types/knowledge';
@@ -17,10 +18,41 @@ interface KnowledgeAttachmentsProps {
   scope: KnowledgeScopeContext;
 }
 
+interface PendingUpload {
+  filename: string;
+  status: 'uploading' | 'failed';
+}
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function indexStatusLabel(
+  status: KnowledgeIndexStatus,
+  pipelineStep: KnowledgeAttachment['indexPipelineStep'],
+): string {
+  if (status === 'queued') return 'Queued for embedding';
+  if (status === 'processing') {
+    switch (pipelineStep) {
+      case 'extracting':
+        return 'Extracting text';
+      case 'chunking':
+        return 'Chunking';
+      case 'embedding':
+        return 'Processing embedding';
+      default:
+        return 'Processing embedding';
+    }
+  }
+  if (status === 'completed') return 'Indexed';
+  if (status === 'failed') return 'Indexing failed';
+  return 'Indexing unavailable';
+}
+
+function isActiveIndexStatus(status: KnowledgeIndexStatus): boolean {
+  return status === 'queued' || status === 'processing';
 }
 
 export function KnowledgeAttachments({
@@ -31,6 +63,7 @@ export function KnowledgeAttachments({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [filters, setFilters] = useState<ListAttachmentQuery>({
@@ -41,32 +74,54 @@ export function KnowledgeAttachments({
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
 
-  const loadAttachments = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadAttachments = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      if (!silent) {
+        setLoading(true);
+      }
+      setError(null);
 
-    const query: ListAttachmentQuery = {};
-    if (filters.fileName?.trim()) query.fileName = filters.fileName.trim();
-    if (filters.mimeType?.trim()) query.mimeType = filters.mimeType.trim();
-    if (filters.tag?.trim()) query.tag = filters.tag.trim();
+      const query: ListAttachmentQuery = {};
+      if (filters.fileName?.trim()) query.fileName = filters.fileName.trim();
+      if (filters.mimeType?.trim()) query.mimeType = filters.mimeType.trim();
+      if (filters.tag?.trim()) query.tag = filters.tag.trim();
 
-    try {
-      const data = await fetchKnowledgeAttachments(
-        scope,
-        knowledgeId,
-        Object.keys(query).length > 0 ? query : undefined,
-      );
-      setAttachments(data);
-    } catch {
-      setError('Failed to load attachments.');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters.fileName, filters.mimeType, filters.tag, knowledgeId, scope]);
+      try {
+        const data = await fetchKnowledgeAttachments(
+          scope,
+          knowledgeId,
+          Object.keys(query).length > 0 ? query : undefined,
+        );
+        setAttachments(data);
+      } catch {
+        if (!silent) {
+          setError('Failed to load attachments.');
+        }
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [filters.fileName, filters.mimeType, filters.tag, knowledgeId, scope],
+  );
 
   useEffect(() => {
     void loadAttachments();
   }, [loadAttachments]);
+
+  const shouldPoll = attachments.some((attachment) =>
+    isActiveIndexStatus(attachment.indexStatus),
+  );
+
+  useEffect(() => {
+    if (!shouldPoll) return;
+    const id = setInterval(() => {
+      void loadAttachments({ silent: true });
+    }, 4000);
+    return () => clearInterval(id);
+  }, [shouldPoll, loadAttachments]);
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,6 +133,7 @@ export function KnowledgeAttachments({
 
     setUploading(true);
     setError(null);
+    setPendingUploads(files.map((file) => ({ filename: file.name, status: 'uploading' })));
 
     try {
       const uploaded: KnowledgeAttachment[] = [];
@@ -92,6 +148,9 @@ export function KnowledgeAttachments({
           },
         );
         uploaded.push(attachment);
+        setPendingUploads((prev) =>
+          prev.filter((item) => item.filename !== file.name),
+        );
       }
 
       setAttachments((prev) => [...uploaded, ...prev]);
@@ -101,8 +160,12 @@ export function KnowledgeAttachments({
       setFileInputKey((current) => current + 1);
     } catch {
       setError('Failed to upload one or more files.');
+      setPendingUploads((prev) =>
+        prev.map((item) => ({ ...item, status: 'failed' })),
+      );
     } finally {
       setUploading(false);
+      setPendingUploads([]);
     }
   }
 
@@ -195,7 +258,27 @@ export function KnowledgeAttachments({
       {loading && <p className="status-message">Loading attachments...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && attachments.length === 0 && (
+      {pendingUploads.length > 0 && (
+        <ul className="knowledge-attachment-list">
+          {pendingUploads.map((item) => (
+            <li
+              key={item.filename}
+              className="knowledge-attachment-item is-uploading"
+            >
+              <div className="knowledge-attachment-meta">
+                <strong>{item.filename}</strong>
+                <span
+                  className={`knowledge-index-status is-${item.status === 'uploading' ? 'processing' : 'failed'}`}
+                >
+                  {item.status === 'uploading' ? 'Uploading' : 'Upload failed'}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!loading && attachments.length === 0 && pendingUploads.length === 0 && (
         <p className="status-message">No attachments yet.</p>
       )}
 
@@ -208,6 +291,19 @@ export function KnowledgeAttachments({
                 <span>
                   {attachment.mimeType} · {formatFileSize(attachment.sizeBytes)}
                 </span>
+                <span className="knowledge-file-stats">
+                  {attachment.chunkCount} chunk
+                  {attachment.chunkCount === 1 ? '' : 's'} · {attachment.tokenCount}{' '}
+                  token{attachment.tokenCount === 1 ? '' : 's'}
+                </span>
+                <span
+                  className={`knowledge-index-status is-${attachment.indexStatus}`}
+                >
+                  {indexStatusLabel(
+                    attachment.indexStatus,
+                    attachment.indexPipelineStep,
+                  )}
+                </span>
                 {attachment.description && (
                   <span>{attachment.description}</span>
                 )}
@@ -215,6 +311,9 @@ export function KnowledgeAttachments({
                   <span className="knowledge-attachment-tags">
                     {attachment.tags.join(', ')}
                   </span>
+                )}
+                {attachment.lastIndexError && (
+                  <span className="alert alert-error">{attachment.lastIndexError}</span>
                 )}
                 <span className="knowledge-meta">
                   Uploaded {new Date(attachment.createdAt).toLocaleString()}
