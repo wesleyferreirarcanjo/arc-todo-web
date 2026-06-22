@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
 import {
   fetchChatbotSettings,
   updateChatbotSettings,
@@ -82,6 +83,8 @@ export function ChatbotSettingsPage() {
           </p>
         </div>
       </div>
+
+      <ChatbotSettingsNav />
 
       {loading ? <p className="subtitle">Loading chatbot settings...</p> : null}
       {error ? <p className="form-error">{error}</p> : null}

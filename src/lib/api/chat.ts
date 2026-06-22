@@ -37,10 +37,12 @@ export interface StreamChatCallbacks {
 
 export class ChatApiError extends Error {
   status: number;
+  detail?: unknown;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, detail?: unknown) {
     super(message);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -81,12 +83,14 @@ export async function sendChatMessage(
 
   if (!response.ok) {
     let message = `Chat request failed (${response.status})`;
+    let body: unknown;
     try {
-      message = parseErrorMessage(response.status, await response.json());
+      body = await response.json();
+      message = parseErrorMessage(response.status, body);
     } catch {
       // ignore parse errors
     }
-    throw new ChatApiError(message, response.status);
+    throw new ChatApiError(message, response.status, body);
   }
 
   return response.json() as Promise<ChatResponse>;
@@ -130,12 +134,14 @@ export async function streamChatMessage(
 
   if (!response.ok) {
     let message = `Chat request failed (${response.status})`;
+    let body: unknown;
     try {
-      message = parseErrorMessage(response.status, await response.json());
+      body = await response.json();
+      message = parseErrorMessage(response.status, body);
     } catch {
       // ignore parse errors
     }
-    throw new ChatApiError(message, response.status);
+    throw new ChatApiError(message, response.status, body);
   }
 
   const reader = response.body?.getReader();

@@ -285,6 +285,7 @@ export function Layout() {
                 <p className="sidebar-settings-category">AI</p>
                 <NavLink
                   to="/settings/chatbot"
+                  end
                   role="menuitem"
                   className={({ isActive }) =>
                     isActive
@@ -295,6 +296,18 @@ export function Layout() {
                 >
                   <ChatbotIcon />
                   Chatbot
+                </NavLink>
+                <NavLink
+                  to="/settings/chatbot/testing"
+                  role="menuitem"
+                  className={({ isActive }) =>
+                    isActive
+                      ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                      : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                  }
+                  onClick={closeSettingsMenu}
+                >
+                  Testing
                 </NavLink>
                 <NavLink
                   to="/settings/mcp-tools"

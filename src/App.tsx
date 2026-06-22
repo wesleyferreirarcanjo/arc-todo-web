@@ -6,6 +6,7 @@ import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
+import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
 import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
@@ -49,6 +50,10 @@ export default function App() {
                 <Route
                   path="/settings/chatbot"
                   element={<ChatbotSettingsPage />}
+                />
+                <Route
+                  path="/settings/chatbot/testing"
+                  element={<ChatbotTestingPage />}
                 />
                 <Route
                   path="/settings/mcp-tools"
