@@ -133,6 +133,22 @@ export interface RagChunkListInput {
   mimeType?: string;
 }
 
+export interface RagChunkAggregate {
+  totalChunks: number;
+  totalTokens: number;
+}
+
+export interface RagChunkAggregateInput {
+  scope?: string;
+  organizationId?: string;
+  projectId?: string;
+  personId?: string;
+  knowledgeEntryId?: string;
+  attachmentId?: string;
+  mimeType?: string;
+  entryTextOnly?: boolean;
+}
+
 export interface RagRetrievedChunk {
   id: string;
   scope: string;

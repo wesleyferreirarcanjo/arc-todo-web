@@ -2656,6 +2656,55 @@ textarea {
   gap: 0.75rem;
 }
 
+.knowledge-index-overview {
+  margin-top: 1.25rem;
+}
+
+.knowledge-index-overview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.knowledge-index-overview-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.knowledge-index-overview-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.knowledge-index-overview-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.knowledge-index-overview-grid {
+  margin-top: 0;
+}
+
+.knowledge-index-overview-status {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.knowledge-index-overview-status-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 @media (max-width: 1200px) {
   .knowledge-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -11,6 +11,7 @@ import {
   updateKnowledgeEntry,
 } from '../lib/knowledge/scope';
 import { getKnowledgeAccentColor } from '../lib/color/entityColor';
+import { KnowledgeIndexOverview } from '../components/KnowledgeIndexOverview';
 import { KnowledgeList } from '../components/KnowledgeList';
 import { QuickKnowledgeCreate } from '../components/QuickKnowledgeCreate';
 import type { KnowledgeSaveTarget } from '../components/QuickKnowledgeCreate';
@@ -300,6 +301,13 @@ export function KnowledgeWorkspacePage({
           />
         </div>
       </div>
+
+      <KnowledgeIndexOverview
+        scope={scopeFilter || undefined}
+        organizationId={organizationId || lockedOrganizationId || undefined}
+        projectId={projectId || lockedProjectId || undefined}
+        mimeType={mimeType.trim() || undefined}
+      />
 
       {loading && <p className="status-message">Loading knowledge...</p>}
       {error && <div className="alert alert-error">{error}</div>}

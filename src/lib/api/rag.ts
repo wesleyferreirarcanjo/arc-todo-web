@@ -1,5 +1,7 @@
 import { apiRequest } from './client';
 import type {
+  RagChunkAggregate,
+  RagChunkAggregateInput,
   RagChunkListInput,
   RagChunkListResult,
   RagIndexJob,
@@ -64,6 +66,28 @@ function buildChunkQuery(input: RagChunkListInput): string {
   if (input.mimeType) params.set('mimeType', input.mimeType);
   const query = params.toString();
   return query ? `?${query}` : '';
+}
+
+function buildChunkAggregateQuery(input: RagChunkAggregateInput): string {
+  const params = new URLSearchParams();
+  if (input.scope) params.set('scope', input.scope);
+  if (input.organizationId) params.set('organizationId', input.organizationId);
+  if (input.projectId) params.set('projectId', input.projectId);
+  if (input.personId) params.set('personId', input.personId);
+  if (input.knowledgeEntryId) params.set('knowledgeEntryId', input.knowledgeEntryId);
+  if (input.attachmentId) params.set('attachmentId', input.attachmentId);
+  if (input.mimeType) params.set('mimeType', input.mimeType);
+  if (input.entryTextOnly) params.set('entryTextOnly', 'true');
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+export function fetchRagChunkAggregate(
+  input: RagChunkAggregateInput = {},
+): Promise<RagChunkAggregate | null> {
+  return apiRequest<RagChunkAggregate | null>(
+    `/rag/chunks/aggregate${buildChunkAggregateQuery(input)}`,
+  );
 }
 
 export function fetchRagChunks(input: RagChunkListInput = {}): Promise<RagChunkListResult> {
