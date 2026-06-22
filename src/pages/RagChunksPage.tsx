@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Modal } from '../components/Modal';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import { fetchRagChunks, fetchRagIndexStatus, syncRagIndex } from '../lib/api/rag';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
-import type { RagChunkListResult, RagIndexJob, RagIndexStatus } from '../types/ragSettings';
+import type {
+  RagChunkListResult,
+  RagIndexJob,
+  RagIndexStatus,
+  RagIndexedChunk,
+} from '../types/ragSettings';
 
 const PAGE_SIZE = 50;
 const POLL_MS = 4000;
@@ -18,6 +24,47 @@ function formatJobLabel(job: RagIndexJob): string {
     return job.entryTitle;
   }
   return job.jobType === 'attachment' ? 'Attachment job' : 'Knowledge entry job';
+}
+
+function formatTimestamp(value: string | null | undefined): string {
+  if (!value) {
+    return '—';
+  }
+  return new Date(value).toLocaleString();
+}
+
+function formatChunkTitle(chunk: RagIndexedChunk): string {
+  return chunk.title?.trim() || 'Untitled';
+}
+
+function formatChunkSource(chunk: RagIndexedChunk): string {
+  const parts: string[] = [];
+  if (chunk.sourceFilename) {
+    parts.push(chunk.sourceFilename);
+  }
+  const stamp = chunk.updatedAt ?? chunk.createdAt;
+  if (stamp) {
+    parts.push(`Updated ${formatTimestamp(stamp)}`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : 'No source filename';
+}
+
+function hasActiveFilters(input: {
+  scope: string;
+  organizationId: string;
+  projectId: string;
+  mimeType: string;
+  knowledgeEntryId: string;
+  attachmentId: string;
+}): boolean {
+  return Boolean(
+    input.scope ||
+      input.organizationId ||
+      input.projectId ||
+      input.mimeType ||
+      input.knowledgeEntryId ||
+      input.attachmentId,
+  );
 }
 
 function IndexPipeline({ job }: { job: RagIndexJob }) {
@@ -76,6 +123,148 @@ function JobStatusCard({ job }: { job: RagIndexJob }) {
   );
 }
 
+function ChunkSummaryCard({
+  chunk,
+  organizationName,
+  projectName,
+  onViewDetails,
+}: {
+  chunk: RagIndexedChunk;
+  organizationName?: string;
+  projectName?: string;
+  onViewDetails: () => void;
+}) {
+  return (
+    <article className="rag-chunk-card">
+      <span className="rag-chunk-display-id" title={chunk.id}>
+        chunk #{chunk.chunkIndex}
+      </span>
+
+      <div className="rag-chunk-badges">
+        <div className="rag-chunk-badges-main">
+          <span className="task-badge">{chunk.scope}</span>
+          {organizationName ? (
+            <span className="task-badge task-badge-org" title={organizationName}>
+              {organizationName}
+            </span>
+          ) : null}
+          {projectName ? (
+            <span className="task-badge task-badge-project" title={projectName}>
+              {projectName}
+            </span>
+          ) : null}
+        </div>
+        <span className="task-badge">{chunk.tokenCount} tokens</span>
+      </div>
+
+      <div className="rag-chunk-card-actions">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={onViewDetails}
+        >
+          View details
+        </button>
+      </div>
+
+      <div className="rag-chunk-card-content">
+        <div className="rag-chunk-card-header">
+          <h3>{formatChunkTitle(chunk)}</h3>
+          <span className="task-badge">{chunk.mimeType || 'unknown type'}</span>
+        </div>
+        <p className="rag-chunk-preview">{chunk.text}</p>
+        <p className="rag-chunk-meta">{formatChunkSource(chunk)}</p>
+      </div>
+    </article>
+  );
+}
+
+function ChunkDetailsModal({
+  chunk,
+  organizationName,
+  projectName,
+  onClose,
+}: {
+  chunk: RagIndexedChunk;
+  organizationName?: string;
+  projectName?: string;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`${formatChunkTitle(chunk)} · chunk ${chunk.chunkIndex}`}
+      titleId={`rag-chunk-modal-${chunk.id}`}
+      className="rag-chunk-details-modal"
+    >
+      <div className="rag-chunk-details-layout">
+        <div className="rag-chunk-details-context">
+          <span className="task-badge">{chunk.scope}</span>
+          {organizationName ? (
+            <span className="task-badge task-badge-org">{organizationName}</span>
+          ) : null}
+          {projectName ? (
+            <span className="task-badge task-badge-project">{projectName}</span>
+          ) : null}
+          <span className="task-badge">{chunk.mimeType || 'unknown type'}</span>
+          <span className="task-badge">{chunk.tokenCount} tokens</span>
+        </div>
+
+        <section className="task-details-section">
+          <h4>Chunk text</h4>
+          <p className="rag-chunk-details-text">{chunk.text}</p>
+        </section>
+
+        <dl className="task-details-meta-grid">
+          <div>
+            <dt>Source filename</dt>
+            <dd>{chunk.sourceFilename || '—'}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>{formatTimestamp(chunk.createdAt)}</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd>{formatTimestamp(chunk.updatedAt)}</dd>
+          </div>
+        </dl>
+
+        <section className="task-details-section">
+          <h4>IDs</h4>
+          <dl className="rag-chunk-details-id-grid">
+            <div>
+              <dt>Chunk</dt>
+              <dd>{chunk.id}</dd>
+            </div>
+            <div>
+              <dt>Knowledge entry</dt>
+              <dd>{chunk.knowledgeEntryId}</dd>
+            </div>
+            <div>
+              <dt>Attachment</dt>
+              <dd>{chunk.attachmentId || '—'}</dd>
+            </div>
+            <div>
+              <dt>Organization</dt>
+              <dd>{chunk.organizationId || '—'}</dd>
+            </div>
+            <div>
+              <dt>Project</dt>
+              <dd>{chunk.projectId || '—'}</dd>
+            </div>
+            <div>
+              <dt>Person</dt>
+              <dd>{chunk.personId || '—'}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </Modal>
+  );
+}
+
 export function RagChunksPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -88,6 +277,7 @@ export function RagChunksPage() {
   const [offset, setOffset] = useState(0);
   const [result, setResult] = useState<RagChunkListResult | null>(null);
   const [indexStatus, setIndexStatus] = useState<RagIndexStatus | null>(null);
+  const [selectedChunk, setSelectedChunk] = useState<RagIndexedChunk | null>(null);
   const [chunksLoading, setChunksLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(true);
   const [chunksRefreshing, setChunksRefreshing] = useState(false);
@@ -95,6 +285,16 @@ export function RagChunksPage() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const previousProcessingCount = useRef(0);
+
+  const organizationNameById = useCallback(
+    (id: string | null) => organizations.find((org) => org.id === id)?.name,
+    [organizations],
+  );
+
+  const projectNameById = useCallback(
+    (id: string | null) => projects.find((project) => project.id === id)?.name,
+    [projects],
+  );
 
   const loadChunks = useCallback(
     async (nextOffset = offset, options: { silent?: boolean } = {}) => {
@@ -160,9 +360,6 @@ export function RagChunksPage() {
     void fetchOrganizations()
       .then((items) => {
         setOrganizations(items);
-        if (items[0]) {
-          setOrganizationId(items[0].id);
-        }
       })
       .catch(() => setOrganizations([]));
   }, []);
@@ -176,7 +373,6 @@ export function RagChunksPage() {
     void fetchProjects(organizationId)
       .then((items) => {
         setProjects(items);
-        setProjectId(items[0]?.id ?? '');
       })
       .catch(() => setProjects([]));
   }, [organizationId]);
@@ -225,10 +421,31 @@ export function RagChunksPage() {
     }
   }
 
+  function handleOrganizationChange(nextOrganizationId: string) {
+    setOrganizationId(nextOrganizationId);
+    setProjectId('');
+  }
+
   const total = result?.total ?? 0;
   const pageStart = total === 0 ? 0 : offset + 1;
   const pageEnd = Math.min(offset + PAGE_SIZE, total);
   const initialLoading = chunksLoading && statusLoading && !result && !indexStatus;
+  const filtersActive = hasActiveFilters({
+    scope,
+    organizationId,
+    projectId,
+    mimeType,
+    knowledgeEntryId,
+    attachmentId,
+  });
+
+  const emptyStateMessage = filtersActive
+    ? hasActiveWork
+      ? 'No chunks match these filters yet. Files may still be processing.'
+      : 'No chunks found for the current filters.'
+    : hasActiveWork
+      ? 'No chunks have been indexed yet. Files may still be processing.'
+      : 'No chunks have been indexed yet.';
 
   return (
     <section className="page-section rag-chunks-page">
@@ -306,7 +523,10 @@ export function RagChunksPage() {
         </label>
         <label className="form-field">
           <span>Organization</span>
-          <select value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}>
+          <select
+            value={organizationId}
+            onChange={(event) => handleOrganizationChange(event.target.value)}
+          >
             <option value="">All organizations</option>
             {organizations.map((org) => (
               <option key={org.id} value={org.id}>
@@ -317,7 +537,11 @@ export function RagChunksPage() {
         </label>
         <label className="form-field">
           <span>Project</span>
-          <select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+          <select
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
+            disabled={!organizationId}
+          >
             <option value="">All projects</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
@@ -366,30 +590,19 @@ export function RagChunksPage() {
             {chunksRefreshing ? <span className="subtitle">Updating chunks...</span> : null}
           </div>
           {result.items.length === 0 ? (
-            <p>
-              {hasActiveWork
-                ? 'No chunks match these filters yet. Files may still be processing.'
-                : 'No chunks found for the current filters.'}
-            </p>
+            <p>{emptyStateMessage}</p>
           ) : (
-            result.items.map((chunk) => (
-              <article key={chunk.id} className="knowledge-card" style={{ marginTop: '1rem' }}>
-                <h3>
-                  {chunk.title || 'Untitled'} · chunk {chunk.chunkIndex}
-                </h3>
-                <p className="subtitle">
-                  {chunk.scope}
-                  {chunk.sourceFilename ? ` · ${chunk.sourceFilename}` : ''}
-                  {chunk.mimeType ? ` · ${chunk.mimeType}` : ''} · {chunk.tokenCount} tokens
-                </p>
-                <p className="subtitle">
-                  Entry {chunk.knowledgeEntryId}
-                  {chunk.attachmentId ? ` · attachment ${chunk.attachmentId}` : ''}
-                  {chunk.projectId ? ` · project ${chunk.projectId}` : ''}
-                </p>
-                <p>{chunk.text}</p>
-              </article>
-            ))
+            <div className="rag-chunk-list">
+              {result.items.map((chunk) => (
+                <ChunkSummaryCard
+                  key={chunk.id}
+                  chunk={chunk}
+                  organizationName={organizationNameById(chunk.organizationId)}
+                  projectName={projectNameById(chunk.projectId)}
+                  onViewDetails={() => setSelectedChunk(chunk)}
+                />
+              ))}
+            </div>
           )}
           <div className="form-actions">
             <button
@@ -418,6 +631,15 @@ export function RagChunksPage() {
             </button>
           </div>
         </div>
+      ) : null}
+
+      {selectedChunk ? (
+        <ChunkDetailsModal
+          chunk={selectedChunk}
+          organizationName={organizationNameById(selectedChunk.organizationId)}
+          projectName={projectNameById(selectedChunk.projectId)}
+          onClose={() => setSelectedChunk(null)}
+        />
       ) : null}
     </section>
   );
