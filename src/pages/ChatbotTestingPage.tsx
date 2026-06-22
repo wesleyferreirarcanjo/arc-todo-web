@@ -130,6 +130,13 @@ function estimateRequestTokens(request: ChatRequest): number {
   );
 }
 
+function createRunId(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  return `run-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function buildRunResult({
   request,
   scenarioLabel,
@@ -144,7 +151,7 @@ function buildRunResult({
   const promptTokenCount = estimateRequestTokens(request);
   const responseTokenCount = estimateTokenCount(response);
   return {
-    id: crypto.randomUUID(),
+    id: createRunId(),
     savedAt: new Date().toISOString(),
     request,
     scenarioLabel,
