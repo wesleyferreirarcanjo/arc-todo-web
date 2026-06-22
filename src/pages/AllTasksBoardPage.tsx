@@ -44,6 +44,7 @@ export function AllTasksBoardPage() {
   const [tasks, setTasks] = useState<TaskWithContext[]>([]);
   const [cycleTasks, setCycleTasks] = useState<Task[]>([]);
   const [activeCycle, setActiveCycle] = useState<BoardCycle | null>(null);
+  const [autoClosesOn, setAutoClosesOn] = useState<string | null>(null);
   const [cycleHistory, setCycleHistory] = useState<BoardCycleHistoryResponse>({
     cycles: [],
   });
@@ -103,6 +104,7 @@ export function AllTasksBoardPage() {
           fetchBoardCycleHistory(organizationId, projectId),
         ]);
         setActiveCycle(current.cycle);
+        setAutoClosesOn(current.autoClosesOn);
         setCycleTasks(current.tasks);
         setCycleHistory(history);
         if (silent) setError(null);
@@ -356,9 +358,10 @@ export function AllTasksBoardPage() {
         </p>
       )}
 
-      {projectFocus && activeCycle && (
+      {projectFocus && activeCycle && autoClosesOn && (
         <BoardCycleHeader
           cycle={activeCycle}
+          autoClosesOn={autoClosesOn}
           advancing={advancing}
           onAdvance={() => void handleAdvanceCycle()}
         />

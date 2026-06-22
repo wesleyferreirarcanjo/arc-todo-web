@@ -34,6 +34,7 @@ export interface BoardCycleHistoryEntry {
 export interface CurrentBoardCycleResponse {
   cycle: BoardCycle;
   tasks: Task[];
+  autoClosesOn: string;
 }
 
 export interface AdvanceBoardCycleResponse {
