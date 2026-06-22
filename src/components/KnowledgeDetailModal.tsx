@@ -92,7 +92,12 @@ export function KnowledgeDetailModal({
         style={accentStyle}
       >
         {scopeLabel && (
-          <span className="knowledge-scope-badge">{scopeLabel}</span>
+          <span
+            className={`knowledge-scope-badge${accentColor ? ' has-accent' : ''}`}
+            style={accentStyle}
+          >
+            {scopeLabel}
+          </span>
         )}
 
         {editing ? (

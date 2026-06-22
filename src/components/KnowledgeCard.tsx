@@ -50,7 +50,7 @@ export function KnowledgeCard({
     >
       {scopeLabel && (
         <span
-          className="knowledge-scope-badge"
+          className={`knowledge-scope-badge${accentColor ? ' has-accent' : ''}`}
           style={
             accentColor
               ? ({ '--entity-accent': accentColor } as CSSProperties)
