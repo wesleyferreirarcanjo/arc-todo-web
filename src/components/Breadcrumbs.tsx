@@ -36,6 +36,10 @@ export function Breadcrumbs() {
     );
   }
 
+  if (location.pathname.startsWith('/settings/rag')) {
+    return null;
+  }
+
   const isGeneralPersonKnowledge =
     location.pathname.startsWith('/people/') &&
     location.pathname.endsWith('/knowledge');

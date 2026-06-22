@@ -132,15 +132,6 @@ export function RagSettingsPage() {
 
   return (
     <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>RAG Settings</h2>
-          <p className="subtitle">
-            Configure chunking, local CPU embeddings, queue throttling, and DeepSeek retrieval helper settings.
-          </p>
-        </div>
-      </div>
-
       <RagSettingsNav />
 
       {loading ? <p className="subtitle">Loading RAG settings...</p> : null}
