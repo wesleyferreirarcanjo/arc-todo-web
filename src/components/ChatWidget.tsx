@@ -215,7 +215,7 @@ export function ChatWidget() {
     removeConversation,
     registerComposer,
     ensureActiveConversation,
-    persistMessage,
+    refreshConversations,
     appendLocalMessage,
     updateLastAssistantMessage,
   } = useChat();
@@ -337,7 +337,6 @@ export function ChatWidget() {
 
     try {
       const conversationId = await ensureActiveConversation();
-      await persistMessage('user', text);
 
       appendLocalMessage({ role: 'assistant', content: '' });
 
@@ -359,7 +358,7 @@ export function ChatWidget() {
       );
 
       updateLastAssistantMessage(response.message, response.usedTools ?? []);
-      await persistMessage('assistant', response.message, response.usedTools ?? []);
+      await refreshConversations();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chat request failed');
     } finally {
@@ -519,40 +518,38 @@ export function ChatWidget() {
               {loadingMessages ? (
                 <p className="chat-widget-loading">Loading conversation...</p>
               ) : (
-                messages.map((message, index) => (
-                  <motion.article
-                    key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
-                    className={
-                      message.role === 'user'
-                        ? 'chat-widget-message chat-widget-message-user'
-                        : 'chat-widget-message chat-widget-message-assistant'
-                    }
-                    variants={chatMessageVariants}
-                    initial="hidden"
-                    animate="visible"
-                    transition={fast}
-                  >
-                    <span className="chat-widget-message-role">
-                      {message.role === 'user' ? 'You' : 'Assistant'}
-                    </span>
-                    <MessageBody content={message.content} />
-                  </motion.article>
-                ))
-              )}
+                messages.map((message, index) => {
+                  const isStreamingPlaceholder =
+                    loading &&
+                    message.role === 'assistant' &&
+                    !message.content &&
+                    index === messages.length - 1;
 
-              {loading ? (
-                <motion.article
-                  className="chat-widget-message chat-widget-message-assistant chat-widget-message-loading"
-                  variants={chatMessageVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={fast}
-                  aria-live="assertive"
-                >
-                  <span className="chat-widget-message-role">Assistant</span>
-                  <TypingIndicator />
-                </motion.article>
-              ) : null}
+                  return (
+                    <motion.article
+                      key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
+                      className={
+                        message.role === 'user'
+                          ? 'chat-widget-message chat-widget-message-user'
+                          : 'chat-widget-message chat-widget-message-assistant'
+                      }
+                      variants={chatMessageVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={fast}
+                    >
+                      <span className="chat-widget-message-role">
+                        {message.role === 'user' ? 'You' : 'Assistant'}
+                      </span>
+                      {isStreamingPlaceholder ? (
+                        <TypingIndicator />
+                      ) : (
+                        <MessageBody content={message.content} />
+                      )}
+                    </motion.article>
+                  );
+                })
+              )}
 
               <div ref={messagesEndRef} />
             </div>
