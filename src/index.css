@@ -2665,7 +2665,22 @@ textarea {
 }
 
 .knowledge-card.has-accent {
-  border-left: 3px solid var(--entity-accent, var(--accent));
+  border-left: 4px solid var(--entity-accent, var(--border-strong));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--entity-accent, var(--accent)) 6%, var(--bg-surface)),
+    var(--bg-surface)
+  );
+}
+
+.knowledge-card.has-accent::before {
+  display: none;
+}
+
+.knowledge-card.has-accent .knowledge-scope-badge {
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--entity-accent, #8778a3) 8%, var(--bg-surface));
 }
 
 .knowledge-create-modal .knowledge-form {
@@ -2736,6 +2751,20 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  cursor: default;
+}
+
+.entity-card.knowledge-card:hover {
+  /* ponytail: framer-motion owns hover lift on knowledge cards */
+  transform: none;
+}
+
+.knowledge-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .knowledge-scope-badge {

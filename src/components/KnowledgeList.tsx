@@ -1,3 +1,4 @@
+import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import type {
   KnowledgeEntry,
   KnowledgeEntryWithContext,
@@ -28,18 +29,22 @@ export function KnowledgeList({
   }
 
   return (
-    <div className="entity-list knowledge-list">
-      {entries.map((entry) => (
-        <KnowledgeCard
-          key={entry.id}
-          entry={entry}
-          scope={scope ?? entryToScopeContext(entry)}
-          scopeLabel={getScopeLabel?.(entry)}
-          accentColor={getAccentColor?.(entry as KnowledgeEntryWithContext)}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
-      ))}
-    </div>
+    <LayoutGroup id="knowledge-list">
+      <div className="entity-list knowledge-list">
+        <AnimatePresence mode="popLayout">
+          {entries.map((entry) => (
+            <KnowledgeCard
+              key={entry.id}
+              entry={entry}
+              scope={scope ?? entryToScopeContext(entry)}
+              scopeLabel={getScopeLabel?.(entry)}
+              accentColor={getAccentColor?.(entry as KnowledgeEntryWithContext)}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+    </LayoutGroup>
   );
 }
