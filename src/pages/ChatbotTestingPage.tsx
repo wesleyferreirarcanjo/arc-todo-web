@@ -95,18 +95,85 @@ const SCENARIOS: TestScenario[] = [
 ];
 
 interface RunResult {
+  id: string;
+  savedAt: string;
   request: ChatRequest;
   scenarioLabel: string;
   mode: 'stream' | 'sync';
   response: string;
   usedTools: string[];
   elapsedMs: number;
-  tokenCount: number;
+  promptTokenCount: number;
+  responseTokenCount: number;
+  totalTokenCount: number;
 }
+
+const SAVED_RUNS_STORAGE_KEY = 'arc-todo.chatbotTesting.savedRuns';
+const MAX_SAVED_RUNS = 12;
 
 function formatMs(ms: number): string {
   if (ms < 1000) return `${ms} ms`;
   return `${(ms / 1000).toFixed(2)} s`;
+}
+
+function estimateTokenCount(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  // ponytail: client-only estimate; replace with backend token usage if the API exposes it.
+  return Math.ceil(trimmed.length / 4);
+}
+
+function estimateRequestTokens(request: ChatRequest): number {
+  return request.messages.reduce(
+    (sum, message) => sum + estimateTokenCount(message.content),
+    0,
+  );
+}
+
+function buildRunResult({
+  request,
+  scenarioLabel,
+  mode,
+  response,
+  usedTools,
+  elapsedMs,
+}: Omit<
+  RunResult,
+  'id' | 'savedAt' | 'promptTokenCount' | 'responseTokenCount' | 'totalTokenCount'
+>): RunResult {
+  const promptTokenCount = estimateRequestTokens(request);
+  const responseTokenCount = estimateTokenCount(response);
+  return {
+    id: crypto.randomUUID(),
+    savedAt: new Date().toISOString(),
+    request,
+    scenarioLabel,
+    mode,
+    response,
+    usedTools,
+    elapsedMs,
+    promptTokenCount,
+    responseTokenCount,
+    totalTokenCount: promptTokenCount + responseTokenCount,
+  };
+}
+
+function loadSavedRuns(): RunResult[] {
+  try {
+    const raw = window.localStorage.getItem(SAVED_RUNS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, MAX_SAVED_RUNS) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedRuns(runs: RunResult[]): void {
+  window.localStorage.setItem(
+    SAVED_RUNS_STORAGE_KEY,
+    JSON.stringify(runs.slice(0, MAX_SAVED_RUNS)),
+  );
 }
 
 function redactSecrets(value: unknown): unknown {
@@ -219,18 +286,22 @@ function ResultCard({ result }: { result: RunResult }) {
           </strong>
         </article>
         <article className="token-summary-card">
-          <span className="token-summary-label">Response length</span>
-          <strong className="token-summary-value">{result.tokenCount}</strong>
-        </article>
-        <article className="token-summary-card">
-          <span className="token-summary-label">Tools used</span>
+          <span className="token-summary-label">Prompt tokens</span>
           <strong className="token-summary-value">
-            {result.usedTools.length}
+            {result.promptTokenCount.toLocaleString()}
           </strong>
         </article>
         <article className="token-summary-card">
-          <span className="token-summary-label">Elapsed</span>
-          <strong className="token-summary-value">{formatMs(result.elapsedMs)}</strong>
+          <span className="token-summary-label">Response tokens</span>
+          <strong className="token-summary-value">
+            {result.responseTokenCount.toLocaleString()}
+          </strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">Total tokens</span>
+          <strong className="token-summary-value">
+            {result.totalTokenCount.toLocaleString()}
+          </strong>
         </article>
       </div>
 
@@ -240,6 +311,7 @@ function ResultCard({ result }: { result: RunResult }) {
         {result.scenarioLabel.startsWith('Conversation:')
           ? ` · ${result.scenarioLabel}`
           : ''}
+        {' · '}Tools: {result.usedTools.length} · Elapsed: {formatMs(result.elapsedMs)}
       </p>
 
       <section className="chatbot-testing-result-section">
@@ -274,6 +346,93 @@ function ResultCard({ result }: { result: RunResult }) {
   );
 }
 
+function SavedRunCards({
+  runs,
+  onSelect,
+  onDelete,
+  onClear,
+}: {
+  runs: RunResult[];
+  onSelect: (run: RunResult) => void;
+  onDelete: (runId: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <section className="notice-card chatbot-testing-saved-section">
+      <div className="chatbot-testing-saved-header">
+        <div>
+          <h3>Saved test runs</h3>
+          <p className="subtitle">
+            Successful tests are saved locally as review cards for quick comparison.
+          </p>
+        </div>
+        {runs.length > 0 ? (
+          <button type="button" className="btn btn-secondary btn-sm" onClick={onClear}>
+            Clear saved
+          </button>
+        ) : null}
+      </div>
+
+      {runs.length === 0 ? (
+        <p className="subtitle">No saved tests yet. Run a scenario to create the first card.</p>
+      ) : (
+        <div className="chatbot-testing-saved-grid">
+          {runs.map((run) => (
+            <article
+              key={run.id}
+              className="task-card chatbot-testing-saved-card"
+              tabIndex={0}
+            >
+              <div className="task-context-badges chatbot-testing-saved-badges">
+                <div className="task-context-badges-main">
+                  <span className="task-badge">{run.mode}</span>
+                  <span className="task-badge">
+                    {run.totalTokenCount.toLocaleString()} tokens
+                  </span>
+                  <span className="task-badge">{run.usedTools.length} tools</span>
+                </div>
+              </div>
+
+              <div className="task-card-content">
+                <div className="task-card-header">
+                  <h3>{run.scenarioLabel}</h3>
+                </div>
+                <p className="task-meta">
+                  {new Date(run.savedAt).toLocaleString()} · {formatMs(run.elapsedMs)}
+                </p>
+                <p className="task-description">
+                  {run.request.messages[run.request.messages.length - 1]?.content ||
+                    'No prompt recorded.'}
+                </p>
+                <p className="chatbot-testing-saved-response">
+                  {run.response || '(empty response)'}
+                </p>
+              </div>
+
+              <div className="entity-actions chatbot-testing-saved-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => onSelect(run)}
+                >
+                  View
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => onDelete(run.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function ChatbotTestingPage() {
   const { currentOrgId, currentProjectId } = useWorkspace();
   const abortRef = useRef<AbortController | null>(null);
@@ -295,6 +454,7 @@ export function ChatbotTestingPage() {
   const [error, setError] = useState<string | null>(null);
   const [rawError, setRawError] = useState<string | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [savedRuns, setSavedRuns] = useState<RunResult[]>([]);
 
   const selectedScenario = useMemo(
     () => SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? SCENARIOS[0],
@@ -324,6 +484,10 @@ export function ChatbotTestingPage() {
   useEffect(() => {
     void loadInitial();
   }, [loadInitial]);
+
+  useEffect(() => {
+    setSavedRuns(loadSavedRuns());
+  }, []);
 
   useEffect(() => {
     setFinalPrompt(selectedScenario.finalPrompt);
@@ -382,6 +546,36 @@ export function ChatbotTestingPage() {
     };
   }
 
+  function saveRun(run: RunResult) {
+    setSavedRuns((current) => {
+      const next = [run, ...current.filter((item) => item.id !== run.id)].slice(
+        0,
+        MAX_SAVED_RUNS,
+      );
+      persistSavedRuns(next);
+      return next;
+    });
+  }
+
+  function handleSelectSavedRun(run: RunResult) {
+    setResult(run);
+    setRawError(null);
+    setError(null);
+  }
+
+  function handleDeleteSavedRun(runId: string) {
+    setSavedRuns((current) => {
+      const next = current.filter((run) => run.id !== runId);
+      persistSavedRuns(next);
+      return next;
+    });
+  }
+
+  function handleClearSavedRuns() {
+    setSavedRuns([]);
+    persistSavedRuns([]);
+  }
+
   async function handleRun(event: React.FormEvent) {
     event.preventDefault();
     if (!finalPrompt.trim() || running) {
@@ -417,7 +611,7 @@ export function ChatbotTestingPage() {
         );
 
         const elapsedMs = Math.round(performance.now() - startedAt);
-        setResult({
+        const nextResult = buildRunResult({
           request,
           scenarioLabel: loadedConversation
             ? `Conversation: ${loadedConversation.title}`
@@ -426,12 +620,13 @@ export function ChatbotTestingPage() {
           response: response.message,
           usedTools: response.usedTools ?? [],
           elapsedMs,
-          tokenCount: response.message.length,
         });
+        setResult(nextResult);
+        saveRun(nextResult);
       } else {
         const response = await sendChatMessage(request);
         const elapsedMs = Math.round(performance.now() - startedAt);
-        setResult({
+        const nextResult = buildRunResult({
           request,
           scenarioLabel: loadedConversation
             ? `Conversation: ${loadedConversation.title}`
@@ -440,8 +635,9 @@ export function ChatbotTestingPage() {
           response: response.message,
           usedTools: response.usedTools ?? [],
           elapsedMs,
-          tokenCount: response.message.length,
         });
+        setResult(nextResult);
+        saveRun(nextResult);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -594,6 +790,13 @@ export function ChatbotTestingPage() {
               </button>
             </div>
           </form>
+
+          <SavedRunCards
+            runs={savedRuns}
+            onSelect={handleSelectSavedRun}
+            onDelete={handleDeleteSavedRun}
+            onClear={handleClearSavedRuns}
+          />
 
           {running && useStreaming && streamingText ? (
             <div className="notice-card chatbot-testing-results-card">

@@ -4405,6 +4405,58 @@ textarea {
   color: var(--danger-text);
 }
 
+.chatbot-testing-saved-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.chatbot-testing-saved-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chatbot-testing-saved-header h3 {
+  margin: 0;
+}
+
+.chatbot-testing-saved-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.chatbot-testing-saved-card {
+  cursor: default;
+  min-height: 16rem;
+}
+
+.chatbot-testing-saved-card:active {
+  cursor: default;
+}
+
+.chatbot-testing-saved-badges {
+  padding-right: 0;
+}
+
+.chatbot-testing-saved-response {
+  margin: 0.65rem 0 0;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.chatbot-testing-saved-actions {
+  position: relative;
+  z-index: 2;
+}
+
 .board-cycle-header {
   display: flex;
   align-items: flex-start;
