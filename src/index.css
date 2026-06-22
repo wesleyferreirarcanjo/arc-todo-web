@@ -556,23 +556,33 @@ textarea:focus-visible {
 
 .settings-page-tab:hover:not(.active) {
   color: var(--text-primary);
-  border-radius: 14px 5px 14px 5px;
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
-}
-
-.settings-page-tab:nth-child(even):hover:not(.active) {
-  border-radius: 5px 14px 5px 14px;
 }
 
 .settings-page-tab.active {
   color: var(--accent-contrast);
   border-right-color: transparent;
-  border-radius: 14px 5px 14px 5px;
   background: var(--gradient-accent);
   box-shadow: var(--shadow-soft), 0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
-.settings-page-tab.active:nth-child(even) {
+.settings-page-tab:first-child:hover:not(.active),
+.settings-page-tab:first-child.active {
+  border-radius: 22px 6px 6px 8px;
+}
+
+.settings-page-tab:last-child:hover:not(.active),
+.settings-page-tab:last-child.active {
+  border-radius: 6px 22px 8px 6px;
+}
+
+.settings-page-tab:not(:first-child):not(:last-child):hover:not(.active),
+.settings-page-tab:not(:first-child):not(:last-child).active {
+  border-radius: 14px 5px 14px 5px;
+}
+
+.settings-page-tab:not(:first-child):not(:last-child):nth-child(even):hover:not(.active),
+.settings-page-tab:not(:first-child):not(:last-child).active:nth-child(even) {
   border-radius: 5px 14px 5px 14px;
 }
 
