@@ -237,8 +237,8 @@ function ResultCard({ result }: { result: RunResult }) {
       <p className="subtitle chatbot-testing-request-summary">
         Org: {result.request.organizationId ?? 'none'} · Project:{' '}
         {result.request.projectId ?? 'none'}
-        {result.request.conversationId
-          ? ` · Conversation: ${result.request.conversationId}`
+        {result.scenarioLabel.startsWith('Conversation:')
+          ? ` · ${result.scenarioLabel}`
           : ''}
       </p>
 
@@ -378,7 +378,6 @@ export function ChatbotTestingPage() {
       messages,
       organizationId: currentOrgId ?? undefined,
       projectId: currentProjectId ?? undefined,
-      conversationId: conversationId || undefined,
       taskRefs: loadedConversation?.taskRefs,
     };
   }
@@ -453,12 +452,17 @@ export function ChatbotTestingPage() {
         err instanceof Error ? err.message : 'Chatbot test request failed';
       setError(message);
 
-      const detail =
+      const detail = redactSecrets(
         err instanceof ChatApiError
-          ? { status: err.status, message: err.message, detail: err.detail }
-          : { message };
+          ? {
+              status: err.status,
+              message: err.message,
+              ...(err.detail !== undefined ? { detail: err.detail } : {}),
+            }
+          : { message: err instanceof Error ? err.message : String(err) },
+      );
 
-      setRawError(JSON.stringify(redactSecrets(detail), null, 2));
+      setRawError(JSON.stringify(detail, null, 2));
     } finally {
       setRunning(false);
       abortRef.current = null;

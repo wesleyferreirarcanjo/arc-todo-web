@@ -182,7 +182,7 @@ export async function streamChatMessage(
       } else if (parsed.event === 'error') {
         const message = String(payload.message ?? 'Chat stream failed');
         callbacks.onError?.(message);
-        throw new ChatApiError(message, 502);
+        throw new ChatApiError(message, 502, payload);
       }
     }
   }
