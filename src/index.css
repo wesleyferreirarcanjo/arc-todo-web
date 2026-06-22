@@ -2651,6 +2651,94 @@ textarea {
 
 .knowledge-list {
   margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+  .knowledge-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .knowledge-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.knowledge-card.is-compact {
+  padding: 0.65rem 0.75rem;
+  gap: 0.45rem;
+  min-height: 9.5rem;
+}
+
+.knowledge-card.is-compact .knowledge-card-content {
+  gap: 0.45rem;
+}
+
+.knowledge-card.is-compact .knowledge-scope-badge {
+  font-size: 0.62rem;
+  padding: 0.12rem 0.45rem;
+}
+
+.knowledge-card.is-compact .knowledge-card-title,
+.knowledge-card.is-compact h3 {
+  font-size: 0.92rem;
+  line-height: 1.3;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.knowledge-card-preview {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.knowledge-card.is-compact .knowledge-meta {
+  font-size: 0.68rem;
+  margin-top: auto;
+}
+
+.knowledge-card.is-compact .knowledge-focus-btn {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.knowledge-card.is-focused {
+  grid-column: 1 / -1;
+  padding: 1rem 1.15rem;
+}
+
+.knowledge-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.knowledge-card-header h3 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.knowledge-collapse-btn {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.65rem;
 }
 
 .knowledge-entry-index {

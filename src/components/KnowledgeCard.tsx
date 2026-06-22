@@ -14,8 +14,17 @@ interface KnowledgeCardProps {
   scope: KnowledgeScopeContext;
   scopeLabel?: string;
   accentColor?: string;
+  focused: boolean;
+  onFocus: () => void;
+  onCollapse: () => void;
   onUpdate: (id: string, input: UpdateKnowledgeInput) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+}
+
+function previewContent(text: string, max = 120): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max).trimEnd()}…`;
 }
 
 export function KnowledgeCard({
@@ -23,6 +32,9 @@ export function KnowledgeCard({
   scope,
   scopeLabel,
   accentColor,
+  focused,
+  onFocus,
+  onCollapse,
   onUpdate,
   onDelete,
 }: KnowledgeCardProps) {
@@ -33,6 +45,8 @@ export function KnowledgeCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [reindexVersion, setReindexVersion] = useState(0);
+
+  const expanded = focused || editing;
 
   async function handleSave() {
     if (!title.trim() || !content.trim()) return;
@@ -65,6 +79,11 @@ export function KnowledgeCard({
     setEditing(false);
   }
 
+  function handleStartEdit() {
+    onFocus();
+    setEditing(true);
+  }
+
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor } as CSSProperties)
     : undefined;
@@ -72,13 +91,13 @@ export function KnowledgeCard({
   return (
     <motion.article
       layout
-      className={`entity-card knowledge-card${accentColor ? ' has-accent' : ''}`}
+      className={`entity-card knowledge-card${accentColor ? ' has-accent' : ''}${expanded ? ' is-focused' : ' is-compact'}`}
       style={cardStyle}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: deleting ? 0.6 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: -4 }}
       whileHover={
-        !deleting
+        !deleting && !expanded
           ? {
               y: -1,
               boxShadow: 'var(--shadow-lift)',
@@ -144,9 +163,18 @@ export function KnowledgeCard({
               </button>
             </div>
           </div>
-        ) : (
+        ) : expanded ? (
           <>
-            <h3>{entry.title}</h3>
+            <div className="knowledge-card-header">
+              <h3>{entry.title}</h3>
+              <button
+                type="button"
+                className="btn btn-secondary knowledge-collapse-btn"
+                onClick={onCollapse}
+              >
+                Collapse
+              </button>
+            </div>
             <p className="knowledge-content">{entry.content}</p>
             <p className="knowledge-meta">
               Updated {new Date(entry.updatedAt).toLocaleString()}
@@ -159,7 +187,7 @@ export function KnowledgeCard({
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => setEditing(true)}
+                onClick={handleStartEdit}
               >
                 Edit
               </button>
@@ -172,10 +200,28 @@ export function KnowledgeCard({
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
+            <KnowledgeAttachments knowledgeId={entry.id} scope={scope} />
+          </>
+        ) : (
+          <>
+            <h3 className="knowledge-card-title">{entry.title}</h3>
+            <p className="knowledge-content knowledge-card-preview">
+              {previewContent(entry.content)}
+            </p>
+            <p className="knowledge-meta">
+              Updated {new Date(entry.updatedAt).toLocaleDateString()}
+            </p>
+            <div className="knowledge-actions">
+              <button
+                type="button"
+                className="btn btn-primary knowledge-focus-btn"
+                onClick={onFocus}
+              >
+                Open
+              </button>
+            </div>
           </>
         )}
-
-        <KnowledgeAttachments knowledgeId={entry.id} scope={scope} />
       </motion.div>
     </motion.article>
   );

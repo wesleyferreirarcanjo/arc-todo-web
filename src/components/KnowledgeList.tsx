@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import type {
   KnowledgeEntry,
@@ -24,6 +25,8 @@ export function KnowledgeList({
   onUpdate,
   onDelete,
 }: KnowledgeListProps) {
+  const [focusedEntryId, setFocusedEntryId] = useState<string | null>(null);
+
   if (entries.length === 0) {
     return null;
   }
@@ -39,6 +42,13 @@ export function KnowledgeList({
               scope={scope ?? entryToScopeContext(entry)}
               scopeLabel={getScopeLabel?.(entry)}
               accentColor={getAccentColor?.(entry as KnowledgeEntryWithContext)}
+              focused={focusedEntryId === entry.id}
+              onFocus={() => setFocusedEntryId(entry.id)}
+              onCollapse={() =>
+                setFocusedEntryId((current) =>
+                  current === entry.id ? null : current,
+                )
+              }
               onUpdate={onUpdate}
               onDelete={onDelete}
             />
