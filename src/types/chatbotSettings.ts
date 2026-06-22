@@ -5,6 +5,8 @@ export interface ChatbotSettings {
   temperature: number;
   enabled: boolean;
   hasApiKey: boolean;
+  maxHistoryMessages: number;
+  maxHistoryTokens: number;
 }
 
 export interface UpdateChatbotSettingsInput {
@@ -14,4 +16,6 @@ export interface UpdateChatbotSettingsInput {
   apiKey?: string;
   temperature?: number;
   enabled?: boolean;
+  maxHistoryMessages?: number;
+  maxHistoryTokens?: number;
 }

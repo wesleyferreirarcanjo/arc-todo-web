@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
-import { sendChatMessage } from '../lib/api/chat';
+import { streamChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
 import type { ConversationSummary } from '../lib/api/conversations';
 import { useChat } from '../context/ChatContext';
@@ -217,6 +217,7 @@ export function ChatWidget() {
     ensureActiveConversation,
     persistMessage,
     appendLocalMessage,
+    updateLastAssistantMessage,
   } = useChat();
   const { base, fast, reducedMotion } = useMotionTransition();
 
@@ -338,19 +339,26 @@ export function ChatWidget() {
       const conversationId = await ensureActiveConversation();
       await persistMessage('user', text);
 
-      const response = await sendChatMessage({
-        messages: nextMessages,
-        organizationId: currentOrgId ?? undefined,
-        projectId: currentProjectId ?? undefined,
-        conversationId,
-        taskRefs,
-      });
+      appendLocalMessage({ role: 'assistant', content: '' });
 
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: response.message,
-      };
-      appendLocalMessage(assistantMessage);
+      let streamedContent = '';
+      const response = await streamChatMessage(
+        {
+          messages: nextMessages,
+          organizationId: currentOrgId ?? undefined,
+          projectId: currentProjectId ?? undefined,
+          conversationId,
+          taskRefs,
+        },
+        {
+          onToken: (delta) => {
+            streamedContent += delta;
+            updateLastAssistantMessage(streamedContent);
+          },
+        },
+      );
+
+      updateLastAssistantMessage(response.message, response.usedTools ?? []);
       await persistMessage('assistant', response.message, response.usedTools ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chat request failed');

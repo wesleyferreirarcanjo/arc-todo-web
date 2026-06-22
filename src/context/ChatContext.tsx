@@ -63,6 +63,10 @@ interface ChatContextValue {
     usedTools?: string[],
   ) => Promise<void>;
   appendLocalMessage: (message: ChatMessage) => void;
+  updateLastAssistantMessage: (
+    content: string,
+    usedTools?: string[],
+  ) => void;
   refreshConversations: () => Promise<void>;
 }
 
@@ -88,6 +92,7 @@ function toChatMessages(detail: ConversationDetail): ChatMessage[] {
   return detail.messages.map((message) => ({
     role: message.role,
     content: message.content,
+    usedTools: message.usedTools,
   }));
 }
 
@@ -494,6 +499,30 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages((current) => [...current, message]);
   }, []);
 
+  const updateLastAssistantMessage = useCallback(
+    (content: string, usedTools: string[] = []) => {
+      setMessages((current) => {
+        if (current.length === 0) {
+          return [{ role: 'assistant', content, usedTools }];
+        }
+        const next = [...current];
+        const lastIndex = next.length - 1;
+        const last = next[lastIndex];
+        if (last?.role !== 'assistant') {
+          next.push({ role: 'assistant', content, usedTools });
+          return next;
+        }
+        next[lastIndex] = {
+          ...last,
+          content,
+          usedTools: usedTools.length ? usedTools : last.usedTools,
+        };
+        return next;
+      });
+    },
+    [],
+  );
+
   const value = useMemo<ChatContextValue>(
     () => ({
       chatOpen,
@@ -519,6 +548,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ensureActiveConversation,
       persistMessage,
       appendLocalMessage,
+      updateLastAssistantMessage,
       refreshConversations,
     }),
     [
@@ -544,6 +574,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ensureActiveConversation,
       persistMessage,
       appendLocalMessage,
+      updateLastAssistantMessage,
       refreshConversations,
     ],
   );

@@ -12,6 +12,8 @@ export function ChatbotSettingsPage() {
   const [model, setModel] = useState('deepseek-chat');
   const [temperature, setTemperature] = useState('0.2');
   const [enabled, setEnabled] = useState(false);
+  const [maxHistoryMessages, setMaxHistoryMessages] = useState('50');
+  const [maxHistoryTokens, setMaxHistoryTokens] = useState('100000');
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,6 +31,8 @@ export function ChatbotSettingsPage() {
       setModel(data.model);
       setTemperature(String(data.temperature));
       setEnabled(data.enabled);
+      setMaxHistoryMessages(String(data.maxHistoryMessages ?? 50));
+      setMaxHistoryTokens(String(data.maxHistoryTokens ?? 100000));
       setApiKey('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load chatbot settings');
@@ -54,6 +58,8 @@ export function ChatbotSettingsPage() {
         model,
         temperature: Number(temperature),
         enabled,
+        maxHistoryMessages: Number(maxHistoryMessages),
+        maxHistoryTokens: Number(maxHistoryTokens),
         ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
       });
       setSettings(updated);
@@ -117,6 +123,28 @@ export function ChatbotSettingsPage() {
               value={apiKey}
               placeholder={settings?.hasApiKey ? 'Saved — enter a new key to replace' : 'Enter API key'}
               onChange={(event) => setApiKey(event.target.value)}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Max history messages</span>
+            <input
+              type="number"
+              min="1"
+              max="500"
+              value={maxHistoryMessages}
+              onChange={(event) => setMaxHistoryMessages(event.target.value)}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Max history tokens</span>
+            <input
+              type="number"
+              min="1024"
+              max="200000"
+              value={maxHistoryTokens}
+              onChange={(event) => setMaxHistoryTokens(event.target.value)}
             />
           </label>
 

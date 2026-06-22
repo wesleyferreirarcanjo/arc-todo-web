@@ -6,6 +6,7 @@ const CHAT_API_BASE_URL =
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  usedTools?: string[];
 }
 
 export interface TaskRef {
@@ -28,6 +29,12 @@ export interface ChatResponse {
   usedTools?: string[];
 }
 
+export interface StreamChatCallbacks {
+  onToken?: (delta: string) => void;
+  onDone?: (message: string, usedTools: string[]) => void;
+  onError?: (message: string) => void;
+}
+
 export class ChatApiError extends Error {
   status: number;
 
@@ -35,6 +42,24 @@ export class ChatApiError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+function parseErrorMessage(status: number, body: unknown): string {
+  if (typeof body === 'object' && body !== null) {
+    const detail = (body as { detail?: unknown }).detail;
+    if (typeof detail === 'string') {
+      return detail;
+    }
+    if (
+      typeof detail === 'object' &&
+      detail !== null &&
+      'error' in detail &&
+      typeof (detail as { error?: { message?: string } }).error?.message === 'string'
+    ) {
+      return (detail as { error: { message: string } }).error.message;
+    }
+  }
+  return `Chat request failed (${status})`;
 }
 
 export async function sendChatMessage(
@@ -57,10 +82,7 @@ export async function sendChatMessage(
   if (!response.ok) {
     let message = `Chat request failed (${response.status})`;
     try {
-      const data = (await response.json()) as { detail?: string };
-      if (data.detail) {
-        message = data.detail;
-      }
+      message = parseErrorMessage(response.status, await response.json());
     } catch {
       // ignore parse errors
     }
@@ -68,4 +90,96 @@ export async function sendChatMessage(
   }
 
   return response.json() as Promise<ChatResponse>;
+}
+
+function parseSseEvent(rawEvent: string): { event: string; data: string } | null {
+  let event = 'message';
+  const dataLines: string[] = [];
+  for (const line of rawEvent.split('\n')) {
+    if (line.startsWith('event:')) {
+      event = line.slice(6).trim();
+    } else if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).trim());
+    }
+  }
+  if (!dataLines.length) {
+    return null;
+  }
+  return { event, data: dataLines.join('\n') };
+}
+
+export async function streamChatMessage(
+  request: ChatRequest,
+  callbacks: StreamChatCallbacks,
+  signal?: AbortSignal,
+): Promise<ChatResponse> {
+  const token = getToken();
+  if (!token) {
+    throw new ChatApiError('Not authenticated', 401);
+  }
+
+  const response = await fetch(`${CHAT_API_BASE_URL}/chat/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+    signal,
+  });
+
+  if (!response.ok) {
+    let message = `Chat request failed (${response.status})`;
+    try {
+      message = parseErrorMessage(response.status, await response.json());
+    } catch {
+      // ignore parse errors
+    }
+    throw new ChatApiError(message, response.status);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new ChatApiError('Streaming is not supported in this browser', 500);
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let finalMessage = '';
+  let usedTools: string[] = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split('\n\n');
+    buffer = events.pop() ?? '';
+
+    for (const rawEvent of events) {
+      const parsed = parseSseEvent(rawEvent);
+      if (!parsed) {
+        continue;
+      }
+      const payload = JSON.parse(parsed.data) as Record<string, unknown>;
+      if (parsed.event === 'token') {
+        const delta = String(payload.delta ?? '');
+        finalMessage += delta;
+        callbacks.onToken?.(delta);
+      } else if (parsed.event === 'done') {
+        finalMessage = String(payload.message ?? finalMessage);
+        usedTools = Array.isArray(payload.usedTools)
+          ? payload.usedTools.map(String)
+          : [];
+        callbacks.onDone?.(finalMessage, usedTools);
+      } else if (parsed.event === 'error') {
+        const message = String(payload.message ?? 'Chat stream failed');
+        callbacks.onError?.(message);
+        throw new ChatApiError(message, 502);
+      }
+    }
+  }
+
+  return { message: finalMessage, usedTools };
 }
