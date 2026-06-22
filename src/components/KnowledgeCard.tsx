@@ -1,12 +1,15 @@
 import { type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import type { KnowledgeEntry } from '../types/knowledge';
+import type { KnowledgeEntry, KnowledgeIndexMetadata } from '../types/knowledge';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
+import { KnowledgeCardIndexStats } from './KnowledgeCardIndexStats';
 
 interface KnowledgeCardProps {
   entry: KnowledgeEntry;
   scopeLabel?: string;
   accentColor?: string;
+  indexMeta?: KnowledgeIndexMetadata | null;
+  indexLoading?: boolean;
   onOpen: () => void;
 }
 
@@ -20,6 +23,8 @@ export function KnowledgeCard({
   entry,
   scopeLabel,
   accentColor,
+  indexMeta,
+  indexLoading = false,
   onOpen,
 }: KnowledgeCardProps) {
   const { base } = useMotionTransition();
@@ -64,6 +69,10 @@ export function KnowledgeCard({
         <p className="knowledge-meta">
           Updated {new Date(entry.updatedAt).toLocaleDateString()}
         </p>
+        <KnowledgeCardIndexStats
+          indexMeta={indexMeta}
+          loading={indexLoading}
+        />
         <div className="knowledge-actions">
           <button
             type="button"

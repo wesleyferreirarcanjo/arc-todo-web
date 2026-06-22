@@ -71,7 +71,7 @@ export function KnowledgeEntryIndex({
 
   return (
     <div className="knowledge-entry-index">
-      <h4>Text indexing</h4>
+      <h4>Indexing</h4>
       <div className="knowledge-attachment-meta">
         <span className="knowledge-file-stats">
           {indexMeta.chunkCount} chunk{indexMeta.chunkCount === 1 ? '' : 's'} ·{' '}

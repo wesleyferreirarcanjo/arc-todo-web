@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
+import { fetchKnowledgeEntryIndex } from '../lib/api/knowledge';
 import type {
   KnowledgeEntry,
   KnowledgeEntryWithContext,
+  KnowledgeIndexMetadata,
   UpdateKnowledgeInput,
 } from '../types/knowledge';
 import { entryToScopeContext } from '../lib/knowledge/scope';
+import { isActiveIndexStatus } from '../lib/knowledge/indexStatus';
 import { getKnowledgeAccentColor } from '../lib/color/entityColor';
 import { KnowledgeCard } from './KnowledgeCard';
 import { KnowledgeDetailModal } from './KnowledgeDetailModal';
+
+const INDEX_POLL_MS = 4000;
 
 interface KnowledgeListProps {
   entries: KnowledgeEntry[];
@@ -28,6 +33,78 @@ export function KnowledgeList({
   onDelete,
 }: KnowledgeListProps) {
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);
+  const [indexByEntryId, setIndexByEntryId] = useState<
+    Record<string, KnowledgeIndexMetadata>
+  >({});
+  const [indexLoading, setIndexLoading] = useState(false);
+
+  const entryIds = useMemo(
+    () => entries.map((entry) => entry.id),
+    [entries],
+  );
+
+  const loadIndexMetadata = useCallback(
+    async (ids: string[], options: { silent?: boolean } = {}) => {
+      if (ids.length === 0) return;
+
+      if (!options.silent) {
+        setIndexLoading(true);
+      }
+
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const meta = await fetchKnowledgeEntryIndex(id);
+            return [id, meta] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      setIndexByEntryId((current) => {
+        const next = { ...current };
+        for (const result of results) {
+          if (result) {
+            next[result[0]] = result[1];
+          }
+        }
+        return next;
+      });
+
+      if (!options.silent) {
+        setIndexLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    void loadIndexMetadata(entryIds);
+  }, [entryIds, loadIndexMetadata]);
+
+  const hasActiveIndexWork = useMemo(
+    () =>
+      entryIds.some((id) => {
+        const meta = indexByEntryId[id];
+        return meta ? isActiveIndexStatus(meta.indexStatus) : false;
+      }),
+    [entryIds, indexByEntryId],
+  );
+
+  useEffect(() => {
+    if (!hasActiveIndexWork) return;
+
+    const timer = window.setInterval(() => {
+      const activeIds = entryIds.filter((id) => {
+        const meta = indexByEntryId[id];
+        return meta ? isActiveIndexStatus(meta.indexStatus) : true;
+      });
+      void loadIndexMetadata(activeIds, { silent: true });
+    }, INDEX_POLL_MS);
+
+    return () => window.clearInterval(timer);
+  }, [entryIds, hasActiveIndexWork, indexByEntryId, loadIndexMetadata]);
 
   if (entries.length === 0) {
     return null;
@@ -49,6 +126,8 @@ export function KnowledgeList({
                 entry={entry}
                 scopeLabel={getScopeLabel?.(entry)}
                 accentColor={resolveAccentColor(entry as KnowledgeEntryWithContext)}
+                indexMeta={indexByEntryId[entry.id]}
+                indexLoading={indexLoading && !indexByEntryId[entry.id]}
                 onOpen={() => setOpenEntryId(entry.id)}
               />
             ))}
