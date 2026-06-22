@@ -554,36 +554,26 @@ textarea:focus-visible {
   border-right: 1px solid color-mix(in srgb, var(--border-strong) 75%, transparent);
 }
 
-.settings-page-tab:first-child:hover:not(.active),
-.settings-page-tab:first-child.active {
-  border-radius: 14px 0 0 8px;
-}
-
-.settings-page-tab:last-child:hover:not(.active),
-.settings-page-tab:last-child.active {
-  border-radius: 0 8px 14px 0;
-}
-
-.settings-page-tab:not(:first-child):not(:last-child):hover:not(.active):nth-child(odd),
-.settings-page-tab:not(:first-child):not(:last-child).active:nth-child(odd) {
-  border-radius: 14px 5px 14px 5px;
-}
-
-.settings-page-tab:not(:first-child):not(:last-child):hover:not(.active):nth-child(even),
-.settings-page-tab:not(:first-child):not(:last-child).active:nth-child(even) {
-  border-radius: 5px 14px 5px 14px;
-}
-
 .settings-page-tab:hover:not(.active) {
   color: var(--text-primary);
+  border-radius: 14px 5px 14px 5px;
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+}
+
+.settings-page-tab:nth-child(even):hover:not(.active) {
+  border-radius: 5px 14px 5px 14px;
 }
 
 .settings-page-tab.active {
   color: var(--accent-contrast);
   border-right-color: transparent;
+  border-radius: 14px 5px 14px 5px;
   background: var(--gradient-accent);
   box-shadow: var(--shadow-soft), 0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.settings-page-tab.active:nth-child(even) {
+  border-radius: 5px 14px 5px 14px;
 }
 
 .settings-page-tab:has(+ .settings-page-tab.active) {
