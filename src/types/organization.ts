@@ -4,6 +4,7 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
+  color: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,11 +24,13 @@ export interface OrganizationMember {
 export interface CreateOrganizationInput {
   name: string;
   slug?: string;
+  color?: string;
 }
 
 export interface UpdateOrganizationInput {
   name?: string;
   slug?: string;
+  color?: string;
 }
 
 export interface AddOrganizationMemberInput {

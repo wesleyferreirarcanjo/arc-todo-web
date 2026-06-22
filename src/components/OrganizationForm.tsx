@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { DEFAULT_ORGANIZATION_COLOR } from '../lib/color/entityColor';
 import type { CreateOrganizationInput } from '../types/organization';
 
 interface OrganizationFormProps {
@@ -7,6 +8,7 @@ interface OrganizationFormProps {
 
 export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
   const [name, setName] = useState('');
+  const [color, setColor] = useState(DEFAULT_ORGANIZATION_COLOR);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,8 +20,12 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
     setError(null);
 
     try {
-      await onSubmit({ name: name.trim() });
+      await onSubmit({
+        name: name.trim(),
+        color,
+      });
       setName('');
+      setColor(DEFAULT_ORGANIZATION_COLOR);
     } catch {
       setError('Failed to create organization.');
     } finally {
@@ -41,6 +47,20 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
           placeholder="Acme Corp"
           required
         />
+      </label>
+
+      <label className="color-field">
+        Color
+        <div className="color-input-row">
+          <input
+            type="color"
+            className="color-picker"
+            value={color}
+            onChange={(event) => setColor(event.target.value)}
+            aria-label="Organization color"
+          />
+          <span className="color-value">{color}</span>
+        </div>
       </label>
 
       <button type="submit" className="btn btn-primary" disabled={loading}>

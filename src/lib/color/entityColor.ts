@@ -11,6 +11,7 @@ const ENTITY_ACCENTS = [
 ];
 
 export const DEFAULT_PROJECT_COLOR = '#8778a3';
+export const DEFAULT_ORGANIZATION_COLOR = '#8778a3';
 
 function hashString(value: string): number {
   let hash = 0;

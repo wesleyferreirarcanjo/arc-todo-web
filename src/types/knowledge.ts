@@ -18,6 +18,7 @@ export interface KnowledgeEntryWithContext extends KnowledgeEntry {
     id: string;
     name: string;
     slug: string;
+    color: string;
   } | null;
   project?: {
     id: string;

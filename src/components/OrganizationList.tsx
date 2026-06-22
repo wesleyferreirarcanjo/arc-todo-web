@@ -17,11 +17,13 @@ export function OrganizationList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [color, setColor] = useState('');
   const [saving, setSaving] = useState(false);
 
   function handleStartEdit(organization: Organization) {
     setName(organization.name);
     setSlug(organization.slug);
+    setColor(getOrganizationColor(organization));
     setEditingId(organization.id);
   }
 
@@ -29,20 +31,19 @@ export function OrganizationList({
     setEditingId(null);
     setName('');
     setSlug('');
+    setColor('');
   }
 
-  async function handleSave(organizationId: string) {
+  async function handleSave(organization: Organization) {
     if (!name.trim()) return;
 
     const input: UpdateOrganizationInput = {};
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
 
-    const org = organizations.find((item) => item.id === organizationId);
-    if (!org) return;
-
-    if (trimmedName !== org.name) input.name = trimmedName;
-    if (trimmedSlug !== org.slug) input.slug = trimmedSlug || undefined;
+    if (trimmedName !== organization.name) input.name = trimmedName;
+    if (trimmedSlug !== organization.slug) input.slug = trimmedSlug || undefined;
+    if (color !== getOrganizationColor(organization)) input.color = color;
 
     if (Object.keys(input).length === 0) {
       handleCancelEdit();
@@ -51,7 +52,7 @@ export function OrganizationList({
 
     setSaving(true);
     try {
-      await updateOrganization(organizationId, input);
+      await updateOrganization(organization.id, input);
       await onUpdated?.();
       handleCancelEdit();
     } finally {
@@ -96,12 +97,26 @@ export function OrganizationList({
                   />
                 </label>
 
+                <label className="color-field">
+                  Color
+                  <div className="color-input-row">
+                    <input
+                      type="color"
+                      className="color-picker"
+                      value={color}
+                      onChange={(event) => setColor(event.target.value)}
+                      aria-label="Organization color"
+                    />
+                    <span className="color-value">{color}</span>
+                  </div>
+                </label>
+
                 <div className="entity-edit-actions">
                   <button
                     type="button"
                     className="btn btn-primary"
                     disabled={saving || !name.trim()}
-                    onClick={() => void handleSave(organization.id)}
+                    onClick={() => void handleSave(organization)}
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>
@@ -121,6 +136,11 @@ export function OrganizationList({
 
                 <div className="entity-card-header">
                   <h3>{organization.name}</h3>
+                  <span
+                    className="entity-color-swatch"
+                    style={{ backgroundColor: accent }}
+                    title={`Color: ${accent}`}
+                  />
                 </div>
 
                 <p className="entity-meta">Slug: {organization.slug}</p>
