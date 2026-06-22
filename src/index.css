@@ -4148,3 +4148,118 @@ textarea {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   word-break: break-all;
 }
+
+.rag-testing-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.rag-testing-page .notice-card,
+.rag-testing-page .settings-form-card {
+  position: relative;
+  margin-bottom: 0;
+  border-color: var(--border);
+  border-radius: var(--radius-blob);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.rag-testing-page .notice-card::before,
+.rag-testing-page .settings-form-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 48%);
+  pointer-events: none;
+}
+
+.rag-testing-page .notice-card > *,
+.rag-testing-page .settings-form-card > * {
+  position: relative;
+}
+
+.rag-testing-console {
+  display: grid;
+  gap: 1rem;
+  max-width: none;
+  padding: 1.25rem;
+}
+
+.rag-testing-status-detail {
+  margin-top: 1rem;
+}
+
+.rag-testing-metric-grid {
+  margin-top: 0.75rem;
+}
+
+.rag-testing-estimate-card h3,
+.rag-testing-results-card h3 {
+  margin: 0;
+}
+
+.rag-testing-estimate-total {
+  margin: 0.75rem 0 0;
+}
+
+.rag-testing-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.rag-testing-result-header h3 {
+  margin: 0;
+}
+
+.rag-testing-index-snapshot {
+  margin: 0.75rem 0 0;
+}
+
+.rag-testing-chunk-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.rag-testing-chunk-card {
+  margin: 0;
+}
+
+.rag-testing-chunk-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.rag-testing-chunk-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.rag-testing-chunk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.rag-testing-chunk-meta .task-badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rag-testing-chunk-text {
+  margin: 0.55rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

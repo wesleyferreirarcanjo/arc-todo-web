@@ -4,7 +4,7 @@ import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import {
   estimateRagTokens,
-  fetchRagJobs,
+  fetchRagIndexStatus,
   retrieveGeneral,
   retrieveProject,
   syncRagIndex,
@@ -12,7 +12,282 @@ import {
 import { fetchRagSettings } from '../lib/api/ragSettings';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
-import type { RagRetrievalResult, RagSettings, RagTokenEstimate } from '../types/ragSettings';
+import type {
+  RagIndexJob,
+  RagIndexStatus,
+  RagRetrievalResult,
+  RagRetrievedChunk,
+  RagSettings,
+  RagTokenEstimate,
+} from '../types/ragSettings';
+
+function formatJobLabel(job: RagIndexJob): string {
+  if (job.sourceFilename) return job.sourceFilename;
+  if (job.entryTitle) return job.entryTitle;
+  return job.jobType === 'attachment' ? 'Attachment job' : 'Knowledge entry job';
+}
+
+function formatTokenCount(value: number): string {
+  return value.toLocaleString();
+}
+
+function IndexPipeline({ job }: { job: RagIndexJob }) {
+  const steps = job.pipelineSteps;
+  const current = job.pipelineStep;
+
+  return (
+    <div className="rag-index-pipeline" aria-label="Indexing pipeline">
+      {steps.map((step, index) => {
+        const isComplete =
+          job.status === 'completed' ? index <= current : current >= 0 && index < current;
+        const isActive =
+          job.status === 'processing'
+            ? index >= 1 && index <= 3
+            : job.status !== 'completed' && job.status !== 'failed' && index === current;
+        const isFailed = job.status === 'failed';
+
+        return (
+          <div
+            key={step}
+            className={`rag-index-pipeline-step${
+              isFailed && index === 0 ? ' failed' : ''
+            }${isComplete || (job.status === 'completed' && index <= current) ? ' complete' : ''}${
+              isActive ? ' active' : ''
+            }`}
+          >
+            <span className="rag-index-pipeline-dot" aria-hidden="true" />
+            <span className="rag-index-pipeline-label">{step}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function JobStatusCard({ job }: { job: RagIndexJob }) {
+  return (
+    <article className="knowledge-card rag-index-job-card">
+      <div className="rag-index-job-header">
+        <h3>{formatJobLabel(job)}</h3>
+        <span className={`rag-index-status-badge status-${job.status}`}>{job.status}</span>
+      </div>
+      <p className="subtitle">
+        {job.scope ? `${job.scope} · ` : ''}
+        {job.jobType}
+        {job.mimeType ? ` · ${job.mimeType}` : ''}
+        {job.queuePosition ? ` · queue #${job.queuePosition}` : ''}
+        {job.chunkCount > 0 ? ` · ${job.chunkCount} chunks indexed` : ''}
+      </p>
+      {job.status === 'failed' && job.lastError ? (
+        <p className="form-error">{job.lastError}</p>
+      ) : (
+        <IndexPipeline job={job} />
+      )}
+    </article>
+  );
+}
+
+function IndexStatusCard({
+  indexStatus,
+  statusRefreshing,
+  syncing,
+  onSync,
+}: {
+  indexStatus: RagIndexStatus | null;
+  statusRefreshing: boolean;
+  syncing: boolean;
+  onSync: () => void;
+}) {
+  return (
+    <div className="notice-card rag-index-status-card">
+      <div className="rag-index-status-header">
+        <h3>Index queue</h3>
+        <div className="rag-index-status-actions">
+          {statusRefreshing ? <span className="subtitle">Refreshing...</span> : null}
+          <button
+            type="button"
+            className="btn btn-sm rag-sync-btn"
+            disabled={syncing || statusRefreshing}
+            onClick={onSync}
+          >
+            {syncing ? 'Queueing sync...' : 'Queue sync'}
+          </button>
+        </div>
+      </div>
+
+      {indexStatus ? (
+        <>
+          <p className="subtitle">
+            {indexStatus.totalChunks} indexed chunks · {indexStatus.queuedJobs} queued ·{' '}
+            {indexStatus.processingJobs} processing · {indexStatus.failedJobs} failed
+          </p>
+
+          {indexStatus.processingJob ? (
+            <div className="rag-testing-status-detail">
+              <p className="subtitle">Currently processing</p>
+              <JobStatusCard job={indexStatus.processingJob} />
+            </div>
+          ) : indexStatus.queuedJobs > 0 ? (
+            <p className="subtitle rag-testing-status-detail">
+              Worker idle or between jobs. Next file is waiting in the queue.
+            </p>
+          ) : (
+            <p className="subtitle rag-testing-status-detail">
+              No files are being processed right now.
+            </p>
+          )}
+
+          {indexStatus.activeJobs.length > 1 ? (
+            <div className="rag-testing-status-detail">
+              <p className="subtitle">Waiting or running jobs</p>
+              {indexStatus.activeJobs
+                .filter((job) => job.id !== indexStatus.processingJob?.id)
+                .map((job) => (
+                  <JobStatusCard key={job.id} job={job} />
+                ))}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <p className="subtitle">Index status unavailable.</p>
+      )}
+    </div>
+  );
+}
+
+function TokenEstimateCard({
+  estimate,
+  settings,
+}: {
+  estimate: RagTokenEstimate;
+  settings: RagSettings | null;
+}) {
+  return (
+    <div className="notice-card rag-testing-estimate-card">
+      <h3>Token estimate</h3>
+      <div className="token-summary-grid rag-testing-metric-grid">
+        <article className="token-summary-card">
+          <span className="token-summary-label">Query</span>
+          <strong className="token-summary-value">{formatTokenCount(estimate.queryTokens)}</strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">Embedding</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(estimate.embeddingTokens)}
+          </strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">DeepSeek helper</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(estimate.deepseekHelperTokens)}
+          </strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">Context</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(estimate.estimatedContextTokens)}
+          </strong>
+        </article>
+      </div>
+      <p className="subtitle rag-testing-estimate-total">
+        Estimated total:{' '}
+        <strong className="token-total">{formatTokenCount(estimate.estimatedTotalTokens)} tokens</strong>
+      </p>
+      {settings ? (
+        <p className="subtitle">
+          Queue throttle: {settings.minSecondsBetweenJobs}s between jobs, concurrency{' '}
+          {settings.workerConcurrency}.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function RetrievedChunkCard({ chunk }: { chunk: RagRetrievedChunk }) {
+  return (
+    <article className="knowledge-card rag-testing-chunk-card">
+      <div className="rag-testing-chunk-header">
+        <h3>{chunk.title?.trim() || 'Untitled'}</h3>
+        <span className="task-badge">score {chunk.score.toFixed(3)}</span>
+      </div>
+      <div className="rag-testing-chunk-meta">
+        <span className="task-badge">{chunk.scope}</span>
+        <span className="task-badge">{chunk.tokenCount} tokens</span>
+        {chunk.compressed ? <span className="task-badge">compressed</span> : null}
+        {chunk.helperReason ? <span className="task-badge">helper</span> : null}
+        {chunk.sourceFilename ? (
+          <span className="task-badge" title={chunk.sourceFilename}>
+            {chunk.sourceFilename}
+          </span>
+        ) : null}
+      </div>
+      {chunk.helperReason ? <p className="subtitle">Helper: {chunk.helperReason}</p> : null}
+      <p className="rag-testing-chunk-text">{chunk.text}</p>
+    </article>
+  );
+}
+
+function RetrievalResultsCard({ result }: { result: RagRetrievalResult }) {
+  return (
+    <div className="notice-card rag-testing-results-card">
+      <div className="rag-testing-result-header">
+        <div>
+          <h3>Retrieval results</h3>
+          <p className="subtitle">
+            Mode: {result.mode} · {result.chunks.length} chunk
+            {result.chunks.length === 1 ? '' : 's'} matched
+          </p>
+        </div>
+      </div>
+
+      <p className="subtitle">
+        Search query: <strong>{result.searchQuery}</strong>
+      </p>
+
+      <div className="token-summary-grid rag-testing-metric-grid">
+        <article className="token-summary-card">
+          <span className="token-summary-label">Embedding</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(result.tokenUsage.embeddingTokens)}
+          </strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">Helper</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(result.tokenUsage.deepseekHelperTokens)}
+          </strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">Context</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(result.tokenUsage.contextTokens)}
+          </strong>
+        </article>
+        <article className="token-summary-card">
+          <span className="token-summary-label">Total</span>
+          <strong className="token-summary-value">
+            {formatTokenCount(result.tokenUsage.totalTokens)}
+          </strong>
+        </article>
+      </div>
+
+      <p className="subtitle rag-testing-index-snapshot">
+        Index snapshot — {result.indexStatus.totalChunks} chunks indexed ·{' '}
+        {result.indexStatus.queuedJobs} queued jobs
+      </p>
+
+      {result.chunks.length === 0 ? (
+        <p>No chunks matched. Upload knowledge, wait for indexing, then try again.</p>
+      ) : (
+        <div className="rag-testing-chunk-list">
+          {result.chunks.map((chunk) => (
+            <RetrievedChunkCard key={chunk.id} chunk={chunk} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function RagTestingPage() {
   const [settings, setSettings] = useState<RagSettings | null>(null);
@@ -29,30 +304,47 @@ export function RagTestingPage() {
   const [useCompression, setUseCompression] = useState(false);
   const [estimate, setEstimate] = useState<RagTokenEstimate | null>(null);
   const [result, setResult] = useState<RagRetrievalResult | null>(null);
-  const [jobs, setJobs] = useState<Array<{ id: string; status: string; jobType: string }>>([]);
+  const [indexStatus, setIndexStatus] = useState<RagIndexStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusRefreshing, setStatusRefreshing] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [running, setRunning] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const loadIndexStatus = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (options.silent) {
+      setStatusRefreshing(true);
+    }
+    try {
+      const data = await fetchRagIndexStatus();
+      setIndexStatus(data);
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load index status');
+      return null;
+    } finally {
+      setStatusRefreshing(false);
+    }
+  }, []);
+
   const loadInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [ragSettings, orgs, queueJobs] = await Promise.all([
+      const [ragSettings, orgs, status] = await Promise.all([
         fetchRagSettings(),
         fetchOrganizations(),
-        fetchRagJobs(),
+        fetchRagIndexStatus(),
       ]);
       setSettings(ragSettings);
       setOrganizations(orgs);
+      setIndexStatus(status);
       setTopK(String(ragSettings.topKDefault));
       setMaxContextTokens(String(ragSettings.maxContextTokens));
       setUseQueryRewrite(ragSettings.deepseekUseQueryRewrite);
       setUseRerank(ragSettings.deepseekUseRerank);
       setUseCompression(ragSettings.deepseekUseCompression);
-      setJobs(queueJobs);
       if (orgs[0]) {
         setOrganizationId(orgs[0].id);
       }
@@ -81,6 +373,11 @@ export function RagTestingPage() {
       .catch(() => setProjects([]));
   }, [organizationId]);
 
+  function handleOrganizationChange(nextOrganizationId: string) {
+    setOrganizationId(nextOrganizationId);
+    setProjectId('');
+  }
+
   async function handleRetrieve(event: React.FormEvent) {
     event.preventDefault();
     setRunning(true);
@@ -103,8 +400,7 @@ export function RagTestingPage() {
             })
           : await retrieveGeneral(payload);
       setResult(response);
-      const queueJobs = await fetchRagJobs();
-      setJobs(queueJobs);
+      await loadIndexStatus({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Retrieval failed');
     } finally {
@@ -143,104 +439,150 @@ export function RagTestingPage() {
     setError(null);
     try {
       await syncRagIndex();
-      const queueJobs = await fetchRagJobs();
-      setJobs(queueJobs);
+      await loadIndexStatus({ silent: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sync failed');
+      setError(err instanceof Error ? err.message : 'Failed to queue sync');
     } finally {
       setSyncing(false);
     }
   }
 
   return (
-    <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>RAG Testing</h2>
-          <p className="subtitle">
-            Manually test retrieval against indexed knowledge without chatbot or MCP.
-          </p>
-        </div>
-        <button type="button" className="btn btn-secondary" disabled={syncing} onClick={() => void handleSync()}>
-          {syncing ? 'Syncing...' : 'Queue sync'}
-        </button>
-      </div>
-
+    <section className="page-section rag-testing-page">
       <RagSettingsNav />
 
-      {loading ? <p className="subtitle">Loading...</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
+      {loading ? <p className="subtitle">Loading RAG testing console...</p> : null}
 
       {!loading ? (
         <>
-          <form className="settings-form-card" onSubmit={(event) => void handleRetrieve(event)}>
-            <label className="form-field">
-              <span>Mode</span>
-              <select value={mode} onChange={(event) => setMode(event.target.value as 'general' | 'project')}>
-                <option value="general">General</option>
-                <option value="project">Project</option>
-              </select>
-            </label>
+          <IndexStatusCard
+            indexStatus={indexStatus}
+            statusRefreshing={statusRefreshing}
+            syncing={syncing}
+            onSync={() => void handleSync()}
+          />
 
-            {mode === 'project' ? (
-              <>
+          <form
+            className="settings-form-card settings-form-card-wide rag-testing-console"
+            onSubmit={(event) => void handleRetrieve(event)}
+          >
+            <section className="settings-section-card">
+              <div className="settings-section-header">
+                <h3>Query</h3>
+                <p>Choose retrieval scope and enter the question to test against indexed knowledge.</p>
+              </div>
+              <div className="settings-fields-grid">
                 <label className="form-field">
-                  <span>Organization</span>
-                  <select value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}>
-                    {organizations.map((org) => (
-                      <option key={org.id} value={org.id}>
-                        {org.name}
-                      </option>
-                    ))}
+                  <span>Mode</span>
+                  <select
+                    value={mode}
+                    onChange={(event) => setMode(event.target.value as 'general' | 'project')}
+                  >
+                    <option value="general">General</option>
+                    <option value="project">Project</option>
                   </select>
                 </label>
-                <label className="form-field">
-                  <span>Project</span>
-                  <select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            ) : null}
 
-            <label className="form-field">
-              <span>Question</span>
-              <textarea
-                rows={4}
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                placeholder="What documentation do we have about deployment?"
-              />
-            </label>
-            <label className="form-field">
-              <span>Top K</span>
-              <input type="number" value={topK} onChange={(event) => setTopK(event.target.value)} />
-            </label>
-            <label className="form-field">
-              <span>Max context tokens</span>
-              <input
-                type="number"
-                value={maxContextTokens}
-                onChange={(event) => setMaxContextTokens(event.target.value)}
-              />
-            </label>
-            <label className="toggle-row">
-              <span>Query rewrite</span>
-              <input type="checkbox" checked={useQueryRewrite} onChange={(event) => setUseQueryRewrite(event.target.checked)} />
-            </label>
-            <label className="toggle-row">
-              <span>Rerank</span>
-              <input type="checkbox" checked={useRerank} onChange={(event) => setUseRerank(event.target.checked)} />
-            </label>
-            <label className="toggle-row">
-              <span>Compression</span>
-              <input type="checkbox" checked={useCompression} onChange={(event) => setUseCompression(event.target.checked)} />
-            </label>
-            <div className="form-actions">
+                {mode === 'project' ? (
+                  <>
+                    <label className="form-field">
+                      <span>Organization</span>
+                      <select
+                        value={organizationId}
+                        onChange={(event) => handleOrganizationChange(event.target.value)}
+                      >
+                        {organizations.map((org) => (
+                          <option key={org.id} value={org.id}>
+                            {org.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="form-field">
+                      <span>Project</span>
+                      <select
+                        value={projectId}
+                        onChange={(event) => setProjectId(event.target.value)}
+                        disabled={!organizationId}
+                      >
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                ) : null}
+
+                <label className="form-field setting-field-wide">
+                  <span>Question</span>
+                  <textarea
+                    rows={4}
+                    value={question}
+                    onChange={(event) => setQuestion(event.target.value)}
+                    placeholder="What documentation do we have about deployment?"
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="settings-section-card">
+              <div className="settings-section-header">
+                <h3>Retrieval limits</h3>
+                <p>Override defaults for this test run without saving settings.</p>
+              </div>
+              <div className="settings-fields-grid">
+                <label className="form-field">
+                  <span>Top K</span>
+                  <input type="number" value={topK} onChange={(event) => setTopK(event.target.value)} />
+                </label>
+                <label className="form-field">
+                  <span>Max context tokens</span>
+                  <input
+                    type="number"
+                    value={maxContextTokens}
+                    onChange={(event) => setMaxContextTokens(event.target.value)}
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="settings-section-card">
+              <div className="settings-section-header">
+                <h3>DeepSeek helpers</h3>
+                <p>Optional preprocessing steps applied during this retrieval test.</p>
+              </div>
+              <div className="settings-fields-grid">
+                <label className="toggle-row">
+                  <span>Query rewrite</span>
+                  <input
+                    type="checkbox"
+                    checked={useQueryRewrite}
+                    onChange={(event) => setUseQueryRewrite(event.target.checked)}
+                  />
+                </label>
+                <label className="toggle-row">
+                  <span>Rerank</span>
+                  <input
+                    type="checkbox"
+                    checked={useRerank}
+                    onChange={(event) => setUseRerank(event.target.checked)}
+                  />
+                </label>
+                <label className="toggle-row">
+                  <span>Compression</span>
+                  <input
+                    type="checkbox"
+                    checked={useCompression}
+                    onChange={(event) => setUseCompression(event.target.checked)}
+                  />
+                </label>
+              </div>
+            </section>
+
+            <div className="form-actions settings-form-actions">
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -255,64 +597,8 @@ export function RagTestingPage() {
             </div>
           </form>
 
-          {settings ? (
-            <p className="subtitle">
-              Index queue: {jobs.filter((job) => job.status === 'queued').length} queued jobs. Total indexed
-              chunks shown after retrieval.
-            </p>
-          ) : null}
-
-          {estimate ? (
-            <div className="notice-card">
-              <h3>Token estimate</h3>
-              <p>Query tokens: {estimate.queryTokens}</p>
-              <p>Local embedding tokens: {estimate.embeddingTokens}</p>
-              <p>DeepSeek helper tokens: {estimate.deepseekHelperTokens}</p>
-              <p>Estimated context tokens: {estimate.estimatedContextTokens}</p>
-              <p>
-                <strong>Estimated total tokens: {estimate.estimatedTotalTokens}</strong>
-              </p>
-              {settings ? (
-                <p className="subtitle">
-                  Queue throttle: {settings.minSecondsBetweenJobs}s between jobs, concurrency{' '}
-                  {settings.workerConcurrency}.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {result ? (
-            <div className="notice-card">
-              <p>
-                Search query: <strong>{result.searchQuery}</strong>
-              </p>
-              <p>
-                Tokens — embedding: {result.tokenUsage.embeddingTokens}, helper:{' '}
-                {result.tokenUsage.deepseekHelperTokens}, context: {result.tokenUsage.contextTokens}
-              </p>
-              <p>
-                Index status — chunks: {result.indexStatus.totalChunks}, queued jobs:{' '}
-                {result.indexStatus.queuedJobs}
-              </p>
-              {result.chunks.length === 0 ? (
-                <p>No chunks matched. Upload knowledge, wait for indexing, then try again.</p>
-              ) : (
-                result.chunks.map((chunk) => (
-                  <article key={chunk.id} className="knowledge-card" style={{ marginTop: '1rem' }}>
-                    <h3>
-                      {chunk.title || 'Untitled'} · score {chunk.score.toFixed(3)}
-                    </h3>
-                    <p className="subtitle">
-                      {chunk.scope}
-                      {chunk.sourceFilename ? ` · ${chunk.sourceFilename}` : ''} · {chunk.tokenCount} tokens
-                    </p>
-                    {chunk.helperReason ? <p className="subtitle">Helper: {chunk.helperReason}</p> : null}
-                    <p>{chunk.text}</p>
-                  </article>
-                ))
-              )}
-            </div>
-          ) : null}
+          {estimate ? <TokenEstimateCard estimate={estimate} settings={settings} /> : null}
+          {result ? <RetrievalResultsCard result={result} /> : null}
         </>
       ) : null}
     </section>
