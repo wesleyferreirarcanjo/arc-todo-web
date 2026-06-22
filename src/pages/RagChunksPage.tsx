@@ -37,16 +37,27 @@ function formatChunkTitle(chunk: RagIndexedChunk): string {
   return chunk.title?.trim() || 'Untitled';
 }
 
-function formatChunkSource(chunk: RagIndexedChunk): string {
-  const parts: string[] = [];
-  if (chunk.sourceFilename) {
-    parts.push(chunk.sourceFilename);
+function formatChunkContentType(chunk: RagIndexedChunk): string {
+  if (chunk.mimeType) {
+    return chunk.mimeType;
   }
+  return chunk.attachmentId ? 'file' : 'text';
+}
+
+function formatChunkSourceLabel(chunk: RagIndexedChunk): string {
+  if (chunk.sourceFilename) {
+    return chunk.sourceFilename;
+  }
+  return chunk.attachmentId ? 'Attachment' : 'Knowledge entry';
+}
+
+function formatChunkSource(chunk: RagIndexedChunk): string {
+  const parts: string[] = [formatChunkSourceLabel(chunk)];
   const stamp = chunk.updatedAt ?? chunk.createdAt;
   if (stamp) {
     parts.push(`Updated ${formatTimestamp(stamp)}`);
   }
-  return parts.length > 0 ? parts.join(' · ') : 'No source filename';
+  return parts.join(' · ');
 }
 
 function hasActiveFilters(input: {
@@ -170,7 +181,7 @@ function ChunkSummaryCard({
       <div className="rag-chunk-card-content">
         <div className="rag-chunk-card-header">
           <h3>{formatChunkTitle(chunk)}</h3>
-          <span className="task-badge">{chunk.mimeType || 'unknown type'}</span>
+          <span className="task-badge">{formatChunkContentType(chunk)}</span>
         </div>
         <p className="rag-chunk-preview">{chunk.text}</p>
         <p className="rag-chunk-meta">{formatChunkSource(chunk)}</p>
@@ -207,7 +218,7 @@ function ChunkDetailsModal({
           {projectName ? (
             <span className="task-badge task-badge-project">{projectName}</span>
           ) : null}
-          <span className="task-badge">{chunk.mimeType || 'unknown type'}</span>
+          <span className="task-badge">{formatChunkContentType(chunk)}</span>
           <span className="task-badge">{chunk.tokenCount} tokens</span>
         </div>
 
@@ -218,8 +229,8 @@ function ChunkDetailsModal({
 
         <dl className="task-details-meta-grid">
           <div>
-            <dt>Source filename</dt>
-            <dd>{chunk.sourceFilename || '—'}</dd>
+            <dt>Source</dt>
+            <dd>{formatChunkSourceLabel(chunk)}</dd>
           </div>
           <div>
             <dt>Created</dt>
