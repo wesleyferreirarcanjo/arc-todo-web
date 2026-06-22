@@ -2,11 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
-import { fetchRagJobs, retrieveGeneral, retrieveProject, syncRagIndex } from '../lib/api/rag';
+import {
+  estimateRagTokens,
+  fetchRagJobs,
+  retrieveGeneral,
+  retrieveProject,
+  syncRagIndex,
+} from '../lib/api/rag';
 import { fetchRagSettings } from '../lib/api/ragSettings';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
-import type { RagRetrievalResult, RagSettings } from '../types/ragSettings';
+import type { RagRetrievalResult, RagSettings, RagTokenEstimate } from '../types/ragSettings';
 
 export function RagTestingPage() {
   const [settings, setSettings] = useState<RagSettings | null>(null);
@@ -21,9 +27,11 @@ export function RagTestingPage() {
   const [useQueryRewrite, setUseQueryRewrite] = useState(false);
   const [useRerank, setUseRerank] = useState(false);
   const [useCompression, setUseCompression] = useState(false);
+  const [estimate, setEstimate] = useState<RagTokenEstimate | null>(null);
   const [result, setResult] = useState<RagRetrievalResult | null>(null);
   const [jobs, setJobs] = useState<Array<{ id: string; status: string; jobType: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [calculating, setCalculating] = useState(false);
   const [running, setRunning] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +109,32 @@ export function RagTestingPage() {
       setError(err instanceof Error ? err.message : 'Retrieval failed');
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function handleEstimate() {
+    if (!settings || !question.trim()) return;
+    setCalculating(true);
+    setError(null);
+    try {
+      const nextEstimate = await estimateRagTokens({
+        question: question.trim(),
+        mode,
+        topK: Number(topK),
+        chunkSizeTokens: settings.chunkSizeTokens,
+        chunkOverlapTokens: settings.chunkOverlapTokens,
+        maxContextTokens: Number(maxContextTokens),
+        deepseekEnabled: settings.deepseekEnabled,
+        deepseekMaxHelperTokens: settings.deepseekMaxHelperTokens,
+        deepseekUseQueryRewrite: useQueryRewrite,
+        deepseekUseRerank: useRerank,
+        deepseekUseCompression: useCompression,
+      });
+      setEstimate(nextEstimate);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to estimate tokens');
+    } finally {
+      setCalculating(false);
     }
   }
 
@@ -207,6 +241,14 @@ export function RagTestingPage() {
               <input type="checkbox" checked={useCompression} onChange={(event) => setUseCompression(event.target.checked)} />
             </label>
             <div className="form-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={calculating || running || !settings || !question.trim()}
+                onClick={() => void handleEstimate()}
+              >
+                {calculating ? 'Estimating...' : 'Estimate tokens'}
+              </button>
               <button type="submit" className="btn btn-primary" disabled={running || !question.trim()}>
                 {running ? 'Retrieving...' : 'Run retrieval'}
               </button>
@@ -218,6 +260,25 @@ export function RagTestingPage() {
               Index queue: {jobs.filter((job) => job.status === 'queued').length} queued jobs. Total indexed
               chunks shown after retrieval.
             </p>
+          ) : null}
+
+          {estimate ? (
+            <div className="notice-card">
+              <h3>Token estimate</h3>
+              <p>Query tokens: {estimate.queryTokens}</p>
+              <p>Local embedding tokens: {estimate.embeddingTokens}</p>
+              <p>DeepSeek helper tokens: {estimate.deepseekHelperTokens}</p>
+              <p>Estimated context tokens: {estimate.estimatedContextTokens}</p>
+              <p>
+                <strong>Estimated total tokens: {estimate.estimatedTotalTokens}</strong>
+              </p>
+              {settings ? (
+                <p className="subtitle">
+                  Queue throttle: {settings.minSecondsBetweenJobs}s between jobs, concurrency{' '}
+                  {settings.workerConcurrency}.
+                </p>
+              ) : null}
+            </div>
           ) : null}
 
           {result ? (

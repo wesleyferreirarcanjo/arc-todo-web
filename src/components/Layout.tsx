@@ -339,18 +339,6 @@ export function Layout() {
                       Settings
                     </NavLink>
                     <NavLink
-                      to="/settings/rag/tokens"
-                      role="menuitem"
-                      className={({ isActive }) =>
-                        isActive
-                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                      }
-                      onClick={closeSettingsMenu}
-                    >
-                      Token spend
-                    </NavLink>
-                    <NavLink
                       to="/settings/rag/chunks"
                       role="menuitem"
                       className={({ isActive }) =>
