@@ -19,6 +19,8 @@ import {
 import { getProjectColor } from '../lib/color/entityColor';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
+import { BoardViewToggle } from '../components/BoardViewToggle';
+import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
 import { QuickTaskCreate } from '../components/QuickTaskCreate';
@@ -52,6 +54,7 @@ export function AllTasksBoardPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
@@ -340,6 +343,7 @@ export function AllTasksBoardPage() {
         )}
 
         <div className="board-filter-actions">
+          <BoardViewToggle viewMode={viewMode} onChange={setViewMode} />
           <TaskImportExportMenu
             tasks={tasks}
             query={query}
@@ -381,30 +385,45 @@ export function AllTasksBoardPage() {
       )}
 
       {!loading && !error && topLevelCount > 0 && projectFocus && (
-        <TaskBoard
-          tasks={cycleTasks}
-          accentColor={
-            focusedProject
-              ? getProjectColor(focusedProject)
-              : getProjectColor({ id: projectId! })
-          }
-          organizationId={organizationId}
-          projectId={projectId}
-          onUpdate={handleCycleUpdate}
-          onDelete={handleCycleDelete}
-          onCreateSubtask={handleCycleCreateSubtask}
-          onSetParent={handleCycleSetParent}
-        />
+        viewMode === 'board' ? (
+          <TaskBoard
+            tasks={cycleTasks}
+            accentColor={
+              focusedProject
+                ? getProjectColor(focusedProject)
+                : getProjectColor({ id: projectId! })
+            }
+            organizationId={organizationId}
+            projectId={projectId}
+            onUpdate={handleCycleUpdate}
+            onDelete={handleCycleDelete}
+            onCreateSubtask={handleCycleCreateSubtask}
+            onSetParent={handleCycleSetParent}
+          />
+        ) : (
+          <TaskListView
+            tasks={cycleTasks}
+            accentColor={
+              focusedProject
+                ? getProjectColor(focusedProject)
+                : getProjectColor({ id: projectId! })
+            }
+          />
+        )
       )}
 
       {!loading && !error && topLevelCount > 0 && !projectFocus && (
-        <UnifiedTaskBoard
-          tasks={tasks}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-          onCreateSubtask={handleCreateSubtask}
-          onSetParent={handleSetParent}
-        />
+        viewMode === 'board' ? (
+          <UnifiedTaskBoard
+            tasks={tasks}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+            onCreateSubtask={handleCreateSubtask}
+            onSetParent={handleSetParent}
+          />
+        ) : (
+          <TaskListView tasks={tasks} />
+        )
       )}
 
       {projectFocus && (
