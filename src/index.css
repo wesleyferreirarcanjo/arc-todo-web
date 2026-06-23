@@ -567,8 +567,11 @@ textarea:focus-visible {
 
 .settings-page-tabs {
   display: inline-flex;
+  justify-self: start;
+  align-self: start;
   align-items: stretch;
   gap: 0;
+  max-width: 100%;
   padding: 0.22rem;
   margin-bottom: 1.25rem;
   border: 1px solid var(--border-strong);
