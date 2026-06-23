@@ -61,7 +61,7 @@ export function OrganizationList({
   }
 
   return (
-    <div className="entity-list">
+    <div className="entity-list organizations-list">
       {organizations.map((organization) => {
         const accent = getOrganizationColor(organization);
         const isEditing = editingId === organization.id;
@@ -70,12 +70,14 @@ export function OrganizationList({
         return (
           <article
             key={organization.id}
-            className={`entity-card management-card has-accent${isEditing ? ' is-editing' : ''}`}
+            className={`entity-card management-card organization-card has-accent${isEditing ? ' is-editing' : ''}`}
             style={cardStyle}
           >
             {isEditing ? (
               <div className="entity-edit">
-                <span className="entity-scope-badge">Organization</span>
+                <span className="entity-scope-badge entity-scope-badge-org">
+                  Organization
+                </span>
 
                 <label>
                   Name
@@ -98,14 +100,14 @@ export function OrganizationList({
                 </label>
 
                 <label className="color-field">
-                  Color
+                  Accent color
                   <div className="color-input-row">
                     <input
                       type="color"
                       className="color-picker"
                       value={color}
                       onChange={(event) => setColor(event.target.value)}
-                      aria-label="Organization color"
+                      aria-label="Organization accent color"
                     />
                     <span className="color-value">{color}</span>
                   </div>
@@ -132,18 +134,25 @@ export function OrganizationList({
               </div>
             ) : (
               <>
-                <span className="entity-scope-badge">Organization</span>
+                <span className="entity-scope-badge entity-scope-badge-org">
+                  Organization
+                </span>
 
-                <div className="entity-card-header">
-                  <h3>{organization.name}</h3>
+                <div className="entity-card-header organization-card-header">
+                  <div className="organization-card-identity">
+                    <h3>{organization.name}</h3>
+                    <p className="organization-slug">
+                      <span className="organization-slug-label">Slug</span>
+                      <code>{organization.slug}</code>
+                    </p>
+                  </div>
                   <span
-                    className="entity-color-swatch"
+                    className="entity-color-swatch entity-color-swatch-lg"
                     style={{ backgroundColor: accent }}
-                    title={`Color: ${accent}`}
+                    title={`Accent color: ${accent}`}
+                    aria-label={`Accent color ${accent}`}
                   />
                 </div>
-
-                <p className="entity-meta">Slug: {organization.slug}</p>
 
                 <div className="entity-actions">
                   <button

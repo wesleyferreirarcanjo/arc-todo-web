@@ -34,8 +34,18 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
   }
 
   return (
-    <form className="entity-form" onSubmit={handleSubmit}>
-      <h2>New organization</h2>
+    <form
+      className="entity-form organization-form"
+      onSubmit={handleSubmit}
+      aria-labelledby="organizations-create-heading"
+    >
+      <div className="organization-form-header">
+        <h2 id="organizations-create-heading">New organization</h2>
+        <p className="organization-form-description">
+          Create a workspace to group projects, people, and knowledge.
+        </p>
+      </div>
+
       {error && <div className="alert alert-error">{error}</div>}
 
       <label>
@@ -50,22 +60,24 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
       </label>
 
       <label className="color-field">
-        Color
+        Accent color
         <div className="color-input-row">
           <input
             type="color"
             className="color-picker"
             value={color}
             onChange={(event) => setColor(event.target.value)}
-            aria-label="Organization color"
+            aria-label="Organization accent color"
           />
           <span className="color-value">{color}</span>
         </div>
       </label>
 
-      <button type="submit" className="btn btn-primary" disabled={loading}>
-        {loading ? 'Creating...' : 'Create organization'}
-      </button>
+      <div className="organization-form-actions">
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Creating...' : 'Create organization'}
+        </button>
+      </div>
     </form>
   );
 }
