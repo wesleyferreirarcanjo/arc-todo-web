@@ -8,6 +8,24 @@ import {
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { Modal } from './Modal';
 
+function CopyIcon({ className = 'task-copy-icon' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
 interface TaskDetailsModalProps {
   open: boolean;
   onClose: () => void;
@@ -107,7 +125,7 @@ export function TaskDetailsModal({
 
   async function handleCopy() {
     try {
-      await copyTaskToClipboard(task);
+      await copyTaskToClipboard(task, subtasks);
       setCopyState('copied');
     } catch {
       setCopyState('error');
@@ -186,20 +204,24 @@ export function TaskDetailsModal({
             <span className="task-details-status">{task.status.replace('_', ' ')}</span>
           </div>
           <div className="task-details-actions">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => void handleSmartCopy()}
-            >
-              Smart copy
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => void handleCopy()}
-            >
-              Copy title + description
-            </button>
+            <div className="task-details-copy-group">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => void handleCopy()}
+              >
+                Copy title + description
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm task-details-smart-copy-btn"
+                aria-label="Smart copy for AI planning"
+                title="Smart copy for AI planning"
+                onClick={() => void handleSmartCopy()}
+              >
+                <CopyIcon />
+              </button>
+            </div>
             <button type="button" className="btn btn-secondary btn-sm" onClick={onEdit}>
               Edit
             </button>

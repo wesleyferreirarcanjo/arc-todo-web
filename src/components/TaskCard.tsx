@@ -243,6 +243,7 @@ export function TaskCard({
   const [setParentModalOpen, setSetParentModalOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
+  const [smartCopyTooltip, setSmartCopyTooltip] = useState('Smart copy');
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -327,29 +328,34 @@ export function TaskCard({
 
   async function handleCopyTask() {
     try {
-      const canSmartCopy =
-        resolvedOrganizationId &&
-        resolvedProjectId &&
-        (!isSubtask || isDetachedSubtask);
-
-      if (canSmartCopy) {
-        await copyTaskSmartToClipboard(task, {
-          organizationId: resolvedOrganizationId,
-          projectId: resolvedProjectId,
-          organizationName,
-          projectName,
-          parentDisplayId,
-          subtasks: isSubtask ? undefined : resolvedSubtasks,
-        });
-        setCopyTooltip('Smart copied');
-      } else {
-        await copyTaskToClipboard(task);
-        setCopyTooltip('Copied');
-      }
+      await copyTaskToClipboard(task, isSubtask ? undefined : resolvedSubtasks);
+      setCopyTooltip('Copied');
       window.setTimeout(() => setCopyTooltip('Copy task'), 2000);
     } catch {
       setCopyTooltip('Copy failed');
       window.setTimeout(() => setCopyTooltip('Copy task'), 2500);
+    }
+  }
+
+  async function handleSmartCopyTask() {
+    if (!resolvedOrganizationId || !resolvedProjectId) {
+      return;
+    }
+
+    try {
+      await copyTaskSmartToClipboard(task, {
+        organizationId: resolvedOrganizationId,
+        projectId: resolvedProjectId,
+        organizationName,
+        projectName,
+        parentDisplayId,
+        subtasks: isSubtask ? undefined : resolvedSubtasks,
+      });
+      setSmartCopyTooltip('Smart copied');
+      window.setTimeout(() => setSmartCopyTooltip('Smart copy'), 2000);
+    } catch {
+      setSmartCopyTooltip('Copy failed');
+      window.setTimeout(() => setSmartCopyTooltip('Smart copy'), 2500);
     }
   }
 
@@ -591,20 +597,38 @@ export function TaskCard({
           )}
 
           {isSubtask && !isDetachedSubtask && (
-            <button
-              type="button"
-              className="task-card-action-btn"
-              aria-label={copyTooltip}
-              onClick={(event) => {
-                stopCardPointer(event);
-                void handleCopyTask();
-              }}
-            >
-              <CopyIcon className="task-card-action-icon" />
-              <span className="task-card-action-tooltip" role="tooltip">
-                {copyTooltip}
-              </span>
-            </button>
+            <>
+              <button
+                type="button"
+                className="task-card-action-btn"
+                aria-label={copyTooltip}
+                onClick={(event) => {
+                  stopCardPointer(event);
+                  void handleCopyTask();
+                }}
+              >
+                <CopyIcon className="task-card-action-icon" />
+                <span className="task-card-action-tooltip" role="tooltip">
+                  {copyTooltip}
+                </span>
+              </button>
+              {resolvedOrganizationId && resolvedProjectId && (
+                <button
+                  type="button"
+                  className="task-card-action-btn task-card-smart-copy-btn"
+                  aria-label={smartCopyTooltip}
+                  onClick={(event) => {
+                    stopCardPointer(event);
+                    void handleSmartCopyTask();
+                  }}
+                >
+                  <CopyIcon className="task-card-action-icon" />
+                  <span className="task-card-action-tooltip" role="tooltip">
+                    {smartCopyTooltip}
+                  </span>
+                </button>
+              )}
+            </>
           )}
 
           <div className="task-action-menu">
@@ -746,21 +770,42 @@ export function TaskCard({
         </motion.div>
 
         {!compact && (!isSubtask || isDetachedSubtask) && (
-          <button
-            type="button"
-            className="task-card-action-btn task-card-copy-btn"
-            aria-label={copyTooltip}
+          <div
+            className="task-card-copy-actions"
             onPointerDown={stopCardPointer}
-            onClick={(event) => {
-              stopCardPointer(event);
-              void handleCopyTask();
-            }}
+            onClick={stopCardPointer}
           >
-            <CopyIcon className="task-card-action-icon" />
-            <span className="task-card-action-tooltip" role="tooltip">
-              {copyTooltip}
-            </span>
-          </button>
+            <button
+              type="button"
+              className="task-card-action-btn task-card-copy-btn"
+              aria-label={copyTooltip}
+              onClick={(event) => {
+                stopCardPointer(event);
+                void handleCopyTask();
+              }}
+            >
+              <CopyIcon className="task-card-action-icon" />
+              <span className="task-card-action-tooltip" role="tooltip">
+                {copyTooltip}
+              </span>
+            </button>
+            {resolvedOrganizationId && resolvedProjectId && (
+              <button
+                type="button"
+                className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"
+                aria-label={smartCopyTooltip}
+                onClick={(event) => {
+                  stopCardPointer(event);
+                  void handleSmartCopyTask();
+                }}
+              >
+                <CopyIcon className="task-card-action-icon" />
+                <span className="task-card-action-tooltip" role="tooltip">
+                  {smartCopyTooltip}
+                </span>
+              </button>
+            )}
+          </div>
         )}
 
         {(!isSubtask || isDetachedSubtask) && chatContextTask ? (

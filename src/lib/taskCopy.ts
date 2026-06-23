@@ -1,12 +1,21 @@
 import type { Task } from '../types/todo';
 
-export function formatTaskCopyText(task: Task): string {
-  const description = task.description?.trim() || 'No description';
-  const dueDate = task.dueDate
-    ? new Date(task.dueDate).toISOString().slice(0, 10)
-    : 'No due date';
+function formatSimpleDueDate(value: string | null | undefined): string {
+  if (!value) return 'No due date';
+  return new Date(value).toISOString().slice(0, 10);
+}
 
-  return `Task: ${task.title}\nDescription: ${description}\nDue date: ${dueDate}`;
+function formatSimpleTaskBlock(task: Task, label = 'Task'): string {
+  const description = task.description?.trim() || 'No description';
+  return `${label}: ${task.title}\nDescription: ${description}\nDue date: ${formatSimpleDueDate(task.dueDate)}`;
+}
+
+export function formatTaskCopyText(task: Task, subtasks?: Task[]): string {
+  const blocks = [formatSimpleTaskBlock(task)];
+  for (const subtask of subtasks ?? []) {
+    blocks.push(formatSimpleTaskBlock(subtask, 'Subtask'));
+  }
+  return blocks.join('\n\n');
 }
 
 export interface TaskSmartCopyContext {
@@ -144,8 +153,8 @@ export async function copyTextToClipboard(text: string): Promise<void> {
   }
 }
 
-export async function copyTaskToClipboard(task: Task): Promise<void> {
-  await copyTextToClipboard(formatTaskCopyText(task));
+export async function copyTaskToClipboard(task: Task, subtasks?: Task[]): Promise<void> {
+  await copyTextToClipboard(formatTaskCopyText(task, subtasks));
 }
 
 export async function copyTaskSmartToClipboard(

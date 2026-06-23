@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTaskSmartCopyText } from './taskCopy';
+import { formatTaskCopyText, formatTaskSmartCopyText } from './taskCopy';
 import type { Task } from '../types/todo';
 
 const parentTask: Task = {
@@ -30,6 +30,16 @@ const subtask: Task = {
   createdAt: '2026-06-01T00:00:00.000Z',
   updatedAt: '2026-06-01T00:00:00.000Z',
 };
+
+describe('formatTaskCopyText', () => {
+  it('includes subtasks in the simple copy format', () => {
+    const text = formatTaskCopyText(parentTask, [subtask]);
+
+    expect(text).toContain('Task: Add smart copy');
+    expect(text).toContain('Subtask: Wire UI button');
+    expect(text).toContain('## Execution Plan');
+  });
+});
 
 describe('formatTaskSmartCopyText', () => {
   it('includes task context, subtasks, MCP hints, and deploy guardrails', () => {
