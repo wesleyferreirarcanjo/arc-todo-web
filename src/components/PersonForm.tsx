@@ -39,8 +39,18 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
   }
 
   return (
-    <form className="entity-form" onSubmit={handleSubmit}>
-      <h2>New person</h2>
+    <form
+      className="entity-form person-form"
+      onSubmit={handleSubmit}
+      aria-labelledby="people-create-heading"
+    >
+      <div className="person-form-header">
+        <h2 id="people-create-heading">New person</h2>
+        <p className="person-form-description">
+          Capture the basics now; add detailed knowledge from the person card later.
+        </p>
+      </div>
+
       {error && <div className="alert alert-error">{error}</div>}
 
       <label>
@@ -61,6 +71,7 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="jane@example.com"
+          autoComplete="email"
         />
       </label>
 
@@ -71,6 +82,7 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Product manager"
+          autoComplete="organization-title"
         />
       </label>
 
@@ -84,9 +96,11 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
         />
       </label>
 
-      <button type="submit" className="btn btn-primary" disabled={loading}>
-        {loading ? 'Creating...' : 'Create person'}
-      </button>
+      <div className="person-form-actions">
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Creating...' : 'Create person'}
+        </button>
+      </div>
     </form>
   );
 }

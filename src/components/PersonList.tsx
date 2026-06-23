@@ -25,6 +25,7 @@ export function PersonList({
           <button
             type="button"
             className="entity-card-main"
+            aria-label={`Open knowledge for ${person.name}`}
             onClick={() =>
               navigate(
                 scope === 'general'
@@ -33,12 +34,38 @@ export function PersonList({
               )
             }
           >
-            <h3>{person.name}</h3>
-            {person.title && <p className="entity-meta">{person.title}</p>}
-            {person.email && <p className="entity-meta">{person.email}</p>}
+            <div className="person-card-header">
+              <div className="person-avatar" aria-hidden="true">
+                {person.name.trim().charAt(0).toUpperCase()}
+              </div>
+              <div className="person-card-identity">
+                <h3>{person.name}</h3>
+                <p className="person-card-scope">
+                  {scope === 'general' ? 'Personal contact' : 'Organization contact'}
+                </p>
+              </div>
+            </div>
+
+            <div className="person-card-details">
+              {person.title && (
+                <p className="entity-meta person-card-detail">
+                  <span>Role</span>
+                  {person.title}
+                </p>
+              )}
+              {person.email && (
+                <p className="entity-meta person-card-detail">
+                  <span>Email</span>
+                  {person.email}
+                </p>
+              )}
+            </div>
+
             {person.notes && (
-              <p className="entity-description">{person.notes}</p>
+              <p className="entity-description person-card-notes">{person.notes}</p>
             )}
+
+            <span className="person-card-knowledge-link">Open knowledge</span>
           </button>
         </div>
       ))}
