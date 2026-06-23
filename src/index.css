@@ -2920,32 +2920,32 @@ textarea {
 
 .task-card-action-btn.task-card-smart-copy-btn,
 .task-details-smart-copy-btn {
-  background: rgba(232, 146, 58, 0.1);
-  border-color: rgba(232, 146, 58, 0.28);
-  color: #ff9f43;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
 }
 
 .task-card-action-btn.task-card-smart-copy-btn .task-card-action-icon,
 .task-details-smart-copy-btn .task-copy-icon {
-  color: #ff9f43;
-  stroke: #ff9f43;
+  color: #c4926a;
+  stroke: #c4926a;
 }
 
 .task-card-action-btn.task-card-smart-copy-btn:hover,
 .task-card-action-btn.task-card-smart-copy-btn:focus-visible,
 .task-details-smart-copy-btn:hover,
 .task-details-smart-copy-btn:focus-visible {
-  background: rgba(232, 146, 58, 0.18);
-  border-color: rgba(232, 146, 58, 0.58);
-  color: #ffb15f;
+  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
 }
 
 .task-card-action-btn.task-card-smart-copy-btn:hover .task-card-action-icon,
 .task-card-action-btn.task-card-smart-copy-btn:focus-visible .task-card-action-icon,
 .task-details-smart-copy-btn:hover .task-copy-icon,
 .task-details-smart-copy-btn:focus-visible .task-copy-icon {
-  color: #ffb15f;
-  stroke: #ffb15f;
+  color: #d4a57a;
+  stroke: #d4a57a;
 }
 
 .task-details-copy-group {
