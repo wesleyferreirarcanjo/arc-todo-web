@@ -151,6 +151,8 @@ export function Layout() {
   const [ragMenuOpen, setRagMenuOpen] = useState(
     () => location.pathname.startsWith('/settings/rag'),
   );
+  const isSettingsPage = location.pathname.startsWith('/settings');
+  const isRagSettingsPage = location.pathname.startsWith('/settings/rag');
   const isBoardPage = location.pathname === '/board';
   const isKnowledgePage =
     location.pathname === '/knowledge' ||
@@ -275,7 +277,7 @@ export function Layout() {
             >
               <button
                 type="button"
-                className="sidebar-settings-trigger"
+                className={`sidebar-settings-trigger${isSettingsPage ? ' active' : ''}`}
                 aria-expanded={settingsOpen}
                 aria-haspopup="menu"
                 aria-label="Settings"
@@ -288,101 +290,102 @@ export function Layout() {
 
               {settingsOpen ? (
                 <div className="sidebar-settings-menu" role="menu">
-                <p className="sidebar-settings-category">AI</p>
-                <NavLink
-                  to="/settings/chatbot"
-                  end
-                  role="menuitem"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'sidebar-settings-menu-item active'
-                      : 'sidebar-settings-menu-item'
-                  }
-                  onClick={closeSettingsMenu}
-                >
-                  <ChatbotIcon />
-                  Chatbot
-                </NavLink>
-                <NavLink
-                  to="/settings/chatbot/testing"
-                  role="menuitem"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                      : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                  }
-                  onClick={closeSettingsMenu}
-                >
-                  Testing
-                </NavLink>
-                <NavLink
-                  to="/settings/mcp-tools"
-                  role="menuitem"
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'sidebar-settings-menu-item active'
-                      : 'sidebar-settings-menu-item'
-                  }
-                  onClick={closeSettingsMenu}
-                >
-                  <McpIcon />
-                  MCP Tools
-                </NavLink>
-                <p className="sidebar-settings-category">RAG</p>
-                <button
-                  type="button"
-                  className={`sidebar-settings-menu-item sidebar-settings-submenu-trigger${
-                    ragMenuOpen ? ' is-open' : ''
-                  }`}
-                  aria-expanded={ragMenuOpen}
-                  onClick={() => setRagMenuOpen((open) => !open)}
-                >
-                  <RagIcon />
-                  RAG
-                  <span className="sidebar-settings-submenu-chevron" aria-hidden="true">
-                    {ragMenuOpen ? '▾' : '▸'}
-                  </span>
-                </button>
-                {ragMenuOpen ? (
-                  <div className="sidebar-settings-submenu">
-                    <NavLink
-                      to="/settings/rag/settings"
-                      role="menuitem"
-                      className={({ isActive }) =>
-                        isActive
-                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                      }
-                      onClick={closeSettingsMenu}
-                    >
-                      Settings
-                    </NavLink>
-                    <NavLink
-                      to="/settings/rag/chunks"
-                      role="menuitem"
-                      className={({ isActive }) =>
-                        isActive
-                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                      }
-                      onClick={closeSettingsMenu}
-                    >
-                      Chunks
-                    </NavLink>
-                    <NavLink
-                      to="/settings/rag/testing"
-                      role="menuitem"
-                      className={({ isActive }) =>
-                        isActive
-                          ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                          : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                      }
-                      onClick={closeSettingsMenu}
-                    >
-                      Testing
-                    </NavLink>
-                  </div>
-                ) : null}
+                  <p className="sidebar-settings-category">AI</p>
+                  <NavLink
+                    to="/settings/chatbot"
+                    end
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'sidebar-settings-menu-item active'
+                        : 'sidebar-settings-menu-item'
+                    }
+                    onClick={closeSettingsMenu}
+                  >
+                    <ChatbotIcon />
+                    Chatbot
+                  </NavLink>
+                  <NavLink
+                    to="/settings/chatbot/testing"
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                        : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                    }
+                    onClick={closeSettingsMenu}
+                  >
+                    Testing
+                  </NavLink>
+                  <NavLink
+                    to="/settings/mcp-tools"
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'sidebar-settings-menu-item active'
+                        : 'sidebar-settings-menu-item'
+                    }
+                    onClick={closeSettingsMenu}
+                  >
+                    <McpIcon />
+                    MCP Tools
+                  </NavLink>
+                  <p className="sidebar-settings-category">RAG</p>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`sidebar-settings-menu-item sidebar-settings-submenu-trigger${
+                      ragMenuOpen ? ' is-open' : ''
+                    }${isRagSettingsPage ? ' active' : ''}`}
+                    aria-expanded={ragMenuOpen}
+                    onClick={() => setRagMenuOpen((open) => !open)}
+                  >
+                    <RagIcon />
+                    RAG
+                    <span className="sidebar-settings-submenu-chevron" aria-hidden="true">
+                      {ragMenuOpen ? '▾' : '▸'}
+                    </span>
+                  </button>
+                  {ragMenuOpen ? (
+                    <div className="sidebar-settings-submenu">
+                      <NavLink
+                        to="/settings/rag/settings"
+                        role="menuitem"
+                        className={({ isActive }) =>
+                          isActive
+                            ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                            : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                        }
+                        onClick={closeSettingsMenu}
+                      >
+                        Settings
+                      </NavLink>
+                      <NavLink
+                        to="/settings/rag/chunks"
+                        role="menuitem"
+                        className={({ isActive }) =>
+                          isActive
+                            ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                            : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                        }
+                        onClick={closeSettingsMenu}
+                      >
+                        Chunks
+                      </NavLink>
+                      <NavLink
+                        to="/settings/rag/testing"
+                        role="menuitem"
+                        className={({ isActive }) =>
+                          isActive
+                            ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
+                            : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
+                        }
+                        onClick={closeSettingsMenu}
+                      >
+                        Testing
+                      </NavLink>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>

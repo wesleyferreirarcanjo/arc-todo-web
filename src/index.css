@@ -407,10 +407,16 @@ textarea:focus-visible {
 }
 
 .sidebar-settings-trigger:hover,
-.sidebar-settings-trigger[aria-expanded='true'] {
+.sidebar-settings-trigger[aria-expanded='true'],
+.sidebar-settings-trigger.active {
   background: var(--bg-elevated);
   border-color: var(--border);
   color: var(--text-primary);
+}
+
+.sidebar-settings-trigger.active {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: var(--shadow-soft);
 }
 
 .sidebar-footer-btn {
@@ -461,8 +467,8 @@ textarea:focus-visible {
   z-index: 40;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.5rem;
+  gap: 0.3rem;
+  padding: 0.55rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -473,12 +479,12 @@ textarea:focus-visible {
   left: calc(100% + 0.35rem);
   right: auto;
   bottom: 0;
-  min-width: 11rem;
+  min-width: 12.5rem;
 }
 
 .sidebar-settings-category {
   margin: 0;
-  padding: 0.35rem 0.5rem 0.15rem;
+  padding: 0.4rem 0.55rem 0.2rem;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -486,28 +492,38 @@ textarea:focus-visible {
   color: var(--text-muted);
 }
 
+.sidebar-settings-category:not(:first-child) {
+  margin-top: 0.3rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
 .sidebar-settings-menu-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.55rem 0.65rem;
+  min-height: 2.25rem;
+  padding: 0.55rem 0.7rem;
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
   border: 1px solid transparent;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .sidebar-settings-menu-item:hover,
 .sidebar-settings-menu-item.active {
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
   border-color: var(--border);
 }
 
 .sidebar-settings-menu-item.active {
-  border-color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  box-shadow: inset 3px 0 0 var(--accent), var(--shadow-soft);
 }
 
 .sidebar-settings-submenu-trigger {
@@ -521,28 +537,40 @@ textarea:focus-visible {
   margin-left: auto;
   font-size: 0.75rem;
   color: var(--text-muted);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-settings-submenu-trigger.is-open .sidebar-settings-submenu-chevron {
+  color: var(--text-primary);
 }
 
 .sidebar-settings-submenu {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  padding-left: 0.35rem;
+  margin-left: 0.55rem;
+  padding-left: 0.7rem;
+  border-left: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 
 .sidebar-settings-submenu-item {
-  padding-left: 1.75rem;
+  padding-left: 0.9rem;
   font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.sidebar-settings-submenu-item.active {
+  color: var(--text-primary);
 }
 
 .settings-page-tabs {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 0;
-  padding: 0.22rem;
+  gap: 0.2rem;
+  padding: 0.25rem;
   margin-bottom: 1.25rem;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
   box-shadow: var(--shadow-soft), inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
 }
@@ -551,9 +579,10 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1.1rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 0;
+  border-radius: calc(var(--radius-md) - 4px);
   background: transparent;
   color: var(--text-muted);
   text-decoration: none;
@@ -565,7 +594,7 @@ textarea:focus-visible {
 }
 
 .settings-page-tab:not(:last-child) {
-  border-right: 1px solid color-mix(in srgb, var(--border-strong) 75%, transparent);
+  border-right: 1px solid transparent;
 }
 
 .settings-page-tab:hover:not(.active) {
@@ -578,21 +607,6 @@ textarea:focus-visible {
   border-right-color: transparent;
   background: var(--gradient-accent);
   box-shadow: var(--shadow-soft), 0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
-}
-
-.settings-page-tab:first-child:hover:not(.active),
-.settings-page-tab:first-child.active {
-  border-radius: 24px 0 0 8px;
-}
-
-.settings-page-tab:last-child:hover:not(.active),
-.settings-page-tab:last-child.active {
-  border-radius: 0 8px 24px 0;
-}
-
-.settings-page-tab:not(:first-child):not(:last-child):hover:not(.active),
-.settings-page-tab:not(:first-child):not(:last-child).active {
-  border-radius: 0;
 }
 
 .settings-page-tab:has(+ .settings-page-tab.active) {
