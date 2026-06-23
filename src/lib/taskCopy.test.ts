@@ -52,6 +52,8 @@ describe('formatTaskSmartCopyText', () => {
     });
 
     expect(text).toContain('# Arc Todo Smart Copy');
+    expect(text).toContain('Start here: make a concise implementation plan');
+    expect(text).toContain('include your proposed solution/default');
     expect(text).toContain('display_id: #arc-1');
     expect(text).toContain('organization_id: 57df4a79-d87d-40e1-9fb0-2da29d8ebecf');
     expect(text).toContain('project_name: Frontend');
@@ -60,7 +62,8 @@ describe('formatTaskSmartCopyText', () => {
     expect(text).toContain('parent_task_id=<parent UUID from get_task>');
     expect(text).toContain('list_tasks parent_task_id filter requires UUID');
     expect(text).toContain('Deploy only when repo scripts/docs make the path clear');
-    expect(text).toContain('In plan mode: produce a concise implementation plan');
+    expect(text).toContain('First response should be a useful implementation plan');
+    expect(text).toContain('suggest one improvement or simpler alternative');
   });
 
   it('includes parent reference for subtasks', () => {
