@@ -54,7 +54,7 @@ export function formatTaskSmartCopyText(
   const lines: string[] = [
     '# Arc Todo Smart Copy',
     '',
-    'Start here: make a concise implementation plan from this task before editing. If anything important is unclear, ask 1-2 focused questions and include your proposed solution/default for each question.',
+    'Start here: make a concise implementation plan from this task before editing. If anything important is unclear, ask all focused questions needed to make the plan strong, and include your proposed solution/default for each question.',
     '',
     'After the plan is approved, execute the work, verify it, then use Arc Todo MCP to move completed subtasks and the parent task to done.',
     '',
@@ -95,7 +95,7 @@ export function formatTaskSmartCopyText(
     '### Planning',
     '- Treat the Description as the outcome plan; subtask bodies are the technical execution plans.',
     '- First response should be a useful implementation plan, not a summary of this packet.',
-    '- Ask only material product/architecture questions. Every question must include a proposed solution/default.',
+    '- Ask every material product/architecture question needed for a good plan. Every question must include a proposed solution/default.',
     '- When useful, suggest one improvement or simpler alternative during the question process.',
     '- In plan mode: produce a concise implementation plan from this packet and wait for approval before edits.',
     '',
