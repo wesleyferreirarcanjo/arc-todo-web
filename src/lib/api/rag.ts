@@ -93,3 +93,11 @@ export function fetchRagChunkAggregate(
 export function fetchRagChunks(input: RagChunkListInput = {}): Promise<RagChunkListResult> {
   return apiRequest<RagChunkListResult>(`/rag/chunks${buildChunkQuery(input)}`);
 }
+
+export function deleteRagChunk(chunkId: string): Promise<{
+  deletedChunks: number;
+  cancelledJobs: number;
+  chunkId: string;
+}> {
+  return apiRequest(`/rag/chunks/${chunkId}`, { method: 'DELETE' });
+}

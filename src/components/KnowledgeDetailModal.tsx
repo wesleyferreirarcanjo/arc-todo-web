@@ -4,9 +4,11 @@ import type {
   KnowledgeScopeContext,
   UpdateKnowledgeInput,
 } from '../types/knowledge';
+import { ConfirmDialog } from './ConfirmDialog';
 import { Modal } from './Modal';
 import { KnowledgeAttachments } from './KnowledgeAttachments';
 import { KnowledgeEntryIndex } from './KnowledgeEntryIndex';
+import { knowledgeDeleteCopy } from '../lib/knowledge/destructiveCopy';
 
 interface KnowledgeDetailModalProps {
   open: boolean;
@@ -35,6 +37,7 @@ export function KnowledgeDetailModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [reindexVersion, setReindexVersion] = useState(0);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const accentStyle = accentColor
     ? ({ '--entity-accent': accentColor } as CSSProperties)
@@ -63,15 +66,18 @@ export function KnowledgeDetailModal({
     }
   }
 
-  async function handleDelete() {
+  async function handleDeleteConfirmed() {
     setDeleting(true);
     try {
       await onDelete(entry.id);
+      setConfirmDeleteOpen(false);
       handleClose();
     } finally {
       setDeleting(false);
     }
   }
+
+  const deleteCopy = knowledgeDeleteCopy(entry.title);
 
   function handleCancelEdit() {
     setTitle(entry.title);
@@ -159,15 +165,26 @@ export function KnowledgeDetailModal({
                 type="button"
                 className="btn btn-danger"
                 disabled={deleting}
-                onClick={() => void handleDelete()}
+                onClick={() => setConfirmDeleteOpen(true)}
               >
-                {deleting ? 'Deleting...' : 'Delete'}
+                Delete
               </button>
             </div>
             <KnowledgeAttachments knowledgeId={entry.id} scope={scope} />
           </>
         )}
       </div>
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title={deleteCopy.title}
+        description={deleteCopy.description}
+        confirmLabel={deleteCopy.confirmLabel}
+        cancelLabel="Keep entry"
+        variant="danger"
+        loading={deleting}
+        onConfirm={() => void handleDeleteConfirmed()}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </Modal>
   );
 }

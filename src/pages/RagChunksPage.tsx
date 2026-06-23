@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
-import { fetchRagChunks, fetchRagIndexStatus, syncRagIndex } from '../lib/api/rag';
+import {
+  deleteRagChunk,
+  fetchRagChunks,
+  fetchRagIndexStatus,
+  syncRagIndex,
+} from '../lib/api/rag';
+import { chunkDeleteCopy, ragSyncCopy } from '../lib/knowledge/destructiveCopy';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 import type {
@@ -194,11 +201,15 @@ function ChunkDetailsModal({
   chunk,
   organizationName,
   projectName,
+  deleting,
+  onDelete,
   onClose,
 }: {
   chunk: RagIndexedChunk;
   organizationName?: string;
   projectName?: string;
+  deleting: boolean;
+  onDelete: () => void;
   onClose: () => void;
 }) {
   return (
@@ -271,6 +282,17 @@ function ChunkDetailsModal({
             </div>
           </dl>
         </section>
+
+        <div className="knowledge-actions">
+          <button
+            type="button"
+            className="btn btn-danger"
+            disabled={deleting}
+            onClick={onDelete}
+          >
+            {deleting ? 'Deleting...' : 'Delete chunk'}
+          </button>
+        </div>
       </div>
     </Modal>
   );
@@ -295,7 +317,11 @@ export function RagChunksPage() {
   const [statusRefreshing, setStatusRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
+  const [confirmChunkDeleteOpen, setConfirmChunkDeleteOpen] = useState(false);
+  const [deletingChunk, setDeletingChunk] = useState(false);
   const previousProcessingCount = useRef(0);
+  const syncCopy = ragSyncCopy();
 
   const organizationNameById = useCallback(
     (id: string | null) => organizations.find((org) => org.id === id)?.name,
@@ -419,16 +445,34 @@ export function RagChunksPage() {
     await Promise.all([loadChunks(0), loadIndexStatus()]);
   }
 
-  async function handleSync() {
+  async function handleSyncConfirmed() {
     setSyncing(true);
     setError(null);
     try {
       await syncRagIndex();
+      setConfirmSyncOpen(false);
       await refreshAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to queue sync');
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleChunkDeleteConfirmed() {
+    if (!selectedChunk) return;
+    setDeletingChunk(true);
+    setError(null);
+    try {
+      await deleteRagChunk(selectedChunk.id);
+      setConfirmChunkDeleteOpen(false);
+      setSelectedChunk(null);
+      await loadChunks(offset, { silent: true });
+      await loadIndexStatus({ silent: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete chunk');
+    } finally {
+      setDeletingChunk(false);
     }
   }
 
@@ -475,7 +519,7 @@ export function RagChunksPage() {
                 type="button"
                 className="btn btn-sm rag-sync-btn"
                 disabled={syncing || statusRefreshing}
-                onClick={() => void handleSync()}
+                onClick={() => setConfirmSyncOpen(true)}
               >
                 {syncing ? 'Queueing sync...' : 'Queue sync'}
               </button>
@@ -649,7 +693,31 @@ export function RagChunksPage() {
           chunk={selectedChunk}
           organizationName={organizationNameById(selectedChunk.organizationId)}
           projectName={projectNameById(selectedChunk.projectId)}
+          deleting={deletingChunk}
+          onDelete={() => setConfirmChunkDeleteOpen(true)}
           onClose={() => setSelectedChunk(null)}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={confirmSyncOpen}
+        title={syncCopy.title}
+        description={syncCopy.description}
+        confirmLabel={syncCopy.confirmLabel}
+        loading={syncing}
+        onConfirm={() => void handleSyncConfirmed()}
+        onCancel={() => setConfirmSyncOpen(false)}
+      />
+
+      {selectedChunk ? (
+        <ConfirmDialog
+          open={confirmChunkDeleteOpen}
+          {...chunkDeleteCopy(formatChunkSourceLabel(selectedChunk))}
+          cancelLabel="Keep chunk"
+          variant="danger"
+          loading={deletingChunk}
+          onConfirm={() => void handleChunkDeleteConfirmed()}
+          onCancel={() => setConfirmChunkDeleteOpen(false)}
         />
       ) : null}
     </section>

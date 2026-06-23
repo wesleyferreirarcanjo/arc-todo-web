@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ConfirmDialog } from './ConfirmDialog';
 import {
   fetchRagChunkAggregate,
   fetchRagIndexStatus,
   syncRagIndex,
 } from '../lib/api/rag';
+import { ragSyncCopy } from '../lib/knowledge/destructiveCopy';
 import type { RagChunkAggregate, RagIndexStatus } from '../types/ragSettings';
 
 const POLL_MS = 4000;
@@ -53,6 +55,7 @@ export function KnowledgeIndexOverview({
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
 
   const filters = {
     scope,
@@ -102,11 +105,12 @@ export function KnowledgeIndexOverview({
     return () => window.clearInterval(timer);
   }, [hasActiveWork, loadOverview]);
 
-  async function handleSync() {
+  async function handleSyncConfirmed() {
     setSyncing(true);
     setError(null);
     try {
       await syncRagIndex();
+      setConfirmSyncOpen(false);
       await loadOverview({ silent: true });
     } catch {
       setError('Failed to queue sync.');
@@ -114,6 +118,8 @@ export function KnowledgeIndexOverview({
       setSyncing(false);
     }
   }
+
+  const syncCopy = ragSyncCopy();
 
   const status = overallStatusLabel(aggregate, indexStatus);
   const totalChunks = aggregate?.totalChunks ?? indexStatus?.totalChunks ?? 0;
@@ -136,7 +142,7 @@ export function KnowledgeIndexOverview({
             type="button"
             className="btn btn-secondary btn-sm"
             disabled={syncing || refreshing}
-            onClick={() => void handleSync()}
+            onClick={() => setConfirmSyncOpen(true)}
           >
             {syncing ? 'Queueing sync...' : 'Queue sync'}
           </button>
@@ -198,6 +204,15 @@ export function KnowledgeIndexOverview({
           ) : null}
         </>
       )}
+      <ConfirmDialog
+        open={confirmSyncOpen}
+        title={syncCopy.title}
+        description={syncCopy.description}
+        confirmLabel={syncCopy.confirmLabel}
+        loading={syncing}
+        onConfirm={() => void handleSyncConfirmed()}
+        onCancel={() => setConfirmSyncOpen(false)}
+      />
     </section>
   );
 }

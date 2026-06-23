@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
@@ -9,6 +10,7 @@ import {
   retrieveProject,
   syncRagIndex,
 } from '../lib/api/rag';
+import { ragSyncCopy } from '../lib/knowledge/destructiveCopy';
 import { fetchRagSettings } from '../lib/api/ragSettings';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
@@ -311,6 +313,8 @@ export function RagTestingPage() {
   const [running, setRunning] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
+  const syncCopy = ragSyncCopy();
 
   const loadIndexStatus = useCallback(async (options: { silent?: boolean } = {}) => {
     if (options.silent) {
@@ -434,11 +438,12 @@ export function RagTestingPage() {
     }
   }
 
-  async function handleSync() {
+  async function handleSyncConfirmed() {
     setSyncing(true);
     setError(null);
     try {
       await syncRagIndex();
+      setConfirmSyncOpen(false);
       await loadIndexStatus({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to queue sync');
@@ -460,7 +465,7 @@ export function RagTestingPage() {
             indexStatus={indexStatus}
             statusRefreshing={statusRefreshing}
             syncing={syncing}
-            onSync={() => void handleSync()}
+            onSync={() => setConfirmSyncOpen(true)}
           />
 
           <form
@@ -599,6 +604,16 @@ export function RagTestingPage() {
 
           {estimate ? <TokenEstimateCard estimate={estimate} settings={settings} /> : null}
           {result ? <RetrievalResultsCard result={result} /> : null}
+
+          <ConfirmDialog
+            open={confirmSyncOpen}
+            title={syncCopy.title}
+            description={syncCopy.description}
+            confirmLabel={syncCopy.confirmLabel}
+            loading={syncing}
+            onConfirm={() => void handleSyncConfirmed()}
+            onCancel={() => setConfirmSyncOpen(false)}
+          />
         </>
       ) : null}
     </section>

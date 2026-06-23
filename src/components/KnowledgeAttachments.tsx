@@ -1,9 +1,11 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { ConfirmDialog } from './ConfirmDialog';
 import { FileInput } from './FileInput';
 import {
   deleteKnowledgeAttachment,
   downloadKnowledgeAttachment,
   fetchKnowledgeAttachments,
+  resyncKnowledgeAttachment,
   uploadKnowledgeAttachment,
 } from '../lib/api/knowledge';
 import type {
@@ -11,6 +13,10 @@ import type {
   KnowledgeScopeContext,
   ListAttachmentQuery,
 } from '../types/knowledge';
+import {
+  attachmentDeleteCopy,
+  attachmentResyncCopy,
+} from '../lib/knowledge/destructiveCopy';
 import {
   indexStatusLabel,
   isActiveIndexStatus,
@@ -50,6 +56,13 @@ export function KnowledgeAttachments({
   });
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<KnowledgeAttachment | null>(
+    null,
+  );
+  const [pendingResync, setPendingResync] = useState<KnowledgeAttachment | null>(
+    null,
+  );
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadAttachments = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -158,16 +171,46 @@ export function KnowledgeAttachments({
     }
   }
 
-  async function handleDelete(attachmentId: string) {
+  async function handleDeleteConfirmed() {
+    if (!pendingDelete) return;
+    const attachmentId = pendingDelete.id;
     setActiveActionId(attachmentId);
     setError(null);
+    setActionMessage(null);
     try {
       await deleteKnowledgeAttachment(scope, knowledgeId, attachmentId);
       setAttachments((prev) =>
         prev.filter((attachment) => attachment.id !== attachmentId),
       );
+      setPendingDelete(null);
     } catch {
       setError('Failed to delete attachment.');
+    } finally {
+      setActiveActionId(null);
+    }
+  }
+
+  async function handleResyncConfirmed() {
+    if (!pendingResync) return;
+    const attachmentId = pendingResync.id;
+    setActiveActionId(attachmentId);
+    setError(null);
+    setActionMessage(null);
+    try {
+      const updated = await resyncKnowledgeAttachment(
+        scope,
+        knowledgeId,
+        attachmentId,
+      );
+      setAttachments((prev) =>
+        prev.map((attachment) =>
+          attachment.id === attachmentId ? updated : attachment,
+        ),
+      );
+      setActionMessage(`Resync queued for ${pendingResync.originalFilename}.`);
+      setPendingResync(null);
+    } catch {
+      setError('Failed to resync attachment.');
     } finally {
       setActiveActionId(null);
     }
@@ -234,6 +277,7 @@ export function KnowledgeAttachments({
 
       {loading && <p className="status-message">Loading attachments...</p>}
       {error && <div className="alert alert-error">{error}</div>}
+      {actionMessage && <p className="status-message">{actionMessage}</p>}
 
       {pendingUploads.length > 0 && (
         <ul className="knowledge-attachment-list">
@@ -307,9 +351,17 @@ export function KnowledgeAttachments({
                 </button>
                 <button
                   type="button"
+                  className="btn btn-secondary"
+                  disabled={activeActionId === attachment.id}
+                  onClick={() => setPendingResync(attachment)}
+                >
+                  Resync
+                </button>
+                <button
+                  type="button"
                   className="btn btn-danger"
                   disabled={activeActionId === attachment.id}
-                  onClick={() => void handleDelete(attachment.id)}
+                  onClick={() => setPendingDelete(attachment)}
                 >
                   Delete
                 </button>
@@ -318,6 +370,30 @@ export function KnowledgeAttachments({
           ))}
         </ul>
       )}
+      {pendingDelete ? (
+        <ConfirmDialog
+          open
+          {...attachmentDeleteCopy(
+            pendingDelete.originalFilename,
+            pendingDelete.chunkCount,
+          )}
+          cancelLabel="Keep file"
+          variant="danger"
+          loading={activeActionId === pendingDelete.id}
+          onConfirm={() => void handleDeleteConfirmed()}
+          onCancel={() => setPendingDelete(null)}
+        />
+      ) : null}
+      {pendingResync ? (
+        <ConfirmDialog
+          open
+          {...attachmentResyncCopy(pendingResync.originalFilename)}
+          cancelLabel="Cancel"
+          loading={activeActionId === pendingResync.id}
+          onConfirm={() => void handleResyncConfirmed()}
+          onCancel={() => setPendingResync(null)}
+        />
+      ) : null}
     </section>
   );
 }

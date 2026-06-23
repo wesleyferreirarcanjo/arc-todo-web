@@ -112,6 +112,17 @@ export function deleteKnowledgeAttachment(
   );
 }
 
+export function resyncKnowledgeAttachment(
+  scope: KnowledgeScopeContext,
+  knowledgeId: string,
+  attachmentId: string,
+): Promise<KnowledgeAttachment> {
+  return apiRequest<KnowledgeAttachment>(
+    `${attachmentsBasePath(scope, knowledgeId)}/${attachmentId}/resync`,
+    { method: 'POST', body: {} },
+  );
+}
+
 export function fetchGeneralKnowledge(): Promise<KnowledgeEntry[]> {
   return apiRequest<KnowledgeEntry[]>('/knowledge');
 }
