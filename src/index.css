@@ -41,6 +41,8 @@
   --radius-blob: 28px 8px 28px 8px;
   --radius-blob-alt: 8px 28px 8px 28px;
   --radius-pill: 999px;
+  --button-height: 2.65rem;
+  --button-height-sm: 2.15rem;
   --sidebar-expanded-width: 260px;
   --sidebar-collapsed-width: 72px;
   --sidebar-width: var(--sidebar-collapsed-width);
@@ -894,6 +896,7 @@ textarea:focus-visible {
 
 .modal-close:hover {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
   color: var(--text-primary);
 }
 
@@ -1294,13 +1297,15 @@ textarea:focus-visible {
   background: transparent;
   color: var(--text-primary);
   font-size: 0.875rem;
+  font-weight: 600;
   text-align: left;
   cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .task-import-export-item:hover:not(:disabled),
 .task-import-export-item:focus-visible {
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   outline: none;
 }
 
@@ -2011,8 +2016,9 @@ textarea {
   flex-shrink: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
-  padding: 0.45rem 0.9rem;
-  background: var(--bg-surface);
+  min-height: var(--button-height-sm);
+  padding: 0.45rem 0.85rem;
+  background: color-mix(in srgb, var(--bg-surface) 86%, var(--accent) 14%);
   color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 700;
@@ -2023,6 +2029,7 @@ textarea {
 
 .file-input-control:hover .file-input-button {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--bg-surface) 78%, var(--accent) 22%);
 }
 
 .file-input-value {
@@ -2160,42 +2167,74 @@ textarea {
 }
 
 .btn {
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--button-height);
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  padding: 0.7rem 1.25rem;
+  padding: 0.68rem 1.18rem;
+  color: var(--text-primary);
   cursor: pointer;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
   transition: background var(--transition-fast), box-shadow var(--transition-fast),
-    transform var(--transition-fast), border-color var(--transition-fast);
+    transform var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.btn:focus-visible {
+  border-color: var(--accent);
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--gradient-accent);
   color: var(--accent-contrast);
+  border-color: color-mix(in srgb, var(--accent) 54%, transparent);
   margin-top: 1.25rem;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 color-mix(in srgb, white 16%, transparent);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 88%, white);
-  box-shadow: var(--shadow-soft);
+  border-color: color-mix(in srgb, var(--accent-secondary) 72%, transparent);
+  box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
   transform: translateY(-1px);
 }
 
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-soft);
+}
+
 .btn-secondary {
-  background: var(--bg-elevated);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, var(--accent) 12%);
   color: var(--text-primary);
   border: 1px solid var(--border-strong);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
 }
 
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .theme-toggle-btn {
@@ -2212,6 +2251,7 @@ textarea {
 
 .theme-toggle-btn:hover {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
 }
 
 .theme-icon {
@@ -2270,6 +2310,14 @@ textarea {
 
 .btn-danger:hover:not(:disabled) {
   border-color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger-bg) 82%, var(--danger-text) 18%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-text) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+.btn-danger:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .alert {
@@ -2872,9 +2920,8 @@ textarea {
 .task-card-action-btn:hover,
 .task-card-action-btn:focus-visible {
   border-color: var(--border-strong);
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   color: var(--text-primary);
-  outline: none;
 }
 
 .task-card-action-icon {
@@ -2936,7 +2983,7 @@ textarea {
 .task-menu-trigger:hover,
 .task-menu-trigger[aria-expanded='true'] {
   border-color: var(--border-strong);
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   color: var(--text-primary);
 }
 
@@ -2979,7 +3026,7 @@ textarea {
 
 .task-action-menu-item:hover:not(:disabled),
 .task-action-menu-item:focus-visible {
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   outline: none;
 }
 
@@ -2994,7 +3041,7 @@ textarea {
 
 .task-action-menu-item-danger:hover:not(:disabled),
 .task-action-menu-item-danger:focus-visible {
-  background: var(--danger-bg);
+  background: color-mix(in srgb, var(--danger-bg) 84%, var(--danger-text) 16%);
 }
 
 .task-menu-item-icon {
@@ -3165,7 +3212,8 @@ textarea {
 }
 
 .btn-sm {
-  padding: 0.45rem 0.8rem;
+  min-height: var(--button-height-sm);
+  padding: 0.45rem 0.78rem;
   font-size: 0.8rem;
 }
 
@@ -3310,11 +3358,15 @@ textarea {
   color: var(--accent);
   font-size: 0.875rem;
   font-weight: 600;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.18em;
+  transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
 }
 
 .text-link:hover {
-  text-decoration: underline;
+  color: color-mix(in srgb, var(--accent) 82%, var(--text-primary));
+  text-decoration-color: currentColor;
 }
 
 .knowledge-list {
@@ -3864,7 +3916,8 @@ textarea {
   color: var(--accent-contrast);
   box-shadow: var(--shadow-lift);
   cursor: pointer;
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base),
+    transform var(--transition-base);
 }
 
 .chat-widget-fab.is-closed {
@@ -3888,12 +3941,14 @@ textarea {
 
 .chat-widget-fab:hover {
   box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
+  transform: translateY(-1px);
 }
 
 .chat-widget-fab.is-open:hover {
   border-color: var(--accent);
   color: var(--accent-contrast);
   box-shadow: var(--shadow-soft), 0 0 0 2px var(--ring);
+  transform: translateY(0);
 }
 
 .chat-widget-fab-content {
