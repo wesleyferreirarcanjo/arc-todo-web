@@ -917,7 +917,9 @@ export function TaskCard({
           <TaskForm
             heading="New subtask"
             submitLabel="Add subtask"
+            hideHeading
             parentTaskId={task.id}
+            defaultCategory={task.category ?? DEFAULT_TASK_CATEGORY}
             onSubmit={async (input) => {
               await onCreateSubtask!(task.id, input);
               setSubtaskModalOpen(false);

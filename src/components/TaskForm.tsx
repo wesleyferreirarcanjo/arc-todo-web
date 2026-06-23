@@ -5,14 +5,20 @@ import {
   emptyCodingMetadataForm,
   type CodingMetadataFormState,
 } from '../lib/tasks/taskCategory';
-import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
+import {
+  CategorySelect,
+  DEFAULT_TASK_CATEGORY,
+  TaskCategoryFormFields,
+} from './TaskCategoryFormFields';
 import { Select } from './Select';
 
 interface TaskFormProps {
   onSubmit: (input: CreateTaskInput) => Promise<void>;
   parentTaskId?: string;
+  defaultCategory?: TaskCategory;
   heading?: string;
   submitLabel?: string;
+  hideHeading?: boolean;
 }
 
 const statuses: { value: TaskStatus; label: string }[] = [
@@ -31,15 +37,17 @@ const criticities: { value: TaskCriticity; label: string }[] = [
 export function TaskForm({
   onSubmit,
   parentTaskId,
+  defaultCategory = DEFAULT_TASK_CATEGORY,
   heading = 'New task',
   submitLabel = 'Add task',
+  hideHeading = false,
 }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [criticity, setCriticity] = useState<TaskCriticity>('medium');
   const [dueDate, setDueDate] = useState('');
-  const [category, setCategory] = useState<TaskCategory>(DEFAULT_TASK_CATEGORY);
+  const [category, setCategory] = useState<TaskCategory>(defaultCategory);
   const [coding, setCoding] = useState<CodingMetadataFormState>(emptyCodingMetadataForm());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +83,7 @@ export function TaskForm({
       setStatus('todo');
       setCriticity('medium');
       setDueDate('');
-      setCategory(DEFAULT_TASK_CATEGORY);
+      setCategory(defaultCategory);
       setCoding(emptyCodingMetadataForm());
     } catch {
       setError('Failed to create task.');
@@ -86,7 +94,7 @@ export function TaskForm({
 
   return (
     <form className="task-form" onSubmit={handleSubmit}>
-      <h2>{heading}</h2>
+      {!hideHeading && <h2>{heading}</h2>}
       {error && <div className="alert alert-error">{error}</div>}
 
       <label>
@@ -110,14 +118,12 @@ export function TaskForm({
         />
       </label>
 
-      <TaskCategoryFormFields
-        category={category}
-        onCategoryChange={setCategory}
-        coding={coding}
-        onCodingChange={handleCodingChange}
-      />
-
       <div className="form-row">
+        <label>
+          Category
+          <CategorySelect category={category} onCategoryChange={setCategory} />
+        </label>
+
         <label>
           Status
           <Select
@@ -145,6 +151,14 @@ export function TaskForm({
           />
         </label>
       </div>
+
+      <TaskCategoryFormFields
+        category={category}
+        onCategoryChange={setCategory}
+        coding={coding}
+        onCodingChange={handleCodingChange}
+        showCategorySelect={false}
+      />
 
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Adding...' : submitLabel}

@@ -171,7 +171,9 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
           </p>
         )}
 
-        {canCreate && <TaskForm onSubmit={handleCreate} />}
+        {canCreate && (
+          <TaskForm onSubmit={handleCreate} hideHeading heading="New task" />
+        )}
       </Modal>
     </>
   );

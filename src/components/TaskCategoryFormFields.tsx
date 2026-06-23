@@ -6,11 +6,30 @@ import {
 } from '../lib/tasks/taskCategory';
 import { Select } from './Select';
 
+interface CategorySelectProps {
+  category: TaskCategory;
+  onCategoryChange: (category: TaskCategory) => void;
+}
+
+export function CategorySelect({ category, onCategoryChange }: CategorySelectProps) {
+  return (
+    <Select
+      value={category}
+      onChange={(nextCategory) => onCategoryChange(nextCategory as TaskCategory)}
+      options={TASK_CATEGORIES.map((value) => ({
+        value,
+        label: TASK_CATEGORY_LABELS[value],
+      }))}
+    />
+  );
+}
+
 interface TaskCategoryFormFieldsProps {
   category: TaskCategory;
   onCategoryChange: (category: TaskCategory) => void;
   coding: CodingMetadataFormState;
   onCodingChange: (field: keyof CodingMetadataFormState, value: string) => void;
+  showCategorySelect?: boolean;
 }
 
 export function TaskCategoryFormFields({
@@ -18,20 +37,16 @@ export function TaskCategoryFormFields({
   onCategoryChange,
   coding,
   onCodingChange,
+  showCategorySelect = true,
 }: TaskCategoryFormFieldsProps) {
   return (
     <>
-      <label>
-        Category
-        <Select
-          value={category}
-          onChange={(nextCategory) => onCategoryChange(nextCategory as TaskCategory)}
-          options={TASK_CATEGORIES.map((value) => ({
-            value,
-            label: TASK_CATEGORY_LABELS[value],
-          }))}
-        />
-      </label>
+      {showCategorySelect && (
+        <label>
+          Category
+          <CategorySelect category={category} onCategoryChange={onCategoryChange} />
+        </label>
+      )}
 
       {category === 'coding' && (
         <fieldset className="task-coding-metadata-fields">
