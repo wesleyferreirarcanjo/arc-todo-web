@@ -40,7 +40,14 @@ export function TaskListView({ tasks, accentColor }: TaskListViewProps) {
   const sorted = sortTasks(tasks);
 
   if (sorted.length === 0) {
-    return <p className="status-message task-list-empty">No tasks to show.</p>;
+    return (
+      <div className="task-list-empty" role="status">
+        <p className="task-list-empty-title">No tasks to show</p>
+        <p className="task-list-empty-hint">
+          Tasks will appear here when list view has items to display.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -85,24 +92,50 @@ export function TaskListView({ tasks, accentColor }: TaskListViewProps) {
                     : undefined
               }
             >
-              <span className="task-list-col task-list-col-id" role="cell">
+              <span
+                className="task-list-col task-list-col-id"
+                role="cell"
+                data-label="ID"
+              >
                 {task.displayId}
               </span>
-              <span className="task-list-col task-list-col-title" role="cell">
+              <span
+                className="task-list-col task-list-col-title"
+                role="cell"
+                data-label="Title"
+              >
                 {task.title}
               </span>
-              <span className="task-list-col task-list-col-status" role="cell">
-                {STATUS_LABELS[task.status]}
+              <span
+                className={`task-list-col task-list-col-status task-list-status-${task.status}`}
+                role="cell"
+                data-label="Status"
+              >
+                <span className="task-list-status-badge">
+                  {STATUS_LABELS[task.status]}
+                </span>
               </span>
-              <span className="task-list-col task-list-col-criticity" role="cell">
+              <span
+                className="task-list-col task-list-col-criticity"
+                role="cell"
+                data-label="Priority"
+              >
                 <span className={`criticity-badge criticity-${task.criticity}`}>
                   {task.criticity}
                 </span>
               </span>
-              <span className="task-list-col task-list-col-due" role="cell">
+              <span
+                className="task-list-col task-list-col-due"
+                role="cell"
+                data-label="Due"
+              >
                 {formatDueDate(task.dueDate)}
               </span>
-              <span className="task-list-col task-list-col-context" role="cell">
+              <span
+                className="task-list-col task-list-col-context"
+                role="cell"
+                data-label="Context"
+              >
                 {withContext ? (
                   <>
                     <span className="task-badge">{task.organization.name}</span>
