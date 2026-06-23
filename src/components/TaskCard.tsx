@@ -6,7 +6,7 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as Reac
 import type { CreateTaskInput, Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
 import { mergeSubtaskProgress, listParentCandidates, splitSubtasksByParentStatus } from '../lib/tasks/taskTree';
 import { useChat } from '../context/ChatContext';
-import { copyTaskToClipboard } from '../lib/taskCopy';
+import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
@@ -327,8 +327,25 @@ export function TaskCard({
 
   async function handleCopyTask() {
     try {
-      await copyTaskToClipboard(task);
-      setCopyTooltip('Copied');
+      const canSmartCopy =
+        resolvedOrganizationId &&
+        resolvedProjectId &&
+        (!isSubtask || isDetachedSubtask);
+
+      if (canSmartCopy) {
+        await copyTaskSmartToClipboard(task, {
+          organizationId: resolvedOrganizationId,
+          projectId: resolvedProjectId,
+          organizationName,
+          projectName,
+          parentDisplayId,
+          subtasks: isSubtask ? undefined : resolvedSubtasks,
+        });
+        setCopyTooltip('Smart copied');
+      } else {
+        await copyTaskToClipboard(task);
+        setCopyTooltip('Copied');
+      }
       window.setTimeout(() => setCopyTooltip('Copy task'), 2000);
     } catch {
       setCopyTooltip('Copy failed');

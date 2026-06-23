@@ -5,7 +5,7 @@ import {
   fetchTaskComments,
   fetchTaskHistory,
 } from '../lib/api/todos';
-import { copyTaskToClipboard } from '../lib/taskCopy';
+import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { Modal } from './Modal';
 
 interface TaskDetailsModalProps {
@@ -60,6 +60,7 @@ export function TaskDetailsModal({
   const [commentBody, setCommentBody] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   useEffect(() => {
     if (!open) {
@@ -70,6 +71,7 @@ export function TaskDetailsModal({
     setLoading(true);
     setError(null);
     setCopyState('idle');
+    setSmartCopyState('idle');
 
     void Promise.all([
       fetchTaskComments(organizationId, projectId, task.id),
@@ -109,6 +111,22 @@ export function TaskDetailsModal({
       setCopyState('copied');
     } catch {
       setCopyState('error');
+    }
+  }
+
+  async function handleSmartCopy() {
+    try {
+      await copyTaskSmartToClipboard(task, {
+        organizationId,
+        projectId,
+        organizationName,
+        projectName,
+        parentDisplayId,
+        subtasks,
+      });
+      setSmartCopyState('copied');
+    } catch {
+      setSmartCopyState('error');
     }
   }
 
@@ -171,6 +189,13 @@ export function TaskDetailsModal({
             <button
               type="button"
               className="btn btn-secondary btn-sm"
+              onClick={() => void handleSmartCopy()}
+            >
+              Smart copy
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
               onClick={() => void handleCopy()}
             >
               Copy title + description
@@ -181,6 +206,14 @@ export function TaskDetailsModal({
           </div>
         </div>
 
+        {smartCopyState === 'copied' && (
+          <p className="task-details-copy-status">Smart copy ready — paste into Cursor.</p>
+        )}
+        {smartCopyState === 'error' && (
+          <p className="task-details-copy-status task-details-copy-status-error">
+            Smart copy failed.
+          </p>
+        )}
         {copyState === 'copied' && (
           <p className="task-details-copy-status">Copied to clipboard.</p>
         )}
