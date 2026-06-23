@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
-import type { CreateTaskInput, Task, TaskCriticity, TaskStatus } from '../types/todo';
+import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../types/todo';
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
@@ -13,17 +13,7 @@ interface TaskBoardProps {
   accentColor?: string;
   organizationId?: string;
   projectId?: string;
-  onUpdate: (
-    id: string,
-    input: Partial<{
-      title: string;
-      description: string;
-      status: TaskStatus;
-      criticity: TaskCriticity;
-      dueDate: string | null;
-      parentTaskId: string | null;
-    }>,
-  ) => Promise<void>;
+  onUpdate: (id: string, input: Partial<UpdateTaskInput>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;

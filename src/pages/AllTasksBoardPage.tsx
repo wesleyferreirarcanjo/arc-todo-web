@@ -35,9 +35,8 @@ import type {
   CreateTaskInput,
   ListTasksQuery,
   Task,
-  TaskCriticity,
-  TaskStatus,
   TaskWithContext,
+  UpdateTaskInput,
 } from '../types/todo';
 
 export function AllTasksBoardPage() {
@@ -190,14 +189,7 @@ export function AllTasksBoardPage() {
 
   async function handleUpdate(
     task: TaskWithContext,
-    input: Partial<{
-      title: string;
-      description: string;
-      status: TaskStatus;
-      criticity: TaskCriticity;
-      dueDate: string | null;
-      parentTaskId: string | null;
-    }>,
+    input: Partial<UpdateTaskInput>,
   ) {
     const updated = await updateProjectTask(
       task.organization.id,
@@ -225,14 +217,7 @@ export function AllTasksBoardPage() {
 
   async function handleCycleUpdate(
     taskId: string,
-    input: Partial<{
-      title: string;
-      description: string;
-      status: TaskStatus;
-      criticity: TaskCriticity;
-      dueDate: string | null;
-      parentTaskId: string | null;
-    }>,
+    input: Partial<UpdateTaskInput>,
   ) {
     if (!organizationId || !projectId) return;
     await updateProjectTask(organizationId, projectId, taskId, input);

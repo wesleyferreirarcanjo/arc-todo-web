@@ -3,9 +3,9 @@ import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type {
   CreateTaskInput,
-  TaskCriticity,
   TaskStatus,
   TaskWithContext,
+  UpdateTaskInput,
 } from '../types/todo';
 import { getProjectColor } from '../lib/color/entityColor';
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
@@ -18,14 +18,7 @@ interface UnifiedTaskBoardProps {
   tasks: TaskWithContext[];
   onUpdate: (
     task: TaskWithContext,
-    input: Partial<{
-      title: string;
-      description: string;
-      status: TaskStatus;
-      criticity: TaskCriticity;
-      dueDate: string | null;
-      parentTaskId: string | null;
-    }>,
+    input: Partial<UpdateTaskInput>,
   ) => Promise<void>;
   onDelete: (task: TaskWithContext) => Promise<void>;
   onCreateSubtask?: (

@@ -12,6 +12,8 @@ const parentTask: Task = {
   projectId: 'd576e04d-f683-4b88-a374-0aab28a4be10',
   taskNumber: 1,
   displayId: '#arc-1',
+  category: 'other',
+  metadata: {},
   createdAt: '2026-06-01T00:00:00.000Z',
   updatedAt: '2026-06-01T00:00:00.000Z',
 };
@@ -27,6 +29,8 @@ const subtask: Task = {
   parentTaskId: parentTask.id,
   taskNumber: 2,
   displayId: '#arc-2',
+  category: 'other',
+  metadata: {},
   createdAt: '2026-06-01T00:00:00.000Z',
   updatedAt: '2026-06-01T00:00:00.000Z',
 };

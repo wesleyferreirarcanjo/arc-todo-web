@@ -1,5 +1,11 @@
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export type TaskCriticity = 'low' | 'medium' | 'high' | 'critical';
+export type TaskCategory =
+  | 'coding'
+  | 'meeting'
+  | 'design'
+  | 'marketing'
+  | 'other';
 
 export interface SubtaskProgress {
   total: number;
@@ -17,6 +23,8 @@ export interface Task {
   parentTaskId?: string | null;
   taskNumber: number;
   displayId: string;
+  category: TaskCategory;
+  metadata: Record<string, unknown>;
   subtaskProgress?: SubtaskProgress | null;
   subtasks?: Task[];
   createdById?: string | null;
@@ -44,6 +52,7 @@ export interface ListTasksQuery {
   projectId?: string;
   status?: TaskStatus;
   criticity?: TaskCriticity;
+  category?: TaskCategory;
   parentTaskId?: string;
 }
 
@@ -54,6 +63,8 @@ export interface CreateTaskInput {
   criticity?: TaskCriticity;
   dueDate?: string;
   parentTaskId?: string;
+  category?: TaskCategory;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateTaskInput {
@@ -63,6 +74,8 @@ export interface UpdateTaskInput {
   criticity?: TaskCriticity;
   dueDate?: string | null;
   parentTaskId?: string | null;
+  category?: TaskCategory;
+  metadata?: Record<string, unknown>;
 }
 
 export type TaskHistoryField = 'title' | 'description' | 'dueDate';
@@ -115,6 +128,8 @@ export interface TaskExportRow {
   description: string | null;
   status: TaskStatus;
   criticity: TaskCriticity;
+  category: TaskCategory;
+  metadata: Record<string, unknown>;
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;

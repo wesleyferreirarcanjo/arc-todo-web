@@ -3181,6 +3181,70 @@ textarea {
   border-color: color-mix(in srgb, var(--criticity-critical-text) 30%, transparent);
 }
 
+.category-badge {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  padding: 0.18rem 0.48rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.category-badge.category-coding {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-muted));
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.category-badge.category-meeting {
+  background: color-mix(in srgb, #6366f1 12%, var(--surface-muted));
+  color: #6366f1;
+}
+
+.category-badge.category-design {
+  background: color-mix(in srgb, #ec4899 12%, var(--surface-muted));
+  color: #ec4899;
+}
+
+.category-badge.category-marketing {
+  background: color-mix(in srgb, #f59e0b 12%, var(--surface-muted));
+  color: #f59e0b;
+}
+
+.task-coding-metadata-fields {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.task-coding-metadata-fields legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+
+.task-meta-link {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-meta-link a {
+  color: var(--accent);
+}
+
+.task-details-meta-wide {
+  grid-column: 1 / -1;
+}
+
 .task-description {
   margin-top: 0.55rem;
   color: var(--text-muted);

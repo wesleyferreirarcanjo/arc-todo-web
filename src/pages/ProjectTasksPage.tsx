@@ -14,8 +14,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateTaskInput,
   Task,
-  TaskCriticity,
-  TaskStatus,
+  UpdateTaskInput,
 } from '../types/todo';
 
 export function ProjectTasksPage() {
@@ -61,14 +60,7 @@ export function ProjectTasksPage() {
 
   async function handleUpdate(
     id: string,
-    input: Partial<{
-      title: string;
-      description: string;
-      status: TaskStatus;
-      criticity: TaskCriticity;
-      dueDate: string | null;
-      parentTaskId: string | null;
-    }>,
+    input: Partial<UpdateTaskInput>,
   ) {
     if (!orgId || !projectId) return;
     const updated = await updateProjectTask(orgId, projectId, id, input);

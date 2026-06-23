@@ -1,5 +1,11 @@
 import { FormEvent, useState } from 'react';
-import type { CreateTaskInput, TaskCriticity, TaskStatus } from '../types/todo';
+import type { CreateTaskInput, TaskCategory, TaskCriticity, TaskStatus } from '../types/todo';
+import {
+  buildTaskMetadataInput,
+  emptyCodingMetadataForm,
+  type CodingMetadataFormState,
+} from '../lib/tasks/taskCategory';
+import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
 import { Select } from './Select';
 
 interface TaskFormProps {
@@ -33,8 +39,17 @@ export function TaskForm({
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [criticity, setCriticity] = useState<TaskCriticity>('medium');
   const [dueDate, setDueDate] = useState('');
+  const [category, setCategory] = useState<TaskCategory>(DEFAULT_TASK_CATEGORY);
+  const [coding, setCoding] = useState<CodingMetadataFormState>(emptyCodingMetadataForm());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleCodingChange(
+    field: keyof CodingMetadataFormState,
+    value: string,
+  ) {
+    setCoding((current) => ({ ...current, [field]: value }));
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -44,6 +59,7 @@ export function TaskForm({
     setError(null);
 
     try {
+      const metadata = buildTaskMetadataInput(category, coding);
       await onSubmit({
         title: title.trim(),
         description: description.trim() || undefined,
@@ -51,12 +67,16 @@ export function TaskForm({
         criticity,
         dueDate: dueDate || undefined,
         parentTaskId,
+        category,
+        metadata,
       });
       setTitle('');
       setDescription('');
       setStatus('todo');
       setCriticity('medium');
       setDueDate('');
+      setCategory(DEFAULT_TASK_CATEGORY);
+      setCoding(emptyCodingMetadataForm());
     } catch {
       setError('Failed to create task.');
     } finally {
@@ -89,6 +109,13 @@ export function TaskForm({
           rows={3}
         />
       </label>
+
+      <TaskCategoryFormFields
+        category={category}
+        onCategoryChange={setCategory}
+        coding={coding}
+        onCodingChange={handleCodingChange}
+      />
 
       <div className="form-row">
         <label>

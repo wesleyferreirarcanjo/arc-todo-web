@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { CodingTaskMetadata } from '../lib/tasks/taskCategory';
+import { formatTaskCategoryLabel } from '../lib/tasks/taskCategory';
 import type { Task, TaskComment, TaskHistoryEntry } from '../types/todo';
 import {
   createTaskComment,
@@ -198,6 +200,9 @@ export function TaskDetailsModal({
 
         <div className="task-details-header">
           <div className="task-details-badges">
+            <span className={`category-badge category-${task.category ?? 'other'}`}>
+              {formatTaskCategoryLabel(task.category ?? 'other')}
+            </span>
             <span className={`criticity-badge criticity-${task.criticity}`}>
               {task.criticity}
             </span>
@@ -266,6 +271,10 @@ export function TaskDetailsModal({
 
         <dl className="task-details-meta-grid">
           <div>
+            <dt>Category</dt>
+            <dd>{formatTaskCategoryLabel(task.category ?? 'other')}</dd>
+          </div>
+          <div>
             <dt>Due date</dt>
             <dd>{task.dueDate ? formatDisplayDate(task.dueDate) : 'No due date'}</dd>
           </div>
@@ -278,6 +287,72 @@ export function TaskDetailsModal({
             <dd>{formatDisplayDate(task.updatedAt)}</dd>
           </div>
         </dl>
+
+        {task.category === 'coding' && (
+          <section className="task-details-section">
+            <h4>Code metadata</h4>
+            <dl className="task-details-meta-grid">
+              {(() => {
+                const coding = (task.metadata ?? {}) as CodingTaskMetadata;
+                const commits = coding.commits?.length
+                  ? coding.commits.join(', ')
+                  : '—';
+                return (
+                  <>
+                    <div>
+                      <dt>Repository</dt>
+                      <dd>
+                        {coding.repositoryUrl ? (
+                          <a href={coding.repositoryUrl} target="_blank" rel="noreferrer">
+                            {coding.repositoryUrl}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Branch</dt>
+                      <dd>{coding.branch || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Commits</dt>
+                      <dd>{commits}</dd>
+                    </div>
+                    <div>
+                      <dt>Pull request</dt>
+                      <dd>
+                        {coding.pullRequestUrl ? (
+                          <a href={coding.pullRequestUrl} target="_blank" rel="noreferrer">
+                            {coding.pullRequestUrl}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Deployment</dt>
+                      <dd>
+                        {coding.deploymentUrl ? (
+                          <a href={coding.deploymentUrl} target="_blank" rel="noreferrer">
+                            {coding.deploymentUrl}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </dd>
+                    </div>
+                    <div className="task-details-meta-wide">
+                      <dt>Implementation notes</dt>
+                      <dd>{coding.implementationNotes?.trim() || '—'}</dd>
+                    </div>
+                  </>
+                );
+              })()}
+            </dl>
+          </section>
+        )}
 
         {subtasks.length > 0 && (
           <section className="task-details-section">

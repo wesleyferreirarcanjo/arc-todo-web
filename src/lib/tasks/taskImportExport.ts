@@ -7,6 +7,7 @@ import {
 import { triggerBrowserDownload } from '../api/client';
 import type {
   ListTasksQuery,
+  TaskCategory,
   TaskCriticity,
   TaskExportDocument,
   TaskExportFormat,
@@ -15,6 +16,11 @@ import type {
   TaskStatus,
   TaskWithContext,
 } from '../../types/todo';
+import {
+  DEFAULT_TASK_CATEGORY,
+  parseMetadataColumn,
+  serializeMetadataColumn,
+} from './taskCategory';
 
 const SCHEMA_VERSION = 1 as const;
 
@@ -33,6 +39,8 @@ const EXPORT_COLUMNS = [
   'description',
   'status',
   'criticity',
+  'category',
+  'metadata',
   'dueDate',
   'createdAt',
   'updatedAt',
@@ -40,6 +48,13 @@ const EXPORT_COLUMNS = [
 
 const TASK_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done'];
 const TASK_CRITICITIES: TaskCriticity[] = ['low', 'medium', 'high', 'critical'];
+const TASK_CATEGORIES: TaskCategory[] = [
+  'coding',
+  'meeting',
+  'design',
+  'marketing',
+  'other',
+];
 
 type ExportColumn = (typeof EXPORT_COLUMNS)[number];
 
@@ -49,6 +64,10 @@ function isTaskStatus(value: string): value is TaskStatus {
 
 function isTaskCriticity(value: string): value is TaskCriticity {
   return TASK_CRITICITIES.includes(value as TaskCriticity);
+}
+
+function isTaskCategory(value: string): value is TaskCategory {
+  return TASK_CATEGORIES.includes(value as TaskCategory);
 }
 
 function nullish(value: unknown): string | null {
@@ -77,6 +96,8 @@ export function tasksToExportRows(tasks: TaskWithContext[]): TaskExportRow[] {
       description: task.description,
       status: task.status,
       criticity: task.criticity,
+      category: task.category ?? DEFAULT_TASK_CATEGORY,
+      metadata: task.metadata ?? {},
       dueDate: task.dueDate,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
@@ -112,6 +133,8 @@ function rowToRecord(row: TaskExportRow): Record<ExportColumn, string | number> 
     description: row.description ?? '',
     status: row.status,
     criticity: row.criticity,
+    category: row.category,
+    metadata: serializeMetadataColumn(row.metadata),
     dueDate: row.dueDate ?? '',
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -138,6 +161,7 @@ function recordToRow(record: Record<string, unknown>, line?: number): TaskExport
 
   const status = nullish(record.status) ?? 'todo';
   const criticity = nullish(record.criticity) ?? 'medium';
+  const category = nullish(record.category) ?? DEFAULT_TASK_CATEGORY;
   if (!isTaskStatus(status)) {
     throw new Error(
       line
@@ -150,6 +174,13 @@ function recordToRow(record: Record<string, unknown>, line?: number): TaskExport
       line
         ? `Row ${line}: invalid criticity "${criticity}".`
         : `Invalid criticity "${criticity}".`,
+    );
+  }
+  if (!isTaskCategory(category)) {
+    throw new Error(
+      line
+        ? `Row ${line}: invalid category "${category}".`
+        : `Invalid category "${category}".`,
     );
   }
 
@@ -168,6 +199,8 @@ function recordToRow(record: Record<string, unknown>, line?: number): TaskExport
     description: nullish(record.description),
     status,
     criticity,
+    category,
+    metadata: parseMetadataColumn(record.metadata),
     dueDate: nullish(record.dueDate),
     createdAt: nullish(record.createdAt) ?? new Date(0).toISOString(),
     updatedAt: nullish(record.updatedAt) ?? new Date(0).toISOString(),
@@ -533,6 +566,8 @@ export async function importTaskRows(
             description: row.description ?? undefined,
             status: row.status,
             criticity: row.criticity,
+            category: row.category,
+            metadata: row.metadata,
             dueDate: row.dueDate,
             parentTaskId,
           },
@@ -552,6 +587,8 @@ export async function importTaskRows(
         description: row.description ?? undefined,
         status: row.status,
         criticity: row.criticity,
+        category: row.category,
+        metadata: row.metadata,
         dueDate: row.dueDate ?? undefined,
         parentTaskId: parentTaskId ?? undefined,
       });
@@ -584,6 +621,11 @@ export function selfCheckTaskImportExport(): void {
       description: 'Parent description',
       status: 'todo',
       criticity: 'high',
+      category: 'coding',
+      metadata: {
+        repositoryUrl: 'https://github.com/example/repo',
+        branch: 'main',
+      },
       dueDate: '2026-06-21',
       projectId: 'project-1',
       parentTaskId: null,
@@ -610,6 +652,8 @@ export function selfCheckTaskImportExport(): void {
       description: null,
       status: 'in_progress',
       criticity: 'medium',
+      category: 'other',
+      metadata: {},
       dueDate: null,
       projectId: 'project-1',
       parentTaskId: 'parent-id',
@@ -635,6 +679,11 @@ export function selfCheckTaskImportExport(): void {
   const rows = tasksToExportRows(sampleTasks);
   assert(rows.length === 2, 'expected two export rows');
   assert(rows[1].parentDisplayId === '#arc-1', 'expected parent display id on child row');
+  assert(rows[0].category === 'coding', 'expected category on parent row');
+  assert(
+    rows[0].metadata.repositoryUrl === 'https://github.com/example/repo',
+    'expected metadata on parent row',
+  );
 
   const document = buildExportDocument(sampleTasks);
   const jsonRows = parseJson(rowsToJson(document));

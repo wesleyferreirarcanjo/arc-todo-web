@@ -3,8 +3,14 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
-import type { CreateTaskInput, Task, TaskCriticity, TaskStatus, TaskWithContext } from '../types/todo';
+import type { CreateTaskInput, Task, TaskCategory, TaskCriticity, TaskStatus, TaskWithContext, UpdateTaskInput } from '../types/todo';
 import { mergeSubtaskProgress, listParentCandidates, splitSubtasksByParentStatus } from '../lib/tasks/taskTree';
+import {
+  buildTaskMetadataInput,
+  codingMetadataFormFromTask,
+  formatTaskCategoryLabel,
+  type CodingMetadataFormState,
+} from '../lib/tasks/taskCategory';
 import { useChat } from '../context/ChatContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -13,6 +19,7 @@ import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext
 import { Modal } from './Modal';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
+import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
 import { TaskForm } from './TaskForm';
 
 function formatDueDateForInput(dueDate: string | null): string {
@@ -176,17 +183,7 @@ interface TaskCardProps {
   isDragging?: boolean;
   draggingTaskId?: string;
   compact?: boolean;
-  onUpdate: (
-    id: string,
-    input: Partial<{
-      title: string;
-      description: string;
-      status: TaskStatus;
-      criticity: TaskCriticity;
-      dueDate: string | null;
-      parentTaskId: string | null;
-    }>,
-  ) => Promise<void>;
+  onUpdate: (id: string, input: Partial<UpdateTaskInput>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
@@ -249,6 +246,10 @@ export function TaskCard({
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [criticity, setCriticity] = useState<TaskCriticity>(task.criticity);
   const [dueDate, setDueDate] = useState(formatDueDateForInput(task.dueDate));
+  const [category, setCategory] = useState<TaskCategory>(task.category ?? DEFAULT_TASK_CATEGORY);
+  const [coding, setCoding] = useState<CodingMetadataFormState>(() =>
+    codingMetadataFormFromTask(task.metadata),
+  );
   const [parentTaskId, setParentTaskId] = useState(task.parentTaskId ?? '');
   const [selectedParentId, setSelectedParentId] = useState(task.parentTaskId ?? '');
   const [saving, setSaving] = useState(false);
@@ -311,6 +312,8 @@ export function TaskCard({
     setStatus(task.status);
     setCriticity(task.criticity);
     setDueDate(formatDueDateForInput(task.dueDate));
+    setCategory(task.category ?? DEFAULT_TASK_CATEGORY);
+    setCoding(codingMetadataFormFromTask(task.metadata));
     setParentTaskId(task.parentTaskId ?? '');
     setSelectedParentId(task.parentTaskId ?? '');
   }
@@ -364,11 +367,22 @@ export function TaskCard({
     setEditModalOpen(false);
   }
 
+  function handleCodingChange(
+    field: keyof CodingMetadataFormState,
+    value: string,
+  ) {
+    setCoding((current) => ({ ...current, [field]: value }));
+  }
+
   async function handleSave() {
     if (!title.trim()) return;
 
     setSaving(true);
     try {
+      const metadata =
+        category === 'coding'
+          ? buildTaskMetadataInput(category, coding) ?? {}
+          : {};
       await onUpdate(task.id, {
         title: title.trim(),
         description: description.trim() || '',
@@ -376,6 +390,8 @@ export function TaskCard({
         criticity,
         dueDate: dueDate || null,
         parentTaskId: parentTaskId || null,
+        category,
+        metadata,
       });
       setEditModalOpen(false);
     } finally {
@@ -561,6 +577,9 @@ export function TaskCard({
                 </span>
               )}
             </div>
+            <span className={`category-badge category-${task.category ?? 'other'}`}>
+              {formatTaskCategoryLabel(task.category ?? 'other')}
+            </span>
             <span className={`criticity-badge criticity-${task.criticity}`}>
               {task.criticity}
             </span>
@@ -762,6 +781,21 @@ export function TaskCard({
 
           {!compact && (!isSubtask || isDetachedSubtask) && (
             <div className="task-meta">
+              {task.category === 'coding' &&
+                typeof task.metadata?.repositoryUrl === 'string' &&
+                task.metadata.repositoryUrl && (
+                  <span className="task-meta-link">
+                    Repo:{' '}
+                    <a
+                      href={task.metadata.repositoryUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={stopCardPointer}
+                    >
+                      {task.metadata.repositoryUrl}
+                    </a>
+                  </span>
+                )}
               {task.dueDate && (
                 <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
               )}
@@ -965,6 +999,13 @@ export function TaskCard({
               rows={6}
             />
           </label>
+
+          <TaskCategoryFormFields
+            category={category}
+            onCategoryChange={setCategory}
+            coding={coding}
+            onCodingChange={handleCodingChange}
+          />
 
           <div className="form-row">
             <label>
