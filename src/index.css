@@ -1387,6 +1387,10 @@ textarea:focus-visible {
   gap: 1.25rem;
 }
 
+.entity-list > .alert {
+  grid-column: 1 / -1;
+}
+
 .entity-card {
   position: relative;
   text-align: left;
@@ -2256,6 +2260,24 @@ textarea {
 }
 
 .btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: color-mix(in srgb, var(--danger-text) 42%, var(--border));
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger-bg) 72%, var(--danger-text) 28%);
+  border-color: color-mix(in srgb, var(--danger-text) 64%, var(--border));
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.btn-danger:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: none;
 }

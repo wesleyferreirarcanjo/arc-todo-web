@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { updateProject } from '../lib/api/projects';
+import { deleteProject, updateProject } from '../lib/api/projects';
 import { getProjectColor } from '../lib/color/entityColor';
 import type { Project, UpdateProjectInput } from '../types/project';
 
@@ -17,6 +17,8 @@ export function ProjectList({ projects, onUpdated }: ProjectListProps) {
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (!orgId) {
     return null;
@@ -64,11 +66,31 @@ export function ProjectList({ projects, onUpdated }: ProjectListProps) {
     }
   }
 
+  async function handleDelete(project: Project) {
+    const confirmed = window.confirm(
+      `Delete "${project.name}"? This will remove the project and its tasks.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(project.id);
+    setDeleteError(null);
+    try {
+      await deleteProject(orgId!, project.id);
+      await onUpdated?.();
+    } catch {
+      setDeleteError('Failed to delete project.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="entity-list">
+      {deleteError && <div className="alert alert-error">{deleteError}</div>}
       {projects.map((project) => {
         const accent = getProjectColor(project);
         const isEditing = editingId === project.id;
+        const isDeleting = deletingId === project.id;
         const cardStyle = { '--entity-accent': accent } as CSSProperties;
 
         return (
@@ -174,9 +196,18 @@ export function ProjectList({ projects, onUpdated }: ProjectListProps) {
                   <button
                     type="button"
                     className="btn btn-secondary"
+                    disabled={isDeleting}
                     onClick={() => handleStartEdit(project)}
                   >
                     Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={isDeleting}
+                    onClick={() => void handleDelete(project)}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </>

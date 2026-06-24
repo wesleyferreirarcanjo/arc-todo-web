@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateOrganization } from '../lib/api/organizations';
+import { deleteOrganization, updateOrganization } from '../lib/api/organizations';
 import { getOrganizationColor } from '../lib/color/entityColor';
 import type { Organization, UpdateOrganizationInput } from '../types/organization';
 
@@ -19,6 +19,8 @@ export function OrganizationList({
   const [slug, setSlug] = useState('');
   const [color, setColor] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function handleStartEdit(organization: Organization) {
     setName(organization.name);
@@ -60,11 +62,31 @@ export function OrganizationList({
     }
   }
 
+  async function handleDelete(organization: Organization) {
+    const confirmed = window.confirm(
+      `Delete "${organization.name}"? This will remove the organization and its projects.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(organization.id);
+    setDeleteError(null);
+    try {
+      await deleteOrganization(organization.id);
+      await onUpdated?.();
+    } catch {
+      setDeleteError('Failed to delete organization.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="entity-list organizations-list">
+      {deleteError && <div className="alert alert-error">{deleteError}</div>}
       {organizations.map((organization) => {
         const accent = getOrganizationColor(organization);
         const isEditing = editingId === organization.id;
+        const isDeleting = deletingId === organization.id;
         const cardStyle = { '--entity-accent': accent } as CSSProperties;
 
         return (
@@ -167,9 +189,18 @@ export function OrganizationList({
                   <button
                     type="button"
                     className="btn btn-secondary"
+                    disabled={isDeleting}
                     onClick={() => handleStartEdit(organization)}
                   >
                     Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={isDeleting}
+                    onClick={() => void handleDelete(organization)}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </>
