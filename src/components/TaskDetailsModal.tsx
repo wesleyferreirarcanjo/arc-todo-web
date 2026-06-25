@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { CodingTaskMetadata } from '../lib/tasks/taskCategory';
 import { formatTaskCategoryLabel } from '../lib/tasks/taskCategory';
+import { taskDescriptionFieldsFromTask } from '../lib/tasks/taskDescriptions';
+import { formatTaskStatusLabel } from '../lib/tasks/taskStatus';
 import type { Task, TaskComment, TaskHistoryEntry } from '../types/todo';
 import {
   createTaskComment,
@@ -81,6 +83,8 @@ export function TaskDetailsModal({
   const [postingComment, setPostingComment] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+
+  const descriptionFields = taskDescriptionFieldsFromTask(task);
 
   useEffect(() => {
     if (!open) {
@@ -206,7 +210,9 @@ export function TaskDetailsModal({
             <span className={`criticity-badge criticity-${task.criticity}`}>
               {task.criticity}
             </span>
-            <span className="task-details-status">{task.status.replace('_', ' ')}</span>
+            <span className="task-details-status">
+              {formatTaskStatusLabel(task.status)}
+            </span>
           </div>
           <div className="task-details-actions">
             <div className="task-details-copy-group">
@@ -263,9 +269,23 @@ export function TaskDetailsModal({
         )}
 
         <section className="task-details-section">
-          <h4>Description</h4>
+          <h4>Business description</h4>
           <p className="task-details-description">
-            {task.description?.trim() ? task.description : 'No description'}
+            {descriptionFields.businessDescription ?? 'No business description'}
+          </p>
+        </section>
+
+        <section className="task-details-section">
+          <h4>Plan / code description</h4>
+          <p className="task-details-description">
+            {descriptionFields.planCodeDescription ?? 'No plan / code description'}
+          </p>
+        </section>
+
+        <section className="task-details-section">
+          <h4>Test description</h4>
+          <p className="task-details-description">
+            {descriptionFields.testDescription ?? 'No test description'}
           </p>
         </section>
 
@@ -362,7 +382,7 @@ export function TaskDetailsModal({
                 <li key={subtask.id}>
                   <span>{subtask.title}</span>
                   <span className="task-details-status">
-                    {subtask.status.replace('_', ' ')}
+                    {formatTaskStatusLabel(subtask.status)}
                   </span>
                 </li>
               ))}

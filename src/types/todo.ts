@@ -1,4 +1,4 @@
-export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskStatus = 'todo' | 'in_progress' | 'dev_test' | 'qa_test' | 'done';
 export type TaskCriticity = 'low' | 'medium' | 'high' | 'critical';
 export type TaskCategory =
   | 'coding'
@@ -16,6 +16,9 @@ export interface Task {
   id: string;
   title: string;
   description: string | null;
+  businessDescription?: string | null;
+  planCodeDescription?: string | null;
+  testDescription?: string | null;
   status: TaskStatus;
   criticity: TaskCriticity;
   dueDate: string | null;
@@ -59,6 +62,9 @@ export interface ListTasksQuery {
 export interface CreateTaskInput {
   title: string;
   description?: string;
+  businessDescription?: string;
+  planCodeDescription?: string;
+  testDescription?: string;
   status?: TaskStatus;
   criticity?: TaskCriticity;
   dueDate?: string;
@@ -70,6 +76,9 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput {
   title?: string;
   description?: string;
+  businessDescription?: string;
+  planCodeDescription?: string;
+  testDescription?: string;
   status?: TaskStatus;
   criticity?: TaskCriticity;
   dueDate?: string | null;
@@ -114,7 +123,7 @@ export interface TaskResolveResponse {
 }
 
 export interface TaskExportRow {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   displayId: string;
   organizationId: string;
@@ -126,6 +135,9 @@ export interface TaskExportRow {
   parentDisplayId: string | null;
   title: string;
   description: string | null;
+  businessDescription: string | null;
+  planCodeDescription: string | null;
+  testDescription: string | null;
   status: TaskStatus;
   criticity: TaskCriticity;
   category: TaskCategory;
@@ -136,7 +148,7 @@ export interface TaskExportRow {
 }
 
 export interface TaskExportDocument {
-  schemaVersion: 1;
+  schemaVersion: 2;
   exportedAt: string;
   query?: ListTasksQuery;
   tasks: TaskExportRow[];

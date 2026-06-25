@@ -8,6 +8,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import type { TaskStatus } from '../../types/todo';
+import { TASK_STATUS_ORDER } from '../tasks/taskStatus';
 
 export const COLUMN_DROPPABLE_PREFIX = 'column:';
 
@@ -21,8 +22,8 @@ export function parseColumnStatus(droppableId: string | null | undefined): TaskS
   }
 
   const status = droppableId.slice(COLUMN_DROPPABLE_PREFIX.length);
-  if (status === 'todo' || status === 'in_progress' || status === 'done') {
-    return status;
+  if (TASK_STATUS_ORDER.includes(status as TaskStatus)) {
+    return status as TaskStatus;
   }
 
   return null;

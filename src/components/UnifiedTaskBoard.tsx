@@ -11,6 +11,7 @@ import { getProjectColor } from '../lib/color/entityColor';
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
+import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -31,11 +32,10 @@ interface UnifiedTaskBoardProps {
   ) => Promise<void>;
 }
 
-const columns: { status: TaskStatus; title: string }[] = [
-  { status: 'todo', title: 'To Do' },
-  { status: 'in_progress', title: 'In Progress' },
-  { status: 'done', title: 'Done' },
-];
+const columns = TASK_STATUS_OPTIONS.map(({ value, label }) => ({
+  status: value,
+  title: label,
+}));
 
 // ponytail: fixed px threshold; upgrade path = measure card content width
 const MIN_FULL_COLUMN_WIDTH = 280;

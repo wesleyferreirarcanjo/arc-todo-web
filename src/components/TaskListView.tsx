@@ -1,13 +1,9 @@
 import type { CSSProperties } from 'react';
-import type { Task, TaskStatus, TaskWithContext } from '../types/todo';
+import type { Task, TaskWithContext } from '../types/todo';
+import { TASK_STATUS_LABELS, TASK_STATUS_ORDER } from '../lib/tasks/taskStatus';
 
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  todo: 'To Do',
-  in_progress: 'In Progress',
-  done: 'Done',
-};
-
-const STATUS_ORDER: TaskStatus[] = ['todo', 'in_progress', 'done'];
+const STATUS_LABELS = TASK_STATUS_LABELS;
+const STATUS_ORDER = TASK_STATUS_ORDER;
 
 function formatDueDate(dueDate: string | null): string {
   if (!dueDate) return '—';

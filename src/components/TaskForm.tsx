@@ -6,10 +6,16 @@ import {
   type CodingMetadataFormState,
 } from '../lib/tasks/taskCategory';
 import {
+  buildTaskDescriptionInput,
+  type TaskDescriptionFormState,
+} from '../lib/tasks/taskDescriptions';
+import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
+import {
   CategorySelect,
   DEFAULT_TASK_CATEGORY,
   TaskCategoryFormFields,
 } from './TaskCategoryFormFields';
+import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { Select } from './Select';
 
 interface TaskFormProps {
@@ -21,11 +27,7 @@ interface TaskFormProps {
   hideHeading?: boolean;
 }
 
-const statuses: { value: TaskStatus; label: string }[] = [
-  { value: 'todo', label: 'To Do' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'done', label: 'Done' },
-];
+const statuses = TASK_STATUS_OPTIONS;
 
 const criticities: { value: TaskCriticity; label: string }[] = [
   { value: 'low', label: 'Low' },
@@ -43,7 +45,11 @@ export function TaskForm({
   hideHeading = false,
 }: TaskFormProps) {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [descriptions, setDescriptions] = useState<TaskDescriptionFormState>({
+    businessDescription: '',
+    planCodeDescription: '',
+    testDescription: '',
+  });
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [criticity, setCriticity] = useState<TaskCriticity>('medium');
   const [dueDate, setDueDate] = useState('');
@@ -59,6 +65,13 @@ export function TaskForm({
     setCoding((current) => ({ ...current, [field]: value }));
   }
 
+  function handleDescriptionChange(
+    field: keyof TaskDescriptionFormState,
+    value: string,
+  ) {
+    setDescriptions((current) => ({ ...current, [field]: value }));
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
@@ -70,7 +83,7 @@ export function TaskForm({
       const metadata = buildTaskMetadataInput(category, coding);
       await onSubmit({
         title: title.trim(),
-        description: description.trim() || undefined,
+        ...buildTaskDescriptionInput(descriptions),
         status,
         criticity,
         dueDate: dueDate || undefined,
@@ -79,7 +92,11 @@ export function TaskForm({
         metadata,
       });
       setTitle('');
-      setDescription('');
+      setDescriptions({
+        businessDescription: '',
+        planCodeDescription: '',
+        testDescription: '',
+      });
       setStatus('todo');
       setCriticity('medium');
       setDueDate('');
@@ -108,15 +125,11 @@ export function TaskForm({
         />
       </label>
 
-      <label>
-        Description
-        <textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="Optional details"
-          rows={3}
-        />
-      </label>
+      <TaskDescriptionFields
+        values={descriptions}
+        onChange={handleDescriptionChange}
+        compact
+      />
 
       <div className="form-row">
         <label>

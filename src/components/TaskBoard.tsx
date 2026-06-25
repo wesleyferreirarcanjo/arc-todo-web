@@ -5,6 +5,7 @@ import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../type
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
+import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -19,11 +20,10 @@ interface TaskBoardProps {
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
 }
 
-const columns: { status: TaskStatus; title: string }[] = [
-  { status: 'todo', title: 'To Do' },
-  { status: 'in_progress', title: 'In Progress' },
-  { status: 'done', title: 'Done' },
-];
+const columns = TASK_STATUS_OPTIONS.map(({ value, label }) => ({
+  status: value,
+  title: label,
+}));
 
 function getDefaultFocusedStatus(tasks: Task[]): TaskStatus | null {
   return (

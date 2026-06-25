@@ -6,6 +6,10 @@ const parentTask: Task = {
   id: '11111111-1111-1111-1111-111111111111',
   title: 'Add smart copy',
   description: '## Overview\nShip portable agent copy from the board.',
+  businessDescription: '## Overview\nShip portable agent copy from the board.',
+  planCodeDescription:
+    '## Overview\nAdd clarifying questions, overview, and specific plan to Smart Copy.',
+  testDescription: 'Run vitest for taskCopy and verify Smart Copy sections.',
   status: 'todo',
   criticity: 'medium',
   dueDate: '2026-06-30T00:00:00.000Z',
@@ -22,6 +26,9 @@ const subtask: Task = {
   id: '22222222-2222-2222-2222-222222222222',
   title: 'Wire UI button',
   description: '## Execution Plan\n- Add Smart copy to TaskDetailsModal.',
+  businessDescription: '## Execution Plan\n- Add Smart copy to TaskDetailsModal.',
+  planCodeDescription: 'Update TaskDetailsModal and TaskCard copy actions.',
+  testDescription: 'Manual Smart Copy smoke test.',
   status: 'todo',
   criticity: 'low',
   dueDate: null,
@@ -36,17 +43,19 @@ const subtask: Task = {
 };
 
 describe('formatTaskCopyText', () => {
-  it('includes subtasks in the simple copy format', () => {
+  it('includes subtasks and structured descriptions in the simple copy format', () => {
     const text = formatTaskCopyText(parentTask, [subtask]);
 
     expect(text).toContain('Task: Add smart copy');
+    expect(text).toContain('Business description:');
+    expect(text).toContain('Plan / code description:');
+    expect(text).toContain('Test description:');
     expect(text).toContain('Subtask: Wire UI button');
-    expect(text).toContain('## Execution Plan');
   });
 });
 
 describe('formatTaskSmartCopyText', () => {
-  it('includes task context, subtasks, MCP hints, and deploy guardrails', () => {
+  it('includes structured descriptions, subtasks, MCP hints, and Dev Test handoff', () => {
     const text = formatTaskSmartCopyText(parentTask, {
       organizationId: '57df4a79-d87d-40e1-9fb0-2da29d8ebecf',
       projectId: parentTask.projectId,
@@ -56,9 +65,11 @@ describe('formatTaskSmartCopyText', () => {
     });
 
     expect(text).toContain('# Arc Todo Smart Copy');
-    expect(text).toContain('Start here: make a concise implementation plan');
-    expect(text).toContain('ask all focused questions needed');
-    expect(text).toContain('include your proposed solution/default');
+    expect(text).toContain('verify it with the test description');
+    expect(text).toContain('move completed implementation work to Dev Test');
+    expect(text).toContain('## Business Description');
+    expect(text).toContain('## Plan / Code Description');
+    expect(text).toContain('## Test Description');
     expect(text).toContain('display_id: #arc-1');
     expect(text).toContain('organization_id: 57df4a79-d87d-40e1-9fb0-2da29d8ebecf');
     expect(text).toContain('project_name: Frontend');
@@ -66,10 +77,8 @@ describe('formatTaskSmartCopyText', () => {
     expect(text).toContain('get_task(');
     expect(text).toContain('parent_task_id=<parent UUID from get_task>');
     expect(text).toContain('list_tasks parent_task_id filter requires UUID');
-    expect(text).toContain('Deploy only when repo scripts/docs make the path clear');
-    expect(text).toContain('First response should be a useful implementation plan');
-    expect(text).toContain('Ask every material product/architecture question needed');
-    expect(text).toContain('suggest one improvement or simpler alternative');
+    expect(text).toContain('move the task to `dev_test` instead of `done`');
+    expect(text).toContain('Treat Plan / Code Description as the main execution plan');
   });
 
   it('includes parent reference for subtasks', () => {

@@ -21,8 +21,10 @@ import {
   parseMetadataColumn,
   serializeMetadataColumn,
 } from './taskCategory';
+import { isTaskStatus } from './taskStatus';
+import { taskDescriptionFieldsFromTask } from './taskDescriptions';
 
-const SCHEMA_VERSION = 1 as const;
+const SCHEMA_VERSION = 2 as const;
 
 const EXPORT_COLUMNS = [
   'schemaVersion',
@@ -37,6 +39,9 @@ const EXPORT_COLUMNS = [
   'parentDisplayId',
   'title',
   'description',
+  'businessDescription',
+  'planCodeDescription',
+  'testDescription',
   'status',
   'criticity',
   'category',
@@ -46,7 +51,6 @@ const EXPORT_COLUMNS = [
   'updatedAt',
 ] as const;
 
-const TASK_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done'];
 const TASK_CRITICITIES: TaskCriticity[] = ['low', 'medium', 'high', 'critical'];
 const TASK_CATEGORIES: TaskCategory[] = [
   'coding',
@@ -58,8 +62,8 @@ const TASK_CATEGORIES: TaskCategory[] = [
 
 type ExportColumn = (typeof EXPORT_COLUMNS)[number];
 
-function isTaskStatus(value: string): value is TaskStatus {
-  return TASK_STATUSES.includes(value as TaskStatus);
+function isTaskStatusValue(value: string): value is TaskStatus {
+  return isTaskStatus(value);
 }
 
 function isTaskCriticity(value: string): value is TaskCriticity {
@@ -81,6 +85,7 @@ export function tasksToExportRows(tasks: TaskWithContext[]): TaskExportRow[] {
 
   return tasks.map((task) => {
     const parent = task.parentTaskId ? byId.get(task.parentTaskId) : undefined;
+    const descriptions = taskDescriptionFieldsFromTask(task);
     return {
       schemaVersion: SCHEMA_VERSION,
       id: task.id,
@@ -93,7 +98,10 @@ export function tasksToExportRows(tasks: TaskWithContext[]): TaskExportRow[] {
       parentTaskId: task.parentTaskId ?? null,
       parentDisplayId: parent?.displayId ?? null,
       title: task.title,
-      description: task.description,
+      description: descriptions.description,
+      businessDescription: descriptions.businessDescription,
+      planCodeDescription: descriptions.planCodeDescription,
+      testDescription: descriptions.testDescription,
       status: task.status,
       criticity: task.criticity,
       category: task.category ?? DEFAULT_TASK_CATEGORY,
@@ -131,6 +139,9 @@ function rowToRecord(row: TaskExportRow): Record<ExportColumn, string | number> 
     parentDisplayId: row.parentDisplayId ?? '',
     title: row.title,
     description: row.description ?? '',
+    businessDescription: row.businessDescription ?? '',
+    planCodeDescription: row.planCodeDescription ?? '',
+    testDescription: row.testDescription ?? '',
     status: row.status,
     criticity: row.criticity,
     category: row.category,
@@ -162,7 +173,7 @@ function recordToRow(record: Record<string, unknown>, line?: number): TaskExport
   const status = nullish(record.status) ?? 'todo';
   const criticity = nullish(record.criticity) ?? 'medium';
   const category = nullish(record.category) ?? DEFAULT_TASK_CATEGORY;
-  if (!isTaskStatus(status)) {
+  if (!isTaskStatusValue(status)) {
     throw new Error(
       line
         ? `Row ${line}: invalid status "${status}".`
@@ -184,6 +195,12 @@ function recordToRow(record: Record<string, unknown>, line?: number): TaskExport
     );
   }
 
+  const legacyDescription = nullish(record.description);
+  const businessDescription =
+    nullish(record.businessDescription) ?? legacyDescription;
+  const planCodeDescription = nullish(record.planCodeDescription);
+  const testDescription = nullish(record.testDescription);
+
   return {
     schemaVersion: SCHEMA_VERSION,
     id: nullish(record.id) ?? crypto.randomUUID(),
@@ -196,7 +213,10 @@ function recordToRow(record: Record<string, unknown>, line?: number): TaskExport
     parentTaskId: nullish(record.parentTaskId),
     parentDisplayId: nullish(record.parentDisplayId),
     title,
-    description: nullish(record.description),
+    description: businessDescription,
+    businessDescription,
+    planCodeDescription,
+    testDescription,
     status,
     criticity,
     category,
@@ -563,7 +583,10 @@ export async function importTaskRows(
           existing.taskId,
           {
             title: row.title,
-            description: row.description ?? undefined,
+            description: row.businessDescription ?? row.description ?? undefined,
+            businessDescription: row.businessDescription ?? row.description ?? undefined,
+            planCodeDescription: row.planCodeDescription ?? undefined,
+            testDescription: row.testDescription ?? undefined,
             status: row.status,
             criticity: row.criticity,
             category: row.category,
@@ -584,7 +607,10 @@ export async function importTaskRows(
 
       const created = await createProjectTask(row.organizationId, row.projectId, {
         title: row.title,
-        description: row.description ?? undefined,
+        description: row.businessDescription ?? row.description ?? undefined,
+        businessDescription: row.businessDescription ?? row.description ?? undefined,
+        planCodeDescription: row.planCodeDescription ?? undefined,
+        testDescription: row.testDescription ?? undefined,
         status: row.status,
         criticity: row.criticity,
         category: row.category,

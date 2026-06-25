@@ -11,6 +11,13 @@ import {
   formatTaskCategoryLabel,
   type CodingMetadataFormState,
 } from '../lib/tasks/taskCategory';
+import {
+  buildTaskDescriptionInput,
+  taskDescriptionFormFromTask,
+  taskDescriptionFieldsFromTask,
+  type TaskDescriptionFormState,
+} from '../lib/tasks/taskDescriptions';
+import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { useChat } from '../context/ChatContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -20,6 +27,7 @@ import { Modal } from './Modal';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
 import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
+import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
 
 function formatDueDateForInput(dueDate: string | null): string {
@@ -194,11 +202,7 @@ interface TaskCardProps {
   };
 }
 
-const statusOptions: { value: TaskStatus; label: string }[] = [
-  { value: 'todo', label: 'To Do' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'done', label: 'Done' },
-];
+const statusOptions = TASK_STATUS_OPTIONS;
 
 const criticityOptions: { value: TaskCriticity; label: string }[] = [
   { value: 'low', label: 'Low' },
@@ -242,7 +246,9 @@ export function TaskCard({
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [smartCopyTooltip, setSmartCopyTooltip] = useState('Smart copy');
   const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description ?? '');
+  const [descriptions, setDescriptions] = useState<TaskDescriptionFormState>(() =>
+    taskDescriptionFormFromTask(task),
+  );
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [criticity, setCriticity] = useState<TaskCriticity>(task.criticity);
   const [dueDate, setDueDate] = useState(formatDueDateForInput(task.dueDate));
@@ -308,7 +314,7 @@ export function TaskCard({
 
   function resetEditFields() {
     setTitle(task.title);
-    setDescription(task.description ?? '');
+    setDescriptions(taskDescriptionFormFromTask(task));
     setStatus(task.status);
     setCriticity(task.criticity);
     setDueDate(formatDueDateForInput(task.dueDate));
@@ -374,6 +380,13 @@ export function TaskCard({
     setCoding((current) => ({ ...current, [field]: value }));
   }
 
+  function handleDescriptionChange(
+    field: keyof TaskDescriptionFormState,
+    value: string,
+  ) {
+    setDescriptions((current) => ({ ...current, [field]: value }));
+  }
+
   async function handleSave() {
     if (!title.trim()) return;
 
@@ -385,7 +398,7 @@ export function TaskCard({
           : {};
       await onUpdate(task.id, {
         title: title.trim(),
-        description: description.trim() || '',
+        ...buildTaskDescriptionInput(descriptions),
         status,
         criticity,
         dueDate: dueDate || null,
@@ -775,9 +788,12 @@ export function TaskCard({
             </p>
           )}
 
-          {task.description && !compact && (isDetachedSubtask || !isSubtask) && (
-            <p className="task-description">{task.description}</p>
-          )}
+          {(() => {
+            const preview = taskDescriptionFieldsFromTask(task).businessDescription;
+            return preview && !compact && (isDetachedSubtask || !isSubtask) ? (
+              <p className="task-description">{preview}</p>
+            ) : null;
+          })()}
 
           {!compact && (!isSubtask || isDetachedSubtask) && (
             <div className="task-meta">
@@ -993,14 +1009,10 @@ export function TaskCard({
             />
           </label>
 
-          <label>
-            Description
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              rows={6}
-            />
-          </label>
+          <TaskDescriptionFields
+            values={descriptions}
+            onChange={handleDescriptionChange}
+          />
 
           <TaskCategoryFormFields
             category={category}
