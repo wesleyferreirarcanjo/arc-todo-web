@@ -1,4 +1,5 @@
 import type { Task } from '../../types/todo';
+import { taskDescriptionFieldsFromTask } from './taskDescriptions';
 
 export interface TaskSearchContext {
   orgName?: string;
@@ -18,11 +19,14 @@ function taskSearchHaystack(
   task: Task,
   context?: TaskSearchContext,
 ): string {
+  const fields = taskDescriptionFieldsFromTask(task);
   const parts = [
     task.displayId,
     normalizeDisplayId(task.displayId),
     task.title,
-    task.description ?? '',
+    fields.businessDescription ?? '',
+    fields.planCodeDescription ?? '',
+    fields.testDescription ?? '',
     task.status.replace(/_/g, ' '),
     task.criticity,
     task.category,

@@ -28,3 +28,22 @@ export function formatTaskStatusLabel(status: TaskStatus): string {
 export function isTaskStatus(value: string): value is TaskStatus {
   return TASK_STATUS_ORDER.includes(value as TaskStatus);
 }
+
+export interface StatusColumn {
+  status: TaskStatus;
+  label: string;
+}
+
+export function getVisibleStatusColumns(hidden: TaskStatus[]): StatusColumn[] {
+  const hiddenSet = new Set(hidden);
+  return TASK_STATUS_OPTIONS.filter(({ value }) => !hiddenSet.has(value)).map(
+    ({ value, label }) => ({ status: value, label }),
+  );
+}
+
+export function canHideColumn(status: TaskStatus, hidden: TaskStatus[]): boolean {
+  const hiddenSet = new Set(hidden);
+  if (hiddenSet.has(status)) return true;
+  const visibleCount = TASK_STATUS_ORDER.filter((item) => !hiddenSet.has(item)).length;
+  return visibleCount > 1;
+}

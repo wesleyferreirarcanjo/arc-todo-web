@@ -32,9 +32,14 @@ export function parseColumnStatus(droppableId: string | null | undefined): TaskS
 interface UseTaskBoardDndOptions {
   getTaskStatus: (taskId: string) => TaskStatus | undefined;
   onMoveTask: (taskId: string, status: TaskStatus) => Promise<void>;
+  onMoveError?: (taskId: string, error: unknown) => void;
 }
 
-export function useTaskBoardDnd({ getTaskStatus, onMoveTask }: UseTaskBoardDndOptions) {
+export function useTaskBoardDnd({
+  getTaskStatus,
+  onMoveTask,
+  onMoveError,
+}: UseTaskBoardDndOptions) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [overColumnStatus, setOverColumnStatus] = useState<TaskStatus | null>(null);
 
@@ -69,9 +74,13 @@ export function useTaskBoardDnd({ getTaskStatus, onMoveTask }: UseTaskBoardDndOp
       const currentStatus = getTaskStatus(taskId);
       if (!currentStatus || currentStatus === destinationStatus) return;
 
-      await onMoveTask(taskId, destinationStatus);
+      try {
+        await onMoveTask(taskId, destinationStatus);
+      } catch (error) {
+        onMoveError?.(taskId, error);
+      }
     },
-    [getTaskStatus, onMoveTask],
+    [getTaskStatus, onMoveTask, onMoveError],
   );
 
   const handleDragCancel = useCallback(() => {

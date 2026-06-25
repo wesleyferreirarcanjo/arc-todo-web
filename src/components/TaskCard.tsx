@@ -17,7 +17,7 @@ import {
   taskDescriptionFieldsFromTask,
   type TaskDescriptionFormState,
 } from '../lib/tasks/taskDescriptions';
-import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
+import { formatTaskStatusLabel, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { useChat } from '../context/ChatContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -189,6 +189,7 @@ interface TaskCardProps {
   accentColor?: string;
   draggable?: boolean;
   isDragging?: boolean;
+  isMoving?: boolean;
   draggingTaskId?: string;
   compact?: boolean;
   onUpdate: (id: string, input: Partial<UpdateTaskInput>) => Promise<void>;
@@ -224,6 +225,7 @@ export function TaskCard({
   accentColor,
   draggable = false,
   isDragging = false,
+  isMoving = false,
   draggingTaskId,
   compact = false,
   onUpdate,
@@ -543,9 +545,10 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
         style={cardStyle}
-        animate={{ opacity: showAsDragging ? 0.45 : 1 }}
+        animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
+        aria-busy={isMoving || undefined}
         whileHover={
           !showAsDragging && !isInteractionLocked
             ? {
@@ -753,6 +756,9 @@ export function TaskCard({
         >
           <div className="task-card-header">
             <h3>{task.title}</h3>
+            <span className={`task-card-status-badge task-list-status-${task.status}`}>
+              {formatTaskStatusLabel(task.status)}
+            </span>
             {subtaskProgress && (
               <span
                 className="subtask-progress-badge"
@@ -1150,11 +1156,17 @@ export function TaskCardOverlay({
 
       <div className="task-card-header">
         <h3>{task.title}</h3>
+        <span className={`task-card-status-badge task-list-status-${task.status}`}>
+          {formatTaskStatusLabel(task.status)}
+        </span>
       </div>
 
-      {task.description && !compact && (
-        <p className="task-description">{task.description}</p>
-      )}
+      {(() => {
+        const preview = taskDescriptionFieldsFromTask(task).businessDescription;
+        return preview && !compact ? (
+          <p className="task-description">{preview}</p>
+        ) : null;
+      })()}
     </article>
   );
 }

@@ -14,10 +14,15 @@ import {
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
 import {
+  getBoardViewMode,
+  getHiddenBoardColumns,
+  setBoardViewMode,
+  setHiddenBoardColumns,
   setLastOrganizationId,
   setLastProjectId,
 } from '../lib/storage/appStorage';
 import { getProjectColor } from '../lib/color/entityColor';
+import { BoardColumnVisibilityMenu } from '../components/BoardColumnVisibilityMenu';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
 import { BoardViewToggle } from '../components/BoardViewToggle';
@@ -36,9 +41,20 @@ import type {
   CreateTaskInput,
   ListTasksQuery,
   Task,
+  TaskStatus,
   TaskWithContext,
   UpdateTaskInput,
 } from '../types/todo';
+
+function addMovingTaskId(current: Set<string>, taskId: string): Set<string> {
+  return new Set(current).add(taskId);
+}
+
+function removeMovingTaskId(current: Set<string>, taskId: string): Set<string> {
+  const next = new Set(current);
+  next.delete(taskId);
+  return next;
+}
 
 export function AllTasksBoardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -54,7 +70,9 @@ export function AllTasksBoardPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const [viewMode, setViewMode] = useState(getBoardViewMode);
+  const [hiddenColumns, setHiddenColumns] = useState<TaskStatus[]>(getHiddenBoardColumns);
+  const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
@@ -193,13 +211,42 @@ export function AllTasksBoardPage() {
     task: TaskWithContext,
     input: Partial<UpdateTaskInput>,
   ) {
+    if (input.status !== undefined && input.status !== task.status) {
+      const previousStatus = task.status;
+      setMovingTaskIds((current) => addMovingTaskId(current, task.id));
+      setTasks((prev) =>
+        prev.map((item) =>
+          item.id === task.id ? { ...item, status: input.status! } : item,
+        ),
+      );
+      try {
+        await updateProjectTask(
+          task.organization.id,
+          task.project.id,
+          task.id,
+          input,
+        );
+        await loadTasks({ silent: true });
+      } catch {
+        setTasks((prev) =>
+          prev.map((item) =>
+            item.id === task.id ? { ...item, status: previousStatus } : item,
+          ),
+        );
+        setError('Failed to move task.');
+      } finally {
+        setMovingTaskIds((current) => removeMovingTaskId(current, task.id));
+      }
+      return;
+    }
+
     const updated = await updateProjectTask(
       task.organization.id,
       task.project.id,
       task.id,
       input,
     );
-    if (input.status !== undefined || input.parentTaskId !== undefined) {
+    if (input.parentTaskId !== undefined) {
       await loadTasks({ silent: true });
       return;
     }
@@ -222,8 +269,67 @@ export function AllTasksBoardPage() {
     input: Partial<UpdateTaskInput>,
   ) {
     if (!organizationId || !projectId) return;
+
+    if (input.status !== undefined) {
+      const task = cycleTasks.find((item) => item.id === taskId);
+      if (!task || task.status === input.status) return;
+
+      const previousStatus = task.status;
+      setMovingTaskIds((current) => addMovingTaskId(current, taskId));
+      setCycleTasks((prev) =>
+        prev.map((item) =>
+          item.id === taskId ? { ...item, status: input.status! } : item,
+        ),
+      );
+      try {
+        await updateProjectTask(organizationId, projectId, taskId, input);
+        await loadProjectCycle({ silent: true });
+      } catch {
+        setCycleTasks((prev) =>
+          prev.map((item) =>
+            item.id === taskId ? { ...item, status: previousStatus } : item,
+          ),
+        );
+        setError('Failed to move task.');
+      } finally {
+        setMovingTaskIds((current) => removeMovingTaskId(current, taskId));
+      }
+      return;
+    }
+
     await updateProjectTask(organizationId, projectId, taskId, input);
     await loadProjectCycle({ silent: true });
+  }
+
+  function handleMoveError() {
+    setError('Failed to move task.');
+  }
+
+  function handleViewModeChange(mode: 'board' | 'list') {
+    setViewMode(mode);
+    setBoardViewMode(mode);
+  }
+
+  function handleHiddenColumnsChange(nextHidden: TaskStatus[]) {
+    setHiddenColumns(nextHidden);
+    setHiddenBoardColumns(nextHidden);
+  }
+
+  async function handleListStatusUpdate(
+    task: Task | TaskWithContext,
+    status: TaskStatus,
+  ) {
+    if (projectFocus && organizationId && projectId) {
+      await handleCycleUpdate(task.id, { status });
+      return;
+    }
+    if (isTaskWithContext(task)) {
+      await handleUpdate(task, { status });
+    }
+  }
+
+  function isTaskWithContext(task: Task | TaskWithContext): task is TaskWithContext {
+    return 'organization' in task && 'project' in task;
   }
 
   async function handleSetParent(
@@ -373,7 +479,11 @@ export function AllTasksBoardPage() {
         )}
 
         <div className="board-filter-actions">
-          <BoardViewToggle viewMode={viewMode} onChange={setViewMode} />
+          <BoardColumnVisibilityMenu
+            hiddenColumns={hiddenColumns}
+            onChange={handleHiddenColumnsChange}
+          />
+          <BoardViewToggle viewMode={viewMode} onChange={handleViewModeChange} />
           <TaskImportExportMenu
             tasks={tasks}
             query={query}
@@ -401,6 +511,13 @@ export function AllTasksBoardPage() {
         />
       )}
 
+      {hiddenColumns.length > 0 && !loading && (
+        <p className="status-message board-columns-hidden-hint" role="status">
+          {hiddenColumns.length} column{hiddenColumns.length === 1 ? '' : 's'} hidden
+          — use Columns to show them again. List view still shows all tasks.
+        </p>
+      )}
+
       {searchActive && !loading && !error && (
         <p className="status-message board-search-status" role="status">
           {matchingTaskCount === 0
@@ -426,6 +543,8 @@ export function AllTasksBoardPage() {
         viewMode === 'board' ? (
           <TaskBoard
             tasks={filteredCycleTasks}
+            hiddenColumns={hiddenColumns}
+            movingTaskIds={movingTaskIds}
             accentColor={
               focusedProject
                 ? getProjectColor(focusedProject)
@@ -437,10 +556,23 @@ export function AllTasksBoardPage() {
             onDelete={handleCycleDelete}
             onCreateSubtask={handleCycleCreateSubtask}
             onSetParent={handleCycleSetParent}
+            onMoveError={handleMoveError}
           />
         ) : (
           <TaskListView
             tasks={filteredCycleTasks}
+            movingTaskIds={movingTaskIds}
+            onUpdateStatus={handleListStatusUpdate}
+            resolveContext={
+              organizationId && projectId
+                ? () => ({
+                    organizationId,
+                    projectId,
+                    organizationName: organizations.find((org) => org.id === organizationId)?.name,
+                    projectName: focusedProject?.name,
+                  })
+                : undefined
+            }
             accentColor={
               focusedProject
                 ? getProjectColor(focusedProject)
@@ -454,13 +586,20 @@ export function AllTasksBoardPage() {
         viewMode === 'board' ? (
           <UnifiedTaskBoard
             tasks={filteredTasks}
+            hiddenColumns={hiddenColumns}
+            movingTaskIds={movingTaskIds}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             onCreateSubtask={handleCreateSubtask}
             onSetParent={handleSetParent}
+            onMoveError={handleMoveError}
           />
         ) : (
-          <TaskListView tasks={filteredTasks} />
+          <TaskListView
+            tasks={filteredTasks}
+            movingTaskIds={movingTaskIds}
+            onUpdateStatus={handleListStatusUpdate}
+          />
         )
       )}
 

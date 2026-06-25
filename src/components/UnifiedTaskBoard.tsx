@@ -10,13 +10,18 @@ import type {
 import { getProjectColor } from '../lib/color/entityColor';
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
-import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
-import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
+import {
+  StatusMoveAnimationProvider,
+  useStatusMoveAnimation,
+} from '../lib/motion/StatusMoveAnimationContext';
+import { getVisibleStatusColumns, type StatusColumn } from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
 interface UnifiedTaskBoardProps {
   tasks: TaskWithContext[];
+  hiddenColumns?: TaskStatus[];
+  movingTaskIds?: Set<string>;
   onUpdate: (
     task: TaskWithContext,
     input: Partial<UpdateTaskInput>,
@@ -30,38 +35,59 @@ interface UnifiedTaskBoardProps {
     task: TaskWithContext,
     parentId: string | null,
   ) => Promise<void>;
+  onMoveError?: (taskId: string, error: unknown) => void;
 }
-
-const columns = TASK_STATUS_OPTIONS.map(({ value, label }) => ({
-  status: value,
-  title: label,
-}));
 
 // ponytail: fixed px threshold; upgrade path = measure card content width
 const MIN_FULL_COLUMN_WIDTH = 280;
 const COLUMN_GAP_PX = 20;
-const FULL_BOARD_WIDTH =
-  MIN_FULL_COLUMN_WIDTH * columns.length + COLUMN_GAP_PX * (columns.length - 1);
 
-function getDefaultFocusedStatus(tasks: TaskWithContext[]): TaskStatus | null {
+function getFullBoardWidth(columnCount: number): number {
+  return MIN_FULL_COLUMN_WIDTH * columnCount + COLUMN_GAP_PX * (columnCount - 1);
+}
+
+function getDefaultFocusedStatus(
+  tasks: TaskWithContext[],
+  columns: StatusColumn[],
+): TaskStatus | null {
   return (
     columns.find((column) =>
       tasks.some((task) => !task.parentTaskId && task.status === column.status),
-    )?.status ?? null
+    )?.status ?? columns[0]?.status ?? null
   );
 }
 
-export function UnifiedTaskBoard({
+export function UnifiedTaskBoard(props: UnifiedTaskBoardProps) {
+  return (
+    <StatusMoveAnimationProvider>
+      <UnifiedTaskBoardInner {...props} />
+    </StatusMoveAnimationProvider>
+  );
+}
+
+function UnifiedTaskBoardInner({
   tasks,
+  hiddenColumns = [],
+  movingTaskIds,
   onUpdate,
   onDelete,
   onCreateSubtask,
   onSetParent,
+  onMoveError,
 }: UnifiedTaskBoardProps) {
+  const { markStatusMove } = useStatusMoveAnimation();
   const boardRef = useRef<HTMLDivElement>(null);
+  const columns = useMemo(
+    () => getVisibleStatusColumns(hiddenColumns),
+    [hiddenColumns],
+  );
+  const fullBoardWidth = useMemo(
+    () => getFullBoardWidth(columns.length),
+    [columns.length],
+  );
   const [focusMode, setFocusMode] = useState(false);
   const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
-    getDefaultFocusedStatus(tasks),
+    getDefaultFocusedStatus(tasks, columns),
   );
 
   const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
@@ -71,20 +97,27 @@ export function UnifiedTaskBoard({
   );
 
   useEffect(() => {
+    if (focusedStatus && columns.some((column) => column.status === focusedStatus)) {
+      return;
+    }
+    setFocusedStatus(getDefaultFocusedStatus(tasks, columns));
+  }, [columns, focusedStatus, tasks]);
+
+  useEffect(() => {
     const board = boardRef.current;
     if (!board) {
       return;
     }
 
     const syncFocusMode = () => {
-      setFocusMode(board.clientWidth < FULL_BOARD_WIDTH);
+      setFocusMode(board.clientWidth < fullBoardWidth);
     };
 
     syncFocusMode();
     const observer = new ResizeObserver(syncFocusMode);
     observer.observe(board);
     return () => observer.disconnect();
-  }, []);
+  }, [fullBoardWidth]);
 
   const getTaskStatus = useCallback(
     (taskId: string) => taskById.get(taskId)?.status,
@@ -105,14 +138,15 @@ export function UnifiedTaskBoard({
       const task = taskById.get(taskId);
       if (!task || task.status === status) return;
       await onUpdate(task, { status });
+      markStatusMove(taskId);
     },
+    onMoveError,
   });
 
   const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
 
   return (
-    <StatusMoveAnimationProvider>
-      <LayoutGroup id="unified-task-board">
+    <LayoutGroup id="unified-task-board">
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -124,111 +158,112 @@ export function UnifiedTaskBoard({
           ref={boardRef}
           className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}
         >
-        {columns.map((column) => {
-          const columnItems = listBoardColumnItems(boardTasks, column.status);
-          const isFocused = focusMode && focusedStatus === column.status;
-          const isCompact = focusMode && !isFocused;
+          {columns.map((column) => {
+            const columnItems = listBoardColumnItems(boardTasks, column.status);
+            const isFocused = focusMode && focusedStatus === column.status;
+            const isCompact = focusMode && !isFocused;
 
-          return (
-            <BoardColumn
-              key={column.status}
-              status={column.status}
-              title={column.title}
-              taskCount={columnItems.length}
-              isDropTarget={overColumnStatus === column.status}
-              isFocused={isFocused}
-              isCompact={isCompact}
-              focusEnabled={focusMode}
-              onFocus={() => setFocusedStatus(column.status)}
-            >
-              {columnItems.length === 0 ? (
-                <p className="empty-column">No tasks here yet.</p>
-              ) : (
-                columnItems.map((item) => {
-                  if (item.kind === 'parent') {
-                    const task = item.task;
+            return (
+              <BoardColumn
+                key={column.status}
+                status={column.status}
+                title={column.label}
+                taskCount={columnItems.length}
+                isDropTarget={overColumnStatus === column.status}
+                isFocused={isFocused}
+                isCompact={isCompact}
+                focusEnabled={focusMode}
+                onFocus={() => setFocusedStatus(column.status)}
+              >
+                {columnItems.length === 0 ? (
+                  <p className="empty-column">No tasks here yet.</p>
+                ) : (
+                  columnItems.map((item) => {
+                    if (item.kind === 'parent') {
+                      const task = item.task;
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          subtasks={task.subtasks}
+                          organizationId={task.organization.id}
+                          projectId={task.project.id}
+                          organizationName={task.organization.name}
+                          projectName={task.project.name}
+                          accentColor={getProjectColor(task.project)}
+                          compact={isCompact}
+                          draggable
+                          isDragging={activeTaskId === task.id}
+                          isMoving={movingTaskIds?.has(task.id)}
+                          draggingTaskId={activeTaskId ?? undefined}
+                          onUpdate={(_id, input) => onUpdate(task, input)}
+                          onDelete={() => onDelete(task)}
+                          onCreateSubtask={
+                            onCreateSubtask
+                              ? (_parentId, input) => onCreateSubtask(task, input)
+                              : undefined
+                          }
+                          onSetParent={
+                            onSetParent
+                              ? (_taskId, parentId) => onSetParent(task, parentId)
+                              : undefined
+                          }
+                          parentCandidates={tasks}
+                        />
+                      );
+                    }
+
+                    const contextTask = taskById.get(item.task.id);
+                    if (!contextTask) {
+                      return null;
+                    }
+
                     return (
                       <TaskCard
-                        key={task.id}
-                        task={task}
-                        subtasks={task.subtasks}
-                        organizationId={task.organization.id}
-                        projectId={task.project.id}
-                        organizationName={task.organization.name}
-                        projectName={task.project.name}
-                        accentColor={getProjectColor(task.project)}
+                        key={item.task.id}
+                        task={item.task}
+                        isSubtask
+                        isDetachedSubtask
+                        parentDisplayId={item.parentDisplayId}
+                        organizationId={contextTask.organization.id}
+                        projectId={contextTask.project.id}
+                        organizationName={contextTask.organization.name}
+                        projectName={contextTask.project.name}
+                        accentColor={getProjectColor(contextTask.project)}
                         compact={isCompact}
                         draggable
-                        isDragging={activeTaskId === task.id}
+                        isDragging={activeTaskId === item.task.id}
+                        isMoving={movingTaskIds?.has(item.task.id)}
                         draggingTaskId={activeTaskId ?? undefined}
-                        onUpdate={(_id, input) => onUpdate(task, input)}
-                        onDelete={() => onDelete(task)}
-                        onCreateSubtask={
-                          onCreateSubtask
-                            ? (_parentId, input) => onCreateSubtask(task, input)
-                            : undefined
-                        }
+                        onUpdate={(_id, input) => onUpdate(contextTask, input)}
+                        onDelete={() => onDelete(contextTask)}
                         onSetParent={
                           onSetParent
-                            ? (_taskId, parentId) => onSetParent(task, parentId)
+                            ? (_taskId, parentId) => onSetParent(contextTask, parentId)
                             : undefined
                         }
                         parentCandidates={tasks}
                       />
                     );
-                  }
+                  })
+                )}
+              </BoardColumn>
+            );
+          })}
+        </div>
 
-                  const contextTask = taskById.get(item.task.id);
-                  if (!contextTask) {
-                    return null;
-                  }
-
-                  return (
-                    <TaskCard
-                      key={item.task.id}
-                      task={item.task}
-                      isSubtask
-                      isDetachedSubtask
-                      parentDisplayId={item.parentDisplayId}
-                      organizationId={contextTask.organization.id}
-                      projectId={contextTask.project.id}
-                      organizationName={contextTask.organization.name}
-                      projectName={contextTask.project.name}
-                      accentColor={getProjectColor(contextTask.project)}
-                      compact={isCompact}
-                      draggable
-                      isDragging={activeTaskId === item.task.id}
-                      draggingTaskId={activeTaskId ?? undefined}
-                      onUpdate={(_id, input) => onUpdate(contextTask, input)}
-                      onDelete={() => onDelete(contextTask)}
-                      onSetParent={
-                        onSetParent
-                          ? (_taskId, parentId) => onSetParent(contextTask, parentId)
-                          : undefined
-                      }
-                      parentCandidates={tasks}
-                    />
-                  );
-                })
-              )}
-            </BoardColumn>
-          );
-        })}
-      </div>
-
-      <DragOverlay dropAnimation={null}>
-        {activeTask ? (
-          <TaskCardOverlay
-            task={activeTask}
-            organizationName={activeTask.organization.name}
-            projectName={activeTask.project.name}
-            accentColor={getProjectColor(activeTask.project)}
-            compact={focusMode && focusedStatus !== activeTask.status}
-          />
-        ) : null}
-      </DragOverlay>
+        <DragOverlay dropAnimation={null}>
+          {activeTask ? (
+            <TaskCardOverlay
+              task={activeTask}
+              organizationName={activeTask.organization.name}
+              projectName={activeTask.project.name}
+              accentColor={getProjectColor(activeTask.project)}
+              compact={focusMode && focusedStatus !== activeTask.status}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
-      </LayoutGroup>
-    </StatusMoveAnimationProvider>
+    </LayoutGroup>
   );
 }
