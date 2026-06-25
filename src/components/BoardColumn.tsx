@@ -13,7 +13,6 @@ interface BoardColumnProps {
   isDropTarget: boolean;
   isFocused: boolean;
   isCompact: boolean;
-  isColumnHidden?: boolean;
   canHideColumn?: boolean;
   focusEnabled?: boolean;
   onFocus: () => void;
@@ -28,7 +27,6 @@ export function BoardColumn({
   isDropTarget,
   isFocused,
   isCompact,
-  isColumnHidden = false,
   canHideColumn = true,
   focusEnabled = true,
   onFocus,
@@ -42,10 +40,10 @@ export function BoardColumn({
 
   const highlighted = isDropTarget || isOver;
   const isEmpty = taskCount === 0;
-  const hideBlocked = !isColumnHidden && !canHideColumn;
+  const hideBlocked = !canHideColumn;
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
-    if (!focusEnabled || isColumnHidden) {
+    if (!focusEnabled) {
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
@@ -63,12 +61,12 @@ export function BoardColumn({
   return (
     <motion.section
       ref={setNodeRef}
-      className={`board-column${isFocused ? ' is-focused' : ''}${isCompact ? ' is-compact' : ''}${isEmpty ? ' is-empty' : ''}${highlighted ? ' is-drop-target' : ''}${isColumnHidden ? ' is-column-hidden' : ''}`}
-      tabIndex={focusEnabled && !isColumnHidden ? 0 : undefined}
-      role={focusEnabled && !isColumnHidden ? 'button' : undefined}
-      aria-pressed={focusEnabled && !isColumnHidden ? isFocused : undefined}
-      aria-label={`${title} column, ${taskCount} tasks${isColumnHidden ? ', hidden' : ''}`}
-      onClick={focusEnabled && !isColumnHidden ? onFocus : undefined}
+      className={`board-column${isFocused ? ' is-focused' : ''}${isCompact ? ' is-compact' : ''}${isEmpty ? ' is-empty' : ''}${highlighted ? ' is-drop-target' : ''}`}
+      tabIndex={focusEnabled ? 0 : undefined}
+      role={focusEnabled ? 'button' : undefined}
+      aria-pressed={focusEnabled ? isFocused : undefined}
+      aria-label={`${title} column, ${taskCount} tasks`}
+      onClick={focusEnabled ? onFocus : undefined}
       onKeyDown={handleKeyDown}
       animate={{ scale: highlighted ? 1.008 : 1 }}
       transition={base}
@@ -95,31 +93,27 @@ export function BoardColumn({
       <header className="board-column-header">
         <div className="board-column-header-main">
           <h2>{title}</h2>
-          {!isColumnHidden && <span className="count-badge">{taskCount}</span>}
+          <span className="count-badge">{taskCount}</span>
         </div>
         {onToggleVisibility && (
           <button
             type="button"
-            className={`board-column-visibility-toggle${isColumnHidden ? ' is-hidden' : ''}`}
-            aria-label={
-              isColumnHidden ? `Show ${title} column` : `Hide ${title} column`
-            }
-            aria-pressed={!isColumnHidden}
+            className="board-column-visibility-toggle"
+            aria-label={`Hide ${title} column`}
+            aria-pressed
             disabled={hideBlocked}
             title={
               hideBlocked
                 ? 'At least one column must stay visible'
-                : isColumnHidden
-                  ? `Show ${title}`
-                  : `Hide ${title}`
+                : `Hide ${title}`
             }
             onClick={handleToggleVisibility}
           >
-            <EyeIcon visible={!isColumnHidden} />
+            <EyeIcon visible />
           </button>
         )}
       </header>
-      {!isColumnHidden && <div className="board-column-body">{children}</div>}
+      <div className="board-column-body">{children}</div>
     </motion.section>
   );
 }

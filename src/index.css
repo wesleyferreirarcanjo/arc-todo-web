@@ -2558,10 +2558,16 @@ textarea {
   height: 100%;
 }
 
-.task-board-wide .board-column {
+.task-board-wide .board-column,
+.task-board-wide .board-column.is-empty,
+.task-board-wide .board-column.is-empty:not(.is-focused),
+.task-board-wide .board-column.is-focused,
+.task-board-wide .board-column.is-compact,
+.task-board-wide .board-column.is-compact:not(.is-focused) {
   flex: 0 0 280px;
   width: 280px;
   min-width: 280px;
+  max-width: 280px;
   min-height: 320px;
   height: 100%;
   cursor: default;
@@ -2683,11 +2689,6 @@ textarea {
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
 }
 
-.board-column-visibility-toggle.is-hidden {
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong));
-}
-
 .board-column-visibility-toggle:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -2697,49 +2698,14 @@ textarea {
   display: block;
 }
 
-.board-column.is-column-hidden {
-  flex: 0 0 3.25rem;
-  width: 3.25rem;
-  min-width: 3.25rem;
-  cursor: default;
-}
-
-.board-column.is-column-hidden .board-column-header {
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.75rem;
-  height: 100%;
-  padding: 0.85rem 0.35rem;
-  border-bottom: none;
-}
-
-.board-column.is-column-hidden .board-column-header-main {
-  flex-direction: column;
-  justify-content: flex-start;
-  width: 100%;
-}
-
-.board-column.is-column-hidden .board-column-header h2 {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 0.78rem;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.task-board-wide .board-column.is-column-hidden {
-  flex: 0 0 3.25rem;
-  width: 3.25rem;
-  min-width: 3.25rem;
-}
-
 .board-column-header h2 {
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .count-badge {
@@ -2760,6 +2726,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .board-org-group {
@@ -2827,6 +2795,8 @@ textarea {
   cursor: grab;
   box-shadow: var(--shadow-soft);
   transition: border-color var(--transition-base);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .task-card:not(.is-compact):not(.is-subtask) {
@@ -5317,18 +5287,15 @@ textarea {
     flex-wrap: nowrap;
   }
 
-  .task-board-wide .board-column {
+  .task-board-wide .board-column,
+  .task-board-wide .board-column.is-empty,
+  .task-board-wide .board-column.is-focused,
+  .task-board-wide .board-column.is-compact {
     flex: 0 0 280px;
     width: 280px;
-    max-width: none;
+    max-width: 280px;
     min-width: 280px;
     min-height: 320px;
-  }
-
-  .task-board-wide .board-column.is-column-hidden {
-    flex: 0 0 3.25rem;
-    width: 3.25rem;
-    min-width: 3.25rem;
   }
 }
 

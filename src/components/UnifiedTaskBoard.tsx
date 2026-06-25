@@ -104,8 +104,8 @@ function UnifiedTaskBoardInner({
       >
         <div className="task-board-scroll">
           <div className="task-board task-board-wide">
-            {TASK_STATUS_OPTIONS.map(({ value, label }) => {
-              const isColumnHidden = hiddenSet.has(value);
+            {TASK_STATUS_OPTIONS.filter(({ value }) => !hiddenSet.has(value)).map(
+              ({ value, label }) => {
               const columnItems = listBoardColumnItems(boardTasks, value);
 
               return (
@@ -117,7 +117,6 @@ function UnifiedTaskBoardInner({
                   isDropTarget={overColumnStatus === value}
                   isFocused={false}
                   isCompact={false}
-                  isColumnHidden={isColumnHidden}
                   canHideColumn={canHideColumn(value, hiddenColumns)}
                   focusEnabled={false}
                   onFocus={() => {}}
