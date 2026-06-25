@@ -2555,16 +2555,20 @@ textarea {
 }
 
 .task-board.is-auto-fit .board-column {
-  flex: 1 1 280px;
+  flex: 0 0 280px;
+  width: 280px;
   min-width: 280px;
+  max-width: 280px;
   cursor: default;
 }
 
 .task-board.is-auto-fit .board-column.is-focused,
 .task-board.is-auto-fit .board-column.is-compact,
 .task-board.is-auto-fit .board-column.is-empty {
-  flex: 1 1 280px;
+  flex: 0 0 280px;
+  width: 280px;
   min-width: 280px;
+  max-width: 280px;
 }
 
 .task-board.is-focus-mode .board-column {
@@ -2582,8 +2586,10 @@ textarea {
   overflow: hidden;
   box-shadow: var(--shadow-card);
   transform-origin: center top;
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 280px;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
   cursor: pointer;
   transition:
     flex-grow var(--transition-base),
@@ -2592,17 +2598,17 @@ textarea {
 }
 
 .board-column.is-focused {
-  flex: 2.4 1 0;
+  flex: 0 0 280px;
   border-color: var(--border-strong);
   box-shadow: var(--shadow-lift);
 }
 
 .board-column.is-compact:not(.is-focused) {
-  flex: 1 1 0;
+  flex: 0 0 280px;
 }
 
 .board-column.is-empty:not(.is-focused) {
-  flex: 0.75 1 0;
+  flex: 0 0 280px;
 }
 
 .board-column:focus-visible {
@@ -5289,9 +5295,10 @@ textarea {
   .task-board-scroll .task-board.is-auto-fit .board-column.is-compact,
   .task-board-scroll .task-board.is-auto-fit .board-column.is-empty,
   .task-board-scroll .task-board.is-focus-mode .board-column {
-    flex: 1 1 280px;
+    flex: 0 0 280px;
+    width: 280px;
     min-width: 280px;
-    max-width: none;
+    max-width: 280px;
     min-height: 320px;
   }
 }
