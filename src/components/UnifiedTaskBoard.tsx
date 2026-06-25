@@ -9,6 +9,7 @@ import type {
 } from '../types/todo';
 import { getProjectColor } from '../lib/color/entityColor';
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
+import { getFullBoardWidth } from '../lib/board/boardLayout';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import {
   StatusMoveAnimationProvider,
@@ -41,14 +42,6 @@ interface UnifiedTaskBoardProps {
   ) => Promise<void>;
   onMoveError?: (taskId: string, error: unknown) => void;
   onToggleColumnVisibility?: (status: TaskStatus) => void;
-}
-
-// ponytail: fixed px threshold; upgrade path = measure card content width
-const MIN_FULL_COLUMN_WIDTH = 280;
-const COLUMN_GAP_PX = 20;
-
-function getFullBoardWidth(columnCount: number): number {
-  return MIN_FULL_COLUMN_WIDTH * columnCount + COLUMN_GAP_PX * Math.max(0, columnCount - 1);
 }
 
 function getDefaultFocusedStatus(

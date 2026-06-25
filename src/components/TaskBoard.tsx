@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../types/todo';
 import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
+import { getFullBoardWidth } from '../lib/board/boardLayout';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import {
   StatusMoveAnimationProvider,
@@ -62,10 +63,16 @@ function TaskBoardInner({
   onToggleColumnVisibility,
 }: TaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const columns = useMemo(
     () => getVisibleStatusColumns(hiddenColumns),
     [hiddenColumns],
   );
+  const fullBoardWidth = useMemo(
+    () => getFullBoardWidth(columns.length),
+    [columns.length],
+  );
+  const [focusMode, setFocusMode] = useState(false);
   const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
     getDefaultFocusedStatus(tasks, columns),
   );
@@ -82,6 +89,22 @@ function TaskBoardInner({
     }
     setFocusedStatus(getDefaultFocusedStatus(tasks, columns));
   }, [columns, focusedStatus, tasks]);
+
+  useEffect(() => {
+    const viewport = scrollRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const syncFocusMode = () => {
+      setFocusMode(viewport.clientWidth < fullBoardWidth);
+    };
+
+    syncFocusMode();
+    const observer = new ResizeObserver(syncFocusMode);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [fullBoardWidth]);
 
   const getTaskStatus = useCallback(
     (taskId: string) => taskById.get(taskId)?.status,
@@ -118,11 +141,12 @@ function TaskBoardInner({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        <div className="task-board-scroll">
-          <div className="task-board">
+        <div className="task-board-scroll" ref={scrollRef}>
+          <div className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}>
             {columns.map((column) => {
               const columnItems = listBoardColumnItems(boardTasks, column.status);
-              const isFocused = focusedStatus === column.status;
+              const isFocused = focusMode && focusedStatus === column.status;
+              const isCompact = focusMode && !isFocused;
 
               return (
                 <BoardColumn
@@ -132,8 +156,9 @@ function TaskBoardInner({
                   taskCount={columnItems.length}
                   isDropTarget={overColumnStatus === column.status}
                   isFocused={isFocused}
-                  isCompact={!isFocused}
+                  isCompact={isCompact}
                   canHideColumn={canHideColumn(column.status, hiddenColumns)}
+                  focusEnabled={focusMode}
                   onFocus={() => setFocusedStatus(column.status)}
                   onToggleVisibility={
                     onToggleColumnVisibility
@@ -155,7 +180,7 @@ function TaskBoardInner({
                             organizationId={organizationId}
                             projectId={projectId}
                             accentColor={accentColor}
-                            compact={!isFocused}
+                            compact={isCompact}
                             draggable
                             isDragging={activeTaskId === task.id}
                             isMoving={movingTaskIds?.has(task.id)}
@@ -184,7 +209,7 @@ function TaskBoardInner({
                           organizationId={organizationId}
                           projectId={projectId}
                           accentColor={accentColor}
-                          compact={!isFocused}
+                          compact={isCompact}
                           draggable
                           isDragging={activeTaskId === item.task.id}
                           isMoving={movingTaskIds?.has(item.task.id)}
@@ -213,7 +238,7 @@ function TaskBoardInner({
             <TaskCardOverlay
               task={activeTask}
               accentColor={accentColor}
-              compact={focusedStatus !== activeTask.status}
+              compact={focusMode && focusedStatus !== activeTask.status}
             />
           ) : null}
         </DragOverlay>
