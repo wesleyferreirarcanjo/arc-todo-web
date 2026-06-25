@@ -14,10 +14,8 @@ import {
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
 import {
-  getBoardLayoutMode,
   getBoardViewMode,
   getHiddenBoardColumns,
-  setBoardLayoutMode,
   setBoardViewMode,
   setHiddenBoardColumns,
   setLastOrganizationId,
@@ -25,7 +23,6 @@ import {
 } from '../lib/storage/appStorage';
 import { getProjectColor } from '../lib/color/entityColor';
 import { BoardColumnVisibilityMenu } from '../components/BoardColumnVisibilityMenu';
-import { BoardLayoutToggle } from '../components/BoardLayoutToggle';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
 import { BoardViewToggle } from '../components/BoardViewToggle';
@@ -74,7 +71,6 @@ export function AllTasksBoardPage() {
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState(getBoardViewMode);
-  const [layoutMode, setLayoutMode] = useState(getBoardLayoutMode);
   const [hiddenColumns, setHiddenColumns] = useState<TaskStatus[]>(getHiddenBoardColumns);
   const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -314,11 +310,6 @@ export function AllTasksBoardPage() {
     setBoardViewMode(mode);
   }
 
-  function handleLayoutModeChange(mode: 'compact' | 'wide') {
-    setLayoutMode(mode);
-    setBoardLayoutMode(mode);
-  }
-
   function handleHiddenColumnsChange(nextHidden: TaskStatus[]) {
     setHiddenColumns(nextHidden);
     setHiddenBoardColumns(nextHidden);
@@ -492,9 +483,6 @@ export function AllTasksBoardPage() {
             hiddenColumns={hiddenColumns}
             onChange={handleHiddenColumnsChange}
           />
-          {viewMode === 'board' && (
-            <BoardLayoutToggle layoutMode={layoutMode} onChange={handleLayoutModeChange} />
-          )}
           <BoardViewToggle viewMode={viewMode} onChange={handleViewModeChange} />
           <TaskImportExportMenu
             tasks={tasks}
@@ -556,7 +544,6 @@ export function AllTasksBoardPage() {
           <TaskBoard
             tasks={filteredCycleTasks}
             hiddenColumns={hiddenColumns}
-            layoutMode={layoutMode}
             movingTaskIds={movingTaskIds}
             accentColor={
               focusedProject
@@ -600,7 +587,6 @@ export function AllTasksBoardPage() {
           <UnifiedTaskBoard
             tasks={filteredTasks}
             hiddenColumns={hiddenColumns}
-            layoutMode={layoutMode}
             movingTaskIds={movingTaskIds}
             onUpdate={handleUpdate}
             onDelete={handleDelete}

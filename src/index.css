@@ -202,8 +202,7 @@ textarea:focus-visible {
   margin-top: 0;
 }
 
-.content-area.is-board-page .task-board-scroll,
-.content-area.is-board-page .task-board:not(.is-wide-mode) {
+.content-area.is-board-page .task-board-scroll {
   flex: 1;
   min-height: 0;
 }
@@ -2542,38 +2541,30 @@ textarea {
   width: 100%;
 }
 
-.task-board-scroll.is-wide {
+.task-board-scroll {
   flex: 1;
   min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
-.task-board.is-wide-mode {
+.task-board-wide {
   width: max-content;
   min-width: 100%;
+  height: 100%;
 }
 
-.task-board.is-wide-mode .board-column {
+.task-board-wide .board-column {
   flex: 0 0 280px;
   width: 280px;
   min-width: 280px;
+  min-height: 320px;
+  height: 100%;
   cursor: default;
-}
-
-.task-board.is-auto-fit .board-column {
-  flex: 1 1 0;
-  cursor: default;
-}
-
-.task-board.is-auto-fit .board-column.is-focused,
-.task-board.is-auto-fit .board-column.is-compact,
-.task-board.is-auto-fit .board-column.is-empty {
-  flex: 1 1 0;
-}
-
-.task-board.is-focus-mode .board-column {
-  cursor: pointer;
 }
 
 .board-column {
@@ -5235,35 +5226,12 @@ textarea {
 }
 
 @media (max-width: 900px) {
-  .task-board,
-  .task-board.is-auto-fit,
-  .task-board.is-focus-mode {
-    flex-direction: column;
-    flex-wrap: nowrap;
-  }
-
-  .task-board-scroll.is-wide .task-board.is-wide-mode {
+  .task-board-wide {
     flex-direction: row;
     flex-wrap: nowrap;
   }
 
-  .board-column,
-  .board-column.is-focused,
-  .board-column.is-compact,
-  .board-column.is-empty,
-  .task-board.is-auto-fit .board-column,
-  .task-board.is-auto-fit .board-column.is-focused,
-  .task-board.is-auto-fit .board-column.is-compact,
-  .task-board.is-auto-fit .board-column.is-empty,
-  .task-board.is-focus-mode .board-column {
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    min-height: 16rem;
-  }
-
-  .task-board-scroll.is-wide .task-board.is-wide-mode .board-column {
+  .task-board-wide .board-column {
     flex: 0 0 280px;
     width: 280px;
     max-width: none;
@@ -5281,19 +5249,6 @@ textarea {
 
   .board-filters {
     padding: 0.85rem;
-  }
-
-  .task-board {
-    flex-wrap: wrap;
-  }
-
-  .board-column,
-  .board-column.is-focused,
-  .board-column.is-compact,
-  .board-column.is-empty {
-    flex: 1 1 100%;
-    max-width: 100%;
-    min-width: 0;
   }
 
   .chat-widget-root {
