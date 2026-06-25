@@ -13,6 +13,7 @@ import {
 } from '../lib/api/todos';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
+import { canHideColumn } from '../lib/tasks/taskStatus';
 import {
   getBoardViewMode,
   getHiddenBoardColumns,
@@ -315,6 +316,16 @@ export function AllTasksBoardPage() {
     setHiddenBoardColumns(nextHidden);
   }
 
+  function handleToggleColumnVisibility(status: TaskStatus) {
+    const hiddenSet = new Set(hiddenColumns);
+    if (hiddenSet.has(status)) {
+      handleHiddenColumnsChange(hiddenColumns.filter((item) => item !== status));
+      return;
+    }
+    if (!canHideColumn(status, hiddenColumns)) return;
+    handleHiddenColumnsChange([...hiddenColumns, status]);
+  }
+
   async function handleListStatusUpdate(
     task: Task | TaskWithContext,
     status: TaskStatus,
@@ -545,6 +556,7 @@ export function AllTasksBoardPage() {
             tasks={filteredCycleTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
+            onToggleColumnVisibility={handleToggleColumnVisibility}
             accentColor={
               focusedProject
                 ? getProjectColor(focusedProject)
@@ -588,6 +600,7 @@ export function AllTasksBoardPage() {
             tasks={filteredTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
+            onToggleColumnVisibility={handleToggleColumnVisibility}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             onCreateSubtask={handleCreateSubtask}

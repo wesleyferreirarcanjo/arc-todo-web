@@ -4,6 +4,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import type { TaskStatus } from '../types/todo';
 import { getColumnDroppableId } from '../lib/board/useTaskBoardDnd';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
+import { EyeIcon } from './EyeIcon';
 
 interface BoardColumnProps {
   status: TaskStatus;
@@ -12,8 +13,11 @@ interface BoardColumnProps {
   isDropTarget: boolean;
   isFocused: boolean;
   isCompact: boolean;
+  isColumnHidden?: boolean;
+  canHideColumn?: boolean;
   focusEnabled?: boolean;
   onFocus: () => void;
+  onToggleVisibility?: () => void;
   children: ReactNode;
 }
 
@@ -24,8 +28,11 @@ export function BoardColumn({
   isDropTarget,
   isFocused,
   isCompact,
+  isColumnHidden = false,
+  canHideColumn = true,
   focusEnabled = true,
   onFocus,
+  onToggleVisibility,
   children,
 }: BoardColumnProps) {
   const { base } = useMotionTransition();
@@ -35,9 +42,10 @@ export function BoardColumn({
 
   const highlighted = isDropTarget || isOver;
   const isEmpty = taskCount === 0;
+  const hideBlocked = !isColumnHidden && !canHideColumn;
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
-    if (!focusEnabled) {
+    if (!focusEnabled || isColumnHidden) {
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
@@ -46,15 +54,21 @@ export function BoardColumn({
     }
   }
 
+  function handleToggleVisibility(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    if (hideBlocked) return;
+    onToggleVisibility?.();
+  }
+
   return (
     <motion.section
       ref={setNodeRef}
-      className={`board-column${isFocused ? ' is-focused' : ''}${isCompact ? ' is-compact' : ''}${isEmpty ? ' is-empty' : ''}${highlighted ? ' is-drop-target' : ''}`}
-      tabIndex={focusEnabled ? 0 : undefined}
-      role={focusEnabled ? 'button' : undefined}
-      aria-pressed={focusEnabled ? isFocused : undefined}
-      aria-label={`${title} column, ${taskCount} tasks`}
-      onClick={focusEnabled ? onFocus : undefined}
+      className={`board-column${isFocused ? ' is-focused' : ''}${isCompact ? ' is-compact' : ''}${isEmpty ? ' is-empty' : ''}${highlighted ? ' is-drop-target' : ''}${isColumnHidden ? ' is-column-hidden' : ''}`}
+      tabIndex={focusEnabled && !isColumnHidden ? 0 : undefined}
+      role={focusEnabled && !isColumnHidden ? 'button' : undefined}
+      aria-pressed={focusEnabled && !isColumnHidden ? isFocused : undefined}
+      aria-label={`${title} column, ${taskCount} tasks${isColumnHidden ? ', hidden' : ''}`}
+      onClick={focusEnabled && !isColumnHidden ? onFocus : undefined}
       onKeyDown={handleKeyDown}
       animate={{ scale: highlighted ? 1.008 : 1 }}
       transition={base}
@@ -79,10 +93,33 @@ export function BoardColumn({
       />
 
       <header className="board-column-header">
-        <h2>{title}</h2>
-        <span className="count-badge">{taskCount}</span>
+        <div className="board-column-header-main">
+          <h2>{title}</h2>
+          {!isColumnHidden && <span className="count-badge">{taskCount}</span>}
+        </div>
+        {onToggleVisibility && (
+          <button
+            type="button"
+            className={`board-column-visibility-toggle${isColumnHidden ? ' is-hidden' : ''}`}
+            aria-label={
+              isColumnHidden ? `Show ${title} column` : `Hide ${title} column`
+            }
+            aria-pressed={!isColumnHidden}
+            disabled={hideBlocked}
+            title={
+              hideBlocked
+                ? 'At least one column must stay visible'
+                : isColumnHidden
+                  ? `Show ${title}`
+                  : `Hide ${title}`
+            }
+            onClick={handleToggleVisibility}
+          >
+            <EyeIcon visible={!isColumnHidden} />
+          </button>
+        )}
       </header>
-      <div className="board-column-body">{children}</div>
+      {!isColumnHidden && <div className="board-column-body">{children}</div>}
     </motion.section>
   );
 }

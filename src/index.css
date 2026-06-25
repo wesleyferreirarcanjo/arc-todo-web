@@ -2644,9 +2644,95 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.65rem;
   padding: 1.1rem 1.15rem;
   border-bottom: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.12);
+}
+
+.board-column-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.board-column-visibility-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.board-column-visibility-toggle:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+}
+
+.board-column-visibility-toggle.is-hidden {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong));
+}
+
+.board-column-visibility-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.board-column-eye-icon {
+  display: block;
+}
+
+.board-column.is-column-hidden {
+  flex: 0 0 3.25rem;
+  width: 3.25rem;
+  min-width: 3.25rem;
+  cursor: default;
+}
+
+.board-column.is-column-hidden .board-column-header {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 0.85rem 0.35rem;
+  border-bottom: none;
+}
+
+.board-column.is-column-hidden .board-column-header-main {
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.board-column.is-column-hidden .board-column-header h2 {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.task-board-wide .board-column.is-column-hidden {
+  flex: 0 0 3.25rem;
+  width: 3.25rem;
+  min-width: 3.25rem;
 }
 
 .board-column-header h2 {
@@ -5237,6 +5323,12 @@ textarea {
     max-width: none;
     min-width: 280px;
     min-height: 320px;
+  }
+
+  .task-board-wide .board-column.is-column-hidden {
+    flex: 0 0 3.25rem;
+    width: 3.25rem;
+    min-width: 3.25rem;
   }
 }
 

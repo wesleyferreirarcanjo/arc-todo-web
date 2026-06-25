@@ -14,7 +14,7 @@ import {
   StatusMoveAnimationProvider,
   useStatusMoveAnimation,
 } from '../lib/motion/StatusMoveAnimationContext';
-import { getVisibleStatusColumns } from '../lib/tasks/taskStatus';
+import { TASK_STATUS_OPTIONS, canHideColumn } from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -36,6 +36,7 @@ interface UnifiedTaskBoardProps {
     parentId: string | null,
   ) => Promise<void>;
   onMoveError?: (taskId: string, error: unknown) => void;
+  onToggleColumnVisibility?: (status: TaskStatus) => void;
 }
 
 export function UnifiedTaskBoard(props: UnifiedTaskBoardProps) {
@@ -55,12 +56,10 @@ function UnifiedTaskBoardInner({
   onCreateSubtask,
   onSetParent,
   onMoveError,
+  onToggleColumnVisibility,
 }: UnifiedTaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
-  const columns = useMemo(
-    () => getVisibleStatusColumns(hiddenColumns),
-    [hiddenColumns],
-  );
+  const hiddenSet = useMemo(() => new Set(hiddenColumns), [hiddenColumns]);
 
   const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
   const taskById = useMemo(
@@ -105,20 +104,28 @@ function UnifiedTaskBoardInner({
       >
         <div className="task-board-scroll">
           <div className="task-board task-board-wide">
-            {columns.map((column) => {
-              const columnItems = listBoardColumnItems(boardTasks, column.status);
+            {TASK_STATUS_OPTIONS.map(({ value, label }) => {
+              const isColumnHidden = hiddenSet.has(value);
+              const columnItems = listBoardColumnItems(boardTasks, value);
 
               return (
                 <BoardColumn
-                  key={column.status}
-                  status={column.status}
-                  title={column.label}
+                  key={value}
+                  status={value}
+                  title={label}
                   taskCount={columnItems.length}
-                  isDropTarget={overColumnStatus === column.status}
+                  isDropTarget={overColumnStatus === value}
                   isFocused={false}
                   isCompact={false}
+                  isColumnHidden={isColumnHidden}
+                  canHideColumn={canHideColumn(value, hiddenColumns)}
                   focusEnabled={false}
                   onFocus={() => {}}
+                  onToggleVisibility={
+                    onToggleColumnVisibility
+                      ? () => onToggleColumnVisibility(value)
+                      : undefined
+                  }
                 >
                   {columnItems.length === 0 ? (
                     <p className="empty-column">No tasks here yet.</p>
