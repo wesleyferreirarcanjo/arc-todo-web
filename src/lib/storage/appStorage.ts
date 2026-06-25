@@ -7,9 +7,11 @@ const THEME_KEY = 'arc_todo_theme';
 const SIDEBAR_COLLAPSED_KEY = 'arc_todo_sidebar_collapsed';
 const BOARD_HIDDEN_COLUMNS_KEY = 'arc_todo_board_hidden_columns';
 const BOARD_VIEW_MODE_KEY = 'arc_todo_board_view_mode';
+const BOARD_LAYOUT_MODE_KEY = 'arc_todo_board_layout_mode';
 
 export type Theme = 'dark' | 'light';
 export type BoardViewMode = 'board' | 'list';
+export type BoardLayoutMode = 'compact' | 'wide';
 
 export function getLastOrganizationId(): string | null {
   return localStorage.getItem(ORG_KEY);
@@ -90,4 +92,13 @@ export function getBoardViewMode(): BoardViewMode {
 
 export function setBoardViewMode(mode: BoardViewMode): void {
   localStorage.setItem(BOARD_VIEW_MODE_KEY, mode);
+}
+
+export function getBoardLayoutMode(): BoardLayoutMode {
+  const stored = localStorage.getItem(BOARD_LAYOUT_MODE_KEY);
+  return stored === 'wide' ? 'wide' : 'compact';
+}
+
+export function setBoardLayoutMode(mode: BoardLayoutMode): void {
+  localStorage.setItem(BOARD_LAYOUT_MODE_KEY, mode);
 }

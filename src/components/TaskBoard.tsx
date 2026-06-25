@@ -8,6 +8,7 @@ import {
   StatusMoveAnimationProvider,
   useStatusMoveAnimation,
 } from '../lib/motion/StatusMoveAnimationContext';
+import type { BoardLayoutMode } from '../lib/storage/appStorage';
 import { getVisibleStatusColumns, type StatusColumn } from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
@@ -15,6 +16,7 @@ import { TaskCard, TaskCardOverlay } from './TaskCard';
 interface TaskBoardProps {
   tasks: Task[];
   hiddenColumns?: TaskStatus[];
+  layoutMode?: BoardLayoutMode;
   movingTaskIds?: Set<string>;
   accentColor?: string;
   organizationId?: string;
@@ -45,6 +47,7 @@ export function TaskBoard(props: TaskBoardProps) {
 function TaskBoardInner({
   tasks,
   hiddenColumns = [],
+  layoutMode = 'compact',
   movingTaskIds,
   accentColor,
   organizationId,
@@ -55,6 +58,7 @@ function TaskBoardInner({
   onSetParent,
   onMoveError,
 }: TaskBoardProps) {
+  const isWide = layoutMode === 'wide';
   const { markStatusMove } = useStatusMoveAnimation();
   const columns = useMemo(
     () => getVisibleStatusColumns(hiddenColumns),
@@ -103,6 +107,92 @@ function TaskBoardInner({
 
   const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
 
+  const board = (
+    <div className={`task-board${isWide ? ' is-wide-mode' : ''}`}>
+      {columns.map((column) => {
+        const columnItems = listBoardColumnItems(boardTasks, column.status);
+        const isFocused = !isWide && focusedStatus === column.status;
+        const isCompact = !isWide && !isFocused;
+
+        return (
+          <BoardColumn
+            key={column.status}
+            status={column.status}
+            title={column.label}
+            taskCount={columnItems.length}
+            isDropTarget={overColumnStatus === column.status}
+            isFocused={isFocused}
+            isCompact={isCompact}
+            focusEnabled={!isWide}
+            onFocus={() => setFocusedStatus(column.status)}
+          >
+            {columnItems.length === 0 ? (
+              <p className="empty-column">No tasks here yet.</p>
+            ) : (
+              columnItems.map((item) => {
+                if (item.kind === 'parent') {
+                  const task = item.task;
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      subtasks={task.subtasks}
+                      organizationId={organizationId}
+                      projectId={projectId}
+                      accentColor={accentColor}
+                      compact={isCompact}
+                      draggable
+                      isDragging={activeTaskId === task.id}
+                      isMoving={movingTaskIds?.has(task.id)}
+                      draggingTaskId={activeTaskId ?? undefined}
+                      chatContextScope={
+                        organizationId && projectId
+                          ? { organizationId, projectId }
+                          : undefined
+                      }
+                      onUpdate={onUpdate}
+                      onDelete={onDelete}
+                      onCreateSubtask={onCreateSubtask}
+                      onSetParent={onSetParent}
+                      parentCandidates={tasks}
+                    />
+                  );
+                }
+
+                return (
+                  <TaskCard
+                    key={item.task.id}
+                    task={item.task}
+                    isSubtask
+                    isDetachedSubtask
+                    parentDisplayId={item.parentDisplayId}
+                    organizationId={organizationId}
+                    projectId={projectId}
+                    accentColor={accentColor}
+                    compact={isCompact}
+                    draggable
+                    isDragging={activeTaskId === item.task.id}
+                    isMoving={movingTaskIds?.has(item.task.id)}
+                    draggingTaskId={activeTaskId ?? undefined}
+                    chatContextScope={
+                      organizationId && projectId
+                        ? { organizationId, projectId }
+                        : undefined
+                    }
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                    onSetParent={onSetParent}
+                    parentCandidates={tasks}
+                  />
+                );
+              })
+            )}
+          </BoardColumn>
+        );
+      })}
+    </div>
+  );
+
   return (
     <LayoutGroup id="task-board">
       <DndContext
@@ -112,94 +202,14 @@ function TaskBoardInner({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        <div className="task-board">
-          {columns.map((column) => {
-            const columnItems = listBoardColumnItems(boardTasks, column.status);
-            const isFocused = focusedStatus === column.status;
-
-            return (
-              <BoardColumn
-                key={column.status}
-                status={column.status}
-                title={column.label}
-                taskCount={columnItems.length}
-                isDropTarget={overColumnStatus === column.status}
-                isFocused={isFocused}
-                isCompact={!isFocused}
-                onFocus={() => setFocusedStatus(column.status)}
-              >
-                {columnItems.length === 0 ? (
-                  <p className="empty-column">No tasks here yet.</p>
-                ) : (
-                  columnItems.map((item) => {
-                    if (item.kind === 'parent') {
-                      const task = item.task;
-                      return (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          subtasks={task.subtasks}
-                          organizationId={organizationId}
-                          projectId={projectId}
-                          accentColor={accentColor}
-                          compact={!isFocused}
-                          draggable
-                          isDragging={activeTaskId === task.id}
-                          isMoving={movingTaskIds?.has(task.id)}
-                          draggingTaskId={activeTaskId ?? undefined}
-                          chatContextScope={
-                            organizationId && projectId
-                              ? { organizationId, projectId }
-                              : undefined
-                          }
-                          onUpdate={onUpdate}
-                          onDelete={onDelete}
-                          onCreateSubtask={onCreateSubtask}
-                          onSetParent={onSetParent}
-                          parentCandidates={tasks}
-                        />
-                      );
-                    }
-
-                    return (
-                      <TaskCard
-                        key={item.task.id}
-                        task={item.task}
-                        isSubtask
-                        isDetachedSubtask
-                        parentDisplayId={item.parentDisplayId}
-                        organizationId={organizationId}
-                        projectId={projectId}
-                        accentColor={accentColor}
-                        compact={!isFocused}
-                        draggable
-                        isDragging={activeTaskId === item.task.id}
-                        isMoving={movingTaskIds?.has(item.task.id)}
-                        draggingTaskId={activeTaskId ?? undefined}
-                        chatContextScope={
-                          organizationId && projectId
-                            ? { organizationId, projectId }
-                            : undefined
-                        }
-                        onUpdate={onUpdate}
-                        onDelete={onDelete}
-                        onSetParent={onSetParent}
-                        parentCandidates={tasks}
-                      />
-                    );
-                  })
-                )}
-              </BoardColumn>
-            );
-          })}
-        </div>
+        {isWide ? <div className="task-board-scroll is-wide">{board}</div> : board}
 
         <DragOverlay dropAnimation={null}>
           {activeTask ? (
             <TaskCardOverlay
               task={activeTask}
               accentColor={accentColor}
-              compact={focusedStatus !== activeTask.status}
+              compact={!isWide && focusedStatus !== activeTask.status}
             />
           ) : null}
         </DragOverlay>

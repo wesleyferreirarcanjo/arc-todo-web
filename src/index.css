@@ -202,8 +202,13 @@ textarea:focus-visible {
   margin-top: 0;
 }
 
-.content-area.is-board-page .task-board {
+.content-area.is-board-page .task-board-scroll,
+.content-area.is-board-page .task-board:not(.is-wide-mode) {
   flex: 1;
+  min-height: 0;
+}
+
+.content-area.is-board-page .task-board {
   min-height: 0;
 }
 
@@ -2535,6 +2540,25 @@ textarea {
   align-items: stretch;
   gap: 1.25rem;
   width: 100%;
+}
+
+.task-board-scroll.is-wide {
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.task-board.is-wide-mode {
+  width: max-content;
+  min-width: 100%;
+}
+
+.task-board.is-wide-mode .board-column {
+  flex: 0 0 280px;
+  width: 280px;
+  min-width: 280px;
+  cursor: default;
 }
 
 .task-board.is-auto-fit .board-column {
@@ -5218,6 +5242,11 @@ textarea {
     flex-wrap: nowrap;
   }
 
+  .task-board-scroll.is-wide .task-board.is-wide-mode {
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+
   .board-column,
   .board-column.is-focused,
   .board-column.is-compact,
@@ -5232,6 +5261,14 @@ textarea {
     max-width: 100%;
     min-width: 0;
     min-height: 16rem;
+  }
+
+  .task-board-scroll.is-wide .task-board.is-wide-mode .board-column {
+    flex: 0 0 280px;
+    width: 280px;
+    max-width: none;
+    min-width: 280px;
+    min-height: 320px;
   }
 }
 
