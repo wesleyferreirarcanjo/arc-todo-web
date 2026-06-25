@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../types/todo';
@@ -8,7 +8,11 @@ import {
   StatusMoveAnimationProvider,
   useStatusMoveAnimation,
 } from '../lib/motion/StatusMoveAnimationContext';
-import { TASK_STATUS_OPTIONS, canHideColumn } from '../lib/tasks/taskStatus';
+import {
+  canHideColumn,
+  getVisibleStatusColumns,
+  type StatusColumn,
+} from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -25,6 +29,14 @@ interface TaskBoardProps {
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
   onMoveError?: (taskId: string, error: unknown) => void;
   onToggleColumnVisibility?: (status: TaskStatus) => void;
+}
+
+function getDefaultFocusedStatus(tasks: Task[], columns: StatusColumn[]): TaskStatus | null {
+  return (
+    columns.find((column) =>
+      tasks.some((task) => !task.parentTaskId && task.status === column.status),
+    )?.status ?? columns[0]?.status ?? null
+  );
 }
 
 export function TaskBoard(props: TaskBoardProps) {
@@ -50,13 +62,26 @@ function TaskBoardInner({
   onToggleColumnVisibility,
 }: TaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
-  const hiddenSet = useMemo(() => new Set(hiddenColumns), [hiddenColumns]);
+  const columns = useMemo(
+    () => getVisibleStatusColumns(hiddenColumns),
+    [hiddenColumns],
+  );
+  const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
+    getDefaultFocusedStatus(tasks, columns),
+  );
 
   const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
   const taskById = useMemo(
     () => new Map(tasks.map((task) => [task.id, task])),
     [tasks],
   );
+
+  useEffect(() => {
+    if (focusedStatus && columns.some((column) => column.status === focusedStatus)) {
+      return;
+    }
+    setFocusedStatus(getDefaultFocusedStatus(tasks, columns));
+  }, [columns, focusedStatus, tasks]);
 
   const getTaskStatus = useCallback(
     (taskId: string) => taskById.get(taskId)?.status,
@@ -94,26 +119,25 @@ function TaskBoardInner({
         onDragCancel={handleDragCancel}
       >
         <div className="task-board-scroll">
-          <div className="task-board task-board-wide">
-            {TASK_STATUS_OPTIONS.filter(({ value }) => !hiddenSet.has(value)).map(
-              ({ value, label }) => {
-              const columnItems = listBoardColumnItems(boardTasks, value);
+          <div className="task-board">
+            {columns.map((column) => {
+              const columnItems = listBoardColumnItems(boardTasks, column.status);
+              const isFocused = focusedStatus === column.status;
 
               return (
                 <BoardColumn
-                  key={value}
-                  status={value}
-                  title={label}
+                  key={column.status}
+                  status={column.status}
+                  title={column.label}
                   taskCount={columnItems.length}
-                  isDropTarget={overColumnStatus === value}
-                  isFocused={false}
-                  isCompact={false}
-                  canHideColumn={canHideColumn(value, hiddenColumns)}
-                  focusEnabled={false}
-                  onFocus={() => {}}
+                  isDropTarget={overColumnStatus === column.status}
+                  isFocused={isFocused}
+                  isCompact={!isFocused}
+                  canHideColumn={canHideColumn(column.status, hiddenColumns)}
+                  onFocus={() => setFocusedStatus(column.status)}
                   onToggleVisibility={
                     onToggleColumnVisibility
-                      ? () => onToggleColumnVisibility(value)
+                      ? () => onToggleColumnVisibility(column.status)
                       : undefined
                   }
                 >
@@ -131,6 +155,7 @@ function TaskBoardInner({
                             organizationId={organizationId}
                             projectId={projectId}
                             accentColor={accentColor}
+                            compact={!isFocused}
                             draggable
                             isDragging={activeTaskId === task.id}
                             isMoving={movingTaskIds?.has(task.id)}
@@ -159,6 +184,7 @@ function TaskBoardInner({
                           organizationId={organizationId}
                           projectId={projectId}
                           accentColor={accentColor}
+                          compact={!isFocused}
                           draggable
                           isDragging={activeTaskId === item.task.id}
                           isMoving={movingTaskIds?.has(item.task.id)}
@@ -184,7 +210,11 @@ function TaskBoardInner({
 
         <DragOverlay dropAnimation={null}>
           {activeTask ? (
-            <TaskCardOverlay task={activeTask} accentColor={accentColor} />
+            <TaskCardOverlay
+              task={activeTask}
+              accentColor={accentColor}
+              compact={focusedStatus !== activeTask.status}
+            />
           ) : null}
         </DragOverlay>
       </DndContext>

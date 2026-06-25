@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type {
@@ -14,7 +14,11 @@ import {
   StatusMoveAnimationProvider,
   useStatusMoveAnimation,
 } from '../lib/motion/StatusMoveAnimationContext';
-import { TASK_STATUS_OPTIONS, canHideColumn } from '../lib/tasks/taskStatus';
+import {
+  canHideColumn,
+  getVisibleStatusColumns,
+  type StatusColumn,
+} from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
@@ -39,6 +43,25 @@ interface UnifiedTaskBoardProps {
   onToggleColumnVisibility?: (status: TaskStatus) => void;
 }
 
+// ponytail: fixed px threshold; upgrade path = measure card content width
+const MIN_FULL_COLUMN_WIDTH = 280;
+const COLUMN_GAP_PX = 20;
+
+function getFullBoardWidth(columnCount: number): number {
+  return MIN_FULL_COLUMN_WIDTH * columnCount + COLUMN_GAP_PX * Math.max(0, columnCount - 1);
+}
+
+function getDefaultFocusedStatus(
+  tasks: TaskWithContext[],
+  columns: StatusColumn[],
+): TaskStatus | null {
+  return (
+    columns.find((column) =>
+      tasks.some((task) => !task.parentTaskId && task.status === column.status),
+    )?.status ?? columns[0]?.status ?? null
+  );
+}
+
 export function UnifiedTaskBoard(props: UnifiedTaskBoardProps) {
   return (
     <StatusMoveAnimationProvider>
@@ -59,13 +82,48 @@ function UnifiedTaskBoardInner({
   onToggleColumnVisibility,
 }: UnifiedTaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
-  const hiddenSet = useMemo(() => new Set(hiddenColumns), [hiddenColumns]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const columns = useMemo(
+    () => getVisibleStatusColumns(hiddenColumns),
+    [hiddenColumns],
+  );
+  const fullBoardWidth = useMemo(
+    () => getFullBoardWidth(columns.length),
+    [columns.length],
+  );
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusedStatus, setFocusedStatus] = useState<TaskStatus | null>(() =>
+    getDefaultFocusedStatus(tasks, columns),
+  );
 
   const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
   const taskById = useMemo(
     () => new Map(tasks.map((task) => [task.id, task])),
     [tasks],
   );
+
+  useEffect(() => {
+    if (focusedStatus && columns.some((column) => column.status === focusedStatus)) {
+      return;
+    }
+    setFocusedStatus(getDefaultFocusedStatus(tasks, columns));
+  }, [columns, focusedStatus, tasks]);
+
+  useEffect(() => {
+    const viewport = scrollRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const syncFocusMode = () => {
+      setFocusMode(viewport.clientWidth < fullBoardWidth);
+    };
+
+    syncFocusMode();
+    const observer = new ResizeObserver(syncFocusMode);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [fullBoardWidth]);
 
   const getTaskStatus = useCallback(
     (taskId: string) => taskById.get(taskId)?.status,
@@ -102,27 +160,28 @@ function UnifiedTaskBoardInner({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        <div className="task-board-scroll">
-          <div className="task-board task-board-wide">
-            {TASK_STATUS_OPTIONS.filter(({ value }) => !hiddenSet.has(value)).map(
-              ({ value, label }) => {
-              const columnItems = listBoardColumnItems(boardTasks, value);
+        <div className="task-board-scroll" ref={scrollRef}>
+          <div className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}>
+            {columns.map((column) => {
+              const columnItems = listBoardColumnItems(boardTasks, column.status);
+              const isFocused = focusMode && focusedStatus === column.status;
+              const isCompact = focusMode && !isFocused;
 
               return (
                 <BoardColumn
-                  key={value}
-                  status={value}
-                  title={label}
+                  key={column.status}
+                  status={column.status}
+                  title={column.label}
                   taskCount={columnItems.length}
-                  isDropTarget={overColumnStatus === value}
-                  isFocused={false}
-                  isCompact={false}
-                  canHideColumn={canHideColumn(value, hiddenColumns)}
-                  focusEnabled={false}
-                  onFocus={() => {}}
+                  isDropTarget={overColumnStatus === column.status}
+                  isFocused={isFocused}
+                  isCompact={isCompact}
+                  canHideColumn={canHideColumn(column.status, hiddenColumns)}
+                  focusEnabled={focusMode}
+                  onFocus={() => setFocusedStatus(column.status)}
                   onToggleVisibility={
                     onToggleColumnVisibility
-                      ? () => onToggleColumnVisibility(value)
+                      ? () => onToggleColumnVisibility(column.status)
                       : undefined
                   }
                 >
@@ -142,6 +201,7 @@ function UnifiedTaskBoardInner({
                             organizationName={task.organization.name}
                             projectName={task.project.name}
                             accentColor={getProjectColor(task.project)}
+                            compact={isCompact}
                             draggable
                             isDragging={activeTaskId === task.id}
                             isMoving={movingTaskIds?.has(task.id)}
@@ -180,6 +240,7 @@ function UnifiedTaskBoardInner({
                           organizationName={contextTask.organization.name}
                           projectName={contextTask.project.name}
                           accentColor={getProjectColor(contextTask.project)}
+                          compact={isCompact}
                           draggable
                           isDragging={activeTaskId === item.task.id}
                           isMoving={movingTaskIds?.has(item.task.id)}
@@ -209,6 +270,7 @@ function UnifiedTaskBoardInner({
               organizationName={activeTask.organization.name}
               projectName={activeTask.project.name}
               accentColor={getProjectColor(activeTask.project)}
+              compact={focusMode && focusedStatus !== activeTask.status}
             />
           ) : null}
         </DragOverlay>
