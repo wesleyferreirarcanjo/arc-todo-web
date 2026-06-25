@@ -12,6 +12,7 @@ import {
   updateProjectTask,
 } from '../lib/api/todos';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
+import { filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
 import {
   setLastOrganizationId,
   setLastProjectId,
@@ -54,6 +55,7 @@ export function AllTasksBoardPage() {
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
@@ -277,13 +279,56 @@ export function AllTasksBoardPage() {
     await loadProjectCycle({ silent: true });
   }
 
-  const topLevelCount = projectFocus
-    ? cycleTasks.filter((task) => !task.parentTaskId).length
-    : tasks.filter((task) => !task.parentTaskId).length;
+  const searchActive = normalizeTaskSearchQuery(searchQuery).length > 0;
+
+  const filteredTasks = useMemo(
+    () =>
+      filterTasksBySearch(tasks, searchQuery, (task) => ({
+        orgName: task.organization.name,
+        projectName: task.project.name,
+      })),
+    [tasks, searchQuery],
+  );
+
+  const filteredCycleTasks = useMemo(
+    () => filterTasksBySearch(cycleTasks, searchQuery),
+    [cycleTasks, searchQuery],
+  );
+
+  const visibleTasks = projectFocus ? filteredCycleTasks : filteredTasks;
+  const sourceTaskCount = projectFocus ? cycleTasks.length : tasks.length;
+
+  const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
+
+  const matchingTaskCount = useMemo(() => {
+    if (!searchActive) return visibleTasks.length;
+    const source = projectFocus ? cycleTasks : tasks;
+    return source.filter((task) => {
+      const context =
+        !projectFocus && 'organization' in task
+          ? {
+              orgName: (task as TaskWithContext).organization.name,
+              projectName: (task as TaskWithContext).project.name,
+            }
+          : undefined;
+      return getTaskSearchRank(task, searchQuery, context) !== null;
+    }).length;
+  }, [searchActive, projectFocus, cycleTasks, tasks, searchQuery, visibleTasks.length]);
 
   return (
     <div className="tasks-page">
       <div className="board-filters">
+        <label className="board-filter-field board-filter-search">
+          Search
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search by ID, title, or text"
+            aria-label="Search tasks"
+          />
+        </label>
+
         <label className="board-filter-field">
           Organization
           <Select
@@ -356,10 +401,18 @@ export function AllTasksBoardPage() {
         />
       )}
 
+      {searchActive && !loading && !error && (
+        <p className="status-message board-search-status" role="status">
+          {matchingTaskCount === 0
+            ? 'No tasks match your search.'
+            : `${matchingTaskCount} matching task${matchingTaskCount === 1 ? '' : 's'}${sourceTaskCount !== matchingTaskCount ? ` in ${sourceTaskCount} loaded` : ''}.`}
+        </p>
+      )}
+
       {loading && <p className="status-message">Loading tasks...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && topLevelCount === 0 && (
+      {!loading && !error && topLevelCount === 0 && !searchActive && (
         <p className="status-message">
           {projectFocus
             ? 'No active board work in this weekly cycle.'
@@ -372,7 +425,7 @@ export function AllTasksBoardPage() {
       {!loading && !error && topLevelCount > 0 && projectFocus && (
         viewMode === 'board' ? (
           <TaskBoard
-            tasks={cycleTasks}
+            tasks={filteredCycleTasks}
             accentColor={
               focusedProject
                 ? getProjectColor(focusedProject)
@@ -387,7 +440,7 @@ export function AllTasksBoardPage() {
           />
         ) : (
           <TaskListView
-            tasks={cycleTasks}
+            tasks={filteredCycleTasks}
             accentColor={
               focusedProject
                 ? getProjectColor(focusedProject)
@@ -400,14 +453,14 @@ export function AllTasksBoardPage() {
       {!loading && !error && topLevelCount > 0 && !projectFocus && (
         viewMode === 'board' ? (
           <UnifiedTaskBoard
-            tasks={tasks}
+            tasks={filteredTasks}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             onCreateSubtask={handleCreateSubtask}
             onSetParent={handleSetParent}
           />
         ) : (
-          <TaskListView tasks={tasks} />
+          <TaskListView tasks={filteredTasks} />
         )
       )}
 

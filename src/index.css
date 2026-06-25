@@ -1377,6 +1377,15 @@ textarea:focus-visible {
   min-width: 200px;
 }
 
+.board-filter-field.board-filter-search {
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+
+.board-search-status {
+  margin-top: -0.25rem;
+}
+
 .board-filter-clear {
   margin-top: 0;
 }
