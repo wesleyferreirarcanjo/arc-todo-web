@@ -21,7 +21,11 @@ import {
   computeQaChecklistProgress,
   normalizeQaChecklistState,
 } from '../lib/tasks/taskQaChecklist';
-import { formatTaskStatusLabel, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
+import {
+  formatTaskStatusLabel,
+  isSmartCopyStatus,
+  TASK_STATUS_OPTIONS,
+} from '../lib/tasks/taskStatus';
 import { useChat } from '../context/ChatContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
@@ -591,7 +595,7 @@ export function TaskCard({
   const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
   const qaProgress = task.status === 'qa_test' ? checklistProgress : null;
   const showSmartCopy =
-    (task.status === 'qa_test' || task.status === 'done') &&
+    isSmartCopyStatus(task.status) &&
     Boolean(resolvedOrganizationId && resolvedProjectId);
   const showCopyActions =
     !compact &&
