@@ -616,6 +616,25 @@ export function TaskCard({
               <span className={`criticity-badge criticity-${task.criticity}`}>
                 {task.criticity}
               </span>
+              <span className={`task-card-status-badge task-list-status-${task.status}`}>
+                {formatTaskStatusLabel(task.status)}
+              </span>
+              {subtaskProgress && (
+                <span
+                  className="subtask-progress-badge"
+                  style={
+                    accentColor
+                      ? ({ '--entity-accent': accentColor } as CSSProperties)
+                      : undefined
+                  }
+                >
+                  <SubtaskProgressRing
+                    done={subtaskProgress.done}
+                    total={subtaskProgress.total}
+                  />
+                  {subtaskProgress.done}/{subtaskProgress.total} done
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -665,22 +684,6 @@ export function TaskCard({
                   {copyTooltip}
                 </span>
               </button>
-              {resolvedOrganizationId && resolvedProjectId && (
-                <button
-                  type="button"
-                  className="task-card-action-btn task-card-smart-copy-btn"
-                  aria-label={smartCopyTooltip}
-                  onClick={(event) => {
-                    stopCardPointer(event);
-                    void handleSmartCopyTask();
-                  }}
-                >
-                  <CopyIcon className="task-card-action-icon" />
-                  <span className="task-card-action-tooltip" role="tooltip">
-                    {smartCopyTooltip}
-                  </span>
-                </button>
-              )}
             </>
           )}
 
@@ -774,15 +777,12 @@ export function TaskCard({
         >
           <div className="task-card-header">
             <h3>{task.title}</h3>
-            <span className={`task-card-status-badge task-list-status-${task.status}`}>
-              {formatTaskStatusLabel(task.status)}
-            </span>
             {checklistProgress && (
               <span className="task-qa-progress-badge">
                 QA {checklistProgress.done}/{checklistProgress.total}
               </span>
             )}
-            {subtaskProgress && (
+            {isSubtask && !isDetachedSubtask && subtaskProgress && (
               <span
                 className="subtask-progress-badge"
                 style={
@@ -921,19 +921,6 @@ export function TaskCard({
           </div>
         )}
 
-        {!isSubtask && !compact && canAddSubtask && (
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm task-add-subtask-btn"
-            onPointerDown={stopCardPointer}
-            onClick={(event) => {
-              stopCardPointer(event);
-              setSubtaskModalOpen(true);
-            }}
-          >
-            Add subtask
-          </button>
-        )}
       </motion.article>
 
       {canOpenDetails && (

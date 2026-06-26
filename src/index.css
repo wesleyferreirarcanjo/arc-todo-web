@@ -2954,6 +2954,8 @@ textarea {
 
 .task-context-badges .task-badge,
 .task-context-badges .category-badge,
+.task-context-badges .task-card-status-badge,
+.task-context-badges .subtask-progress-badge,
 .task-context-badges .criticity-badge {
   font-size: 0.62rem;
   padding: 0.18rem 0.48rem;
@@ -3123,11 +3125,6 @@ textarea {
 
 .task-subtask-summary {
   font-weight: 600;
-}
-
-.task-add-subtask-btn {
-  align-self: flex-start;
-  margin-top: 0.15rem;
 }
 
 .task-details-subtask-progress {
