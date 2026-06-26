@@ -654,7 +654,7 @@ export function TaskCard({
           onPointerDown={stopCardPointer}
           onClick={stopCardPointer}
         >
-          {canOpenDetails && (
+          {canOpenDetails && (!isSubtask || isDetachedSubtask) && (
             <button
               type="button"
               className="task-card-action-btn"
@@ -666,25 +666,6 @@ export function TaskCard({
                 View details
               </span>
             </button>
-          )}
-
-          {isSubtask && !isDetachedSubtask && (
-            <>
-              <button
-                type="button"
-                className="task-card-action-btn"
-                aria-label={copyTooltip}
-                onClick={(event) => {
-                  stopCardPointer(event);
-                  void handleCopyTask();
-                }}
-              >
-                <CopyIcon className="task-card-action-icon" />
-                <span className="task-card-action-tooltip" role="tooltip">
-                  {copyTooltip}
-                </span>
-              </button>
-            </>
           )}
 
           <div className="task-action-menu">
@@ -701,6 +682,21 @@ export function TaskCard({
 
             {actionMenuOpen && (
               <div className="task-action-menu-panel" role="menu">
+                {canOpenDetails && isSubtask && !isDetachedSubtask && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="task-action-menu-item"
+                    onClick={() => {
+                      setActionMenuOpen(false);
+                      handleOpenDetails();
+                    }}
+                  >
+                    <EyeIcon />
+                    View details
+                  </button>
+                )}
+
                 <button
                   type="button"
                   role="menuitem"
@@ -709,6 +705,19 @@ export function TaskCard({
                 >
                   <PencilIcon />
                   Edit
+                </button>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="task-action-menu-item"
+                  onClick={() => {
+                    setActionMenuOpen(false);
+                    void handleCopyTask();
+                  }}
+                >
+                  <CopyIcon />
+                  {copyTooltip}
                 </button>
 
                 {canAddSubtask && (
@@ -777,7 +786,7 @@ export function TaskCard({
         >
           <div className="task-card-header">
             <h3>{task.title}</h3>
-            {checklistProgress && (
+            {task.status === 'qa_test' && checklistProgress && (
               <span className="task-qa-progress-badge">
                 QA {checklistProgress.done}/{checklistProgress.total}
               </span>
@@ -848,7 +857,7 @@ export function TaskCard({
           )}
         </motion.div>
 
-        {!compact && (!isSubtask || isDetachedSubtask) && (
+        {!compact && (!isSubtask || isDetachedSubtask) && resolvedOrganizationId && resolvedProjectId && (
           <div
             className="task-card-copy-actions"
             onPointerDown={stopCardPointer}
@@ -856,34 +865,18 @@ export function TaskCard({
           >
             <button
               type="button"
-              className="task-card-action-btn task-card-copy-btn"
-              aria-label={copyTooltip}
+              className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"
+              aria-label={smartCopyTooltip}
               onClick={(event) => {
                 stopCardPointer(event);
-                void handleCopyTask();
+                void handleSmartCopyTask();
               }}
             >
               <CopyIcon className="task-card-action-icon" />
               <span className="task-card-action-tooltip" role="tooltip">
-                {copyTooltip}
+                {smartCopyTooltip}
               </span>
             </button>
-            {resolvedOrganizationId && resolvedProjectId && (
-              <button
-                type="button"
-                className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"
-                aria-label={smartCopyTooltip}
-                onClick={(event) => {
-                  stopCardPointer(event);
-                  void handleSmartCopyTask();
-                }}
-              >
-                <CopyIcon className="task-card-action-icon" />
-                <span className="task-card-action-tooltip" role="tooltip">
-                  {smartCopyTooltip}
-                </span>
-              </button>
-            )}
           </div>
         )}
 
