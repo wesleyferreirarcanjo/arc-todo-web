@@ -31,16 +31,19 @@ export function parseColumnStatus(droppableId: string | null | undefined): TaskS
 
 interface UseTaskBoardDndOptions {
   getTaskStatus: (taskId: string) => TaskStatus | undefined;
+  getTaskIdsToMove?: (taskId: string) => string[];
   onMoveTask: (taskId: string, status: TaskStatus) => Promise<void>;
   onMoveError?: (taskId: string, error: unknown) => void;
 }
 
 export function useTaskBoardDnd({
   getTaskStatus,
+  getTaskIdsToMove,
   onMoveTask,
   onMoveError,
 }: UseTaskBoardDndOptions) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [activeDragIds, setActiveDragIds] = useState<Set<string>>(() => new Set());
   const [overColumnStatus, setOverColumnStatus] = useState<TaskStatus | null>(null);
 
   const sensors = useSensors(
@@ -50,9 +53,14 @@ export function useTaskBoardDnd({
     useSensor(KeyboardSensor),
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveTaskId(String(event.active.id));
-  }, []);
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const taskId = String(event.active.id);
+      setActiveTaskId(taskId);
+      setActiveDragIds(new Set(getTaskIdsToMove?.(taskId) ?? [taskId]));
+    },
+    [getTaskIdsToMove],
+  );
 
   const handleDragOver = useCallback((event: { over: DragEndEvent['over'] }) => {
     const status = parseColumnStatus(event.over?.id ? String(event.over.id) : null);
@@ -66,31 +74,39 @@ export function useTaskBoardDnd({
         event.over?.id ? String(event.over.id) : null,
       );
 
+      const taskIdsToMove = getTaskIdsToMove?.(taskId) ?? [taskId];
+
       setActiveTaskId(null);
+      setActiveDragIds(new Set());
       setOverColumnStatus(null);
 
       if (!destinationStatus) return;
 
-      const currentStatus = getTaskStatus(taskId);
-      if (!currentStatus || currentStatus === destinationStatus) return;
+      for (const id of taskIdsToMove) {
+        const currentStatus = getTaskStatus(id);
+        if (!currentStatus || currentStatus === destinationStatus) continue;
 
-      try {
-        await onMoveTask(taskId, destinationStatus);
-      } catch (error) {
-        onMoveError?.(taskId, error);
+        try {
+          await onMoveTask(id, destinationStatus);
+        } catch (error) {
+          onMoveError?.(id, error);
+          break;
+        }
       }
     },
-    [getTaskStatus, onMoveTask, onMoveError],
+    [getTaskStatus, getTaskIdsToMove, onMoveTask, onMoveError],
   );
 
   const handleDragCancel = useCallback(() => {
     setActiveTaskId(null);
+    setActiveDragIds(new Set());
     setOverColumnStatus(null);
   }, []);
 
   return useMemo(
     () => ({
       activeTaskId,
+      activeDragIds,
       overColumnStatus,
       sensors,
       handleDragStart,
@@ -100,6 +116,7 @@ export function useTaskBoardDnd({
     }),
     [
       activeTaskId,
+      activeDragIds,
       overColumnStatus,
       sensors,
       handleDragStart,

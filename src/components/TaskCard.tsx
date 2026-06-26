@@ -940,7 +940,7 @@ export function TaskCard({
                 accentColor={accentColor}
                 compact={false}
                 draggable
-                isDragging={draggingTaskId === subtask.id}
+                isDragging={draggingTaskId === subtask.id || draggingTaskId === task.id}
                 draggingTaskId={draggingTaskId}
                 chatContextScope={chatContextScope}
                 parentCandidates={parentCandidates}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../types/todo';
-import { attachSubtasks, listBoardColumnItems } from '../lib/tasks/taskTree';
+import { attachSubtasks, collectDescendantIds, listBoardColumnItems } from '../lib/tasks/taskTree';
 import { getFullBoardWidth } from '../lib/board/boardLayout';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import {
@@ -111,8 +111,14 @@ function TaskBoardInner({
     [taskById],
   );
 
+  const getTaskIdsToMove = useCallback(
+    (taskId: string) => collectDescendantIds(tasks, taskId),
+    [tasks],
+  );
+
   const {
     activeTaskId,
+    activeDragIds,
     overColumnStatus,
     sensors,
     handleDragStart,
@@ -121,6 +127,7 @@ function TaskBoardInner({
     handleDragCancel,
   } = useTaskBoardDnd({
     getTaskStatus,
+    getTaskIdsToMove,
     onMoveTask: async (taskId, status) => {
       const task = taskById.get(taskId);
       if (!task || task.status === status) return;
@@ -182,7 +189,7 @@ function TaskBoardInner({
                             accentColor={accentColor}
                             compact={isCompact}
                             draggable
-                            isDragging={activeTaskId === task.id}
+                            isDragging={activeDragIds.has(task.id)}
                             isMoving={movingTaskIds?.has(task.id)}
                             draggingTaskId={activeTaskId ?? undefined}
                             chatContextScope={
@@ -211,7 +218,7 @@ function TaskBoardInner({
                           accentColor={accentColor}
                           compact={isCompact}
                           draggable
-                          isDragging={activeTaskId === item.task.id}
+                          isDragging={activeDragIds.has(item.task.id)}
                           isMoving={movingTaskIds?.has(item.task.id)}
                           draggingTaskId={activeTaskId ?? undefined}
                           chatContextScope={
