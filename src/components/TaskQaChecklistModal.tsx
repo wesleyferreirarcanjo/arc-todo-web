@@ -98,52 +98,46 @@ export function TaskQaChecklistModal({
       {checklistItems.length === 0 ? (
         <p className="task-details-muted">No checklist items found.</p>
       ) : (
-        <div className="task-qa-checklist-table-wrap">
-          <table className="task-qa-checklist-table">
-            <thead>
-              <tr>
-                <th scope="col">OK</th>
-                <th scope="col">Verificação</th>
-                <th scope="col">Bug</th>
-              </tr>
-            </thead>
-            <tbody>
-              {checklistItems.map((item) => {
-                const isBugged = buggedIds.has(item.id);
-                const isSaving = savingItemId === item.id;
+        <div className="task-qa-checklist-panel">
+          <div className="task-qa-checklist-heading" aria-hidden="true">
+            <span>OK</span>
+            <span>Verificação</span>
+            <span>Bug</span>
+          </div>
+          <ul className="task-qa-checklist-items">
+            {checklistItems.map((item) => {
+              const isBugged = buggedIds.has(item.id);
+              const isSaving = savingItemId === item.id;
 
-                return (
-                  <tr
-                    key={item.id}
-                    className={isBugged ? 'is-bugged' : undefined}
+              return (
+                <li
+                  key={item.id}
+                  className={`task-qa-checklist-item${isBugged ? ' is-bugged' : ''}`}
+                >
+                  <label className="task-qa-checklist-check">
+                    <input
+                      type="checkbox"
+                      aria-label={`Marcar ${formatChecklistLabel(item.label)} como verificado`}
+                      checked={checkedIds.has(item.id)}
+                      disabled={isSaving}
+                      onChange={() => void handleToggleChecklistItem(item.id)}
+                    />
+                  </label>
+                  <p className="task-qa-checklist-label">
+                    {formatChecklistLabel(item.label)}
+                  </p>
+                  <button
+                    type="button"
+                    className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
+                    disabled={isSaving}
+                    onClick={() => void handleToggleItemBug(item)}
                   >
-                    <td className="task-qa-checklist-col-ok">
-                      <input
-                        type="checkbox"
-                        aria-label={`Marcar ${formatChecklistLabel(item.label)} como verificado`}
-                        checked={checkedIds.has(item.id)}
-                        disabled={isSaving}
-                        onChange={() => void handleToggleChecklistItem(item.id)}
-                      />
-                    </td>
-                    <td className="task-qa-checklist-col-label">
-                      {formatChecklistLabel(item.label)}
-                    </td>
-                    <td className="task-qa-checklist-col-bug">
-                      <button
-                        type="button"
-                        className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
-                        disabled={isSaving}
-                        onClick={() => void handleToggleItemBug(item)}
-                      >
-                        {isBugged ? 'Remover bug' : 'Marcar bug'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    {isBugged ? 'Remover' : 'Bug'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </Modal>
