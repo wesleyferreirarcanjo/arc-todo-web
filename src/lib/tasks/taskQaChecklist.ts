@@ -76,6 +76,27 @@ export function computeQaChecklistProgress(
   return { done, total: items.length };
 }
 
+export function buildChecklistTaskUpdate(
+  state: QaChecklistState,
+  items: QaChecklistItem[],
+): { isBug: boolean; bugReason: string | null } {
+  if (state.buggedItemIds.length === 0) {
+    return { isBug: false, bugReason: null };
+  }
+
+  const labelsById = new Map(
+    items.map((item) => [item.id, formatChecklistLabel(item.label)]),
+  );
+  const reasons = state.buggedItemIds
+    .map((itemId) => labelsById.get(itemId))
+    .filter((label): label is string => Boolean(label));
+
+  return {
+    isBug: true,
+    bugReason: reasons.length > 0 ? reasons.join('; ') : null,
+  };
+}
+
 export function toggleChecklistItemBug(
   state: QaChecklistState,
   itemId: string,

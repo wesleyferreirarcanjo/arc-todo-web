@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildChecklistTaskUpdate,
   computeQaChecklistProgress,
   formatChecklistLabel,
   normalizeQaChecklistState,
@@ -46,6 +47,25 @@ describe('taskQaChecklist', () => {
     expect(formatChecklistLabel('Verify **QA TEST** status')).toBe(
       'Verify QA TEST status',
     );
+  });
+
+  it('builds task bug payload from multiple bugged checklist items', () => {
+    const items = parseQaChecklistItems('- [ ] First\n- [ ] Second');
+    expect(
+      buildChecklistTaskUpdate(
+        { checkedItemIds: [], buggedItemIds: ['item-0', 'item-1'] },
+        items,
+      ),
+    ).toEqual({
+      isBug: true,
+      bugReason: 'First; Second',
+    });
+    expect(
+      buildChecklistTaskUpdate({ checkedItemIds: [], buggedItemIds: [] }, items),
+    ).toEqual({
+      isBug: false,
+      bugReason: null,
+    });
   });
 
   it('toggles checklist item bug state and task bug payload', () => {
