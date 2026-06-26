@@ -575,7 +575,7 @@ export function TaskCard({
         }}
         {...draggableProps}
       >
-        {task.displayId && (
+        {task.displayId && isSubtask && !isDetachedSubtask && (
           <span className="task-display-id" title={task.displayId}>
             {task.displayId}
           </span>
@@ -584,6 +584,11 @@ export function TaskCard({
         {(!isSubtask || isDetachedSubtask) && (
           <div className="task-context-badges">
             <div className="task-context-badges-main">
+              {task.displayId && (
+                <span className="task-display-id" title={task.displayId}>
+                  {task.displayId}
+                </span>
+              )}
               {organizationName && (
                 <span className="task-badge task-badge-org" title={organizationName}>
                   {formatBadgeLabel(organizationName)}
@@ -603,13 +608,15 @@ export function TaskCard({
                 </span>
               )}
             </div>
-            {task.isBug && <span className="task-bug-badge">Bug</span>}
-            <span className={`category-badge category-${task.category ?? 'other'}`}>
-              {formatTaskCategoryLabel(task.category ?? 'other')}
-            </span>
-            <span className={`criticity-badge criticity-${task.criticity}`}>
-              {task.criticity}
-            </span>
+            <div className="task-context-badges-meta">
+              {task.isBug && <span className="task-bug-badge">Bug</span>}
+              <span className={`category-badge category-${task.category ?? 'other'}`}>
+                {formatTaskCategoryLabel(task.category ?? 'other')}
+              </span>
+              <span className={`criticity-badge criticity-${task.criticity}`}>
+                {task.criticity}
+              </span>
+            </div>
           </div>
         )}
 
