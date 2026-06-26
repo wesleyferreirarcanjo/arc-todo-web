@@ -180,6 +180,25 @@ function EyeIcon({ className = 'task-menu-item-icon' }: { className?: string }) 
   );
 }
 
+function QaBoardIcon({ className = 'task-menu-item-icon' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 11l2 2 4-4" />
+      <path d="M9 17h6" />
+      <path d="M8 3h8l2 2v16H6V5l2-2Z" />
+    </svg>
+  );
+}
+
 interface TaskCardProps {
   task: Task;
   subtasks?: Task[];
@@ -549,6 +568,7 @@ export function TaskCard({
 
   const showAsDragging = isDragging || isDndDragging;
   const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
+  const qaProgress = task.status === 'qa_test' ? checklistProgress : null;
 
   return (
     <>
@@ -786,11 +806,6 @@ export function TaskCard({
         >
           <div className="task-card-header">
             <h3>{task.title}</h3>
-            {task.status === 'qa_test' && checklistProgress && (
-              <span className="task-qa-progress-badge">
-                QA {checklistProgress.done}/{checklistProgress.total}
-              </span>
-            )}
             {isSubtask && !isDetachedSubtask && subtaskProgress && (
               <span
                 className="subtask-progress-badge"
@@ -863,6 +878,27 @@ export function TaskCard({
             onPointerDown={stopCardPointer}
             onClick={stopCardPointer}
           >
+            {qaProgress && (
+              <span className="task-qa-progress-badge">
+                QA {qaProgress.done}/{qaProgress.total}
+              </span>
+            )}
+            {qaProgress && canOpenDetails && (
+              <button
+                type="button"
+                className="task-card-action-btn task-card-qa-board-btn"
+                aria-label="Open QA task board"
+                onClick={(event) => {
+                  stopCardPointer(event);
+                  handleOpenDetails();
+                }}
+              >
+                <QaBoardIcon className="task-card-action-icon" />
+                <span className="task-card-action-tooltip" role="tooltip">
+                  Open QA task board
+                </span>
+              </button>
+            )}
             <button
               type="button"
               className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"

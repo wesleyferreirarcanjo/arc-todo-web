@@ -3201,6 +3201,11 @@ textarea {
   stroke: #d4a57a;
 }
 
+.task-card-action-btn.task-card-qa-board-btn .task-card-action-icon {
+  color: var(--accent);
+  stroke: var(--accent);
+}
+
 .task-details-copy-group {
   display: inline-flex;
   align-items: center;
@@ -6164,8 +6169,10 @@ textarea {
 }
 
 .task-qa-progress-badge {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
   background: var(--bg-elevated);
