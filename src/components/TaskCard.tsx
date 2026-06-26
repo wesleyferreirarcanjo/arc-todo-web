@@ -363,6 +363,24 @@ export function TaskCard({
     setDetailsModalOpen(true);
   }
 
+  function handleCardDoubleClick(event: ReactMouseEvent<HTMLElement>) {
+    if (!canOpenDetails) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        'button, a, input, select, textarea, label, [role="menu"], .task-card-actions, .task-card-copy-actions',
+      )
+    ) {
+      return;
+    }
+
+    event.stopPropagation();
+    handleOpenDetails();
+  }
+
   async function handleCopyTask() {
     try {
       await copyTaskToClipboard(task, isSubtask ? undefined : resolvedSubtasks);
@@ -572,6 +590,13 @@ export function TaskCard({
   const showAsDragging = isDragging || isDndDragging;
   const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
   const qaProgress = task.status === 'qa_test' ? checklistProgress : null;
+  const showSmartCopy =
+    (task.status === 'qa_test' || task.status === 'done') &&
+    Boolean(resolvedOrganizationId && resolvedProjectId);
+  const showCopyActions =
+    !compact &&
+    (!isSubtask || isDetachedSubtask) &&
+    (Boolean(qaProgress) || showSmartCopy);
 
   return (
     <>
@@ -596,6 +621,7 @@ export function TaskCard({
           layout: animateStatusMove ? base : { duration: 0 },
           default: base,
         }}
+        onDoubleClick={handleCardDoubleClick}
         {...draggableProps}
       >
         {task.displayId && isSubtask && !isDetachedSubtask && (
@@ -875,7 +901,7 @@ export function TaskCard({
           )}
         </motion.div>
 
-        {!compact && (!isSubtask || isDetachedSubtask) && resolvedOrganizationId && resolvedProjectId && (
+        {showCopyActions && (
           <div
             className="task-card-copy-actions"
             onPointerDown={stopCardPointer}
@@ -902,20 +928,22 @@ export function TaskCard({
                 </span>
               </button>
             )}
-            <button
-              type="button"
-              className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"
-              aria-label={smartCopyTooltip}
-              onClick={(event) => {
-                stopCardPointer(event);
-                void handleSmartCopyTask();
-              }}
-            >
-              <CopyIcon className="task-card-action-icon" />
-              <span className="task-card-action-tooltip" role="tooltip">
-                {smartCopyTooltip}
-              </span>
-            </button>
+            {showSmartCopy && (
+              <button
+                type="button"
+                className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"
+                aria-label={smartCopyTooltip}
+                onClick={(event) => {
+                  stopCardPointer(event);
+                  void handleSmartCopyTask();
+                }}
+              >
+                <CopyIcon className="task-card-action-icon" />
+                <span className="task-card-action-tooltip" role="tooltip">
+                  {smartCopyTooltip}
+                </span>
+              </button>
+            )}
           </div>
         )}
 

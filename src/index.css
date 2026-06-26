@@ -6244,7 +6244,7 @@ textarea {
 
 .task-qa-checklist-item {
   min-height: 3rem;
-  padding: 0.55rem 0.7rem;
+  padding: 0.55rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-elevated) 54%, transparent);
@@ -6257,9 +6257,18 @@ textarea {
 
 .task-qa-checklist-check {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
-  justify-content: center;
+  align-self: start;
+  justify-content: flex-start;
+  gap: 0;
+  margin-top: 0;
   padding-top: 0.12rem;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  color: inherit;
 }
 
 .task-qa-checklist-check input {
