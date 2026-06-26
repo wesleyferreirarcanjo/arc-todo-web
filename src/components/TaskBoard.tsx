@@ -3,6 +3,11 @@ import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../types/todo';
 import { attachSubtasks, collectDescendantIds, listBoardColumnItems } from '../lib/tasks/taskTree';
+import {
+  getHiddenBoardColumnCount,
+  getVisibleBoardColumnItems,
+  useExpandedBoardColumns,
+} from '../lib/board/boardColumnLimit';
 import { getFullBoardWidth } from '../lib/board/boardLayout';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import {
@@ -15,6 +20,7 @@ import {
   type StatusColumn,
 } from '../lib/tasks/taskStatus';
 import { BoardColumn } from './BoardColumn';
+import { BoardColumnShowMore } from './BoardColumnShowMore';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
 interface TaskBoardProps {
@@ -63,6 +69,7 @@ function TaskBoardInner({
   onToggleColumnVisibility,
 }: TaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
+  const { expandedColumns, expandColumn } = useExpandedBoardColumns();
   const scrollRef = useRef<HTMLDivElement>(null);
   const columns = useMemo(
     () => getVisibleStatusColumns(hiddenColumns),
@@ -152,6 +159,16 @@ function TaskBoardInner({
           <div className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}>
             {columns.map((column) => {
               const columnItems = listBoardColumnItems(boardTasks, column.status);
+              const visibleItems = getVisibleBoardColumnItems(
+                columnItems,
+                column.status,
+                expandedColumns,
+              );
+              const hiddenCount = getHiddenBoardColumnCount(
+                columnItems.length,
+                column.status,
+                expandedColumns,
+              );
               const isFocused = focusMode && focusedStatus === column.status;
               const isCompact = focusMode && !isFocused;
 
@@ -176,7 +193,7 @@ function TaskBoardInner({
                   {columnItems.length === 0 ? (
                     <p className="empty-column">No tasks here yet.</p>
                   ) : (
-                    columnItems.map((item) => {
+                    visibleItems.map((item) => {
                       if (item.kind === 'parent') {
                         const task = item.task;
                         return (
@@ -234,6 +251,10 @@ function TaskBoardInner({
                       );
                     })
                   )}
+                  <BoardColumnShowMore
+                    hiddenCount={hiddenCount}
+                    onShowMore={() => expandColumn(column.status)}
+                  />
                 </BoardColumn>
               );
             })}
