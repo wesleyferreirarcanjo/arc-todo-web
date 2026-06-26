@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
-import { createOrganization } from '../lib/api/organizations';
+import { useCallback, useEffect, useState } from 'react';
+import { createOrganization, fetchCurrentMembership } from '../lib/api/organizations';
 import { OrganizationForm } from '../components/OrganizationForm';
 import { OrganizationList } from '../components/OrganizationList';
 import { useWorkspace } from '../context/WorkspaceContext';
-import type { CreateOrganizationInput } from '../types/organization';
+import type { CreateOrganizationInput, OrganizationRole } from '../types/organization';
 
 export function OrganizationsPage() {
   const {
@@ -11,6 +11,36 @@ export function OrganizationsPage() {
     loadingOrganizations,
     refreshOrganizations,
   } = useWorkspace();
+  const [roleByOrgId, setRoleByOrgId] = useState<
+    Record<string, OrganizationRole>
+  >({});
+
+  useEffect(() => {
+    if (organizations.length === 0) {
+      setRoleByOrgId({});
+      return;
+    }
+
+    let cancelled = false;
+    void Promise.all(
+      organizations.map(async (organization) => {
+        const membership = await fetchCurrentMembership(organization.id);
+        return [organization.id, membership.role] as const;
+      }),
+    )
+      .then((entries) => {
+        if (!cancelled) {
+          setRoleByOrgId(Object.fromEntries(entries));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRoleByOrgId({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [organizations]);
 
   const handleCreate = useCallback(
     async (input: CreateOrganizationInput) => {
@@ -78,6 +108,7 @@ export function OrganizationsPage() {
         {!loadingOrganizations && organizationCount > 0 && (
           <OrganizationList
             organizations={organizations}
+            roleByOrgId={roleByOrgId}
             onUpdated={handleUpdated}
           />
         )}

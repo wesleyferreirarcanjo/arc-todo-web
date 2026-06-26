@@ -78,14 +78,16 @@ export function AllTasksBoardPage() {
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
+  const createdByMe = searchParams.get('createdByMe') === 'true';
   const projectFocus = Boolean(organizationId && projectId);
 
   const query = useMemo<ListTasksQuery>(
     () => ({
       organizationId,
       projectId,
+      createdByMe: createdByMe || undefined,
     }),
-    [organizationId, projectId],
+    [organizationId, projectId, createdByMe],
   );
 
   const hasFilters = Boolean(organizationId || projectId);
@@ -165,7 +167,11 @@ export function AllTasksBoardPage() {
     }
   }, [organizationId, refreshProjects]);
 
-  function updateFilters(nextOrgId?: string, nextProjectId?: string) {
+  function updateFilters(
+    nextOrgId?: string,
+    nextProjectId?: string,
+    nextCreatedByMe?: boolean,
+  ) {
     const params = new URLSearchParams();
     if (nextOrgId) {
       params.set('organizationId', nextOrgId);
@@ -175,14 +181,21 @@ export function AllTasksBoardPage() {
       params.set('projectId', nextProjectId);
       setLastProjectId(nextProjectId);
     }
+    const myTasks =
+      nextCreatedByMe !== undefined ? nextCreatedByMe : createdByMe;
+    if (myTasks) {
+      params.set('createdByMe', 'true');
+    }
     setSearchParams(params);
   }
 
   function handleOrganizationChange(nextOrgId: string) {
     if (nextOrgId) {
-      updateFilters(nextOrgId);
+      updateFilters(nextOrgId, undefined);
     } else {
-      setSearchParams(new URLSearchParams());
+      const params = new URLSearchParams();
+      if (createdByMe) params.set('createdByMe', 'true');
+      setSearchParams(params);
     }
   }
 
@@ -192,6 +205,10 @@ export function AllTasksBoardPage() {
     } else if (organizationId) {
       updateFilters(organizationId);
     }
+  }
+
+  function handleCreatedByMeChange(enabled: boolean) {
+    updateFilters(organizationId, projectId, enabled);
   }
 
   async function handleAdvanceCycle() {
@@ -485,11 +502,26 @@ export function AllTasksBoardPage() {
           />
         </label>
 
+        {!projectFocus && (
+          <label className="board-filter-field board-filter-checkbox">
+            <input
+              type="checkbox"
+              checked={createdByMe}
+              onChange={(event) => handleCreatedByMeChange(event.target.checked)}
+            />
+            My tasks
+          </label>
+        )}
+
         {hasFilters && (
           <button
             type="button"
             className="btn btn-secondary board-filter-clear"
-            onClick={() => setSearchParams(new URLSearchParams())}
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (createdByMe) params.set('createdByMe', 'true');
+              setSearchParams(params);
+            }}
           >
             Clear focus
           </button>

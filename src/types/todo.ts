@@ -89,6 +89,7 @@ export interface ListTasksQuery {
   category?: TaskCategory;
   parentTaskId?: string;
   isBug?: boolean;
+  createdByMe?: boolean;
 }
 
 export interface CreateTaskInput {

@@ -23,6 +23,7 @@ function buildTasksQueryString(query?: ListTasksQuery): string {
   if (query.category) params.set('category', query.category);
   if (query.parentTaskId) params.set('parentTaskId', query.parentTaskId);
   if (query.isBug) params.set('isBug', 'true');
+  if (query.createdByMe) params.set('createdByMe', 'true');
 
   const qs = params.toString();
   return qs ? `?${qs}` : '';

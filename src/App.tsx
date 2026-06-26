@@ -15,6 +15,8 @@ import { McpToolsSettingsPage } from './pages/McpToolsSettingsPage';
 import { RagChunksPage } from './pages/RagChunksPage';
 import { RagSettingsPage } from './pages/RagSettingsPage';
 import { RagTestingPage } from './pages/RagTestingPage';
+import { OrganizationActivityPage } from './pages/OrganizationActivityPage';
+import { OrganizationMembersPage } from './pages/OrganizationMembersPage';
 import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
 import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
 import { OrganizationProjectsPage } from './pages/OrganizationProjectsPage';
@@ -82,6 +84,14 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId"
                   element={<OrganizationProjectsPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/activity"
+                  element={<OrganizationActivityPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/members"
+                  element={<OrganizationMembersPage />}
                 />
                 <Route
                   path="/organizations/:orgId/knowledge"

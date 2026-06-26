@@ -41,3 +41,13 @@ export interface AddOrganizationMemberInput {
 export interface UpdateOrganizationMemberInput {
   role: OrganizationRole;
 }
+
+export interface CreateOrganizationUserInput {
+  username: string;
+  password: string;
+  role?: OrganizationRole;
+}
+
+export interface OrganizationMembership {
+  role: OrganizationRole;
+}

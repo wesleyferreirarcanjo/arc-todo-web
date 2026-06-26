@@ -2,8 +2,10 @@ import { apiRequest } from './client';
 import type {
   AddOrganizationMemberInput,
   CreateOrganizationInput,
+  CreateOrganizationUserInput,
   Organization,
   OrganizationMember,
+  OrganizationMembership,
   UpdateOrganizationInput,
   UpdateOrganizationMemberInput,
 } from '../../types/organization';
@@ -45,6 +47,24 @@ export function fetchOrganizationMembers(
   orgId: string,
 ): Promise<OrganizationMember[]> {
   return apiRequest<OrganizationMember[]>(`/organizations/${orgId}/members`);
+}
+
+export function fetchCurrentMembership(
+  orgId: string,
+): Promise<OrganizationMembership> {
+  return apiRequest<OrganizationMembership>(
+    `/organizations/${orgId}/membership`,
+  );
+}
+
+export function createOrganizationUser(
+  orgId: string,
+  input: CreateOrganizationUserInput,
+): Promise<OrganizationMember> {
+  return apiRequest<OrganizationMember>(`/organizations/${orgId}/users`, {
+    method: 'POST',
+    body: input,
+  });
 }
 
 export function addOrganizationMember(

@@ -53,6 +53,12 @@ export function OrganizationProjectsPage() {
           Manage projects for this organization. Open tasks or edit project details.
         </p>
         <div className="page-links">
+          <Link to={`/organizations/${orgId}/members`} className="text-link">
+            Members
+          </Link>
+          <Link to={`/organizations/${orgId}/activity`} className="text-link">
+            Activity log
+          </Link>
           <Link to={`/organizations/${orgId}/knowledge`} className="text-link">
             Organization knowledge
           </Link>
