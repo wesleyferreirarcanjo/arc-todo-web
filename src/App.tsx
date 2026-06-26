@@ -2,8 +2,10 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
+import { AdminRoute } from './components/AdminRoute';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
@@ -16,7 +18,6 @@ import { RagChunksPage } from './pages/RagChunksPage';
 import { RagSettingsPage } from './pages/RagSettingsPage';
 import { RagTestingPage } from './pages/RagTestingPage';
 import { OrganizationActivityPage } from './pages/OrganizationActivityPage';
-import { OrganizationMembersPage } from './pages/OrganizationMembersPage';
 import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
 import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
 import { OrganizationProjectsPage } from './pages/OrganizationProjectsPage';
@@ -49,38 +50,41 @@ export default function App() {
                   element={<GeneralPersonKnowledgePage />}
                 />
                 <Route path="/organizations" element={<OrganizationsPage />} />
-                <Route
-                  path="/settings/chatbot"
-                  element={<ChatbotSettingsPage />}
-                />
-                <Route
-                  path="/settings/chatbot/testing"
-                  element={<ChatbotTestingPage />}
-                />
-                <Route
-                  path="/settings/mcp-tools"
-                  element={<McpToolsSettingsPage />}
-                />
-                <Route
-                  path="/settings/rag/settings"
-                  element={<RagSettingsPage />}
-                />
-                <Route
-                  path="/settings/rag/tokens"
-                  element={<Navigate to="/settings/rag/testing" replace />}
-                />
-                <Route
-                  path="/settings/rag/chunks"
-                  element={<RagChunksPage />}
-                />
-                <Route
-                  path="/settings/rag/testing"
-                  element={<RagTestingPage />}
-                />
-                <Route
-                  path="/settings/rag"
-                  element={<Navigate to="/settings/rag/settings" replace />}
-                />
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route
+                    path="/settings/chatbot"
+                    element={<ChatbotSettingsPage />}
+                  />
+                  <Route
+                    path="/settings/chatbot/testing"
+                    element={<ChatbotTestingPage />}
+                  />
+                  <Route
+                    path="/settings/mcp-tools"
+                    element={<McpToolsSettingsPage />}
+                  />
+                  <Route
+                    path="/settings/rag/settings"
+                    element={<RagSettingsPage />}
+                  />
+                  <Route
+                    path="/settings/rag/tokens"
+                    element={<Navigate to="/settings/rag/testing" replace />}
+                  />
+                  <Route
+                    path="/settings/rag/chunks"
+                    element={<RagChunksPage />}
+                  />
+                  <Route
+                    path="/settings/rag/testing"
+                    element={<RagTestingPage />}
+                  />
+                  <Route
+                    path="/settings/rag"
+                    element={<Navigate to="/settings/rag/settings" replace />}
+                  />
+                </Route>
                 <Route
                   path="/organizations/:orgId"
                   element={<OrganizationProjectsPage />}
@@ -88,10 +92,6 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/activity"
                   element={<OrganizationActivityPage />}
-                />
-                <Route
-                  path="/organizations/:orgId/members"
-                  element={<OrganizationMembersPage />}
                 />
                 <Route
                   path="/organizations/:orgId/knowledge"

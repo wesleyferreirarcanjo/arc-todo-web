@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { fetchOrganizationActivity } from '../lib/api/activity';
-import { fetchOrganizationMembers } from '../lib/api/organizations';
 import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { UserActivityEntry } from '../types/activity';
-import type { OrganizationMember } from '../types/organization';
 
 function formatTimestamp(value: string): string {
   return new Date(value).toLocaleString();
@@ -15,21 +13,23 @@ export function OrganizationActivityPage() {
   const { orgId } = useParams();
   const { currentOrganization } = useWorkspace();
   const [activity, setActivity] = useState<UserActivityEntry[]>([]);
-  const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [filterUserId, setFilterUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const memberOptions = useMemo(
-    () => [
-      { value: '', label: 'All members' },
-      ...members.map((member) => ({
-        value: member.userId,
-        label: member.user?.username ?? member.userId,
+  const memberOptions = useMemo(() => {
+    const actors = new Map<string, string>();
+    for (const entry of activity) {
+      actors.set(entry.actorUserId, entry.actorUsername);
+    }
+    return [
+      { value: '', label: 'All users' },
+      ...[...actors.entries()].map(([userId, username]) => ({
+        value: userId,
+        label: username,
       })),
-    ],
-    [members],
-  );
+    ];
+  }, [activity]);
 
   const loadActivity = useCallback(async () => {
     if (!orgId) return;
@@ -37,15 +37,11 @@ export function OrganizationActivityPage() {
     setLoading(true);
     setError(null);
     try {
-      const [entries, memberList] = await Promise.all([
-        fetchOrganizationActivity(orgId, {
-          userId: filterUserId || undefined,
-          limit: 100,
-        }),
-        fetchOrganizationMembers(orgId),
-      ]);
+      const entries = await fetchOrganizationActivity(orgId, {
+        userId: filterUserId || undefined,
+        limit: 100,
+      });
       setActivity(entries);
-      setMembers(memberList);
     } catch {
       setError('Failed to load activity or access denied.');
     } finally {
@@ -66,20 +62,17 @@ export function OrganizationActivityPage() {
       <header className="page-header">
         <h2>{currentOrganization?.name ?? 'Organization'} activity</h2>
         <p className="page-subtitle">
-          Recent actions by members across tasks, users, and knowledge.
+          Recent actions by users across tasks, knowledge, and project work.
         </p>
         <div className="page-links">
           <Link to={`/organizations/${orgId}`} className="text-link">
             Back to projects
           </Link>
-          <Link to={`/organizations/${orgId}/members`} className="text-link">
-            Members
-          </Link>
         </div>
       </header>
 
       <label className="board-filter-field">
-        Filter by member
+        Filter by user
         <Select
           value={filterUserId}
           onChange={setFilterUserId}

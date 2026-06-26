@@ -13,17 +13,25 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export function getStoredUser(): { id: string; username: string } | null {
+import type { User } from '../../types/auth';
+
+export function getStoredUser(): User | null {
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Partial<User>;
+    if (!parsed.id || !parsed.username) return null;
+    return {
+      id: parsed.id,
+      username: parsed.username,
+      isAdmin: parsed.isAdmin ?? false,
+    };
   } catch {
     return null;
   }
 }
 
-export function setStoredUser(user: { id: string; username: string }): void {
+export function setStoredUser(user: User): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 

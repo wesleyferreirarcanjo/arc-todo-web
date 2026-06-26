@@ -3,11 +3,13 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
+import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreateProjectInput } from '../types/project';
 
 export function OrganizationProjectsPage() {
   const { orgId } = useParams();
+  const { isAdmin } = useAuth();
   const {
     currentOrganization,
     projects,
@@ -53,9 +55,6 @@ export function OrganizationProjectsPage() {
           Manage projects for this organization. Open tasks or edit project details.
         </p>
         <div className="page-links">
-          <Link to={`/organizations/${orgId}/members`} className="text-link">
-            Members
-          </Link>
           <Link to={`/organizations/${orgId}/activity`} className="text-link">
             Activity log
           </Link>
@@ -68,18 +67,24 @@ export function OrganizationProjectsPage() {
         </div>
       </header>
 
-      <ProjectForm onSubmit={handleCreate} />
+      {isAdmin && <ProjectForm onSubmit={handleCreate} />}
 
       {loadingProjects && <p className="status-message">Loading projects...</p>}
 
       {!loadingProjects && projects.length === 0 && (
         <p className="status-message">
-          No projects yet. Create your first one above.
+          {isAdmin
+            ? 'No projects yet. Create your first one above.'
+            : 'No projects assigned in this organization yet.'}
         </p>
       )}
 
       {!loadingProjects && projects.length > 0 && (
-        <ProjectList projects={projects} onUpdated={handleUpdated} />
+        <ProjectList
+          projects={projects}
+          canManage={isAdmin}
+          onUpdated={handleUpdated}
+        />
       )}
     </div>
   );

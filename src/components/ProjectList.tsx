@@ -6,10 +6,11 @@ import type { Project, UpdateProjectInput } from '../types/project';
 
 interface ProjectListProps {
   projects: Project[];
+  canManage?: boolean;
   onUpdated?: () => Promise<void>;
 }
 
-export function ProjectList({ projects, onUpdated }: ProjectListProps) {
+export function ProjectList({ projects, canManage = false, onUpdated }: ProjectListProps) {
   const navigate = useNavigate();
   const { orgId } = useParams();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -193,22 +194,26 @@ export function ProjectList({ projects, onUpdated }: ProjectListProps) {
                   >
                     Open tasks
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={isDeleting}
-                    onClick={() => handleStartEdit(project)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    disabled={isDeleting}
-                    onClick={() => void handleDelete(project)}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </button>
+                  {canManage && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={isDeleting}
+                      onClick={() => handleStartEdit(project)}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {canManage && (
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      disabled={isDeleting}
+                      onClick={() => void handleDelete(project)}
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete'}
+                    </button>
+                  )}
                 </div>
               </>
             )}

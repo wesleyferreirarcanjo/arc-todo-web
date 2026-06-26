@@ -2,11 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
 import { login as loginRequest } from '../lib/api/auth';
+import { fetchMe } from '../lib/api/users';
 import {
   clearAuth,
   getStoredUser,
@@ -20,6 +22,7 @@ import type { LoginInput, User } from '../types/auth';
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (input: LoginInput) => Promise<void>;
   logout: () => void;
 }
@@ -32,6 +35,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = getStoredUser();
     return token && storedUser ? storedUser : null;
   });
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    void fetchMe()
+      .then((me) => {
+        setStoredUser(me);
+        setUser(me);
+      })
+      .catch(() => {});
+  }, []);
 
   const login = useCallback(async (input: LoginInput) => {
     const response = await loginRequest(input);
@@ -50,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isAuthenticated: !!user,
+      isAdmin: user?.isAdmin ?? false,
       login,
       logout,
     }),

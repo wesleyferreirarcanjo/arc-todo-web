@@ -1,46 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
-import { createOrganization, fetchCurrentMembership } from '../lib/api/organizations';
+import { useCallback } from 'react';
+import { createOrganization } from '../lib/api/organizations';
 import { OrganizationForm } from '../components/OrganizationForm';
 import { OrganizationList } from '../components/OrganizationList';
+import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
-import type { CreateOrganizationInput, OrganizationRole } from '../types/organization';
+import type { CreateOrganizationInput } from '../types/organization';
 
 export function OrganizationsPage() {
+  const { isAdmin } = useAuth();
   const {
     organizations,
     loadingOrganizations,
     refreshOrganizations,
   } = useWorkspace();
-  const [roleByOrgId, setRoleByOrgId] = useState<
-    Record<string, OrganizationRole>
-  >({});
-
-  useEffect(() => {
-    if (organizations.length === 0) {
-      setRoleByOrgId({});
-      return;
-    }
-
-    let cancelled = false;
-    void Promise.all(
-      organizations.map(async (organization) => {
-        const membership = await fetchCurrentMembership(organization.id);
-        return [organization.id, membership.role] as const;
-      }),
-    )
-      .then((entries) => {
-        if (!cancelled) {
-          setRoleByOrgId(Object.fromEntries(entries));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setRoleByOrgId({});
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [organizations]);
 
   const handleCreate = useCallback(
     async (input: CreateOrganizationInput) => {
@@ -65,12 +37,14 @@ export function OrganizationsPage() {
         </p>
       </header>
 
-      <section
-        className="organizations-create-section"
-        aria-labelledby="organizations-create-heading"
-      >
-        <OrganizationForm onSubmit={handleCreate} />
-      </section>
+      {isAdmin && (
+        <section
+          className="organizations-create-section"
+          aria-labelledby="organizations-create-heading"
+        >
+          <OrganizationForm onSubmit={handleCreate} />
+        </section>
+      )}
 
       <section
         className="organizations-list-section"
@@ -99,8 +73,9 @@ export function OrganizationsPage() {
           <div className="organizations-state-card">
             <p className="organizations-state-title">No organizations yet</p>
             <p className="organizations-state-detail">
-              Create your first workspace above to group projects, people, and
-              knowledge.
+              {isAdmin
+                ? 'Create your first workspace above to group projects, people, and knowledge.'
+                : 'An admin can assign you to projects in an organization.'}
             </p>
           </div>
         )}
@@ -108,7 +83,7 @@ export function OrganizationsPage() {
         {!loadingOrganizations && organizationCount > 0 && (
           <OrganizationList
             organizations={organizations}
-            roleByOrgId={roleByOrgId}
+            canManage={isAdmin}
             onUpdated={handleUpdated}
           />
         )}
