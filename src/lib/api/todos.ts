@@ -1,10 +1,11 @@
-import { apiRequest } from './client';
+import { apiRequest, apiDownload, apiUpload } from './client';
 import type {
   CreateTaskCommentInput,
   CreateTaskInput,
   ListTasksQuery,
   Task,
   TaskComment,
+  TaskEvidence,
   TaskHistoryEntry,
   TaskResolveResponse,
   TaskWithContext,
@@ -21,6 +22,7 @@ function buildTasksQueryString(query?: ListTasksQuery): string {
   if (query.criticity) params.set('criticity', query.criticity);
   if (query.category) params.set('category', query.category);
   if (query.parentTaskId) params.set('parentTaskId', query.parentTaskId);
+  if (query.isBug) params.set('isBug', 'true');
 
   const qs = params.toString();
   return qs ? `?${qs}` : '';
@@ -120,5 +122,52 @@ export function fetchTaskHistory(
 ): Promise<TaskHistoryEntry[]> {
   return apiRequest<TaskHistoryEntry[]>(
     `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/history`,
+  );
+}
+
+export function fetchTaskEvidence(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+): Promise<TaskEvidence[]> {
+  return apiRequest<TaskEvidence[]>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/evidence`,
+  );
+}
+
+export function uploadTaskEvidence(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  file: File,
+): Promise<TaskEvidence> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiUpload<TaskEvidence>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/evidence`,
+    formData,
+  );
+}
+
+export function downloadTaskEvidence(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  evidenceId: string,
+): Promise<{ blob: Blob; filename: string }> {
+  return apiDownload(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/evidence/${evidenceId}/download`,
+  );
+}
+
+export function deleteTaskEvidence(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  evidenceId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/evidence/${evidenceId}`,
+    { method: 'DELETE' },
   );
 }

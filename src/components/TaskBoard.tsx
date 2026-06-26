@@ -24,7 +24,7 @@ interface TaskBoardProps {
   accentColor?: string;
   organizationId?: string;
   projectId?: string;
-  onUpdate: (id: string, input: Partial<UpdateTaskInput>) => Promise<void>;
+  onUpdate: (id: string, input: Partial<UpdateTaskInput>, replaced?: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;

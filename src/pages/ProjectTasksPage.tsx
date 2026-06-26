@@ -61,10 +61,17 @@ export function ProjectTasksPage() {
   async function handleUpdate(
     id: string,
     input: Partial<UpdateTaskInput>,
+    replaced?: Task,
   ) {
     if (!orgId || !projectId) return;
-    const updated = await updateProjectTask(orgId, projectId, id, input);
-    if (input.status !== undefined || input.parentTaskId !== undefined) {
+    const updated =
+      replaced ?? (await updateProjectTask(orgId, projectId, id, input));
+    if (
+      input.status !== undefined ||
+      input.parentTaskId !== undefined ||
+      input.isBug !== undefined ||
+      replaced?.isBug !== undefined
+    ) {
       await loadTasks();
       return;
     }

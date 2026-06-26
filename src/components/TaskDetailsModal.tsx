@@ -11,6 +11,7 @@ import {
 } from '../lib/api/todos';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { Modal } from './Modal';
+import { TaskQaSection } from './TaskQaSection';
 
 function CopyIcon({ className = 'task-copy-icon' }: { className?: string }) {
   return (
@@ -41,6 +42,7 @@ interface TaskDetailsModalProps {
   parentDisplayId?: string;
   subtasks?: Task[];
   onEdit: () => void;
+  onTaskSynced?: (task: Task) => void;
 }
 
 const historyFieldLabels: Record<TaskHistoryEntry['field'], string> = {
@@ -74,6 +76,7 @@ export function TaskDetailsModal({
   parentDisplayId,
   subtasks = [],
   onEdit,
+  onTaskSynced,
 }: TaskDetailsModalProps) {
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
@@ -213,6 +216,7 @@ export function TaskDetailsModal({
             <span className="task-details-status">
               {formatTaskStatusLabel(task.status)}
             </span>
+            {task.isBug && <span className="task-bug-badge">Bug</span>}
           </div>
           <div className="task-details-actions">
             <div className="task-details-copy-group">
@@ -288,6 +292,13 @@ export function TaskDetailsModal({
             {descriptionFields.testDescription ?? 'No test description'}
           </p>
         </section>
+
+        <TaskQaSection
+          task={task}
+          organizationId={organizationId}
+          projectId={projectId}
+          onTaskChange={onTaskSynced}
+        />
 
         <dl className="task-details-meta-grid">
           <div>

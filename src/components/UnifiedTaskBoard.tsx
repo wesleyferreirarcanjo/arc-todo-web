@@ -30,6 +30,7 @@ interface UnifiedTaskBoardProps {
   onUpdate: (
     task: TaskWithContext,
     input: Partial<UpdateTaskInput>,
+    replaced?: TaskWithContext,
   ) => Promise<void>;
   onDelete: (task: TaskWithContext) => Promise<void>;
   onCreateSubtask?: (
@@ -199,7 +200,9 @@ function UnifiedTaskBoardInner({
                             isDragging={activeTaskId === task.id}
                             isMoving={movingTaskIds?.has(task.id)}
                             draggingTaskId={activeTaskId ?? undefined}
-                            onUpdate={(_id, input) => onUpdate(task, input)}
+                            onUpdate={(_id, input, replaced) =>
+                              onUpdate(task, input, replaced as TaskWithContext | undefined)
+                            }
                             onDelete={() => onDelete(task)}
                             onCreateSubtask={
                               onCreateSubtask
@@ -238,7 +241,9 @@ function UnifiedTaskBoardInner({
                           isDragging={activeTaskId === item.task.id}
                           isMoving={movingTaskIds?.has(item.task.id)}
                           draggingTaskId={activeTaskId ?? undefined}
-                          onUpdate={(_id, input) => onUpdate(contextTask, input)}
+                          onUpdate={(_id, input, replaced) =>
+                            onUpdate(contextTask, input, replaced as TaskWithContext | undefined)
+                          }
                           onDelete={() => onDelete(contextTask)}
                           onSetParent={
                             onSetParent

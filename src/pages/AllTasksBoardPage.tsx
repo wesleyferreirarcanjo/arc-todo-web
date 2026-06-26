@@ -211,7 +211,13 @@ export function AllTasksBoardPage() {
   async function handleUpdate(
     task: TaskWithContext,
     input: Partial<UpdateTaskInput>,
+    replaced?: TaskWithContext,
   ) {
+    if (replaced) {
+      await loadTasks({ silent: true });
+      return;
+    }
+
     if (input.status !== undefined && input.status !== task.status) {
       const previousStatus = task.status;
       setMovingTaskIds((current) => addMovingTaskId(current, task.id));
@@ -247,7 +253,7 @@ export function AllTasksBoardPage() {
       task.id,
       input,
     );
-    if (input.parentTaskId !== undefined) {
+    if (input.parentTaskId !== undefined || input.isBug !== undefined) {
       await loadTasks({ silent: true });
       return;
     }

@@ -7,6 +7,30 @@ export type TaskCategory =
   | 'marketing'
   | 'other';
 
+export interface QaChecklistState {
+  checkedItemIds: string[];
+}
+
+export interface QaChecklistItem {
+  id: string;
+  label: string;
+}
+
+export interface QaChecklistProgress {
+  done: number;
+  total: number;
+}
+
+export interface TaskEvidence {
+  id: string;
+  taskId: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedById: string;
+  createdAt: string;
+}
+
 export interface SubtaskProgress {
   total: number;
   done: number;
@@ -28,6 +52,12 @@ export interface Task {
   displayId: string;
   category: TaskCategory;
   metadata: Record<string, unknown>;
+  isBug?: boolean;
+  bugReason?: string | null;
+  buggedAt?: string | null;
+  buggedById?: string | null;
+  qaChecklistState?: QaChecklistState;
+  qaChecklistProgress?: QaChecklistProgress | null;
   subtaskProgress?: SubtaskProgress | null;
   subtasks?: Task[];
   createdById?: string | null;
@@ -57,6 +87,7 @@ export interface ListTasksQuery {
   criticity?: TaskCriticity;
   category?: TaskCategory;
   parentTaskId?: string;
+  isBug?: boolean;
 }
 
 export interface CreateTaskInput {
@@ -85,6 +116,9 @@ export interface UpdateTaskInput {
   parentTaskId?: string | null;
   category?: TaskCategory;
   metadata?: Record<string, unknown>;
+  isBug?: boolean;
+  bugReason?: string | null;
+  qaChecklistState?: QaChecklistState;
 }
 
 export type TaskHistoryField = 'title' | 'description' | 'dueDate';

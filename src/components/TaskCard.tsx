@@ -17,6 +17,10 @@ import {
   taskDescriptionFieldsFromTask,
   type TaskDescriptionFormState,
 } from '../lib/tasks/taskDescriptions';
+import {
+  computeQaChecklistProgress,
+  normalizeQaChecklistState,
+} from '../lib/tasks/taskQaChecklist';
 import { formatTaskStatusLabel, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { useChat } from '../context/ChatContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
@@ -192,7 +196,7 @@ interface TaskCardProps {
   isMoving?: boolean;
   draggingTaskId?: string;
   compact?: boolean;
-  onUpdate: (id: string, input: Partial<UpdateTaskInput>) => Promise<void>;
+  onUpdate: (id: string, input: Partial<UpdateTaskInput>, replaced?: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
@@ -517,6 +521,12 @@ export function TaskCard({
   const inChatContext = isTaskReferenced(task.id);
   const chatContextTask = resolveChatContextTask();
   const subtaskProgress = mergeSubtaskProgress(task.subtaskProgress);
+  const checklistProgress =
+    task.qaChecklistProgress ??
+    computeQaChecklistProgress(
+      task.testDescription,
+      normalizeQaChecklistState(task.qaChecklistState),
+    );
   const resolvedSubtasks =
     subtasks.length > 0 ? subtasks : (task.subtasks ?? []);
   const { nested: nestedSubtasks, detached: detachedSubtasks } =
@@ -593,6 +603,7 @@ export function TaskCard({
                 </span>
               )}
             </div>
+            {task.isBug && <span className="task-bug-badge">Bug</span>}
             <span className={`category-badge category-${task.category ?? 'other'}`}>
               {formatTaskCategoryLabel(task.category ?? 'other')}
             </span>
@@ -759,6 +770,11 @@ export function TaskCard({
             <span className={`task-card-status-badge task-list-status-${task.status}`}>
               {formatTaskStatusLabel(task.status)}
             </span>
+            {checklistProgress && (
+              <span className="task-qa-progress-badge">
+                QA {checklistProgress.done}/{checklistProgress.total}
+              </span>
+            )}
             {subtaskProgress && (
               <span
                 className="subtask-progress-badge"
@@ -923,6 +939,7 @@ export function TaskCard({
           organizationName={organizationName}
           projectName={projectName}
           onEdit={handleStartEdit}
+          onTaskSynced={(updated) => void onUpdate(task.id, {}, updated)}
           subtasks={resolvedSubtasks}
           parentDisplayId={parentDisplayId}
         />
