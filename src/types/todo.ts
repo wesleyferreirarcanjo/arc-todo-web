@@ -9,6 +9,7 @@ export type TaskCategory =
 
 export interface QaChecklistState {
   checkedItemIds: string[];
+  buggedItemIds: string[];
 }
 
 export interface QaChecklistItem {

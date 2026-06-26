@@ -12,7 +12,7 @@ import {
   parseQaChecklistItems,
 } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskEvidence } from '../types/todo';
-import { Modal } from './Modal';
+import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 
 interface TaskQaSectionProps {
   task: Task;
@@ -49,7 +49,6 @@ export function TaskQaSection({
   const checklistProgress =
     task.qaChecklistProgress ??
     computeQaChecklistProgress(task.testDescription, checklistState);
-  const checkedIds = new Set(checklistState.checkedItemIds);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,33 +78,6 @@ export function TaskQaSection({
       cancelled = true;
     };
   }, [organizationId, projectId, task.id, task.updatedAt]);
-
-  async function persistChecklist(nextCheckedIds: string[]) {
-    setQaError(null);
-    try {
-      const updated = await updateProjectTask(
-        organizationId,
-        projectId,
-        task.id,
-        { qaChecklistState: { checkedItemIds: nextCheckedIds } },
-      );
-      onTaskChange?.(updated);
-    } catch (error: unknown) {
-      setQaError(
-        error instanceof Error ? error.message : 'Failed to save checklist',
-      );
-    }
-  }
-
-  async function handleToggleChecklistItem(itemId: string) {
-    const nextChecked = new Set(checkedIds);
-    if (nextChecked.has(itemId)) {
-      nextChecked.delete(itemId);
-    } else {
-      nextChecked.add(itemId);
-    }
-    await persistChecklist([...nextChecked]);
-  }
 
   async function handleUploadEvidence(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -187,6 +159,10 @@ export function TaskQaSection({
     try {
       const updated = await updateProjectTask(organizationId, projectId, task.id, {
         isBug: false,
+        qaChecklistState: {
+          checkedItemIds: checklistState.checkedItemIds,
+          buggedItemIds: [],
+        },
       });
       setBugReason('');
       onTaskChange?.(updated);
@@ -310,32 +286,15 @@ export function TaskQaSection({
 
       {qaError && <p className="task-details-error">{qaError}</p>}
 
-      <Modal
+      <TaskQaChecklistModal
         open={checklistOpen}
         onClose={() => setChecklistOpen(false)}
-        title="Checklist de QA"
-        titleId={`task-qa-checklist-${task.id}`}
-        className="task-qa-checklist-modal"
-      >
-        {checklistItems.length === 0 ? (
-          <p className="task-details-muted">No checklist items found.</p>
-        ) : (
-          <ul className="task-qa-checklist">
-            {checklistItems.map((item) => (
-              <li key={item.id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={checkedIds.has(item.id)}
-                    onChange={() => void handleToggleChecklistItem(item.id)}
-                  />
-                  <span>{item.label}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Modal>
+        task={task}
+        organizationId={organizationId}
+        projectId={projectId}
+        onTaskChange={onTaskChange}
+        onError={setQaError}
+      />
     </section>
   );
 }

@@ -1,21 +1,26 @@
 import type { QaChecklistItem, QaChecklistProgress, QaChecklistState } from '../../types/todo';
 
-const EMPTY_STATE: QaChecklistState = { checkedItemIds: [] };
+const EMPTY_STATE: QaChecklistState = { checkedItemIds: [], buggedItemIds: [] };
+
+function normalizeIdList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    .map((id) => id.trim());
+}
 
 export function normalizeQaChecklistState(value: unknown): QaChecklistState {
   if (!value || typeof value !== 'object') {
     return { ...EMPTY_STATE };
   }
 
-  const raw = value as { checkedItemIds?: unknown };
-  if (!Array.isArray(raw.checkedItemIds)) {
-    return { ...EMPTY_STATE };
-  }
-
+  const raw = value as { checkedItemIds?: unknown; buggedItemIds?: unknown };
   return {
-    checkedItemIds: raw.checkedItemIds
-      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
-      .map((id) => id.trim()),
+    checkedItemIds: normalizeIdList(raw.checkedItemIds),
+    buggedItemIds: normalizeIdList(raw.buggedItemIds),
   };
 }
 
@@ -53,6 +58,10 @@ export function parseQaChecklistItems(
   return items;
 }
 
+export function formatChecklistLabel(label: string): string {
+  return label.replace(/\*\*/g, '');
+}
+
 export function computeQaChecklistProgress(
   testDescription: string | null | undefined,
   state: QaChecklistState,
@@ -65,4 +74,37 @@ export function computeQaChecklistProgress(
   const checked = new Set(state.checkedItemIds);
   const done = items.filter((item) => checked.has(item.id)).length;
   return { done, total: items.length };
+}
+
+export function toggleChecklistItemBug(
+  state: QaChecklistState,
+  itemId: string,
+  itemLabel: string,
+): {
+  nextState: QaChecklistState;
+  taskUpdate: { isBug: boolean; bugReason: string | null };
+} {
+  const bugged = new Set(state.buggedItemIds);
+  if (bugged.has(itemId)) {
+    bugged.delete(itemId);
+  } else {
+    bugged.add(itemId);
+  }
+
+  const nextState: QaChecklistState = {
+    checkedItemIds: state.checkedItemIds,
+    buggedItemIds: [...bugged],
+  };
+
+  if (bugged.size === 0) {
+    return {
+      nextState,
+      taskUpdate: { isBug: false, bugReason: null },
+    };
+  }
+
+  return {
+    nextState,
+    taskUpdate: { isBug: true, bugReason: formatChecklistLabel(itemLabel) },
+  };
 }

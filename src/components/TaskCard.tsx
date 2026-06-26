@@ -33,6 +33,7 @@ import { TaskDetailsModal } from './TaskDetailsModal';
 import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
 import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
+import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 
 function formatDueDateForInput(dueDate: string | null): string {
   if (!dueDate) return '';
@@ -267,6 +268,7 @@ export function TaskCard({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [subtaskModalOpen, setSubtaskModalOpen] = useState(false);
   const [setParentModalOpen, setSetParentModalOpen] = useState(false);
+  const [qaChecklistOpen, setQaChecklistOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [smartCopyTooltip, setSmartCopyTooltip] = useState('Smart copy');
@@ -291,6 +293,7 @@ export function TaskCard({
     editModalOpen ||
     subtaskModalOpen ||
     setParentModalOpen ||
+    qaChecklistOpen ||
     actionMenuOpen;
   const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
   const resolvedProjectId = projectId ?? chatContextScope?.projectId;
@@ -887,15 +890,15 @@ export function TaskCard({
               <button
                 type="button"
                 className="task-card-action-btn task-card-qa-board-btn"
-                aria-label="Open QA task board"
+                aria-label="Ver checklist"
                 onClick={(event) => {
                   stopCardPointer(event);
-                  handleOpenDetails();
+                  setQaChecklistOpen(true);
                 }}
               >
                 <QaBoardIcon className="task-card-action-icon" />
                 <span className="task-card-action-tooltip" role="tooltip">
-                  Open QA task board
+                  Ver checklist
                 </span>
               </button>
             )}
@@ -951,6 +954,17 @@ export function TaskCard({
         )}
 
       </motion.article>
+
+      {canOpenDetails && qaProgress && (
+        <TaskQaChecklistModal
+          open={qaChecklistOpen}
+          onClose={() => setQaChecklistOpen(false)}
+          task={task}
+          organizationId={resolvedOrganizationId!}
+          projectId={resolvedProjectId!}
+          onTaskChange={(updated) => void onUpdate(task.id, {}, updated)}
+        />
+      )}
 
       {canOpenDetails && (
         <TaskDetailsModal
