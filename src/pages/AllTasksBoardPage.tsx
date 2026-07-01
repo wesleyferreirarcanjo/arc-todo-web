@@ -503,7 +503,7 @@ export function AllTasksBoardPage() {
         </label>
 
         {!projectFocus && (
-          <label className="board-filter-field board-filter-checkbox">
+          <label className="checkbox-field board-filter-checkbox">
             <input
               type="checkbox"
               checked={createdByMe}

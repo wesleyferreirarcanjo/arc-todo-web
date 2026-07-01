@@ -1518,6 +1518,12 @@ textarea:focus-visible {
   max-width: 320px;
 }
 
+.board-filter-checkbox {
+  min-width: auto;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
 .board-search-status {
   margin-top: -0.25rem;
 }
@@ -5427,6 +5433,11 @@ textarea {
   .board-filter-field {
     flex: 1 1 12rem;
     min-width: min(100%, 12rem);
+  }
+
+  .board-filter-checkbox {
+    flex: 1 1 100%;
+    align-self: stretch;
   }
 
   .settings-page-tabs {
