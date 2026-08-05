@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { PasswordInput } from './PasswordInput';
 import { ApiError } from '../lib/api/client';
 import type { ManagedUser, ProjectOption, UpdateUserInput } from '../types/user';
 
@@ -131,8 +132,7 @@ export function UserList({
 
                 <label>
                   New password
-                  <input
-                    type="password"
+                  <PasswordInput
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="Leave blank to keep current password"

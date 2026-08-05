@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { PasswordInput } from '../components/PasswordInput';
 import {
   fetchChatbotSettings,
   updateChatbotSettings,
@@ -121,8 +122,7 @@ export function ChatbotSettingsPage() {
 
           <label className="form-field">
             <span>API key</span>
-            <input
-              type="password"
+            <PasswordInput
               value={apiKey}
               placeholder={settings?.hasApiKey ? 'Saved — enter a new key to replace' : 'Enter API key'}
               onChange={(event) => setApiKey(event.target.value)}

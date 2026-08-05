@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { PasswordInput } from './PasswordInput';
 import { ApiError } from '../lib/api/client';
 import type { CreateUserInput, ProjectOption } from '../types/user';
 
@@ -90,8 +91,7 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
 
       <label>
         Password
-        <input
-          type="password"
+        <PasswordInput
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="At least 6 characters"
