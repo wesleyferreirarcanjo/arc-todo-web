@@ -966,6 +966,9 @@ textarea:focus-visible {
   flex-wrap: wrap;
   gap: 1rem;
   align-items: end;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 1rem 1.25rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -975,6 +978,8 @@ textarea:focus-visible {
 
 .board-filter-actions {
   display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
   margin-left: auto;
@@ -1505,21 +1510,26 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  flex: 1 1 12rem;
+  min-width: min(100%, 10rem);
+  max-width: 24rem;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
-  min-width: 200px;
 }
 
 .board-filter-field.board-filter-search {
-  flex: 1 1 240px;
-  max-width: 320px;
+  flex: 1.6 1 16rem;
+  min-width: min(100%, 12rem);
+  max-width: 32rem;
 }
 
-.board-filter-checkbox {
+.board-filter-checkbox,
+.board-filter-field.knowledge-filter-toggle {
   min-width: auto;
+  max-width: none;
   flex: 0 0 auto;
   align-self: center;
 }
@@ -5469,9 +5479,16 @@ textarea {
   .board-filter-field {
     flex: 1 1 12rem;
     min-width: min(100%, 12rem);
+    max-width: none;
   }
 
-  .board-filter-checkbox {
+  .board-filter-field.board-filter-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .board-filter-checkbox,
+  .board-filter-field.knowledge-filter-toggle {
     flex: 1 1 100%;
     align-self: stretch;
   }
