@@ -12,7 +12,7 @@ import {
   updateProjectTask,
 } from '../lib/api/todos';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
-import { filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
+import { filterTasksByCriticity, filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
 import { canHideColumn } from '../lib/tasks/taskStatus';
 import {
   getBoardViewMode,
@@ -42,10 +42,19 @@ import type {
   CreateTaskInput,
   ListTasksQuery,
   Task,
+  TaskCriticity,
   TaskStatus,
   TaskWithContext,
   UpdateTaskInput,
 } from '../types/todo';
+
+const PRIORITY_FILTER_OPTIONS: { value: TaskCriticity | ''; label: string }[] = [
+  { value: '', label: 'All priorities' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
+];
 
 function addMovingTaskId(current: Set<string>, taskId: string): Set<string> {
   return new Set(current).add(taskId);
@@ -75,6 +84,7 @@ export function AllTasksBoardPage() {
   const [hiddenColumns, setHiddenColumns] = useState<TaskStatus[]>(getHiddenBoardColumns);
   const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<TaskCriticity | ''>('');
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
@@ -420,20 +430,21 @@ export function AllTasksBoardPage() {
   }
 
   const searchActive = normalizeTaskSearchQuery(searchQuery).length > 0;
+  const priorityActive = priorityFilter !== '';
+  const listFiltersActive = searchActive || priorityActive;
 
-  const filteredTasks = useMemo(
-    () =>
-      filterTasksBySearch(tasks, searchQuery, (task) => ({
-        orgName: task.organization.name,
-        projectName: task.project.name,
-      })),
-    [tasks, searchQuery],
-  );
+  const filteredTasks = useMemo(() => {
+    const byPriority = filterTasksByCriticity(tasks, priorityFilter);
+    return filterTasksBySearch(byPriority, searchQuery, (task) => ({
+      orgName: task.organization.name,
+      projectName: task.project.name,
+    }));
+  }, [tasks, searchQuery, priorityFilter]);
 
-  const filteredCycleTasks = useMemo(
-    () => filterTasksBySearch(cycleTasks, searchQuery),
-    [cycleTasks, searchQuery],
-  );
+  const filteredCycleTasks = useMemo(() => {
+    const byPriority = filterTasksByCriticity(cycleTasks, priorityFilter);
+    return filterTasksBySearch(byPriority, searchQuery);
+  }, [cycleTasks, searchQuery, priorityFilter]);
 
   const visibleTasks = projectFocus ? filteredCycleTasks : filteredTasks;
   const sourceTaskCount = projectFocus ? cycleTasks.length : tasks.length;
@@ -441,9 +452,11 @@ export function AllTasksBoardPage() {
   const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
 
   const matchingTaskCount = useMemo(() => {
-    if (!searchActive) return visibleTasks.length;
+    if (!listFiltersActive) return visibleTasks.length;
     const source = projectFocus ? cycleTasks : tasks;
     return source.filter((task) => {
+      if (priorityActive && task.criticity !== priorityFilter) return false;
+      if (!searchActive) return true;
       const context =
         !projectFocus && 'organization' in task
           ? {
@@ -453,19 +466,39 @@ export function AllTasksBoardPage() {
           : undefined;
       return getTaskSearchRank(task, searchQuery, context) !== null;
     }).length;
-  }, [searchActive, projectFocus, cycleTasks, tasks, searchQuery, visibleTasks.length]);
+  }, [
+    listFiltersActive,
+    searchActive,
+    priorityActive,
+    priorityFilter,
+    projectFocus,
+    cycleTasks,
+    tasks,
+    searchQuery,
+    visibleTasks.length,
+  ]);
 
   return (
     <div className="tasks-page">
       <div className="board-filters">
         <label className="board-filter-field board-filter-search">
-          Search
+          Title / ID
           <input
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search by ID, title, or text"
-            aria-label="Search tasks"
+            placeholder="Filter by title or ID"
+            aria-label="Filter tasks by title or ID"
+          />
+        </label>
+
+        <label className="board-filter-field">
+          Priority
+          <Select
+            value={priorityFilter}
+            placeholder="All priorities"
+            onChange={(value) => setPriorityFilter(value as TaskCriticity | '')}
+            options={PRIORITY_FILTER_OPTIONS}
           />
         </label>
 
@@ -567,10 +600,10 @@ export function AllTasksBoardPage() {
         </p>
       )}
 
-      {searchActive && !loading && !error && (
+      {listFiltersActive && !loading && !error && (
         <p className="status-message board-search-status" role="status">
           {matchingTaskCount === 0
-            ? 'No tasks match your search.'
+            ? 'No tasks match your filters.'
             : `${matchingTaskCount} matching task${matchingTaskCount === 1 ? '' : 's'}${sourceTaskCount !== matchingTaskCount ? ` in ${sourceTaskCount} loaded` : ''}.`}
         </p>
       )}
@@ -578,7 +611,7 @@ export function AllTasksBoardPage() {
       {loading && <p className="status-message">Loading tasks...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && topLevelCount === 0 && !searchActive && (
+      {!loading && !error && topLevelCount === 0 && !listFiltersActive && (
         <p className="status-message">
           {projectFocus
             ? 'No active board work in this weekly cycle.'

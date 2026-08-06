@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  filterTasksByCriticity,
   filterTasksBySearch,
   getTaskSearchRank,
   normalizeTaskSearchQuery,
@@ -89,5 +90,24 @@ describe('filterTasksBySearch', () => {
       projectName: task.project.name,
     }));
     expect(filtered).toHaveLength(1);
+  });
+});
+
+describe('filterTasksByCriticity', () => {
+  it('returns all tasks when criticity is empty', () => {
+    expect(filterTasksByCriticity([baseTask, subtask], '')).toEqual([
+      baseTask,
+      subtask,
+    ]);
+  });
+
+  it('keeps only matching criticity and parent ancestors', () => {
+    const highSubtask: Task = { ...subtask, criticity: 'high' };
+    const filtered = filterTasksByCriticity([baseTask, highSubtask], 'high');
+    expect(filtered.map((task) => task.displayId)).toEqual(['#arc-102', '#arc-103']);
+  });
+
+  it('returns empty when nothing matches', () => {
+    expect(filterTasksByCriticity([baseTask, subtask], 'critical')).toEqual([]);
   });
 });

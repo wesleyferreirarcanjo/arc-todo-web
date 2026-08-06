@@ -1,4 +1,4 @@
-import type { Task } from '../../types/todo';
+import type { Task, TaskCriticity } from '../../types/todo';
 import { taskDescriptionFieldsFromTask } from './taskDescriptions';
 
 export interface TaskSearchContext {
@@ -122,4 +122,20 @@ export function filterTasksBySearch<T extends Task>(
       if (rankA !== rankB) return rankA - rankB;
       return 0;
     });
+}
+
+/** Keep matching tasks plus ancestors so list/board tree rows stay intact. */
+export function filterTasksByCriticity<T extends Task>(
+  tasks: T[],
+  criticity: TaskCriticity | '',
+): T[] {
+  if (!criticity) return tasks;
+
+  const matchingIds = new Set(
+    tasks.filter((task) => task.criticity === criticity).map((task) => task.id),
+  );
+  if (matchingIds.size === 0) return [];
+
+  const included = includeTaskTreeMatches(tasks, matchingIds);
+  return tasks.filter((task) => included.has(task.id));
 }
