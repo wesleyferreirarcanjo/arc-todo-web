@@ -1520,6 +1520,36 @@ textarea:focus-visible {
   color: var(--text-muted);
 }
 
+/* Label typography must not cascade into nested controls (font: inherit on inputs). */
+.board-filter-field > input,
+.board-filter-field .select-trigger,
+.board-filter-field .select-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.board-filter-field .select-value.is-placeholder {
+  color: var(--text-muted);
+}
+
+.board-filters .board-filter-field > input,
+.board-filters .board-filter-field .select-trigger {
+  box-sizing: border-box;
+  min-height: var(--button-height);
+  height: var(--button-height);
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.board-filters .board-filter-field > input {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 .board-filter-field.board-filter-search {
   flex: 1.6 1 16rem;
   min-width: min(100%, 12rem);
