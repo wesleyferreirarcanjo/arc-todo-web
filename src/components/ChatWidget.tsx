@@ -330,14 +330,14 @@ export function ChatWidget() {
       (message) => !isLocalWelcomeMessage(message),
     );
     const nextMessages: ChatMessage[] = [...conversationMessages, userMessage];
-    appendLocalMessage(userMessage);
     composerRef.current?.clear();
     setLoading(true);
     setError(null);
 
     try {
+      // Ensure conversation before optimistic append so create-new cannot wipe the bubble.
       const conversationId = await ensureActiveConversation();
-
+      appendLocalMessage(userMessage);
       appendLocalMessage({ role: 'assistant', content: '' });
 
       let streamedContent = '';

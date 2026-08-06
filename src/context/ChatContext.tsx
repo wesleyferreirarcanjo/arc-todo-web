@@ -47,7 +47,9 @@ interface ChatContextValue {
   loadingMessages: boolean;
   pendingTaskInsert: TaskRef | null;
   clearPendingTaskInsert: () => void;
-  createNewConversation: () => Promise<string>;
+  createNewConversation: (options?: {
+    clearMessages?: boolean;
+  }) => Promise<string>;
   selectConversation: (conversationId: string) => Promise<void>;
   selectOverflowConversation: (conversationId: string) => Promise<void>;
   removeConversation: (conversationId: string) => Promise<void>;
@@ -69,6 +71,11 @@ interface ChatContextValue {
   ) => void;
   refreshConversations: () => Promise<void>;
 }
+
+export type CreateConversationOptions = {
+  /** When true (default), reset the message pane to the welcome bubble. */
+  clearMessages?: boolean;
+};
 
 type TaskContextInput = TaskWithContext | (Task & {
   organization: { id: string };
@@ -128,6 +135,36 @@ function pruneVisibleTabIds(
   return tabIds.filter((id) => validIds.has(id)).slice(0, MAX_VISIBLE_TABS);
 }
 
+/** Merge server list with local tabs so a stale bootstrap list cannot drop a just-created conversation. */
+export function mergeConversationLists(
+  server: ConversationSummary[],
+  local: ConversationSummary[],
+): ConversationSummary[] {
+  const byId = new Map<string, ConversationSummary>();
+  for (const conversation of server) {
+    byId.set(conversation.id, conversation);
+  }
+  for (const conversation of local) {
+    if (!byId.has(conversation.id)) {
+      byId.set(conversation.id, conversation);
+    }
+  }
+  return sortByRecent([...byId.values()]);
+}
+
+/** Drop stale getConversation results after the user already mutated local messages. */
+export function shouldApplyLoadedMessages(options: {
+  loadGeneration: number;
+  currentGeneration: number;
+  loadedConversationId: string;
+  activeConversationId: string | null;
+}): boolean {
+  return (
+    options.loadGeneration === options.currentGeneration &&
+    options.activeConversationId === options.loadedConversationId
+  );
+}
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -145,10 +182,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const activeConversationIdRef = useRef<string | null>(null);
   const composerRef = useRef<ComposerRegistration | null>(null);
   const referencedTaskIdsRef = useRef<Set<string>>(new Set());
+  const messagesLoadGenerationRef = useRef(0);
+  const conversationsRef = useRef<ConversationSummary[]>([]);
+  const loadingMessagesRef = useRef(false);
+  const messageLoadWaitersRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
     activeConversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  const setLoadingMessagesState = useCallback((loading: boolean) => {
+    loadingMessagesRef.current = loading;
+    setLoadingMessages(loading);
+    if (!loading) {
+      const waiters = messageLoadWaitersRef.current;
+      messageLoadWaitersRef.current = [];
+      for (const resolve of waiters) {
+        resolve();
+      }
+    }
+  }, []);
+
+  const waitForMessageLoad = useCallback(async () => {
+    if (!loadingMessagesRef.current) {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      messageLoadWaitersRef.current.push(resolve);
+    });
+  }, []);
+
+  const invalidatePendingMessageLoads = useCallback(() => {
+    messagesLoadGenerationRef.current += 1;
+    setLoadingMessagesState(false);
+  }, [setLoadingMessagesState]);
 
   const visibleConversations = useMemo(
     () =>
@@ -187,17 +258,47 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const loadConversationDetail = useCallback(async (conversationId: string) => {
-    setLoadingMessages(true);
-    try {
-      const detail = await getConversation(conversationId);
-      setMessages(toChatMessages(detail));
+  const loadConversationDetail = useCallback(
+    async (
+      conversationId: string,
+      options?: {
+        /** When false, do not take over a conversation the user already claimed. */
+        steal?: boolean;
+      },
+    ) => {
+      const steal = options?.steal !== false;
+      const currentId = activeConversationIdRef.current;
+      if (!steal && currentId && currentId !== conversationId) {
+        return;
+      }
+
+      // Claim the tab immediately so a fast first send does not create a duplicate conversation.
       setActiveConversationId(conversationId);
       activeConversationIdRef.current = conversationId;
-    } finally {
-      setLoadingMessages(false);
-    }
-  }, []);
+
+      const loadGeneration = ++messagesLoadGenerationRef.current;
+      setLoadingMessagesState(true);
+      try {
+        const detail = await getConversation(conversationId);
+        if (
+          !shouldApplyLoadedMessages({
+            loadGeneration,
+            currentGeneration: messagesLoadGenerationRef.current,
+            loadedConversationId: conversationId,
+            activeConversationId: activeConversationIdRef.current,
+          })
+        ) {
+          return;
+        }
+        setMessages(toChatMessages(detail));
+      } finally {
+        if (loadGeneration === messagesLoadGenerationRef.current) {
+          setLoadingMessagesState(false);
+        }
+      }
+    },
+    [setLoadingMessagesState],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -205,34 +306,49 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     async function bootstrap() {
       setLoadingConversations(true);
       try {
-        const next = sortByRecent(await listConversations());
+        const serverList = sortByRecent(await listConversations());
         if (cancelled) return;
 
+        const alreadyActiveId = activeConversationIdRef.current;
+        const next = mergeConversationLists(
+          serverList,
+          conversationsRef.current,
+        );
         setConversations(next);
-        setVisibleTabIds(buildInitialVisibleTabIds(next));
+        setVisibleTabIds((current) => {
+          const pruned = pruneVisibleTabIds(current, next);
+          if (pruned.length > 0) {
+            return pruned;
+          }
+          return buildInitialVisibleTabIds(next);
+        });
+
+        // User already opened/sent in a conversation while listConversations was in flight.
+        if (alreadyActiveId) {
+          return;
+        }
 
         if (next.length > 0) {
-          const preferredId = activeConversationIdRef.current;
-          const initialId =
-            preferredId && next.some((conversation) => conversation.id === preferredId)
-              ? preferredId
-              : next[0].id;
+          const initialId = next[0].id;
 
           try {
-            await loadConversationDetail(initialId);
+            await loadConversationDetail(initialId, { steal: false });
           } catch {
+            if (activeConversationIdRef.current) {
+              return;
+            }
             const fallbackId = next.find(
               (conversation) => conversation.id !== initialId,
             )?.id;
             if (fallbackId) {
-              await loadConversationDetail(fallbackId);
-            } else {
+              await loadConversationDetail(fallbackId, { steal: false });
+            } else if (!activeConversationIdRef.current) {
               setActiveConversationId(null);
               activeConversationIdRef.current = null;
               setMessages([WELCOME_MESSAGE]);
             }
           }
-        } else {
+        } else if (!activeConversationIdRef.current) {
           setActiveConversationId(null);
           activeConversationIdRef.current = null;
           setMessages([WELCOME_MESSAGE]);
@@ -276,31 +392,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const createNewConversation = useCallback(async () => {
-    const pruned = await removeOldestConversationIfNeeded(conversations);
-    const created = await createConversation({});
-    const nextConversations = sortByRecent([created, ...pruned]);
+  const createNewConversation = useCallback(
+    async (options?: CreateConversationOptions) => {
+      const clearMessages = options?.clearMessages !== false;
+      const pruned = await removeOldestConversationIfNeeded(
+        conversationsRef.current,
+      );
+      const created = await createConversation({});
+      const nextConversations = sortByRecent([created, ...pruned]);
 
-    setConversations(nextConversations);
-    setVisibleTabIds((current) =>
-      [created.id, ...current.filter((id) => id !== created.id)].slice(
-        0,
-        MAX_VISIBLE_TABS,
-      ),
-    );
-    setActiveConversationId(created.id);
-    activeConversationIdRef.current = created.id;
-    setMessages([WELCOME_MESSAGE]);
-    return created.id;
-  }, [conversations, removeOldestConversationIfNeeded]);
+      // Drop in-flight history loads for the previous tab before claiming the new one.
+      invalidatePendingMessageLoads();
+      setConversations(nextConversations);
+      setVisibleTabIds((current) =>
+        [created.id, ...current.filter((id) => id !== created.id)].slice(
+          0,
+          MAX_VISIBLE_TABS,
+        ),
+      );
+      setActiveConversationId(created.id);
+      activeConversationIdRef.current = created.id;
+      if (clearMessages) {
+        setMessages([WELCOME_MESSAGE]);
+      }
+      return created.id;
+    },
+    [invalidatePendingMessageLoads, removeOldestConversationIfNeeded],
+  );
 
   const ensureActiveConversation = useCallback(async () => {
+    await waitForMessageLoad();
     const currentId = activeConversationIdRef.current;
     if (currentId) {
       return currentId;
     }
-    return createNewConversation();
-  }, [createNewConversation]);
+    // Preserve optimistic bubbles already appended by the send path.
+    return createNewConversation({ clearMessages: false });
+  }, [createNewConversation, waitForMessageLoad]);
 
   const promoteOverflowConversation = useCallback((conversationId: string) => {
     setVisibleTabIds((current) => {
