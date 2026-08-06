@@ -24,18 +24,25 @@ export function LoginPage() {
       await login({ username, password });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message);
+        setError(
+          err.status === 401
+            ? 'Invalid username or password'
+            : err.message,
+        );
       } else {
         setError('Login failed. Please try again.');
       }
-    } finally {
       setLoading(false);
     }
   }
 
   return (
     <div className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
+      <form
+        className="login-card notranslate"
+        translate="no"
+        onSubmit={handleSubmit}
+      >
         <h1>Arc Todo</h1>
         <p className="subtitle">Sign in to manage your tasks</p>
 
@@ -49,6 +56,7 @@ export function LoginPage() {
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
             required
+            disabled={loading}
           />
         </label>
 
@@ -59,6 +67,7 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             required
+            disabled={loading}
           />
         </label>
 

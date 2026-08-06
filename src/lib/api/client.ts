@@ -43,7 +43,9 @@ export async function apiRequest<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (response.status === 401) {
+  // Session expiry only for authenticated calls. Login (auth: false) 401 is
+  // invalid credentials — do not clearAuth/redirect or the login form freezes.
+  if (response.status === 401 && auth) {
     clearAuth();
     clearWorkspaceSelection();
     if (window.location.pathname !== '/login') {
