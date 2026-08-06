@@ -3209,6 +3209,16 @@ textarea {
   background: color-mix(in srgb, var(--entity-accent, #8778a3) 8%, var(--bg-surface));
 }
 
+/* Light: stronger entity-accent tint so org/project ID badges stay readable */
+[data-theme='light'] .task-badge-project,
+[data-theme='light'] .entity-scope-badge-project,
+[data-theme='light'] .entity-scope-badge-org,
+[data-theme='light'] .knowledge-scope-badge.has-accent {
+  background: color-mix(in srgb, var(--entity-accent, #8778a3) 20%, var(--bg-surface));
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 65%, var(--border));
+  color: color-mix(in srgb, var(--entity-accent, var(--text-primary)) 70%, #0a0a12);
+}
+
 .task-card-header {
   display: flex;
   align-items: flex-start;
