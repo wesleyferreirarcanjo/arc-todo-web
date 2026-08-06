@@ -987,7 +987,7 @@ export function TaskCard({
 
       </motion.article>
 
-      {canOpenDetails && qaProgress && (
+      {canOpenDetails && (qaProgress || qaChecklistOpen) && (
         <TaskQaChecklistModal
           open={qaChecklistOpen}
           onClose={() => setQaChecklistOpen(false)}
@@ -997,6 +997,7 @@ export function TaskCard({
           onTaskChange={(updated) => void onUpdate(task.id, {}, updated)}
         />
       )}
+
 
       {canOpenDetails && (
         <TaskDetailsModal

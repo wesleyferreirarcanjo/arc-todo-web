@@ -1,6 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  acquireBodyScrollLock,
+  releaseBodyScrollLock,
+} from '../lib/bodyScrollLock';
 import { modalPanelVariants, overlayVariants } from '../lib/motion/variants';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 
@@ -22,25 +26,26 @@ export function Modal({
   children,
 }: ModalProps) {
   const { base } = useMotionTransition();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       }
     }
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    acquireBodyScrollLock();
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      releaseBodyScrollLock();
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return createPortal(
     <AnimatePresence mode="wait">
