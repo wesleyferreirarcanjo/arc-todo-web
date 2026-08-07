@@ -1,5 +1,11 @@
 import type { TaskStatus } from '../../types/todo';
 import { isTaskStatus } from '../tasks/taskStatus';
+import {
+  DEFAULT_TASK_SORT_DIRECTION,
+  DEFAULT_TASK_SORT_FIELD,
+  type TaskSortDirection,
+  type TaskSortField,
+} from '../tasks/taskSort';
 
 const ORG_KEY = 'arc_todo_last_org';
 const PROJECT_KEY = 'arc_todo_last_project';
@@ -7,9 +13,34 @@ const THEME_KEY = 'arc_todo_theme';
 const SIDEBAR_COLLAPSED_KEY = 'arc_todo_sidebar_collapsed';
 const BOARD_HIDDEN_COLUMNS_KEY = 'arc_todo_board_hidden_columns';
 const BOARD_VIEW_MODE_KEY = 'arc_todo_board_view_mode';
+const BOARD_TASK_SORT_KEY = 'arc_todo_board_task_sort';
 
 export type Theme = 'dark' | 'light';
 export type BoardViewMode = 'board' | 'list';
+
+export interface BoardTaskSort {
+  field: TaskSortField;
+  direction: TaskSortDirection;
+}
+
+const TASK_SORT_FIELDS: TaskSortField[] = [
+  'title',
+  'project',
+  'createdAt',
+  'updatedAt',
+  'dueDate',
+  'criticity',
+  'status',
+  'displayId',
+];
+
+function isTaskSortField(value: string): value is TaskSortField {
+  return TASK_SORT_FIELDS.includes(value as TaskSortField);
+}
+
+function isTaskSortDirection(value: string): value is TaskSortDirection {
+  return value === 'asc' || value === 'desc';
+}
 
 export function getLastOrganizationId(): string | null {
   return localStorage.getItem(ORG_KEY);
@@ -90,4 +121,33 @@ export function getBoardViewMode(): BoardViewMode {
 
 export function setBoardViewMode(mode: BoardViewMode): void {
   localStorage.setItem(BOARD_VIEW_MODE_KEY, mode);
+}
+
+export function getBoardTaskSort(): BoardTaskSort {
+  const stored = localStorage.getItem(BOARD_TASK_SORT_KEY);
+  if (!stored) {
+    return { field: DEFAULT_TASK_SORT_FIELD, direction: DEFAULT_TASK_SORT_DIRECTION };
+  }
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (!parsed || typeof parsed !== 'object') {
+      return { field: DEFAULT_TASK_SORT_FIELD, direction: DEFAULT_TASK_SORT_DIRECTION };
+    }
+    const record = parsed as Record<string, unknown>;
+    const field =
+      typeof record.field === 'string' && isTaskSortField(record.field)
+        ? record.field
+        : DEFAULT_TASK_SORT_FIELD;
+    const direction =
+      typeof record.direction === 'string' && isTaskSortDirection(record.direction)
+        ? record.direction
+        : DEFAULT_TASK_SORT_DIRECTION;
+    return { field, direction };
+  } catch {
+    return { field: DEFAULT_TASK_SORT_FIELD, direction: DEFAULT_TASK_SORT_DIRECTION };
+  }
+}
+
+export function setBoardTaskSort(sort: BoardTaskSort): void {
+  localStorage.setItem(BOARD_TASK_SORT_KEY, JSON.stringify(sort));
 }

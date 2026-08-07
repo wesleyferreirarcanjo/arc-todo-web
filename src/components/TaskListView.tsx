@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { Task, TaskStatus, TaskWithContext } from '../types/todo';
-import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS, TASK_STATUS_ORDER } from '../lib/tasks/taskStatus';
+import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
 
 const STATUS_LABELS = TASK_STATUS_LABELS;
-const STATUS_ORDER = TASK_STATUS_ORDER;
 
 function formatDueDate(dueDate: string | null): string {
   if (!dueDate) return '—';
@@ -19,15 +18,6 @@ function formatDueDate(dueDate: string | null): string {
 
 function isTaskWithContext(task: Task | TaskWithContext): task is TaskWithContext {
   return 'organization' in task && 'project' in task;
-}
-
-function sortTasks<T extends Task>(tasks: T[]): T[] {
-  return [...tasks].sort((a, b) => {
-    const statusDiff =
-      STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
-    if (statusDiff !== 0) return statusDiff;
-    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-  });
 }
 
 interface TaskListContext {
@@ -59,8 +49,7 @@ export function TaskListView({
 }: TaskListViewProps) {
   const [detailsTask, setDetailsTask] = useState<Task | TaskWithContext | null>(null);
 
-  const sorted = useMemo(() => sortTasks(tasks), [tasks]);
-
+  // Page owns ordering (AllTasksBoardPage sortTasks); render in given order.
   const detailsContext = useMemo(() => {
     if (!detailsTask) return null;
     if (isTaskWithContext(detailsTask)) {
@@ -75,24 +64,24 @@ export function TaskListView({
   }, [detailsTask, resolveContext]);
 
   const parentDisplayIdByTaskId = useMemo(() => {
-    const byId = new Map(sorted.map((task) => [task.id, task]));
+    const byId = new Map(tasks.map((task) => [task.id, task]));
     return new Map(
-      sorted
+      tasks
         .filter((task) => task.parentTaskId)
         .map((task) => [task.id, byId.get(task.parentTaskId!)?.displayId]),
     );
-  }, [sorted]);
+  }, [tasks]);
 
   const subtasksByParentId = useMemo(() => {
     const map = new Map<string, Task[]>();
-    for (const task of sorted) {
+    for (const task of tasks) {
       if (!task.parentTaskId) continue;
       const list = map.get(task.parentTaskId) ?? [];
       list.push(task);
       map.set(task.parentTaskId, list);
     }
     return map;
-  }, [sorted]);
+  }, [tasks]);
 
   function getContext(task: Task | TaskWithContext): TaskListContext | null {
     if (isTaskWithContext(task)) {
@@ -130,13 +119,13 @@ export function TaskListView({
 
   useEffect(() => {
     if (!detailsTask) return;
-    const stillPresent = sorted.some((task) => task.id === detailsTask.id);
+    const stillPresent = tasks.some((task) => task.id === detailsTask.id);
     if (!stillPresent) {
       setDetailsTask(null);
     }
-  }, [detailsTask, sorted]);
+  }, [detailsTask, tasks]);
 
-  if (sorted.length === 0) {
+  if (tasks.length === 0) {
     return (
       <div className="task-list-empty" role="status">
         <p className="task-list-empty-title">No tasks to show</p>
@@ -171,7 +160,7 @@ export function TaskListView({
           </span>
         </div>
         <ul className="task-list-body">
-          {sorted.map((task) => {
+          {tasks.map((task) => {
             const withContext = isTaskWithContext(task);
             const parentIndent = task.parentTaskId ? ' is-subtask' : '';
             const isMoving = movingTaskIds?.has(task.id);

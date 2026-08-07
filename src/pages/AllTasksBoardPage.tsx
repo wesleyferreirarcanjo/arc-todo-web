@@ -13,10 +13,19 @@ import {
 } from '../lib/api/todos';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { filterTasksByCriticity, filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
+import {
+  sortTasks,
+  TASK_SORT_DIRECTION_OPTIONS,
+  TASK_SORT_FIELD_OPTIONS,
+  type TaskSortDirection,
+  type TaskSortField,
+} from '../lib/tasks/taskSort';
 import { canHideColumn } from '../lib/tasks/taskStatus';
 import {
+  getBoardTaskSort,
   getBoardViewMode,
   getHiddenBoardColumns,
+  setBoardTaskSort,
   setBoardViewMode,
   setHiddenBoardColumns,
   setLastOrganizationId,
@@ -85,6 +94,10 @@ export function AllTasksBoardPage() {
   const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<TaskCriticity | ''>('');
+  const [sortField, setSortField] = useState<TaskSortField>(() => getBoardTaskSort().field);
+  const [sortDirection, setSortDirection] = useState<TaskSortDirection>(
+    () => getBoardTaskSort().direction,
+  );
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
@@ -446,8 +459,35 @@ export function AllTasksBoardPage() {
     return filterTasksBySearch(byPriority, searchQuery);
   }, [cycleTasks, searchQuery, priorityFilter]);
 
-  const visibleTasks = projectFocus ? filteredCycleTasks : filteredTasks;
+  const sortedTasks = useMemo(
+    () =>
+      sortTasks(filteredTasks, sortField, sortDirection, (task) => ({
+        projectName: task.project.name,
+      })),
+    [filteredTasks, sortField, sortDirection],
+  );
+
+  const sortedCycleTasks = useMemo(() => {
+    const projectName = focusedProject?.name;
+    return sortTasks(filteredCycleTasks, sortField, sortDirection, () =>
+      projectName ? { projectName } : undefined,
+    );
+  }, [filteredCycleTasks, sortField, sortDirection, focusedProject?.name]);
+
+  const visibleTasks = projectFocus ? sortedCycleTasks : sortedTasks;
   const sourceTaskCount = projectFocus ? cycleTasks.length : tasks.length;
+
+  function handleSortFieldChange(value: string) {
+    const field = value as TaskSortField;
+    setSortField(field);
+    setBoardTaskSort({ field, direction: sortDirection });
+  }
+
+  function handleSortDirectionChange(value: string) {
+    const direction = value as TaskSortDirection;
+    setSortDirection(direction);
+    setBoardTaskSort({ field: sortField, direction });
+  }
 
   const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
 
@@ -499,6 +539,24 @@ export function AllTasksBoardPage() {
             placeholder="All priorities"
             onChange={(value) => setPriorityFilter(value as TaskCriticity | '')}
             options={PRIORITY_FILTER_OPTIONS}
+          />
+        </label>
+
+        <label className="board-filter-field">
+          Sort by
+          <Select
+            value={sortField}
+            onChange={handleSortFieldChange}
+            options={TASK_SORT_FIELD_OPTIONS}
+          />
+        </label>
+
+        <label className="board-filter-field">
+          Order
+          <Select
+            value={sortDirection}
+            onChange={handleSortDirectionChange}
+            options={TASK_SORT_DIRECTION_OPTIONS}
           />
         </label>
 
@@ -624,7 +682,7 @@ export function AllTasksBoardPage() {
       {!loading && !error && topLevelCount > 0 && projectFocus && (
         viewMode === 'board' ? (
           <TaskBoard
-            tasks={filteredCycleTasks}
+            tasks={sortedCycleTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
             onToggleColumnVisibility={handleToggleColumnVisibility}
@@ -643,7 +701,7 @@ export function AllTasksBoardPage() {
           />
         ) : (
           <TaskListView
-            tasks={filteredCycleTasks}
+            tasks={sortedCycleTasks}
             movingTaskIds={movingTaskIds}
             onUpdateStatus={handleListStatusUpdate}
             resolveContext={
@@ -668,7 +726,7 @@ export function AllTasksBoardPage() {
       {!loading && !error && topLevelCount > 0 && !projectFocus && (
         viewMode === 'board' ? (
           <UnifiedTaskBoard
-            tasks={filteredTasks}
+            tasks={sortedTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
             onToggleColumnVisibility={handleToggleColumnVisibility}
@@ -680,7 +738,7 @@ export function AllTasksBoardPage() {
           />
         ) : (
           <TaskListView
-            tasks={filteredTasks}
+            tasks={sortedTasks}
             movingTaskIds={movingTaskIds}
             onUpdateStatus={handleListStatusUpdate}
           />
