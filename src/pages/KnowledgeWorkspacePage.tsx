@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   fetchAllKnowledge,
+  fetchOrganizationKnowledgeAccess,
+  fetchProjectKnowledgeAccess,
   uploadKnowledgeAttachment,
 } from '../lib/api/knowledge';
 import {
@@ -11,11 +13,13 @@ import {
   updateKnowledgeEntry,
 } from '../lib/knowledge/scope';
 import { getKnowledgeAccentColor } from '../lib/color/entityColor';
+import { KnowledgeAccessManager } from '../components/KnowledgeAccessManager';
 import { KnowledgeIndexOverview } from '../components/KnowledgeIndexOverview';
 import { KnowledgeList } from '../components/KnowledgeList';
 import { QuickKnowledgeCreate } from '../components/QuickKnowledgeCreate';
 import type { KnowledgeSaveTarget } from '../components/QuickKnowledgeCreate';
 import { Select } from '../components/Select';
+import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateKnowledgeInput,
@@ -37,10 +41,13 @@ export function KnowledgeWorkspacePage({
   lockedProjectId,
 }: KnowledgeWorkspacePageProps) {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { organizations, projects, refreshProjects } = useWorkspace();
   const [entries, setEntries] = useState<KnowledgeEntryWithContext[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(true);
   const [organizationId, setOrganizationId] = useState(
     lockedOrganizationId ?? '',
   );
@@ -88,7 +95,56 @@ export function KnowledgeWorkspacePage({
   );
   const selectedProject = projects.find((project) => project.id === projectId);
 
+  useEffect(() => {
+    if (!lockedOrganizationId && !lockedProjectId) {
+      setHasKnowledgeAccess(true);
+      setAccessDenied(false);
+      return;
+    }
+
+    if (isAdmin) {
+      setHasKnowledgeAccess(true);
+      setAccessDenied(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function checkAccess() {
+      try {
+        const status = lockedProjectId
+          ? await fetchProjectKnowledgeAccess(
+              lockedOrganizationId!,
+              lockedProjectId,
+            )
+          : await fetchOrganizationKnowledgeAccess(lockedOrganizationId!);
+        if (cancelled) return;
+        setHasKnowledgeAccess(status.hasAccess);
+        setAccessDenied(!status.hasAccess);
+      } catch {
+        if (cancelled) return;
+        setHasKnowledgeAccess(false);
+        setAccessDenied(true);
+      }
+    }
+
+    void checkAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, [lockedOrganizationId, lockedProjectId, isAdmin]);
+
   const loadEntries = useCallback(async () => {
+    if (
+      (lockedOrganizationId || lockedProjectId) &&
+      !hasKnowledgeAccess &&
+      !isAdmin
+    ) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -106,7 +162,13 @@ export function KnowledgeWorkspacePage({
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [
+    query,
+    lockedOrganizationId,
+    lockedProjectId,
+    hasKnowledgeAccess,
+    isAdmin,
+  ]);
 
   useEffect(() => {
     void loadEntries();
@@ -197,8 +259,27 @@ export function KnowledgeWorkspacePage({
     setEntries((prev) => prev.filter((item) => item.id !== id));
   }
 
+  if (accessDenied) {
+    return (
+      <div className="knowledge-workspace">
+        <div className="alert alert-error">
+          You do not have access to this knowledge base. Ask an administrator
+          to grant knowledge access.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="knowledge-workspace">
+      {isAdmin && lockedOrganizationId && (
+        <KnowledgeAccessManager
+          orgId={lockedOrganizationId}
+          projectId={lockedProjectId}
+          projectName={selectedProject?.name}
+        />
+      )}
+
       <div className="board-filters knowledge-toolbar">
         <label className="board-filter-field">
           Organization

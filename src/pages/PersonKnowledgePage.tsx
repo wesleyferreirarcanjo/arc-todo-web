@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   createPersonKnowledge,
   deletePersonKnowledge,
+  fetchOrganizationKnowledgeAccess,
   fetchPersonKnowledge,
   updatePersonKnowledge,
   uploadKnowledgeAttachment,
@@ -10,6 +11,7 @@ import {
 import { fetchPerson } from '../lib/api/persons';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
+import { useAuth } from '../context/AuthContext';
 import type {
   CreateKnowledgeInput,
   KnowledgeEntry,
@@ -19,17 +21,30 @@ import type { Person } from '../types/person';
 
 export function PersonKnowledgePage() {
   const { orgId, personId } = useParams();
+  const { isAdmin } = useAuth();
   const [person, setPerson] = useState<Person | null>(null);
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!orgId || !personId) return;
 
     setLoading(true);
     setError(null);
+    setAccessDenied(false);
     try {
+      if (!isAdmin) {
+        const access = await fetchOrganizationKnowledgeAccess(orgId);
+        if (!access.hasAccess) {
+          setAccessDenied(true);
+          setEntries([]);
+          setPerson(null);
+          return;
+        }
+      }
+
       const [personData, knowledgeData] = await Promise.all([
         fetchPerson(orgId, personId),
         fetchPersonKnowledge(orgId, personId),
@@ -41,7 +56,7 @@ export function PersonKnowledgePage() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, personId]);
+  }, [orgId, personId, isAdmin]);
 
   useEffect(() => {
     void loadData();
@@ -78,6 +93,22 @@ export function PersonKnowledgePage() {
 
   if (!orgId || !personId) {
     return <Navigate to="/organizations" replace />;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="page-shell">
+        <div className="alert alert-error">
+          You do not have access to this knowledge base. Ask an administrator
+          to grant knowledge access.
+        </div>
+        <div className="page-links">
+          <Link to={`/organizations/${orgId}/persons`} className="text-link">
+            Back to people
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -6,10 +6,12 @@ import {
   fetchProjectTasks,
   updateProjectTask,
 } from '../lib/api/todos';
+import { fetchProjectKnowledgeAccess } from '../lib/api/knowledge';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
+import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateTaskInput,
@@ -19,10 +21,12 @@ import type {
 
 export function ProjectTasksPage() {
   const { orgId, projectId } = useParams();
+  const { isAdmin } = useAuth();
   const { currentProject } = useWorkspace();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(isAdmin);
 
   const loadTasks = useCallback(async () => {
     if (!orgId || !projectId) return;
@@ -42,6 +46,25 @@ export function ProjectTasksPage() {
   useEffect(() => {
     void loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    if (!orgId || !projectId) return;
+    if (isAdmin) {
+      setHasKnowledgeAccess(true);
+      return;
+    }
+    let cancelled = false;
+    void fetchProjectKnowledgeAccess(orgId, projectId)
+      .then((status) => {
+        if (!cancelled) setHasKnowledgeAccess(status.hasAccess);
+      })
+      .catch(() => {
+        if (!cancelled) setHasKnowledgeAccess(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, projectId, isAdmin]);
 
   async function handleCreate(input: CreateTaskInput) {
     if (!orgId || !projectId) return;
@@ -107,12 +130,14 @@ export function ProjectTasksPage() {
         <h2>{currentProject?.name ?? 'Project tasks'}</h2>
         <p className="page-subtitle">Manage tasks for this project.</p>
         <div className="page-links">
-          <Link
-            to={`/organizations/${orgId}/projects/${projectId}/knowledge`}
-            className="text-link"
-          >
-            Project knowledge
-          </Link>
+          {hasKnowledgeAccess && (
+            <Link
+              to={`/organizations/${orgId}/projects/${projectId}/knowledge`}
+              className="text-link"
+            >
+              Project knowledge
+            </Link>
+          )}
         </div>
       </header>
 

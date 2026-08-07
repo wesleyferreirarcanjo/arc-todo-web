@@ -347,3 +347,86 @@ export function deletePersonKnowledge(
     },
   );
 }
+
+export interface KnowledgeAccessStatus {
+  hasAccess: boolean;
+}
+
+export interface KnowledgeGrantUser {
+  userId: string;
+  username: string;
+  createdAt: string;
+}
+
+export function fetchOrganizationKnowledgeAccess(
+  orgId: string,
+): Promise<KnowledgeAccessStatus> {
+  return apiRequest<KnowledgeAccessStatus>(
+    `/organizations/${orgId}/knowledge-access`,
+  );
+}
+
+export function fetchProjectKnowledgeAccess(
+  orgId: string,
+  projectId: string,
+): Promise<KnowledgeAccessStatus> {
+  return apiRequest<KnowledgeAccessStatus>(
+    `/organizations/${orgId}/projects/${projectId}/knowledge-access`,
+  );
+}
+
+export function fetchOrganizationKnowledgeGrants(
+  orgId: string,
+): Promise<KnowledgeGrantUser[]> {
+  return apiRequest<KnowledgeGrantUser[]>(
+    `/organizations/${orgId}/knowledge-grants`,
+  );
+}
+
+export function setOrganizationKnowledgeGrants(
+  orgId: string,
+  userIds: string[],
+): Promise<KnowledgeGrantUser[]> {
+  return apiRequest<KnowledgeGrantUser[]>(
+    `/organizations/${orgId}/knowledge-grants`,
+    {
+      method: 'PUT',
+      body: { userIds },
+    },
+  );
+}
+
+export function fetchProjectKnowledgeGrants(
+  orgId: string,
+  projectId: string,
+): Promise<KnowledgeGrantUser[]> {
+  return apiRequest<KnowledgeGrantUser[]>(
+    `/organizations/${orgId}/projects/${projectId}/knowledge-grants`,
+  );
+}
+
+export function setProjectKnowledgeGrants(
+  orgId: string,
+  projectId: string,
+  userIds: string[],
+): Promise<KnowledgeGrantUser[]> {
+  return apiRequest<KnowledgeGrantUser[]>(
+    `/organizations/${orgId}/projects/${projectId}/knowledge-grants`,
+    {
+      method: 'PUT',
+      body: { userIds },
+    },
+  );
+}
+
+export function grantAllProjectKnowledgeMembers(
+  orgId: string,
+  projectId: string,
+): Promise<KnowledgeGrantUser[]> {
+  return apiRequest<KnowledgeGrantUser[]>(
+    `/organizations/${orgId}/projects/${projectId}/knowledge-grants/grant-all-members`,
+    {
+      method: 'POST',
+    },
+  );
+}
