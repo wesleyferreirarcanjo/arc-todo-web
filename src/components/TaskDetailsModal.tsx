@@ -116,11 +116,14 @@ export function TaskDetailsModal({
   const [postingComment, setPostingComment] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [planCodeOpen, setPlanCodeOpen] = useState(false);
 
   const descriptionFields = taskDescriptionFieldsFromTask(task);
+  const hasPlanCode = Boolean(descriptionFields.planCodeDescription);
 
   useEffect(() => {
     if (!open) {
+      setPlanCodeOpen(false);
       return;
     }
 
@@ -129,6 +132,7 @@ export function TaskDetailsModal({
     setError(null);
     setCopyState('idle');
     setSmartCopyState('idle');
+    setPlanCodeOpen(false);
 
     void Promise.all([
       fetchTaskComments(organizationId, projectId, task.id),
@@ -310,13 +314,17 @@ export function TaskDetailsModal({
           />
         </section>
 
-        <section className="task-details-section">
-          <h4>Plan / code description</h4>
-          <TaskDescriptionView
-            content={descriptionFields.planCodeDescription}
-            emptyLabel="No plan / code description"
-          />
-        </section>
+        {hasPlanCode && (
+          <div className="task-details-plan-code-actions">
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setPlanCodeOpen(true)}
+            >
+              Ver plano / código
+            </button>
+          </div>
+        )}
 
         <section className="task-details-section">
           <h4>Test description</h4>
@@ -510,6 +518,21 @@ export function TaskDetailsModal({
             })()}
         </section>
       </div>
+
+      {hasPlanCode && (
+        <Modal
+          open={planCodeOpen}
+          onClose={() => setPlanCodeOpen(false)}
+          title="Plan / code description"
+          titleId={`task-plan-code-modal-${task.id}`}
+          className="task-plan-code-modal"
+        >
+          <TaskDescriptionView
+            content={descriptionFields.planCodeDescription}
+            emptyLabel="No plan / code description"
+          />
+        </Modal>
+      )}
     </Modal>
   );
 }
