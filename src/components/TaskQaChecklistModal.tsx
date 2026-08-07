@@ -4,9 +4,10 @@ import {
   buildChecklistTaskUpdate,
   formatChecklistLabel,
   normalizeQaChecklistState,
-  parseQaChecklistItems,
+  parseQaChecklistDocument,
 } from '../lib/tasks/taskQaChecklist';
 import type { QaChecklistState, Task } from '../types/todo';
+import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 
 interface TaskQaChecklistModalProps {
@@ -45,10 +46,12 @@ export function TaskQaChecklistModal({
   });
   const [saving, setSaving] = useState(false);
 
-  const checklistItems = useMemo(
-    () => parseQaChecklistItems(task.testDescription),
+  const checklistDocument = useMemo(
+    () => parseQaChecklistDocument(task.testDescription),
     [task.testDescription],
   );
+  const checklistItems = checklistDocument.items;
+  const helpMarkdown = checklistDocument.helpMarkdown;
   const savedState = useMemo(
     () => normalizeQaChecklistState(task.qaChecklistState),
     [task.qaChecklistState],
@@ -126,6 +129,16 @@ export function TaskQaChecklistModal({
       titleId={`task-qa-checklist-${task.id}`}
       className="task-qa-checklist-modal"
     >
+      {helpMarkdown && (
+        <div className="task-qa-checklist-help">
+          <MarkdownContent
+            className="task-qa-checklist-help-content"
+            variant="full"
+            content={helpMarkdown}
+          />
+        </div>
+      )}
+
       {checklistItems.length === 0 ? (
         <p className="task-details-muted">No checklist items found.</p>
       ) : (
