@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { KnowledgeEntry, KnowledgeIndexMetadata } from '../types/knowledge';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { KnowledgeCardIndexStats } from './KnowledgeCardIndexStats';
+import { MarkdownContent } from './MarkdownContent';
 
 interface KnowledgeCardProps {
   entry: KnowledgeEntry;
@@ -11,12 +12,6 @@ interface KnowledgeCardProps {
   indexMeta?: KnowledgeIndexMetadata | null;
   indexLoading?: boolean;
   onOpen: () => void;
-}
-
-function previewContent(text: string, max = 120): string {
-  const trimmed = text.trim();
-  if (trimmed.length <= max) return trimmed;
-  return `${trimmed.slice(0, max).trimEnd()}…`;
 }
 
 export function KnowledgeCard({
@@ -63,9 +58,11 @@ export function KnowledgeCard({
 
       <div className="knowledge-card-content">
         <h3 className="knowledge-card-title">{entry.title}</h3>
-        <p className="knowledge-content knowledge-card-preview">
-          {previewContent(entry.content)}
-        </p>
+        <MarkdownContent
+          className="knowledge-card-preview"
+          variant="preview"
+          content={entry.content}
+        />
         <p className="knowledge-meta">
           Updated {new Date(entry.updatedAt).toLocaleDateString()}
         </p>

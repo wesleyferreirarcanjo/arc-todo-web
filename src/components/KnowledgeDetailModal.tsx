@@ -9,6 +9,7 @@ import { Modal } from './Modal';
 import { KnowledgeAttachments } from './KnowledgeAttachments';
 import { KnowledgeEntryIndex } from './KnowledgeEntryIndex';
 import { knowledgeDeleteCopy } from '../lib/knowledge/destructiveCopy';
+import { MarkdownContent } from './MarkdownContent';
 
 interface KnowledgeDetailModalProps {
   open: boolean;
@@ -145,7 +146,7 @@ export function KnowledgeDetailModal({
           </div>
         ) : (
           <>
-            <p className="knowledge-content">{entry.content}</p>
+            <MarkdownContent variant="full" content={entry.content} />
             <p className="knowledge-meta">
               Updated {new Date(entry.updatedAt).toLocaleString()}
             </p>
