@@ -6671,6 +6671,16 @@ textarea {
   width: min(100%, 44rem);
 }
 
+.task-bug-history-modal {
+  width: min(100%, 36rem);
+}
+
+.task-bug-history-summary {
+  margin: 0 0 0.85rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .task-qa-checklist-modal .modal-body {
   padding: 1rem;
   scrollbar-width: thin;

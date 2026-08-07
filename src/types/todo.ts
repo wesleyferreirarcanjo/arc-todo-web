@@ -57,6 +57,8 @@ export interface Task {
   bugReason?: string | null;
   buggedAt?: string | null;
   buggedById?: string | null;
+  bugReportCount?: number;
+  bugResolveCount?: number;
   qaChecklistState?: QaChecklistState;
   qaChecklistProgress?: QaChecklistProgress | null;
   subtaskProgress?: SubtaskProgress | null;
@@ -123,7 +125,12 @@ export interface UpdateTaskInput {
   qaChecklistState?: QaChecklistState;
 }
 
-export type TaskHistoryField = 'title' | 'description' | 'dueDate';
+export type TaskHistoryField =
+  | 'title'
+  | 'description'
+  | 'dueDate'
+  | 'isBug'
+  | 'bugReason';
 
 export interface TaskComment {
   id: string;

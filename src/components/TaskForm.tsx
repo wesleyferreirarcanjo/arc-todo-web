@@ -129,6 +129,7 @@ export function TaskForm({
         values={descriptions}
         onChange={handleDescriptionChange}
         compact
+        showAiFields={false}
       />
 
       <div className="form-row">

@@ -7,12 +7,15 @@ interface TaskDescriptionFieldsProps {
     value: TaskDescriptionFormState[K],
   ) => void;
   compact?: boolean;
+  /** When false, hide plan/code + test (AI-filled). Default true for edit flows. */
+  showAiFields?: boolean;
 }
 
 export function TaskDescriptionFields({
   values,
   onChange,
   compact = false,
+  showAiFields = true,
 }: TaskDescriptionFieldsProps) {
   const businessRows = compact ? 3 : 4;
   const planRows = compact ? 4 : 6;
@@ -33,31 +36,35 @@ export function TaskDescriptionFields({
         />
       </label>
 
-      <label>
-        Plan / code description
-        <span className="field-help">
-          How to implement the work: affected areas, execution order, and constraints.
-        </span>
-        <textarea
-          value={values.planCodeDescription}
-          onChange={(event) => onChange('planCodeDescription', event.target.value)}
-          placeholder="Technical execution plan for agents or developers"
-          rows={planRows}
-        />
-      </label>
+      {showAiFields && (
+        <>
+          <label>
+            Plan / code description
+            <span className="field-help">
+              How to implement the work: affected areas, execution order, and constraints.
+            </span>
+            <textarea
+              value={values.planCodeDescription}
+              onChange={(event) => onChange('planCodeDescription', event.target.value)}
+              placeholder="Technical execution plan for agents or developers"
+              rows={planRows}
+            />
+          </label>
 
-      <label>
-        Test description
-        <span className="field-help">
-          How to verify the work during Dev Test, QA Test, and final checks.
-        </span>
-        <textarea
-          value={values.testDescription}
-          onChange={(event) => onChange('testDescription', event.target.value)}
-          placeholder="Automated checks and manual QA expectations"
-          rows={testRows}
-        />
-      </label>
+          <label>
+            Test description
+            <span className="field-help">
+              How to verify the work during Dev Test, QA Test, and final checks.
+            </span>
+            <textarea
+              value={values.testDescription}
+              onChange={(event) => onChange('testDescription', event.target.value)}
+              placeholder="Automated checks and manual QA expectations"
+              rows={testRows}
+            />
+          </label>
+        </>
+      )}
     </>
   );
 }

@@ -12,6 +12,7 @@ import {
   parseQaChecklistItems,
 } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskEvidence } from '../types/todo';
+import { TaskBugHistoryModal } from './TaskBugHistoryModal';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 
 interface TaskQaSectionProps {
@@ -34,6 +35,7 @@ export function TaskQaSection({
   onTaskChange,
 }: TaskQaSectionProps) {
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const [bugHistoryOpen, setBugHistoryOpen] = useState(false);
   const [evidence, setEvidence] = useState<TaskEvidence[]>([]);
   const [loadingEvidence, setLoadingEvidence] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -197,6 +199,13 @@ export function TaskQaSection({
             Ver checklist
           </button>
         )}
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => setBugHistoryOpen(true)}
+        >
+          Ver histórico de bug
+        </button>
         {!task.isBug ? (
           <button
             type="button"
@@ -294,6 +303,14 @@ export function TaskQaSection({
         projectId={projectId}
         onTaskChange={onTaskChange}
         onError={setQaError}
+      />
+
+      <TaskBugHistoryModal
+        open={bugHistoryOpen}
+        onClose={() => setBugHistoryOpen(false)}
+        task={task}
+        organizationId={organizationId}
+        projectId={projectId}
       />
     </section>
   );

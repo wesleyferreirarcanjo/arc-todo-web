@@ -66,11 +66,17 @@ interface TaskDetailsModalProps {
   onTaskSynced?: (task: Task) => void;
 }
 
-const historyFieldLabels: Record<TaskHistoryEntry['field'], string> = {
+const historyFieldLabels: Record<'title' | 'description' | 'dueDate', string> = {
   title: 'Title',
   description: 'Description',
   dueDate: 'Due date',
 };
+
+function isVisibleChangeHistoryEntry(
+  entry: TaskHistoryEntry,
+): entry is TaskHistoryEntry & { field: 'title' | 'description' | 'dueDate' } {
+  return entry.field === 'title' || entry.field === 'description' || entry.field === 'dueDate';
+}
 
 function formatDisplayDate(value: string | null | undefined): string {
   if (!value) {
@@ -79,7 +85,10 @@ function formatDisplayDate(value: string | null | undefined): string {
   return new Date(value).toLocaleString();
 }
 
-function formatHistoryValue(field: TaskHistoryEntry['field'], value: string | null): string {
+function formatHistoryValue(
+  field: 'title' | 'description' | 'dueDate',
+  value: string | null,
+): string {
   if (!value) {
     return field === 'dueDate' ? 'No due date' : 'Empty';
   }
@@ -470,27 +479,35 @@ export function TaskDetailsModal({
           <h4>Change history</h4>
           {loading ? (
             <p className="task-details-muted">Loading history...</p>
-          ) : history.length === 0 ? (
-            <p className="task-details-muted">No title, description, or due date changes yet.</p>
-          ) : (
-            <ul className="task-history-list">
-              {history.map((entry) => (
-                <li key={entry.id} className="task-history-item">
-                  <div className="task-history-item-header">
-                    <strong>{historyFieldLabels[entry.field]}</strong>
-                    <time dateTime={entry.createdAt}>
-                      {formatDisplayDate(entry.createdAt)}
-                    </time>
-                  </div>
-                  <p className="task-history-change">
-                    <span>{formatHistoryValue(entry.field, entry.oldValue)}</span>
-                    <span className="task-history-arrow">→</span>
-                    <span>{formatHistoryValue(entry.field, entry.newValue)}</span>
+          ) : (() => {
+              const visibleHistory = history.filter(isVisibleChangeHistoryEntry);
+              if (visibleHistory.length === 0) {
+                return (
+                  <p className="task-details-muted">
+                    No title, description, or due date changes yet.
                   </p>
-                </li>
-              ))}
-            </ul>
-          )}
+                );
+              }
+              return (
+                <ul className="task-history-list">
+                  {visibleHistory.map((entry) => (
+                    <li key={entry.id} className="task-history-item">
+                      <div className="task-history-item-header">
+                        <strong>{historyFieldLabels[entry.field]}</strong>
+                        <time dateTime={entry.createdAt}>
+                          {formatDisplayDate(entry.createdAt)}
+                        </time>
+                      </div>
+                      <p className="task-history-change">
+                        <span>{formatHistoryValue(entry.field, entry.oldValue)}</span>
+                        <span className="task-history-arrow">→</span>
+                        <span>{formatHistoryValue(entry.field, entry.newValue)}</span>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
         </section>
       </div>
     </Modal>
