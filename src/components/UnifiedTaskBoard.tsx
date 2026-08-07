@@ -15,6 +15,7 @@ import {
   useExpandedBoardColumns,
 } from '../lib/board/boardColumnLimit';
 import { getFullBoardWidth } from '../lib/board/boardLayout';
+import { resolveBoardActionTarget } from '../lib/board/resolveBoardActionTarget';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import {
   StatusMoveAnimationProvider,
@@ -136,6 +137,49 @@ function UnifiedTaskBoardInner({
     [tasks],
   );
 
+  // Nested TaskCards reuse these handlers; always resolve by clicked id (not the parent closure).
+  const handleCardUpdate = useCallback(
+    async (
+      id: string,
+      input: Partial<UpdateTaskInput>,
+      replaced?: TaskWithContext,
+    ) => {
+      const target = resolveBoardActionTarget(taskById, id);
+      if (!target) return;
+      await onUpdate(target, input, replaced);
+    },
+    [onUpdate, taskById],
+  );
+
+  const handleCardDelete = useCallback(
+    async (id: string) => {
+      const target = resolveBoardActionTarget(taskById, id);
+      if (!target) return;
+      await onDelete(target);
+    },
+    [onDelete, taskById],
+  );
+
+  const handleCardCreateSubtask = useCallback(
+    async (parentId: string, input: CreateTaskInput) => {
+      if (!onCreateSubtask) return;
+      const parent = resolveBoardActionTarget(taskById, parentId);
+      if (!parent) return;
+      await onCreateSubtask(parent, input);
+    },
+    [onCreateSubtask, taskById],
+  );
+
+  const handleCardSetParent = useCallback(
+    async (taskId: string, parentId: string | null) => {
+      if (!onSetParent) return;
+      const target = resolveBoardActionTarget(taskById, taskId);
+      if (!target) return;
+      await onSetParent(target, parentId);
+    },
+    [onSetParent, taskById],
+  );
+
   const {
     activeTaskId,
     activeDragIds,
@@ -224,20 +268,12 @@ function UnifiedTaskBoardInner({
                             isDragging={activeDragIds.has(task.id)}
                             isMoving={movingTaskIds?.has(task.id)}
                             draggingTaskId={activeTaskId ?? undefined}
-                            onUpdate={(_id, input, replaced) =>
-                              onUpdate(task, input, replaced as TaskWithContext | undefined)
-                            }
-                            onDelete={() => onDelete(task)}
+                            onUpdate={handleCardUpdate}
+                            onDelete={handleCardDelete}
                             onCreateSubtask={
-                              onCreateSubtask
-                                ? (_parentId, input) => onCreateSubtask(task, input)
-                                : undefined
+                              onCreateSubtask ? handleCardCreateSubtask : undefined
                             }
-                            onSetParent={
-                              onSetParent
-                                ? (_taskId, parentId) => onSetParent(task, parentId)
-                                : undefined
-                            }
+                            onSetParent={onSetParent ? handleCardSetParent : undefined}
                             parentCandidates={tasks}
                           />
                         );
@@ -265,15 +301,9 @@ function UnifiedTaskBoardInner({
                           isDragging={activeDragIds.has(item.task.id)}
                           isMoving={movingTaskIds?.has(item.task.id)}
                           draggingTaskId={activeTaskId ?? undefined}
-                          onUpdate={(_id, input, replaced) =>
-                            onUpdate(contextTask, input, replaced as TaskWithContext | undefined)
-                          }
-                          onDelete={() => onDelete(contextTask)}
-                          onSetParent={
-                            onSetParent
-                              ? (_taskId, parentId) => onSetParent(contextTask, parentId)
-                              : undefined
-                          }
+                          onUpdate={handleCardUpdate}
+                          onDelete={handleCardDelete}
+                          onSetParent={onSetParent ? handleCardSetParent : undefined}
                           parentCandidates={tasks}
                         />
                       );
