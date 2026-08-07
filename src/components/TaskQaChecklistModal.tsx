@@ -130,13 +130,14 @@ export function TaskQaChecklistModal({
       className="task-qa-checklist-modal"
     >
       {helpMarkdown && (
-        <div className="task-qa-checklist-help">
+        <section className="task-qa-checklist-help" aria-label="Test description">
+          <h4 className="task-qa-checklist-help-title">Test description</h4>
           <MarkdownContent
             className="task-qa-checklist-help-content"
             variant="full"
             content={helpMarkdown}
           />
-        </div>
+        </section>
       )}
 
       {checklistItems.length === 0 ? (

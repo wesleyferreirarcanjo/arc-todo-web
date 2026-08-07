@@ -6677,13 +6677,20 @@ textarea {
 .task-qa-checklist-help {
   margin-bottom: 1rem;
   padding: 0.75rem 0.9rem;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 0.5rem;
-  background: var(--surface-muted, #f9fafb);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 10px);
+  background: var(--bg-elevated);
+}
+
+.task-qa-checklist-help-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .task-qa-checklist-help-content {
-  color: var(--text-muted, #4b5563);
+  color: var(--text-muted);
   font-size: 0.925rem;
 }
 
@@ -6692,7 +6699,7 @@ textarea {
   margin-bottom: 0.35rem;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-color, #1f2937);
+  color: var(--text-primary);
 }
 
 .task-qa-checklist-help-content.markdown-content.is-full :is(h1, h2, h3, h4):first-child {
@@ -6702,6 +6709,10 @@ textarea {
 .task-qa-checklist-help-content.markdown-content.is-full :is(p, ul, ol) {
   margin-top: 0.25rem;
   margin-bottom: 0.35rem;
+}
+
+.task-qa-checklist-help-content.markdown-content.is-full a {
+  color: var(--link);
 }
 
 .task-qa-checklist-modal {

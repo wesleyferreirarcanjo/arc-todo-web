@@ -326,14 +326,6 @@ export function TaskDetailsModal({
           </div>
         )}
 
-        <section className="task-details-section">
-          <h4>Test description</h4>
-          <TaskDescriptionView
-            content={descriptionFields.testDescription}
-            emptyLabel="No test description"
-          />
-        </section>
-
         <TaskQaSection
           task={task}
           organizationId={organizationId}

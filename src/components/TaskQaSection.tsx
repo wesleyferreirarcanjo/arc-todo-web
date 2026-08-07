@@ -9,7 +9,7 @@ import {
 import {
   computeQaChecklistProgress,
   normalizeQaChecklistState,
-  parseQaChecklistItems,
+  parseQaChecklistDocument,
 } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskEvidence } from '../types/todo';
 import { TaskBugHistoryModal } from './TaskBugHistoryModal';
@@ -43,10 +43,13 @@ export function TaskQaSection({
   const [bugReason, setBugReason] = useState(task.bugReason ?? '');
   const [flaggingBug, setFlaggingBug] = useState(false);
 
-  const checklistItems = useMemo(
-    () => parseQaChecklistItems(task.testDescription),
+  const checklistDocument = useMemo(
+    () => parseQaChecklistDocument(task.testDescription),
     [task.testDescription],
   );
+  const checklistItems = checklistDocument.items;
+  const hasChecklistContent =
+    checklistItems.length > 0 || Boolean(checklistDocument.helpMarkdown);
   const checklistState = normalizeQaChecklistState(task.qaChecklistState);
   const checklistProgress =
     task.qaChecklistProgress ??
@@ -190,7 +193,7 @@ export function TaskQaSection({
       </div>
 
       <div className="task-qa-actions">
-        {checklistItems.length > 0 && (
+        {hasChecklistContent && (
           <button
             type="button"
             className="btn btn-secondary btn-sm"
