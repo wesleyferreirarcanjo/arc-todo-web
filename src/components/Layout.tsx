@@ -10,6 +10,7 @@ import {
   getSidebarCollapsed,
   setSidebarCollapsed,
 } from '../lib/storage/appStorage';
+import { useDocumentChrome } from '../hooks/useDocumentChrome';
 
 function Icon({ children, className = 'sidebar-nav-icon' }: { children: ReactNode; className?: string }) {
   return (
@@ -154,6 +155,7 @@ const primaryNav = [
 ] as const;
 
 export function Layout() {
+  useDocumentChrome();
   const { logout, isAdmin } = useAuth();
   const location = useLocation();
   const settingsRef = useRef<HTMLDivElement>(null);
