@@ -119,6 +119,7 @@ function IndexPipeline({ job }: { job: RagIndexJob }) {
 }
 
 function JobStatusCard({ job }: { job: RagIndexJob }) {
+  const showError = Boolean(job.lastError);
   return (
     <article className="knowledge-card rag-index-job-card">
       <div className="rag-index-job-header">
@@ -132,11 +133,7 @@ function JobStatusCard({ job }: { job: RagIndexJob }) {
         {job.queuePosition ? ` · queue #${job.queuePosition}` : ''}
         {job.chunkCount > 0 ? ` · ${job.chunkCount} chunks indexed` : ''}
       </p>
-      {job.status === 'failed' && job.lastError ? (
-        <p className="form-error">{job.lastError}</p>
-      ) : (
-        <IndexPipeline job={job} />
-      )}
+      {showError ? <p className="form-error">{job.lastError}</p> : <IndexPipeline job={job} />}
     </article>
   );
 }
@@ -528,9 +525,23 @@ export function RagChunksPage() {
 
           {indexStatus ? (
             <>
+              {indexStatus.ragEnabled === false || indexStatus.workerEnabled === false ? (
+                <p className="form-error" role="status">
+                  {indexStatus.ragEnabled === false
+                    ? 'RAG is disabled in settings — indexing and retrieval are paused.'
+                    : 'Index worker is disabled in settings — jobs will stay queued until it is re-enabled.'}
+                </p>
+              ) : null}
+
               <p className="subtitle">
                 {indexStatus.totalChunks} indexed chunks · {indexStatus.queuedJobs} queued ·{' '}
                 {indexStatus.processingJobs} processing · {indexStatus.failedJobs} failed
+                {indexStatus.ragEnabled != null
+                  ? ` · RAG ${indexStatus.ragEnabled ? 'on' : 'off'}`
+                  : ''}
+                {indexStatus.workerEnabled != null
+                  ? ` · worker ${indexStatus.workerEnabled ? 'on' : 'off'}`
+                  : ''}
               </p>
 
               {indexStatus.processingJob ? (
@@ -553,6 +564,26 @@ export function RagChunksPage() {
                   <p className="subtitle">Waiting or running jobs</p>
                   {indexStatus.activeJobs
                     .filter((job) => job.id !== indexStatus.processingJob?.id)
+                    .map((job) => (
+                      <JobStatusCard key={job.id} job={job} />
+                    ))}
+                </div>
+              ) : null}
+
+              {(indexStatus.recentJobs.filter(
+                (job) =>
+                  job.status === 'failed' ||
+                  (Boolean(job.lastError) && job.id !== indexStatus.processingJob?.id),
+              ).length > 0) ? (
+                <div style={{ marginTop: '1rem' }}>
+                  <p className="subtitle">Failed or skipped (recent)</p>
+                  {indexStatus.recentJobs
+                    .filter(
+                      (job) =>
+                        job.status === 'failed' ||
+                        (Boolean(job.lastError) && job.id !== indexStatus.processingJob?.id),
+                    )
+                    .slice(0, 10)
                     .map((job) => (
                       <JobStatusCard key={job.id} job={job} />
                     ))}

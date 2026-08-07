@@ -94,6 +94,8 @@ export interface RagIndexStatus {
   activeJobs: RagIndexJob[];
   processingJob: RagIndexJob | null;
   recentJobs: RagIndexJob[];
+  ragEnabled?: boolean | null;
+  workerEnabled?: boolean | null;
 }
 
 export interface RagIndexedChunk {

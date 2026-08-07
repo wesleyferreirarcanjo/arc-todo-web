@@ -9,6 +9,7 @@ export interface KnowledgeEntry {
   organizationId: string | null;
   projectId: string | null;
   personId: string | null;
+  taskId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,11 +37,13 @@ export interface KnowledgeEntryWithContext extends KnowledgeEntry {
 export interface CreateKnowledgeInput {
   title: string;
   content: string;
+  taskId?: string | null;
 }
 
 export interface UpdateKnowledgeInput {
   title?: string;
   content?: string;
+  taskId?: string | null;
 }
 
 export interface ListKnowledgeQuery {
@@ -49,6 +52,7 @@ export interface ListKnowledgeQuery {
   organizationId?: string;
   projectId?: string;
   personId?: string;
+  taskId?: string;
   fileName?: string;
   mimeType?: string;
   hasAttachments?: boolean;

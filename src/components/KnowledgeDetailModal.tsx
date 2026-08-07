@@ -1,14 +1,17 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type {
   KnowledgeEntry,
   KnowledgeScopeContext,
   UpdateKnowledgeInput,
 } from '../types/knowledge';
+import type { Task } from '../types/todo';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Modal } from './Modal';
+import { Select } from './Select';
 import { KnowledgeAttachments } from './KnowledgeAttachments';
 import { KnowledgeEntryIndex } from './KnowledgeEntryIndex';
 import { knowledgeDeleteCopy } from '../lib/knowledge/destructiveCopy';
+import { fetchProjectTasks } from '../lib/api/todos';
 import { MarkdownContent } from './MarkdownContent';
 
 interface KnowledgeDetailModalProps {
@@ -35,19 +38,54 @@ export function KnowledgeDetailModal({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
+  const [taskId, setTaskId] = useState(entry.taskId ?? '');
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [reindexVersion, setReindexVersion] = useState(0);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  const canLinkTask =
+    scope.type === 'project' ||
+    (entry.scope === 'project' && Boolean(entry.organizationId && entry.projectId));
+  const linkOrgId =
+    scope.type === 'project' ? scope.orgId : entry.organizationId ?? '';
+  const linkProjectId =
+    scope.type === 'project' ? scope.projectId : entry.projectId ?? '';
+
   const accentStyle = accentColor
     ? ({ '--entity-accent': accentColor } as CSSProperties)
     : undefined;
+
+  useEffect(() => {
+    setTitle(entry.title);
+    setContent(entry.content);
+    setTaskId(entry.taskId ?? '');
+  }, [entry]);
+
+  useEffect(() => {
+    if (!canLinkTask || !linkOrgId || !linkProjectId) {
+      setTasks([]);
+      return;
+    }
+    let cancelled = false;
+    void fetchProjectTasks(linkOrgId, linkProjectId)
+      .then((items) => {
+        if (!cancelled) setTasks(items);
+      })
+      .catch(() => {
+        if (!cancelled) setTasks([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canLinkTask, linkOrgId, linkProjectId]);
 
   function handleClose() {
     setEditing(false);
     setTitle(entry.title);
     setContent(entry.content);
+    setTaskId(entry.taskId ?? '');
     onClose();
   }
 
@@ -59,6 +97,7 @@ export function KnowledgeDetailModal({
       await onUpdate(entry.id, {
         title: title.trim(),
         content: content.trim(),
+        ...(canLinkTask ? { taskId: taskId || null } : {}),
       });
       setEditing(false);
       setReindexVersion((current) => current + 1);
@@ -79,10 +118,12 @@ export function KnowledgeDetailModal({
   }
 
   const deleteCopy = knowledgeDeleteCopy(entry.title);
+  const linkedTask = tasks.find((task) => task.id === (entry.taskId ?? ''));
 
   function handleCancelEdit() {
     setTitle(entry.title);
     setContent(entry.content);
+    setTaskId(entry.taskId ?? '');
     setEditing(false);
   }
 
@@ -125,6 +166,24 @@ export function KnowledgeDetailModal({
                 rows={8}
               />
             </label>
+            {canLinkTask ? (
+              <label className="board-filter-field">
+                Vincular a tarefa (opcional)
+                <Select
+                  value={taskId}
+                  onChange={setTaskId}
+                  options={[
+                    { value: '', label: 'Nenhuma (projeto inteiro)' },
+                    ...tasks.map((task) => ({
+                      value: task.id,
+                      label: task.displayId
+                        ? `${task.displayId} — ${task.title}`
+                        : task.title,
+                    })),
+                  ]}
+                />
+              </label>
+            ) : null}
             <div className="knowledge-actions">
               <button
                 type="button"
@@ -149,6 +208,11 @@ export function KnowledgeDetailModal({
             <MarkdownContent variant="full" content={entry.content} />
             <p className="knowledge-meta">
               Updated {new Date(entry.updatedAt).toLocaleString()}
+              {linkedTask
+                ? ` · Linked to ${linkedTask.displayId} — ${linkedTask.title}`
+                : entry.taskId
+                  ? ' · Linked to a task'
+                  : ''}
             </p>
             <KnowledgeEntryIndex
               knowledgeId={entry.id}

@@ -67,6 +67,7 @@ function IndexPipeline({ job }: { job: RagIndexJob }) {
 }
 
 function JobStatusCard({ job }: { job: RagIndexJob }) {
+  const showError = Boolean(job.lastError);
   return (
     <article className="knowledge-card rag-index-job-card">
       <div className="rag-index-job-header">
@@ -80,11 +81,7 @@ function JobStatusCard({ job }: { job: RagIndexJob }) {
         {job.queuePosition ? ` · queue #${job.queuePosition}` : ''}
         {job.chunkCount > 0 ? ` · ${job.chunkCount} chunks indexed` : ''}
       </p>
-      {job.status === 'failed' && job.lastError ? (
-        <p className="form-error">{job.lastError}</p>
-      ) : (
-        <IndexPipeline job={job} />
-      )}
+      {showError ? <p className="form-error">{job.lastError}</p> : <IndexPipeline job={job} />}
     </article>
   );
 }
@@ -100,6 +97,13 @@ function IndexStatusCard({
   syncing: boolean;
   onSync: () => void;
 }) {
+  const recentFailedOrSkipped =
+    indexStatus?.recentJobs.filter(
+      (job) =>
+        job.status === 'failed' ||
+        (Boolean(job.lastError) && job.id !== indexStatus.processingJob?.id),
+    ) ?? [];
+
   return (
     <div className="notice-card rag-index-status-card">
       <div className="rag-index-status-header">
@@ -119,9 +123,23 @@ function IndexStatusCard({
 
       {indexStatus ? (
         <>
+          {indexStatus.ragEnabled === false || indexStatus.workerEnabled === false ? (
+            <p className="form-error" role="status">
+              {indexStatus.ragEnabled === false
+                ? 'RAG is disabled in settings — indexing and retrieval are paused.'
+                : 'Index worker is disabled in settings — jobs will stay queued until it is re-enabled.'}
+            </p>
+          ) : null}
+
           <p className="subtitle">
             {indexStatus.totalChunks} indexed chunks · {indexStatus.queuedJobs} queued ·{' '}
             {indexStatus.processingJobs} processing · {indexStatus.failedJobs} failed
+            {indexStatus.ragEnabled != null
+              ? ` · RAG ${indexStatus.ragEnabled ? 'on' : 'off'}`
+              : ''}
+            {indexStatus.workerEnabled != null
+              ? ` · worker ${indexStatus.workerEnabled ? 'on' : 'off'}`
+              : ''}
           </p>
 
           {indexStatus.processingJob ? (
@@ -147,6 +165,15 @@ function IndexStatusCard({
                 .map((job) => (
                   <JobStatusCard key={job.id} job={job} />
                 ))}
+            </div>
+          ) : null}
+
+          {recentFailedOrSkipped.length > 0 ? (
+            <div className="rag-testing-status-detail">
+              <p className="subtitle">Failed or skipped (recent)</p>
+              {recentFailedOrSkipped.slice(0, 10).map((job) => (
+                <JobStatusCard key={job.id} job={job} />
+              ))}
             </div>
           ) : null}
         </>

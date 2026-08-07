@@ -125,7 +125,15 @@ export function QuickKnowledgeCreate({
         )}
 
         {canSave ? (
-          <KnowledgeForm onSubmit={handleSubmit} submitLabel="Create knowledge" />
+          <KnowledgeForm
+            onSubmit={handleSubmit}
+            submitLabel="Create knowledge"
+            taskLink={
+              saveTarget === 'project' && organizationId && projectId
+                ? { organizationId, projectId }
+                : null
+            }
+          />
         ) : (
           <p className="status-message">
             Select an organization or project in the filters before saving scoped
