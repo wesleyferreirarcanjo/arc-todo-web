@@ -878,7 +878,7 @@ textarea:focus-visible {
 
 .modal {
   width: min(100%, 640px);
-  max-height: min(90vh, 860px);
+  max-height: min(90dvh, 860px);
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
@@ -2346,6 +2346,27 @@ textarea {
   .checkbox-field input[type='checkbox'] {
     width: 1.5rem;
     height: 1.5rem;
+  }
+
+  .btn-sm,
+  .board-view-toggle-btn,
+  .modal-close,
+  .quick-create-trigger,
+  .sidebar-nav-link,
+  .sidebar-footer-btn,
+  .sidebar-settings-trigger,
+  .sidebar-settings-menu-item {
+    min-height: 2.75rem;
+  }
+
+  .board-view-toggle-btn {
+    min-width: 2.75rem;
+    padding-inline: 0.85rem;
+  }
+
+  .entity-card:hover,
+  .task-card:hover {
+    transform: none;
   }
 }
 
@@ -4123,6 +4144,28 @@ textarea {
   .knowledge-list {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .people-page-summary,
+  .people-list-header,
+  .organizations-list-header,
+  .knowledge-index-overview-actions,
+  .organization-form-actions,
+  .person-form-actions,
+  .entity-edit-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .people-list-header,
+  .organizations-list-header {
+    gap: 0.75rem;
+  }
+
+  .entity-list,
+  .organizations-page .entity-list,
+  .people-page .entity-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .knowledge-card.is-compact {
@@ -5655,6 +5698,9 @@ textarea {
     align-items: center;
     gap: 0.5rem;
     padding: 0.65rem;
+    padding-top: max(0.65rem, env(safe-area-inset-top, 0px));
+    padding-left: max(0.65rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.65rem, env(safe-area-inset-right, 0px));
   }
 
   .sidebar.is-collapsed {
@@ -5670,7 +5716,6 @@ textarea {
   }
 
   .sidebar-header-label,
-  .sidebar-nav-label,
   .sidebar-context,
   .sidebar.is-collapsed [data-tooltip]::before,
   .sidebar.is-collapsed [data-tooltip]::after {
@@ -5681,6 +5726,13 @@ textarea {
     margin-left: 0;
   }
 
+  .sidebar-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
   .sidebar-primary-nav {
     grid-column: 2;
     min-width: 0;
@@ -5688,12 +5740,38 @@ textarea {
     flex-wrap: nowrap;
     gap: 0.45rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    padding-bottom: 0.1rem;
   }
 
   .sidebar.is-collapsed .sidebar-primary-nav {
     flex-direction: row;
     flex-wrap: nowrap;
+  }
+
+  /* Keep nav labels visible on the top bar so menus stay legible at phone width. */
+  .sidebar-nav-label {
+    display: inline;
+    overflow: visible;
+    white-space: nowrap;
+    text-overflow: clip;
+  }
+
+  .sidebar-nav-link {
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    gap: 0.45rem;
+  }
+
+  .sidebar.is-collapsed .sidebar-nav-link {
+    justify-content: flex-start;
+    padding-inline: 0.75rem;
+  }
+
+  .sidebar.is-collapsed .sidebar-nav-label {
+    display: inline;
   }
 
   .sidebar-footer,
@@ -5715,15 +5793,24 @@ textarea {
   .sidebar.is-collapsed .sidebar-settings-trigger {
     flex: 0 0 auto;
     width: auto;
-    min-width: 2.35rem;
-    min-height: 2.35rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     padding-inline: 0.55rem;
+    justify-content: center;
   }
 
+  /* Top-bar Settings flyout must open downward; upward would clip off-screen. */
+  .sidebar-settings-menu,
   .sidebar.is-collapsed .sidebar-settings-menu {
     left: auto;
     right: 0;
-    bottom: calc(100% + 0.35rem);
+    top: calc(100% + 0.35rem);
+    bottom: auto;
+    min-width: 12.5rem;
+    max-width: min(18rem, calc(100vw - 1.5rem));
+    max-height: min(70dvh, 28rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .content-area {
@@ -5732,10 +5819,14 @@ textarea {
     min-height: 0;
     min-width: 0;
     padding: 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 
   .content-area.is-board-page {
     padding: 0.5rem 0.75rem 0.75rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
   }
 
   .app-main,
@@ -5775,6 +5866,24 @@ textarea {
   .board-filter-field.knowledge-filter-toggle {
     flex: 1 1 100%;
     align-self: stretch;
+  }
+
+  .task-import-export-panel,
+  .task-import-export-status,
+  .task-import-export-error {
+    max-width: calc(100vw - 2rem);
+    right: 0;
+    left: auto;
+  }
+
+  .modal {
+    max-height: min(90dvh, 860px);
+  }
+
+  .modal-overlay {
+    padding: 1rem;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   }
 
   .settings-page-tabs {
@@ -5817,6 +5926,12 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  :root,
+  [data-theme='dark'],
+  [data-theme='light'] {
+    --board-column-min-width: min(280px, 85vw);
+  }
+
   .login-card,
   .entity-form,
   .task-form {
@@ -5827,31 +5942,131 @@ textarea {
     padding: 0.85rem;
   }
 
+  .board-filter-field {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .board-filter-actions {
+    gap: 0.5rem;
+  }
+
+  .board-filter-actions > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Near-fullscreen modal sheets on phone. */
+  .modal-overlay {
+    padding: 0;
+    align-items: stretch;
+    place-items: stretch;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .task-details-modal {
+    width: 100%;
+  }
+
+  .modal-header {
+    padding: 1rem 1.1rem;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    flex-shrink: 0;
+  }
+
+  .modal-close {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .modal-body {
+    padding: 1.1rem;
+    padding-bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .task-details-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .task-details-actions {
+    width: 100%;
+  }
+
+  .task-details-actions .btn,
+  .task-details-actions .btn-sm,
+  .task-details-actions button {
+    flex: 1 1 auto;
+    min-height: 2.75rem;
+  }
+
   .chat-widget-root {
-    right: 0.85rem;
-    bottom: 0.85rem;
+    right: max(0.85rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
   }
 
   .chat-widget-fab.is-closed {
-    right: 0.85rem;
-    bottom: 0.85rem;
+    right: max(0.85rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
   }
 
   .chat-widget-root.is-open {
+    inset: 0;
     right: 0;
     bottom: 0;
-    top: auto;
+    top: 0;
+    left: 0;
     padding: 0;
+    align-items: stretch;
   }
 
   .chat-widget-panel {
-    width: min(calc(100vw - 1.7rem), calc(100vw - 1.7rem));
+    width: 100%;
     height: min(calc(100dvh - 5.5rem), 85dvh);
+    border-radius: var(--radius-lg);
   }
 
   .chat-widget-root.is-open .chat-widget-panel {
-    width: min(100vw, 33rem);
-    height: 90dvh;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .chat-widget-tabs {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  }
+
+  .chat-widget-fab.is-open {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .chat-widget-fab.is-open .chat-widget-close-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .people-create-section,
+  .organizations-create-section,
+  .people-list-section,
+  .organizations-list-section {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
