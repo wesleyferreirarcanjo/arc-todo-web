@@ -3286,6 +3286,12 @@ textarea {
   overflow: hidden;
 }
 
+.task-card.is-subtask .task-description.markdown-content {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
 .task-card.is-subtask.is-detached-subtask {
   margin-left: 0;
   padding: 0.75rem 0.85rem 3.5rem 0.95rem;
@@ -3642,6 +3648,10 @@ textarea {
   -webkit-line-clamp: 3;
 }
 
+.task-card .task-description.markdown-content {
+  -webkit-line-clamp: unset;
+}
+
 .task-card-header h3 {
   min-width: 0;
   margin: 0;
@@ -3763,6 +3773,13 @@ textarea {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 8;
+  overflow: hidden;
+}
+
+.task-description.markdown-content {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
   overflow: hidden;
 }
 
@@ -3899,7 +3916,11 @@ textarea {
 .task-details-description {
   color: var(--text-primary);
   line-height: 1.6;
+}
+
+.task-details-description.is-empty {
   white-space: pre-wrap;
+  color: var(--text-muted);
 }
 
 .task-details-meta-grid {
@@ -4137,7 +4158,7 @@ textarea {
   margin: 0;
 }
 
-/* Shared Markdown renderer (knowledge cards + detail modal) */
+/* Shared Markdown renderer (knowledge + task descriptions) */
 .markdown-content {
   color: var(--text-primary);
   line-height: 1.6;

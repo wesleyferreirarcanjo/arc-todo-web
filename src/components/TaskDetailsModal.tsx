@@ -10,8 +10,29 @@ import {
   fetchTaskHistory,
 } from '../lib/api/todos';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
+import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 import { TaskQaSection } from './TaskQaSection';
+
+function TaskDescriptionView({
+  content,
+  emptyLabel,
+}: {
+  content: string | null;
+  emptyLabel: string;
+}) {
+  if (!content) {
+    return <p className="task-details-description is-empty">{emptyLabel}</p>;
+  }
+
+  return (
+    <MarkdownContent
+      className="task-details-description"
+      variant="full"
+      content={content}
+    />
+  );
+}
 
 function CopyIcon({ className = 'task-copy-icon' }: { className?: string }) {
   return (
@@ -274,23 +295,26 @@ export function TaskDetailsModal({
 
         <section className="task-details-section">
           <h4>Business description</h4>
-          <p className="task-details-description">
-            {descriptionFields.businessDescription ?? 'No business description'}
-          </p>
+          <TaskDescriptionView
+            content={descriptionFields.businessDescription}
+            emptyLabel="No business description"
+          />
         </section>
 
         <section className="task-details-section">
           <h4>Plan / code description</h4>
-          <p className="task-details-description">
-            {descriptionFields.planCodeDescription ?? 'No plan / code description'}
-          </p>
+          <TaskDescriptionView
+            content={descriptionFields.planCodeDescription}
+            emptyLabel="No plan / code description"
+          />
         </section>
 
         <section className="task-details-section">
           <h4>Test description</h4>
-          <p className="task-details-description">
-            {descriptionFields.testDescription ?? 'No test description'}
-          </p>
+          <TaskDescriptionView
+            content={descriptionFields.testDescription}
+            emptyLabel="No test description"
+          />
         </section>
 
         <TaskQaSection

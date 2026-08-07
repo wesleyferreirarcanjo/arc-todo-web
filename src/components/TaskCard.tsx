@@ -38,6 +38,7 @@ import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFor
 import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
+import { MarkdownContent } from './MarkdownContent';
 
 function formatDueDateForInput(dueDate: string | null): string {
   if (!dueDate) return '';
@@ -877,7 +878,11 @@ export function TaskCard({
           {(() => {
             const preview = taskDescriptionFieldsFromTask(task).businessDescription;
             return preview && !compact && (isDetachedSubtask || !isSubtask) ? (
-              <p className="task-description">{preview}</p>
+              <MarkdownContent
+                className="task-description"
+                variant="preview"
+                content={preview}
+              />
             ) : null;
           })()}
 
@@ -1251,7 +1256,11 @@ export function TaskCardOverlay({
       {(() => {
         const preview = taskDescriptionFieldsFromTask(task).businessDescription;
         return preview && !compact ? (
-          <p className="task-description">{preview}</p>
+          <MarkdownContent
+            className="task-description"
+            variant="preview"
+            content={preview}
+          />
         ) : null;
       })()}
     </article>
