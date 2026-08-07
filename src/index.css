@@ -6579,6 +6579,22 @@ textarea {
   letter-spacing: 0.02em;
 }
 
+.task-qa-parent-owned-notice {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #d8dde6);
+  background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+  color: var(--text-secondary, #5a6472);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.task-details-parent-qa-hint {
+  margin-top: -0.35rem;
+  margin-bottom: 0.75rem;
+}
+
 .task-qa-section {
   border-top: 1px solid var(--border);
   padding-top: 0.75rem;

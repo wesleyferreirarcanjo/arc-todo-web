@@ -19,6 +19,7 @@ interface TaskQaSectionProps {
   task: Task;
   organizationId: string;
   projectId: string;
+  parentDisplayId?: string;
   onTaskChange?: (task: Task) => void;
 }
 
@@ -32,8 +33,11 @@ export function TaskQaSection({
   task,
   organizationId,
   projectId,
+  parentDisplayId,
   onTaskChange,
 }: TaskQaSectionProps) {
+  const isSubtask = Boolean(task.parentTaskId);
+  const parentLabel = parentDisplayId ?? 'parent task';
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [bugHistoryOpen, setBugHistoryOpen] = useState(false);
   const [evidence, setEvidence] = useState<TaskEvidence[]>([]);
@@ -56,6 +60,12 @@ export function TaskQaSection({
     computeQaChecklistProgress(task.testDescription, checklistState);
 
   useEffect(() => {
+    if (isSubtask) {
+      setEvidence([]);
+      setLoadingEvidence(false);
+      return;
+    }
+
     let cancelled = false;
     setLoadingEvidence(true);
     setQaError(null);
@@ -82,7 +92,7 @@ export function TaskQaSection({
     return () => {
       cancelled = true;
     };
-  }, [organizationId, projectId, task.id, task.updatedAt]);
+  }, [isSubtask, organizationId, projectId, task.id, task.updatedAt]);
 
   async function handleUploadEvidence(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -184,7 +194,7 @@ export function TaskQaSection({
     <section className="task-details-section task-qa-section">
       <div className="task-qa-header">
         <h4>QA</h4>
-        {checklistProgress && (
+        {!isSubtask && checklistProgress && (
           <span className="task-qa-progress-badge">
             Checklist {checklistProgress.done}/{checklistProgress.total}
           </span>
@@ -192,8 +202,16 @@ export function TaskQaSection({
         {task.isBug && <span className="task-bug-badge">Bug</span>}
       </div>
 
+      {isSubtask ? (
+        <p className="task-qa-parent-owned-notice">
+          Acceptance QA (Ver checklist and evidence) lives on the parent{' '}
+          <strong>{parentLabel}</strong>. Use bug actions below for
+          implementation issues on this subtask.
+        </p>
+      ) : null}
+
       <div className="task-qa-actions">
-        {hasChecklistContent && (
+        {!isSubtask && hasChecklistContent && (
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -248,65 +266,69 @@ export function TaskQaSection({
         </p>
       )}
 
-      <div className="task-qa-evidence">
-        <div className="task-qa-evidence-header">
-          <h5>Evidências</h5>
-          <label className="btn btn-secondary btn-sm task-qa-upload-btn">
-            {uploading ? 'Enviando...' : 'Enviar arquivo'}
-            <input
-              type="file"
-              accept="image/*,video/*"
-              disabled={uploading}
-              onChange={(event) => {
-                void handleUploadEvidence(event.target.files);
-                event.target.value = '';
-              }}
-            />
-          </label>
-        </div>
+      {!isSubtask && (
+        <div className="task-qa-evidence">
+          <div className="task-qa-evidence-header">
+            <h5>Evidências</h5>
+            <label className="btn btn-secondary btn-sm task-qa-upload-btn">
+              {uploading ? 'Enviando...' : 'Enviar arquivo'}
+              <input
+                type="file"
+                accept="image/*,video/*"
+                disabled={uploading}
+                onChange={(event) => {
+                  void handleUploadEvidence(event.target.files);
+                  event.target.value = '';
+                }}
+              />
+            </label>
+          </div>
 
-        {loadingEvidence ? (
-          <p className="task-details-muted">Loading evidence...</p>
-        ) : evidence.length === 0 ? (
-          <p className="task-details-muted">No evidence uploaded yet.</p>
-        ) : (
-          <ul className="task-qa-evidence-list">
-            {evidence.map((item) => (
-              <li key={item.id} className="task-qa-evidence-item">
-                <button
-                  type="button"
-                  className="task-qa-evidence-link"
-                  onClick={() => void handlePreviewEvidence(item)}
-                >
-                  {item.originalFilename}
-                </button>
-                <span className="task-qa-evidence-meta">
-                  {formatBytes(item.sizeBytes)}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => void handleDeleteEvidence(item.id)}
-                >
-                  Remover
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+          {loadingEvidence ? (
+            <p className="task-details-muted">Loading evidence...</p>
+          ) : evidence.length === 0 ? (
+            <p className="task-details-muted">No evidence uploaded yet.</p>
+          ) : (
+            <ul className="task-qa-evidence-list">
+              {evidence.map((item) => (
+                <li key={item.id} className="task-qa-evidence-item">
+                  <button
+                    type="button"
+                    className="task-qa-evidence-link"
+                    onClick={() => void handlePreviewEvidence(item)}
+                  >
+                    {item.originalFilename}
+                  </button>
+                  <span className="task-qa-evidence-meta">
+                    {formatBytes(item.sizeBytes)}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => void handleDeleteEvidence(item.id)}
+                  >
+                    Remover
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {qaError && <p className="task-details-error">{qaError}</p>}
 
-      <TaskQaChecklistModal
-        open={checklistOpen}
-        onClose={() => setChecklistOpen(false)}
-        task={task}
-        organizationId={organizationId}
-        projectId={projectId}
-        onTaskChange={onTaskChange}
-        onError={setQaError}
-      />
+      {!isSubtask && (
+        <TaskQaChecklistModal
+          open={checklistOpen}
+          onClose={() => setChecklistOpen(false)}
+          task={task}
+          organizationId={organizationId}
+          projectId={projectId}
+          onTaskChange={onTaskChange}
+          onError={setQaError}
+        />
+      )}
 
       <TaskBugHistoryModal
         open={bugHistoryOpen}

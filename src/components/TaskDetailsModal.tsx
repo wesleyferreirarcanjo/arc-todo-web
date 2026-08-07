@@ -301,9 +301,16 @@ export function TaskDetailsModal({
         )}
 
         {task.subtaskProgress && task.subtaskProgress.total > 0 && (
-          <p className="task-details-subtask-progress">
-            Subtasks: {task.subtaskProgress.done}/{task.subtaskProgress.total} done
-          </p>
+          <>
+            <p className="task-details-subtask-progress">
+              Subtasks: {task.subtaskProgress.done}/{task.subtaskProgress.total}{' '}
+              done
+            </p>
+            <p className="task-details-muted task-details-parent-qa-hint">
+              Acceptance QA (Ver checklist) covers this whole outcome — not each
+              subtask.
+            </p>
+          </>
         )}
 
         <section className="task-details-section">
@@ -330,6 +337,7 @@ export function TaskDetailsModal({
           task={task}
           organizationId={organizationId}
           projectId={projectId}
+          parentDisplayId={parentDisplayId}
           onTaskChange={onTaskSynced}
         />
 
