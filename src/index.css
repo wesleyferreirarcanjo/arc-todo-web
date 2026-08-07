@@ -957,7 +957,7 @@ textarea:focus-visible {
   display: none;
 }
 
-.task-create-modal .task-form label:first-of-type {
+.task-create-modal .task-form > label:first-of-type {
   margin-top: 0;
 }
 
