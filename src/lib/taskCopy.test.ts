@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatTaskCopyText, formatTaskSmartCopyText } from './taskCopy';
+import {
+  BATCH_SMART_COPY_MAX,
+  formatTaskCopyText,
+  formatTaskSmartCopyText,
+  formatTasksBatchSmartCopyText,
+} from './taskCopy';
 import type { Task } from '../types/todo';
 
 const parentTask: Task = {
@@ -91,5 +96,95 @@ describe('formatTaskSmartCopyText', () => {
     expect(text).toContain('## Parent');
     expect(text).toContain('display_id: #arc-1');
     expect(text).toContain('## Subtasks\nnone');
+  });
+});
+
+describe('formatTasksBatchSmartCopyText', () => {
+  const orgId = '57df4a79-d87d-40e1-9fb0-2da29d8ebecf';
+  const secondTask: Task = {
+    ...parentTask,
+    id: '33333333-3333-3333-3333-333333333333',
+    title: 'Second batch task',
+    taskNumber: 3,
+    displayId: '#arc-3',
+  };
+
+  it('builds a multi-task packet with header, id list, and per-task blocks', () => {
+    const text = formatTasksBatchSmartCopyText([
+      {
+        task: parentTask,
+        context: {
+          organizationId: orgId,
+          projectId: parentTask.projectId,
+          organizationName: 'Arc Org',
+          projectName: 'Frontend',
+          subtasks: [subtask],
+        },
+      },
+      {
+        task: secondTask,
+        context: {
+          organizationId: orgId,
+          projectId: secondTask.projectId,
+          projectName: 'Frontend',
+        },
+      },
+    ]);
+
+    expect(text).toContain('# Arc Todo Batch Smart Copy');
+    expect(text).toContain('arc-todo-batch-execute-tasks');
+    expect(text).toContain('arc-todo-batch-execute-bugs');
+    expect(text).toContain('## Selected tasks');
+    expect(text).toContain('1. #arc-1');
+    expect(text).toContain('2. #arc-3');
+    expect(text).toContain('## Task 1 of 2: #arc-1');
+    expect(text).toContain('## Task 2 of 2: #arc-3');
+    expect(text).toContain('Wire UI button (#arc-2)');
+    expect(text).toContain('Second batch task');
+    expect(text).not.toContain('# Arc Todo Smart Copy');
+    expect(text).not.toContain('make a concise implementation plan from this task before editing');
+  });
+
+  it('rejects empty and over-cap batches', () => {
+    expect(() => formatTasksBatchSmartCopyText([])).toThrow(
+      /at least one task/i,
+    );
+
+    const items = Array.from({ length: BATCH_SMART_COPY_MAX + 1 }, (_, i) => ({
+      task: {
+        ...parentTask,
+        id: `44444444-4444-4444-4444-${String(i).padStart(12, '0')}`,
+        displayId: `#arc-${100 + i}`,
+        taskNumber: 100 + i,
+      },
+      context: {
+        organizationId: orgId,
+        projectId: parentTask.projectId,
+      },
+    }));
+
+    expect(() => formatTasksBatchSmartCopyText(items)).toThrow(
+      new RegExp(`limited to ${BATCH_SMART_COPY_MAX}`, 'i'),
+    );
+  });
+
+  it('accepts exactly the max batch size', () => {
+    const items = Array.from({ length: BATCH_SMART_COPY_MAX }, (_, i) => ({
+      task: {
+        ...parentTask,
+        id: `55555555-5555-5555-5555-${String(i).padStart(12, '0')}`,
+        displayId: `#arc-${200 + i}`,
+        taskNumber: 200 + i,
+      },
+      context: {
+        organizationId: orgId,
+        projectId: parentTask.projectId,
+      },
+    }));
+
+    const text = formatTasksBatchSmartCopyText(items);
+    expect(text).toContain(`1. #arc-200`);
+    expect(text).toContain(`5. #arc-204`);
+    expect(text).toContain('## Task 5 of 5: #arc-204');
   });
 });

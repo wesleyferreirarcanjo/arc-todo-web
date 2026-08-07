@@ -194,3 +194,116 @@ export async function copyTaskSmartToClipboard(
 ): Promise<void> {
   await copyTextToClipboard(formatTaskSmartCopyText(task, context));
 }
+
+/** Max tasks in one batch Smart Copy packet (matches batch skill concurrency). */
+export const BATCH_SMART_COPY_MAX = 5;
+
+export interface TaskBatchSmartCopyItem {
+  task: Task;
+  context: TaskSmartCopyContext;
+}
+
+function formatCompactBatchTaskBlock(
+  task: Task,
+  context: TaskSmartCopyContext,
+  index: number,
+  total: number,
+): string {
+  const fields = taskDescriptionFieldsFromTask(task);
+  const subtasks = context.subtasks ?? [];
+  const lines: string[] = [
+    `## Task ${index + 1} of ${total}: ${task.displayId}`,
+    `- display_id: ${task.displayId}`,
+    `- id: ${task.id}`,
+    `- title: ${task.title}`,
+    `- status: ${task.status}`,
+    `- criticity: ${task.criticity}`,
+    `- due_date: ${formatDueDate(task.dueDate)}`,
+    '',
+    '## Context',
+    `- organization_id: ${context.organizationId}`,
+    `- organization_name: ${context.organizationName ?? 'unknown'}`,
+    `- project_id: ${context.projectId}`,
+    `- project_name: ${context.projectName ?? 'unknown'}`,
+  ];
+
+  if (context.parentDisplayId) {
+    lines.push('', '## Parent', `- display_id: ${context.parentDisplayId}`);
+  }
+
+  lines.push(
+    '',
+    formatDescriptionSection('Business Description', fields.businessDescription),
+    '',
+    '## Plan / Code Description',
+    fields.planCodeDescription?.trim() || 'No plan / code description',
+    '',
+    formatDescriptionSection('Test Description', fields.testDescription),
+  );
+
+  if (subtasks.length > 0) {
+    lines.push('', '## Subtasks');
+    subtasks.forEach((subtask, subIndex) => {
+      lines.push('', formatSubtaskBlock(subtask, subIndex));
+    });
+  } else {
+    lines.push('', '## Subtasks', 'none');
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Multi-task Smart Copy for batch skills.
+ * Compact: shared batch agent instructions once; per-task bodies omit the long single-task agent block.
+ * Throws if `items.length` is 0 or greater than {@link BATCH_SMART_COPY_MAX}.
+ */
+export function formatTasksBatchSmartCopyText(
+  items: TaskBatchSmartCopyItem[],
+): string {
+  if (items.length === 0) {
+    throw new Error('Batch Smart Copy requires at least one task');
+  }
+  if (items.length > BATCH_SMART_COPY_MAX) {
+    throw new Error(
+      `Batch Smart Copy is limited to ${BATCH_SMART_COPY_MAX} tasks`,
+    );
+  }
+
+  const displayIds = items.map((item) => item.task.displayId);
+  const lines: string[] = [
+    '# Arc Todo Batch Smart Copy',
+    '',
+    'Paste into Cursor and run the batch skill that matches the work:',
+    '- Features / mixed work: `arc-todo-batch-execute-tasks`',
+    '- Bug fixes / retests: `arc-todo-batch-execute-bugs`',
+    '',
+    'Do not treat this as a single-task Smart Copy. Explicit IDs below win for skill recovery.',
+    '',
+    '## Selected tasks',
+    ...displayIds.map((id, index) => `${index + 1}. ${id}`),
+    '',
+    '## Agent Instructions (batch)',
+    '- Prefer the batch skills named above over executing one packet at a time.',
+    '- Execute / verify each selected task; move completed work to Dev Test (not Done) unless a task explicitly allows skipping test stages.',
+    '- Keep single-task Smart Copy behavior unchanged when pasting a non-batch packet.',
+    '',
+  ];
+
+  items.forEach((item, index) => {
+    lines.push(
+      '---',
+      '',
+      formatCompactBatchTaskBlock(item.task, item.context, index, items.length),
+      '',
+    );
+  });
+
+  return lines.join('\n').trimEnd() + '\n';
+}
+
+export async function copyTasksBatchSmartToClipboard(
+  items: TaskBatchSmartCopyItem[],
+): Promise<void> {
+  await copyTextToClipboard(formatTasksBatchSmartCopyText(items));
+}

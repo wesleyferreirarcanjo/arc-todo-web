@@ -5,7 +5,9 @@ import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
 import { ChatProvider } from '../context/ChatContext';
+import { SmartCopyBasketProvider } from '../context/SmartCopyBasketContext';
 import { ChatWidget } from './ChatWidget';
+import { SmartCopyBasketTray } from './SmartCopyBasketTray';
 import {
   getSidebarCollapsed,
   setSidebarCollapsed,
@@ -436,13 +438,16 @@ export function Layout() {
         </aside>
 
         <ChatProvider>
-          <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
-            <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
-              <Outlet />
-            </main>
-          </div>
+          <SmartCopyBasketProvider>
+            <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
+              <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
+                <Outlet />
+              </main>
+            </div>
 
-          <ChatWidget />
+            <SmartCopyBasketTray />
+            <ChatWidget />
+          </SmartCopyBasketProvider>
         </ChatProvider>
       </div>
     </div>

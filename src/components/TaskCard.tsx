@@ -27,6 +27,7 @@ import {
   TASK_STATUS_OPTIONS,
 } from '../lib/tasks/taskStatus';
 import { useChat } from '../context/ChatContext';
+import { useSmartCopyBasket } from '../context/SmartCopyBasketContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
@@ -265,6 +266,10 @@ export function TaskCard({
   chatContextScope,
 }: TaskCardProps) {
   const { requestTaskInsert, requestTaskRemove, isTaskReferenced } = useChat();
+  const {
+    isInBasket: isInSmartCopyBasket,
+    toggleTask: toggleSmartCopyBasket,
+  } = useSmartCopyBasket();
   const { base } = useMotionTransition();
   const { shouldAnimateStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
@@ -417,6 +422,22 @@ export function TaskCard({
       setSmartCopyTooltip('Copy failed');
       window.setTimeout(() => setSmartCopyTooltip('Smart copy'), 2500);
     }
+  }
+
+  function handleToggleSmartCopyBasket() {
+    if (!resolvedOrganizationId || !resolvedProjectId) {
+      return;
+    }
+
+    setActionMenuOpen(false);
+    toggleSmartCopyBasket(task, {
+      organizationId: resolvedOrganizationId,
+      projectId: resolvedProjectId,
+      organizationName,
+      projectName,
+      parentDisplayId,
+      subtasks: isSubtask ? undefined : resolvedSubtasks,
+    });
   }
 
   function handleCancelEdit() {
@@ -598,6 +619,9 @@ export function TaskCard({
   const showSmartCopy =
     isSmartCopyStatus(task.status) &&
     Boolean(resolvedOrganizationId && resolvedProjectId);
+  const showSmartCopyBasketAction =
+    showSmartCopy && (!isSubtask || isDetachedSubtask);
+  const inSmartCopyBasket = isInSmartCopyBasket(task.id);
   const showCopyActions =
     !compact &&
     (!isSubtask || isDetachedSubtask) &&
@@ -608,7 +632,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -773,6 +797,20 @@ export function TaskCard({
                   <CopyIcon />
                   {copyTooltip}
                 </button>
+
+                {showSmartCopyBasketAction && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="task-action-menu-item"
+                    onClick={handleToggleSmartCopyBasket}
+                  >
+                    <CopyIcon />
+                    {inSmartCopyBasket
+                      ? 'Remove from Smart Copy'
+                      : 'Add to Smart Copy'}
+                  </button>
+                )}
 
                 {canAddSubtask && (
                   <button
