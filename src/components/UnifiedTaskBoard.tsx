@@ -3,6 +3,7 @@ import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type {
   CreateTaskInput,
+  Task,
   TaskStatus,
   TaskWithContext,
   UpdateTaskInput,
@@ -142,11 +143,11 @@ function UnifiedTaskBoardInner({
     async (
       id: string,
       input: Partial<UpdateTaskInput>,
-      replaced?: TaskWithContext,
+      replaced?: Task,
     ) => {
       const target = resolveBoardActionTarget(taskById, id);
       if (!target) return;
-      await onUpdate(target, input, replaced);
+      await onUpdate(target, input, replaced as TaskWithContext | undefined);
     },
     [onUpdate, taskById],
   );
