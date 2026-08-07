@@ -5679,14 +5679,16 @@ textarea {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
-    overflow-x: clip;
+    /* Keep overflow visible here so sticky top bar can pin; clip on .content-area instead. */
+    overflow-x: visible;
   }
 
   .sidebar {
     grid-column: 1;
     grid-row: 1;
-    position: static;
-    top: auto;
+    position: sticky;
+    top: 0;
+    z-index: 30;
     width: auto;
     height: auto;
     max-height: none;
@@ -5701,6 +5703,8 @@ textarea {
     padding-top: max(0.65rem, env(safe-area-inset-top, 0px));
     padding-left: max(0.65rem, env(safe-area-inset-left, 0px));
     padding-right: max(0.65rem, env(safe-area-inset-right, 0px));
+    /* Opaque enough that scrolling content does not show through the stuck bar. */
+    background: var(--bg-surface);
   }
 
   .sidebar.is-collapsed {
@@ -5818,6 +5822,7 @@ textarea {
     grid-row: 2;
     min-height: 0;
     min-width: 0;
+    overflow-x: clip;
     padding: 1rem;
     padding-left: max(1rem, env(safe-area-inset-left, 0px));
     padding-right: max(1rem, env(safe-area-inset-right, 0px));
