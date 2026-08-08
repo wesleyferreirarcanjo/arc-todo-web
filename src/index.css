@@ -5856,7 +5856,8 @@ textarea {
     border-right: none;
     border-bottom: 1px solid var(--border);
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    /* Footer actions moved to Bottom App Bar FAB — two columns only. */
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 0.5rem;
     padding: 0.65rem;
@@ -5940,41 +5941,7 @@ textarea {
 
   .sidebar-footer,
   .sidebar.is-collapsed .sidebar-footer {
-    grid-column: 3;
-    margin: 0;
-    padding: 0;
-    border-top: none;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.45rem;
-    width: auto;
-  }
-
-  .sidebar-footer-btn,
-  .sidebar-settings-trigger,
-  .sidebar.is-collapsed .sidebar-footer-btn,
-  .sidebar.is-collapsed .sidebar-settings-trigger {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    padding-inline: 0.55rem;
-    justify-content: center;
-  }
-
-  /* Top-bar Settings flyout must open downward; upward would clip off-screen. */
-  .sidebar-settings-menu,
-  .sidebar.is-collapsed .sidebar-settings-menu {
-    left: auto;
-    right: 0;
-    top: calc(100% + 0.35rem);
-    bottom: auto;
-    min-width: 12.5rem;
-    max-width: min(18rem, calc(100vw - 1.5rem));
-    max-height: min(70dvh, 28rem);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    display: none;
   }
 
   .content-area {
@@ -6007,6 +5974,10 @@ textarea {
 
   .board-filters {
     gap: 0.75rem;
+  }
+
+  .board-filters-inline {
+    display: none;
   }
 
   .board-filter-actions {
@@ -6066,11 +6037,31 @@ textarea {
   }
 }
 
-.mobile-board-fab {
+.mobile-bottom-app-bar {
   position: fixed;
-  right: max(1rem, env(safe-area-inset-right, 0px));
-  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 40;
+  pointer-events: none;
+  height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+.mobile-bottom-app-bar-surface {
+  position: absolute;
+  inset: 0;
+  border-top: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.mobile-board-fab {
+  position: absolute;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(0.65rem, calc(0.35rem + env(safe-area-inset-bottom, 0px)));
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -6081,7 +6072,7 @@ textarea {
 .undo-toast {
   position: fixed;
   left: 50%;
-  bottom: max(5.5rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));
+  bottom: max(6.75rem, calc(5.25rem + env(safe-area-inset-bottom, 0px)));
   z-index: 80;
   display: flex;
   align-items: center;
@@ -6139,10 +6130,10 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  min-width: 3.25rem;
-  min-height: 3.25rem;
+  width: 4.25rem;
+  height: 4.25rem;
+  min-width: 4.25rem;
+  min-height: 4.25rem;
   border: none;
   border-radius: 999px;
   background: var(--accent);
@@ -6157,7 +6148,7 @@ textarea {
 }
 
 .mobile-board-fab-icon {
-  font-size: 1.75rem;
+  font-size: 2rem;
   line-height: 1;
   font-weight: 500;
 }
@@ -6165,31 +6156,129 @@ textarea {
 .mobile-board-fab-menu {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  min-width: 10.5rem;
-  padding: 0.4rem;
+  gap: 0.35rem;
+  min-width: min(18rem, calc(100vw - 2rem));
+  max-height: min(70dvh, 28rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md, 0.75rem);
-  background: var(--bg-surface);
+  background: var(--bg-elevated, var(--bg-surface));
   box-shadow: var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.12));
 }
 
+.mobile-board-fab-menu-category {
+  margin: 0.35rem 0 0.1rem;
+  padding: 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .mobile-board-fab-menu-item {
-  min-height: 2.75rem;
-  padding: 0.55rem 0.85rem;
+  display: flex;
+  align-items: center;
+  min-height: 3.15rem;
+  padding: 0.7rem 0.95rem;
   border: none;
   border-radius: var(--radius-sm, 0.5rem);
   background: transparent;
   color: var(--text-primary);
   font: inherit;
+  font-size: 1rem;
   font-weight: 600;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
+.mobile-board-fab-menu-subitem {
+  padding-left: 1.5rem;
+  font-weight: 550;
+}
+
+.mobile-board-fab-menu-item.is-active,
 .mobile-board-fab-menu-item:hover,
 .mobile-board-fab-menu-item:focus-visible {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mobile-board-fab-menu-danger {
+  color: var(--danger, #dc2626);
+}
+
+.mobile-filters-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  background: var(--bg-page);
+}
+
+.mobile-filters-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  padding-top: max(0.65rem, env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.mobile-filters-back {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: var(--bg-elevated, var(--bg-surface));
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-filters-title {
+  font-family: var(--font-display, inherit);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mobile-filters-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem 0.85rem;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
+.mobile-filters-body.board-filters {
+  flex-wrap: nowrap;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+.mobile-filters-body .board-filter-field,
+.mobile-filters-body .board-filter-actions,
+.mobile-filters-body .board-quick-filters {
+  width: 100%;
 }
 
 .mobile-quick-create-form {
@@ -6244,15 +6333,19 @@ textarea {
 }
 
 @media (min-width: 1024px) {
-  .mobile-board-fab {
+  .mobile-bottom-app-bar,
+  .mobile-board-fab,
+  .mobile-filters-overlay {
     display: none;
   }
 }
 
 @media (max-width: 1023px) {
   .tasks-page,
-  .board-page {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  .board-page,
+  .content-area,
+  .page-shell {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .chat-widget-root.is-mobile-shell.is-open .chat-widget-panel,
@@ -6312,6 +6405,21 @@ textarea {
   margin-bottom: 0.15rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+}
+
+@media (max-width: 900px) {
+  .board-status-tabs {
+    position: sticky;
+    top: var(--mobile-top-nav-height, 4.25rem);
+    z-index: 25;
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.35rem;
+    background: var(--bg-page);
+    border-bottom: 1px solid var(--border-subtle);
+  }
 }
 
 .board-status-tab {

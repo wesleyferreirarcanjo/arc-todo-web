@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
 import { ChatProvider } from '../context/ChatContext';
 import { SmartCopyBasketProvider } from '../context/SmartCopyBasketContext';
 import { ChatWidget } from './ChatWidget';
+import { MobileBoardFab } from './MobileBoardFab';
 import { SmartCopyBasketTray } from './SmartCopyBasketTray';
 import {
   getSidebarCollapsed,
   setSidebarCollapsed,
 } from '../lib/storage/appStorage';
 import { useDocumentChrome } from '../hooks/useDocumentChrome';
+import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 
 function Icon({ children, className = 'sidebar-nav-icon' }: { children: ReactNode; className?: string }) {
   return (
@@ -161,6 +164,8 @@ export function Layout() {
   const { logout, isAdmin } = useAuth();
   const location = useLocation();
   const settingsRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [collapsed, setCollapsed] = useState(getSidebarCollapsed);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ragMenuOpen, setRagMenuOpen] = useState(
@@ -183,6 +188,30 @@ export function Layout() {
       setRagMenuOpen(true);
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar || !isMobileShell) {
+      document.documentElement.style.removeProperty('--mobile-top-nav-height');
+      return;
+    }
+
+    function syncTopNavHeight() {
+      if (!sidebarRef.current) return;
+      document.documentElement.style.setProperty(
+        '--mobile-top-nav-height',
+        `${sidebarRef.current.offsetHeight}px`,
+      );
+    }
+
+    syncTopNavHeight();
+    const observer = new ResizeObserver(syncTopNavHeight);
+    observer.observe(sidebar);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--mobile-top-nav-height');
+    };
+  }, [isMobileShell]);
 
   function closeSettingsMenu() {
     setSettingsOpen(false);
@@ -245,7 +274,10 @@ export function Layout() {
   return (
     <div className={`app-shell${collapsed ? ' is-sidebar-collapsed' : ''}`}>
       <div className="app-body">
-        <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
+        <aside
+          ref={sidebarRef}
+          className={`sidebar${collapsed ? ' is-collapsed' : ''}`}
+        >
           <div className="sidebar-header">
             {!collapsed && <span className="sidebar-header-label">Navigation</span>}
             <button
@@ -438,16 +470,19 @@ export function Layout() {
         </aside>
 
         <ChatProvider>
-          <SmartCopyBasketProvider>
-            <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
-              <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
-                <Outlet />
-              </main>
-            </div>
+          <BoardMobileShellProvider>
+            <SmartCopyBasketProvider>
+              <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
+                <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
+                  <Outlet />
+                </main>
+              </div>
 
-            <SmartCopyBasketTray />
-            <ChatWidget />
-          </SmartCopyBasketProvider>
+              <SmartCopyBasketTray />
+              <ChatWidget />
+              <MobileBoardFab />
+            </SmartCopyBasketProvider>
+          </BoardMobileShellProvider>
         </ChatProvider>
       </div>
     </div>

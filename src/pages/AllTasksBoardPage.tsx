@@ -19,8 +19,6 @@ import {
 } from '../lib/tasks/taskQuickFilter';
 import {
   sortTasks,
-  TASK_SORT_DIRECTION_OPTIONS,
-  TASK_SORT_FIELD_OPTIONS,
   type TaskSortDirection,
   type TaskSortField,
 } from '../lib/tasks/taskSort';
@@ -38,20 +36,17 @@ import {
   setLastProjectId,
 } from '../lib/storage/appStorage';
 import { getProjectColor } from '../lib/color/entityColor';
-import { BoardColumnVisibilityMenu } from '../components/BoardColumnVisibilityMenu';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
-import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
-import { BoardViewToggle } from '../components/BoardViewToggle';
+import { BoardFiltersControls } from '../components/BoardFiltersControls';
+import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
-import { MobileBoardFab } from '../components/MobileBoardFab';
-import { QuickTaskCreate } from '../components/QuickTaskCreate';
-import { TaskImportExportMenu } from '../components/TaskImportExportMenu';
-import { Select } from '../components/Select';
 import { useAuth } from '../context/AuthContext';
+import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import type {
   BoardCycle,
   BoardCycleHistoryResponse,
@@ -65,14 +60,6 @@ import type {
   TaskWithContext,
   UpdateTaskInput,
 } from '../types/todo';
-
-const PRIORITY_FILTER_OPTIONS: { value: TaskCriticity | ''; label: string }[] = [
-  { value: '', label: 'All priorities' },
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'critical', label: 'Critical' },
-];
 
 function addMovingTaskId(current: Set<string>, taskId: string): Set<string> {
   return new Set(current).add(taskId);
@@ -88,6 +75,7 @@ export function AllTasksBoardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { organizations, projects, refreshProjects } = useWorkspace();
+  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [tasks, setTasks] = useState<TaskWithContext[]>([]);
   const [cycleTasks, setCycleTasks] = useState<Task[]>([]);
   const [activeCycle, setActiveCycle] = useState<BoardCycle | null>(null);
@@ -108,6 +96,7 @@ export function AllTasksBoardPage() {
   const [sortDirection, setSortDirection] = useState<TaskSortDirection>(
     () => getBoardTaskSort().direction,
   );
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [quickFilter, setQuickFilter] = useState<BoardQuickFilter>(() => {
     const stored = getBoardQuickFilter();
     if (stored !== 'all') return stored;
@@ -254,6 +243,27 @@ export function AllTasksBoardPage() {
     setQuickFilter(next);
     setBoardQuickFilter(next);
   }
+
+  const refreshBoard = useCallback(async () => {
+    if (projectFocus) {
+      await loadProjectCycle({ silent: true });
+    } else {
+      await loadTasks({ silent: true });
+    }
+  }, [projectFocus, loadProjectCycle, loadTasks]);
+
+  const openFilters = useCallback(() => {
+    setFiltersOpen(true);
+  }, []);
+
+  useRegisterBoardMobileActions({
+    onCreated: refreshBoard,
+    openFilters,
+    scope:
+      projectFocus && organizationId && projectId
+        ? { organizationId, projectId }
+        : undefined,
+  });
 
   async function handleAdvanceCycle() {
     if (!organizationId || !projectId) return;
@@ -544,112 +554,76 @@ export function AllTasksBoardPage() {
 
   return (
     <div className="tasks-page">
-      <div className="board-filters">
-        <label className="board-filter-field board-filter-search">
-          Title / ID
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Filter by title or ID"
-            aria-label="Filter tasks by title or ID"
-          />
-        </label>
-
-        <label className="board-filter-field">
-          Priority
-          <Select
-            value={priorityFilter}
-            placeholder="All priorities"
-            onChange={(value) => setPriorityFilter(value as TaskCriticity | '')}
-            options={PRIORITY_FILTER_OPTIONS}
-          />
-        </label>
-
-        <label className="board-filter-field">
-          Sort by
-          <Select
-            value={sortField}
-            onChange={handleSortFieldChange}
-            options={TASK_SORT_FIELD_OPTIONS}
-          />
-        </label>
-
-        <label className="board-filter-field">
-          Order
-          <Select
-            value={sortDirection}
-            onChange={handleSortDirectionChange}
-            options={TASK_SORT_DIRECTION_OPTIONS}
-          />
-        </label>
-
-        <label className="board-filter-field">
-          Organization
-          <Select
-            value={organizationId ?? ''}
-            placeholder="All organizations"
-            onChange={handleOrganizationChange}
-            options={[
-              { value: '', label: 'All organizations' },
-              ...organizations.map((organization) => ({
-                value: organization.id,
-                label: organization.name,
-              })),
-            ]}
-          />
-        </label>
-
-        <label className="board-filter-field">
-          Project
-          <Select
-            value={projectId ?? ''}
-            placeholder="All projects"
-            disabled={!organizationId}
-            onChange={handleProjectChange}
-            options={[
-              { value: '', label: 'All projects' },
-              ...projects.map((project) => ({
-                value: project.id,
-                label: project.name,
-              })),
-            ]}
-          />
-        </label>
-
-        <BoardQuickFilterChips
-          value={quickFilter}
-          onChange={handleQuickFilterChange}
+      <div className="board-filters board-filters-inline">
+        <BoardFiltersControls
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          priorityFilter={priorityFilter}
+          onPriorityFilterChange={setPriorityFilter}
+          sortField={sortField}
+          onSortFieldChange={handleSortFieldChange}
+          sortDirection={sortDirection}
+          onSortDirectionChange={handleSortDirectionChange}
+          organizationId={organizationId ?? null}
+          projectId={projectId ?? null}
+          organizations={organizations}
+          projects={projects}
+          onOrganizationChange={handleOrganizationChange}
+          onProjectChange={handleProjectChange}
+          quickFilter={quickFilter}
+          onQuickFilterChange={handleQuickFilterChange}
+          hasFilters={hasFilters}
+          onClearFocus={() => {
+            setSearchParams(new URLSearchParams());
+          }}
+          hiddenColumns={hiddenColumns}
+          onHiddenColumnsChange={handleHiddenColumnsChange}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          tasks={tasks}
+          query={query}
+          onImported={projectFocus ? loadProjectCycle : loadTasks}
+          onCreated={projectFocus ? loadProjectCycle : loadTasks}
+          showQuickCreate
         />
-
-        {hasFilters && (
-          <button
-            type="button"
-            className="btn btn-secondary board-filter-clear"
-            onClick={() => {
-              setSearchParams(new URLSearchParams());
-            }}
-          >
-            Clear focus
-          </button>
-        )}
-
-        <div className="board-filter-actions">
-          <BoardColumnVisibilityMenu
-            hiddenColumns={hiddenColumns}
-            onChange={handleHiddenColumnsChange}
-          />
-          <BoardViewToggle viewMode={viewMode} onChange={handleViewModeChange} />
-          <TaskImportExportMenu
-            tasks={tasks}
-            query={query}
-            onImported={projectFocus ? loadProjectCycle : loadTasks}
-          />
-          <QuickTaskCreate
-            onCreated={projectFocus ? loadProjectCycle : loadTasks}
-          />
-        </div>
       </div>
+
+      <MobileBoardFiltersOverlay
+        open={isMobileShell && filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+      >
+        <BoardFiltersControls
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          priorityFilter={priorityFilter}
+          onPriorityFilterChange={setPriorityFilter}
+          sortField={sortField}
+          onSortFieldChange={handleSortFieldChange}
+          sortDirection={sortDirection}
+          onSortDirectionChange={handleSortDirectionChange}
+          organizationId={organizationId ?? null}
+          projectId={projectId ?? null}
+          organizations={organizations}
+          projects={projects}
+          onOrganizationChange={handleOrganizationChange}
+          onProjectChange={handleProjectChange}
+          quickFilter={quickFilter}
+          onQuickFilterChange={handleQuickFilterChange}
+          hasFilters={hasFilters}
+          onClearFocus={() => {
+            setSearchParams(new URLSearchParams());
+          }}
+          hiddenColumns={hiddenColumns}
+          onHiddenColumnsChange={handleHiddenColumnsChange}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          tasks={tasks}
+          query={query}
+          onImported={projectFocus ? loadProjectCycle : loadTasks}
+          onCreated={projectFocus ? loadProjectCycle : loadTasks}
+          showQuickCreate={false}
+        />
+      </MobileBoardFiltersOverlay>
 
       {!projectFocus && organizationId && !projectId && (
         <p className="status-message board-cycle-focus-hint">
@@ -767,15 +741,6 @@ export function AllTasksBoardPage() {
           loading={historyLoading}
         />
       )}
-
-      <MobileBoardFab
-        onCreated={projectFocus ? loadProjectCycle : loadTasks}
-        scope={
-          projectFocus && organizationId && projectId
-            ? { organizationId, projectId }
-            : undefined
-        }
-      />
     </div>
   );
 }

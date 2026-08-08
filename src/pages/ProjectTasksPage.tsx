@@ -9,10 +9,10 @@ import {
 import { fetchProjectKnowledgeAccess } from '../lib/api/knowledge';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
-import { MobileBoardFab } from '../components/MobileBoardFab';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
 import { useAuth } from '../context/AuthContext';
+import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   CreateTaskInput,
@@ -43,6 +43,16 @@ export function ProjectTasksPage() {
       setLoading(false);
     }
   }, [orgId, projectId]);
+
+  useRegisterBoardMobileActions(
+    orgId && projectId
+      ? {
+          onCreated: loadTasks,
+          openFilters: () => {},
+          scope: { organizationId: orgId, projectId },
+        }
+      : null,
+  );
 
   useEffect(() => {
     void loadTasks();
@@ -163,11 +173,6 @@ export function ProjectTasksPage() {
           onSetParent={handleSetParent}
         />
       )}
-
-      <MobileBoardFab
-        onCreated={loadTasks}
-        scope={{ organizationId: orgId, projectId }}
-      />
     </div>
   );
 }
