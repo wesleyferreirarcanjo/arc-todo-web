@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { CodingTaskMetadata } from '../lib/tasks/taskCategory';
 import { formatTaskCategoryLabel } from '../lib/tasks/taskCategory';
 import { taskDescriptionFieldsFromTask } from '../lib/tasks/taskDescriptions';
-import { formatTaskStatusLabel } from '../lib/tasks/taskStatus';
+import { formatTaskStatusLabel, isSmartCopyStatus } from '../lib/tasks/taskStatus';
 import type { Task, TaskComment, TaskHistoryEntry } from '../types/todo';
 import {
   createTaskComment,
@@ -328,15 +328,17 @@ export function TaskDetailsModal({
               >
                 Copy title + description
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm task-details-smart-copy-btn"
-                aria-label="Smart copy for AI planning"
-                title="Smart copy for AI planning"
-                onClick={() => void handleSmartCopy()}
-              >
-                <CopyIcon />
-              </button>
+              {isSmartCopyStatus(task.status) && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm task-details-smart-copy-btn"
+                  aria-label="Smart copy for AI planning"
+                  title="Smart copy for AI planning"
+                  onClick={() => void handleSmartCopy()}
+                >
+                  <CopyIcon />
+                </button>
+              )}
             </div>
             <button
               type="button"

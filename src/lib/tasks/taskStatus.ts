@@ -29,9 +29,9 @@ export function isTaskStatus(value: string): value is TaskStatus {
   return TASK_STATUS_ORDER.includes(value as TaskStatus);
 }
 
-/** Smart copy is for agent execution before QA / Done. */
+/** Smart copy is for agent execution (To Do / In Progress) before Dev Test / QA / Done. */
 export function isSmartCopyStatus(status: TaskStatus): boolean {
-  return status === 'todo' || status === 'in_progress' || status === 'dev_test';
+  return status === 'todo' || status === 'in_progress';
 }
 
 export interface StatusColumn {

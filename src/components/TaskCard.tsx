@@ -777,7 +777,10 @@ export function TaskCard({
 
   const showAsDragging = isDragging || isDndDragging;
   const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
-  const qaProgress = task.status === 'qa_test' ? checklistProgress : null;
+  const qaProgress =
+    task.status === 'dev_test' || task.status === 'qa_test'
+      ? checklistProgress
+      : null;
   const showSmartCopy =
     isSmartCopyStatus(task.status) &&
     Boolean(resolvedOrganizationId && resolvedProjectId);
