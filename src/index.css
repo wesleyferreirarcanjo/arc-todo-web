@@ -5950,13 +5950,14 @@ textarea {
 .mobile-bottom-app-bar {
   --mobile-bottom-bar-h: 2.75rem;
   --mobile-fab-size: 3.5rem;
+  --mobile-fab-gap: 0.65rem;
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 40;
   pointer-events: none;
-  /* Slim strip for tabs only — FAB is a floating sibling, not part of this box. */
+  /* Slim strip for status icons only — FAB sits fully above this box. */
   height: calc(var(--mobile-bottom-bar-h) + env(safe-area-inset-bottom, 0px));
   overflow: hidden;
 }
@@ -5975,11 +5976,8 @@ textarea {
   pointer-events: none;
   display: flex;
   align-items: center;
-  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-  /* Clear the FAB circle; does not change bar height. */
-  padding-right: calc(
-    var(--mobile-fab-size, 3.5rem) + 1.25rem + max(0.5rem, env(safe-area-inset-right, 0px))
-  );
+  padding-left: max(0.45rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.45rem, env(safe-area-inset-right, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -5987,6 +5985,7 @@ textarea {
   pointer-events: auto;
   flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
   margin: 0;
   padding: 0;
   border: none;
@@ -5994,24 +5993,33 @@ textarea {
   position: static;
   top: auto;
   z-index: auto;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  justify-content: space-evenly;
 }
 
 .mobile-bottom-app-bar-surface .board-status-tab {
-  min-height: 2.25rem;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.25rem 0.35rem;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
-/* FAB floats over the bar: center sits on the bar top edge → half in / half out. */
+.mobile-bottom-app-bar-surface .board-status-tab-label {
+  display: none;
+}
+
+/* FAB completely above the bar with a small gap (not overlapping chrome). */
 .mobile-board-fab {
   --mobile-bottom-bar-h: 2.75rem;
   --mobile-fab-size: 3.5rem;
+  --mobile-fab-gap: 0.65rem;
   position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
   bottom: calc(
-    env(safe-area-inset-bottom, 0px) + var(--mobile-bottom-bar-h) -
-      (var(--mobile-fab-size) / 2)
+    env(safe-area-inset-bottom, 0px) + var(--mobile-bottom-bar-h) +
+      var(--mobile-fab-gap)
   );
   z-index: 41;
   display: flex;
@@ -6031,7 +6039,7 @@ textarea {
 .undo-toast {
   position: fixed;
   left: 50%;
-  bottom: max(6.25rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
+  bottom: max(7.5rem, calc(6.5rem + env(safe-area-inset-bottom, 0px)));
   z-index: 80;
   display: flex;
   align-items: center;
@@ -6365,8 +6373,8 @@ textarea {
   .board-page,
   .content-area,
   .page-shell {
-    /* Slim bar (~2.85rem) + half FAB peeking above + safe area. */
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    /* Slim icon bar + FAB fully above it + gap + safe area. */
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
@@ -6442,6 +6450,14 @@ textarea {
   scrollbar-width: thin;
 }
 
+.board-status-tabs.is-icon-tabs {
+  scrollbar-width: none;
+}
+
+.board-status-tabs.is-icon-tabs::-webkit-scrollbar {
+  display: none;
+}
+
 .board-status-tab {
   flex: 0 0 auto;
   display: inline-flex;
@@ -6458,6 +6474,28 @@ textarea {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.board-status-tab-glyph {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
+  flex-shrink: 0;
+}
+
+.board-status-tabs.is-icon-tabs .board-status-tab {
+  flex-direction: column;
+  border-radius: 0.75rem;
+  gap: 0.1rem;
+}
+
+.board-status-tabs.is-icon-tabs .board-status-tab-count {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.65rem;
+  line-height: 1;
+  font-weight: 700;
 }
 
 .board-status-tab.is-active {
