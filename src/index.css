@@ -5856,9 +5856,8 @@ textarea {
     padding-right: max(1rem, env(safe-area-inset-right, 0px));
     /* Top bar is hidden on mobile — only keep notch inset, no extra black band. */
     padding-top: env(safe-area-inset-top, 0px);
-    background:
-      linear-gradient(var(--bg-surface), var(--bg-surface)),
-      var(--bg-page);
+    /* Page bg only — surface fill made bottom padding look like a stretched app bar. */
+    background: var(--bg-page);
   }
 
   .content-area.is-board-page {
@@ -5866,9 +5865,7 @@ textarea {
     padding-top: env(safe-area-inset-top, 0px);
     padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
     padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
-    background:
-      linear-gradient(var(--bg-surface), var(--bg-surface)),
-      var(--bg-page);
+    background: var(--bg-page);
   }
 
   .app-main,
@@ -6010,11 +6007,11 @@ textarea {
   display: none;
 }
 
-/* FAB completely above the bar with a small gap (not overlapping chrome). */
+/* FAB floats above the bar over board content — wrapper has no chrome background. */
 .mobile-board-fab {
   --mobile-bottom-bar-h: 2.75rem;
   --mobile-fab-size: 3.5rem;
-  --mobile-fab-gap: 0.65rem;
+  --mobile-fab-gap: 0.75rem;
   position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
   bottom: calc(
@@ -6027,6 +6024,12 @@ textarea {
   align-items: flex-end;
   justify-content: flex-end;
   gap: 0.55rem;
+  width: var(--mobile-fab-size);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
   pointer-events: none;
   transform: translateZ(0);
   isolation: isolate;
@@ -6373,21 +6376,31 @@ textarea {
   .board-page,
   .content-area,
   .page-shell {
-    /* Slim icon bar + FAB fully above it + gap + safe area. */
-    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+    /* Clear only the slim Bottom App Bar — FAB floats over content, does not own chrome. */
+    padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .content-area.is-board-page {
+    /* Board scroll owns FAB clearance; avoid empty surface slab under the FAB. */
+    padding-bottom: 0;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .task-board-scroll.is-mobile-tabbed,
+  .content-area.is-board-page .task-list-view {
+    /* Last cards can scroll clear of bar + floating FAB. */
+    padding-bottom: calc(
+      2.85rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
   .app-shell:has(.content-area.is-board-page) {
     height: 100dvh;
     max-height: 100dvh;
-    overflow: hidden;
-  }
-
-  .content-area.is-board-page {
-    min-height: 0;
-    height: 100%;
-    max-height: 100%;
     overflow: hidden;
   }
 
