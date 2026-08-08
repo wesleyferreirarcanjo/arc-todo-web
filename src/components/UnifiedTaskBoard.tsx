@@ -299,73 +299,78 @@ function UnifiedTaskBoardInner({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        {isMobileBoard && activeStatus ? (
-          <BoardStatusTabs
-            columns={columns}
-            activeStatus={activeStatus}
-            counts={statusCounts}
-            onChange={setActiveStatus}
-          />
-        ) : null}
-
+        {/* Flex shell so tabbed columns keep a real height under sticky status tabs. */}
         <div
-          className={`task-board-scroll${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
-          ref={scrollRef}
+          className={`task-board-shell${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
         >
-          <div
-            className={`task-board${
-              isMobileBoard
-                ? ' is-mobile-tabbed'
-                : focusMode
-                  ? ' is-focus-mode'
-                  : ' is-auto-fit'
-            }`}
-          >
-            {visibleColumns.map((column) => {
-              const columnItems = listBoardColumnItems(boardTasks, column.status);
-              const visibleItems = getVisibleBoardColumnItems(
-                columnItems,
-                column.status,
-                expandedColumns,
-              );
-              const hiddenCount = getHiddenBoardColumnCount(
-                columnItems.length,
-                column.status,
-                expandedColumns,
-              );
-              const isFocused = !isMobileBoard && focusMode && focusedStatus === column.status;
-              const isCompact = !isMobileBoard && focusMode && !isFocused;
+          {isMobileBoard && activeStatus ? (
+            <BoardStatusTabs
+              columns={columns}
+              activeStatus={activeStatus}
+              counts={statusCounts}
+              onChange={setActiveStatus}
+            />
+          ) : null}
 
-              return (
-                <BoardColumn
-                  key={column.status}
-                  status={column.status}
-                  title={column.label}
-                  taskCount={columnItems.length}
-                  isDropTarget={overColumnStatus === column.status}
-                  isFocused={isFocused || isMobileBoard}
-                  isCompact={isCompact}
-                  canHideColumn={canHideColumn(column.status, hiddenColumns)}
-                  focusEnabled={!isMobileBoard && focusMode}
-                  onFocus={() => setFocusedStatus(column.status)}
-                  onToggleVisibility={
-                    onToggleColumnVisibility
-                      ? () => onToggleColumnVisibility(column.status)
-                      : undefined
-                  }
-                >
-                  {columnItems.length === 0 ? (
-                    <p className="empty-column">No tasks here yet.</p>
-                  ) : (
-                    renderColumnCards(visibleItems, isCompact)
-                  )}
-                  <BoardColumnShowMore
-                    hiddenCount={hiddenCount}
-                    onShowMore={() => expandColumn(column.status)}
-                  />
-                </BoardColumn>
-              );
-            })}
+          <div
+            className={`task-board-scroll${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
+            ref={scrollRef}
+          >
+            <div
+              className={`task-board${
+                isMobileBoard
+                  ? ' is-mobile-tabbed'
+                  : focusMode
+                    ? ' is-focus-mode'
+                    : ' is-auto-fit'
+              }`}
+            >
+              {visibleColumns.map((column) => {
+                const columnItems = listBoardColumnItems(boardTasks, column.status);
+                const visibleItems = getVisibleBoardColumnItems(
+                  columnItems,
+                  column.status,
+                  expandedColumns,
+                );
+                const hiddenCount = getHiddenBoardColumnCount(
+                  columnItems.length,
+                  column.status,
+                  expandedColumns,
+                );
+                const isFocused = !isMobileBoard && focusMode && focusedStatus === column.status;
+                const isCompact = !isMobileBoard && focusMode && !isFocused;
+
+                return (
+                  <BoardColumn
+                    key={column.status}
+                    status={column.status}
+                    title={column.label}
+                    taskCount={columnItems.length}
+                    isDropTarget={overColumnStatus === column.status}
+                    isFocused={isFocused || isMobileBoard}
+                    isCompact={isCompact}
+                    canHideColumn={canHideColumn(column.status, hiddenColumns)}
+                    focusEnabled={!isMobileBoard && focusMode}
+                    onFocus={() => setFocusedStatus(column.status)}
+                    onToggleVisibility={
+                      onToggleColumnVisibility
+                        ? () => onToggleColumnVisibility(column.status)
+                        : undefined
+                    }
+                  >
+                    {columnItems.length === 0 ? (
+                      <p className="empty-column">No tasks here yet.</p>
+                    ) : (
+                      renderColumnCards(visibleItems, isCompact)
+                    )}
+                    <BoardColumnShowMore
+                      hiddenCount={hiddenCount}
+                      onShowMore={() => expandColumn(column.status)}
+                    />
+                  </BoardColumn>
+                );
+              })}
+            </div>
           </div>
         </div>
 

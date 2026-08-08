@@ -6044,7 +6044,9 @@ textarea {
   bottom: 0;
   z-index: 40;
   pointer-events: none;
-  height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  /* Slim bar; FAB overlaps above it (Material-style). */
+  height: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  overflow: visible;
 }
 
 .mobile-bottom-app-bar-surface {
@@ -6060,7 +6062,8 @@ textarea {
 .mobile-board-fab {
   position: absolute;
   right: max(1rem, env(safe-area-inset-right, 0px));
-  bottom: max(0.65rem, calc(0.35rem + env(safe-area-inset-bottom, 0px)));
+  /* Sit on top of the bar (half over the surface, half above). */
+  bottom: calc(1.65rem + env(safe-area-inset-bottom, 0px));
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -6072,7 +6075,7 @@ textarea {
 .undo-toast {
   position: fixed;
   left: 50%;
-  bottom: max(6.75rem, calc(5.25rem + env(safe-area-inset-bottom, 0px)));
+  bottom: max(5.75rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)));
   z-index: 80;
   display: flex;
   align-items: center;
@@ -6130,10 +6133,10 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 4.25rem;
-  height: 4.25rem;
-  min-width: 4.25rem;
-  min-height: 4.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  min-width: 3.5rem;
+  min-height: 3.5rem;
   border: none;
   border-radius: 999px;
   background: var(--accent);
@@ -6148,7 +6151,7 @@ textarea {
 }
 
 .mobile-board-fab-icon {
-  font-size: 2rem;
+  font-size: 1.65rem;
   line-height: 1;
   font-weight: 500;
 }
@@ -6219,6 +6222,7 @@ textarea {
   width: 100%;
   height: 100dvh;
   max-height: 100dvh;
+  overflow: hidden;
   background: var(--bg-page);
 }
 
@@ -6230,7 +6234,7 @@ textarea {
   padding-top: max(0.65rem, env(safe-area-inset-top, 0px));
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .mobile-filters-back {
@@ -6254,10 +6258,14 @@ textarea {
 }
 
 .mobile-filters-body {
-  flex: 1 1 auto;
+  /* flex-basis 0% so overflow scroll works reliably in nested flex. */
+  flex: 1 1 0%;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   padding: 1rem 0.85rem;
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   display: flex;
@@ -6345,7 +6353,22 @@ textarea {
   .board-page,
   .content-area,
   .page-shell {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    /* Room for slim Bottom App Bar + overlapping FAB. */
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
+  .app-shell:has(.content-area.is-board-page) {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .content-area.is-board-page {
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
   }
 
   .chat-widget-root.is-mobile-shell.is-open .chat-widget-panel,
@@ -6461,8 +6484,25 @@ textarea {
   background: color-mix(in srgb, var(--accent, #3b82f6) 18%, transparent);
 }
 
+/* Tabs + column list share remaining viewport height (prevents blank board). */
+.task-board-shell.is-mobile-tabbed {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.task-board-shell.is-mobile-tabbed .board-status-tabs {
+  flex: 0 0 auto;
+}
+
 .task-board-scroll.is-mobile-tabbed {
+  flex: 1 1 0%;
+  min-height: 12rem;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .task-board.is-mobile-tabbed {
@@ -6472,6 +6512,8 @@ textarea {
   gap: 0;
   width: 100%;
   min-width: 0;
+  height: auto;
+  min-height: 100%;
 }
 
 .task-board.is-mobile-tabbed .board-column,
@@ -6481,6 +6523,30 @@ textarea {
   width: 100%;
   min-width: 0;
   max-width: none;
+  /* Override board-page height:100% + min-height:0 collapse. */
+  height: auto;
+  min-height: 16rem;
+  overflow: visible;
+}
+
+.content-area.is-board-page .task-board-shell.is-mobile-tabbed {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.content-area.is-board-page .task-board.is-mobile-tabbed {
+  min-height: 100%;
+  height: auto;
+}
+
+.content-area.is-board-page .task-board.is-mobile-tabbed .board-column {
+  height: auto;
+  min-height: 16rem;
+  overflow: visible;
+}
+
+.content-area.is-board-page .task-board.is-mobile-tabbed .board-column-body {
+  overflow: visible;
   min-height: 0;
 }
 
