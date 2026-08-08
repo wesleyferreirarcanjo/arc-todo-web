@@ -133,6 +133,60 @@ function FlaskIcon() {
   );
 }
 
+function NavigateIcon() {
+  return (
+    <FabGlyph>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </FabGlyph>
+  );
+}
+
+function KnowledgeIcon() {
+  return (
+    <FabGlyph>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </FabGlyph>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <FabGlyph>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </FabGlyph>
+  );
+}
+
+function OrganizationsIcon() {
+  return (
+    <FabGlyph>
+      <path d="M3 21h18" />
+      <path d="M5 21V7l8-4v18" />
+      <path d="M19 21V11l-6-4" />
+    </FabGlyph>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <FabGlyph>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </FabGlyph>
+  );
+}
+
+type DialLevel = 'main' | 'nav' | 'settings';
+
 type DialAction = {
   id: string;
   label: string;
@@ -198,13 +252,13 @@ export function MobileBoardFab() {
   const { actions, statusTabs } = useBoardMobileShell();
   const reducedMotion = useReducedMotion();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dialLevel, setDialLevel] = useState<DialLevel>('main');
   const [createOpen, setCreateOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!menuOpen) {
-      setSettingsOpen(false);
+      setDialLevel('main');
     }
   }, [menuOpen]);
 
@@ -219,8 +273,8 @@ export function MobileBoardFab() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        if (settingsOpen) {
-          setSettingsOpen(false);
+        if (dialLevel !== 'main') {
+          setDialLevel('main');
           return;
         }
         setMenuOpen(false);
@@ -233,10 +287,17 @@ export function MobileBoardFab() {
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [menuOpen, settingsOpen]);
+  }, [menuOpen, dialLevel]);
 
   const mainActions = useMemo((): DialAction[] => {
-    const items: DialAction[] = [];
+    const items: DialAction[] = [
+      {
+        id: 'navigate',
+        label: 'Navigate',
+        icon: <NavigateIcon />,
+        onClick: () => setDialLevel('nav'),
+      },
+    ];
     if (isBoardPage && actions?.openFilters) {
       items.push({
         id: 'filter',
@@ -282,7 +343,7 @@ export function MobileBoardFab() {
         id: 'settings',
         label: 'Settings',
         icon: <SettingsIcon />,
-        onClick: () => setSettingsOpen(true),
+        onClick: () => setDialLevel('settings'),
       });
     }
     items.push({
@@ -306,13 +367,61 @@ export function MobileBoardFab() {
     toggleTheme,
   ]);
 
+  const navActions = useMemo((): DialAction[] => {
+    const go = (path: string) => {
+      setMenuOpen(false);
+      navigate(path);
+    };
+    const items: DialAction[] = [
+      {
+        id: 'nav-back',
+        label: 'Back',
+        icon: <BackIcon />,
+        onClick: () => setDialLevel('main'),
+      },
+      {
+        id: 'nav-board',
+        label: 'All tasks',
+        icon: <NavigateIcon />,
+        onClick: () => go('/board'),
+      },
+      {
+        id: 'nav-knowledge',
+        label: 'Knowledge',
+        icon: <KnowledgeIcon />,
+        onClick: () => go('/knowledge'),
+      },
+      {
+        id: 'nav-people',
+        label: 'People',
+        icon: <PeopleIcon />,
+        onClick: () => go('/people'),
+      },
+      {
+        id: 'nav-organizations',
+        label: 'Organizations',
+        icon: <OrganizationsIcon />,
+        onClick: () => go('/organizations'),
+      },
+    ];
+    if (isAdmin) {
+      items.push({
+        id: 'nav-users',
+        label: 'Users',
+        icon: <UsersIcon />,
+        onClick: () => go('/admin/users'),
+      });
+    }
+    return items;
+  }, [isAdmin, navigate]);
+
   const settingsActions = useMemo((): DialAction[] => {
     return [
       {
         id: 'back',
         label: 'Back',
         icon: <BackIcon />,
-        onClick: () => setSettingsOpen(false),
+        onClick: () => setDialLevel('main'),
       },
       {
         id: 'settings-chatbot',
@@ -357,8 +466,19 @@ export function MobileBoardFab() {
     return null;
   }
 
-  const dialActions = settingsOpen ? settingsActions : mainActions;
-  const dialKey = settingsOpen ? 'settings' : 'main';
+  const dialActions =
+    dialLevel === 'nav'
+      ? navActions
+      : dialLevel === 'settings'
+        ? settingsActions
+        : mainActions;
+  const dialKey = dialLevel;
+  const dialAriaLabel =
+    dialLevel === 'nav'
+      ? 'Main navigation'
+      : dialLevel === 'settings'
+        ? 'Settings actions'
+        : 'Board actions';
 
   return (
     <>
@@ -380,7 +500,7 @@ export function MobileBoardFab() {
           ref={rootRef}
           className={`mobile-board-fab${menuOpen ? ' is-open' : ''}`}
         >
-          <div className="mobile-board-fab-dial" role="menu" aria-label={settingsOpen ? 'Settings actions' : 'Board actions'}>
+          <div className="mobile-board-fab-dial" role="menu" aria-label={dialAriaLabel}>
             <AnimatePresence mode="popLayout">
               {menuOpen
                 ? dialActions.map((action, index) => (
