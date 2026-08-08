@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   deleteTaskEvidence,
   downloadTaskEvidence,
@@ -12,6 +12,7 @@ import {
   parseQaChecklistDocument,
 } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskEvidence } from '../types/todo';
+import { Modal } from './Modal';
 import { TaskBugHistoryModal } from './TaskBugHistoryModal';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 
@@ -27,6 +28,53 @@ function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isImageEvidence(item: TaskEvidence): boolean {
+  return item.mimeType.startsWith('image/');
+}
+
+function clipboardImageFileName(mimeType: string): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const subtype = mimeType.split('/')[1]?.split('+')[0] || 'png';
+  const ext = subtype === 'jpeg' ? 'jpg' : subtype;
+  return `clipboard-${stamp}.${ext}`;
+}
+
+function extractClipboardImage(clipboardData: DataTransfer | null): File | null {
+  if (!clipboardData) return null;
+
+  for (const item of Array.from(clipboardData.items)) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      if (!blob) continue;
+      if (blob instanceof File && blob.name) return blob;
+      return new File([blob], clipboardImageFileName(item.type || blob.type), {
+        type: item.type || blob.type || 'image/png',
+      });
+    }
+  }
+
+  for (const file of Array.from(clipboardData.files)) {
+    if (file.type.startsWith('image/')) {
+      return file;
+    }
+  }
+
+  return null;
+}
+
+function isTypingTarget(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  const tag = el.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    el.isContentEditable
+  );
 }
 
 export function TaskQaSection({
@@ -46,6 +94,12 @@ export function TaskQaSection({
   const [qaError, setQaError] = useState<string | null>(null);
   const [bugReason, setBugReason] = useState(task.bugReason ?? '');
   const [flaggingBug, setFlaggingBug] = useState(false);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [lightboxItem, setLightboxItem] = useState<TaskEvidence | null>(null);
+  const [pasteZoneHovered, setPasteZoneHovered] = useState(false);
+  const [pasteZoneFocused, setPasteZoneFocused] = useState(false);
+  const pasteZoneRef = useRef<HTMLDivElement>(null);
+  const pasteZoneActive = pasteZoneHovered || pasteZoneFocused;
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -58,6 +112,15 @@ export function TaskQaSection({
   const checklistProgress =
     task.qaChecklistProgress ??
     computeQaChecklistProgress(task.testDescription, checklistState);
+
+  const imageEvidenceIds = useMemo(
+    () =>
+      evidence
+        .filter(isImageEvidence)
+        .map((item) => item.id)
+        .join(','),
+    [evidence],
+  );
 
   useEffect(() => {
     if (isSubtask) {
@@ -94,12 +157,51 @@ export function TaskQaSection({
     };
   }, [isSubtask, organizationId, projectId, task.id, task.updatedAt]);
 
-  async function handleUploadEvidence(fileList: FileList | null) {
-    const file = fileList?.[0];
-    if (!file) {
+  useEffect(() => {
+    if (isSubtask || !imageEvidenceIds) {
+      setThumbUrls({});
       return;
     }
 
+    let cancelled = false;
+    const createdUrls: string[] = [];
+    const ids = imageEvidenceIds.split(',').filter(Boolean);
+
+    void (async () => {
+      const next: Record<string, string> = {};
+      await Promise.all(
+        ids.map(async (evidenceId) => {
+          try {
+            const { blob } = await downloadTaskEvidence(
+              organizationId,
+              projectId,
+              task.id,
+              evidenceId,
+            );
+            if (cancelled) return;
+            const url = URL.createObjectURL(blob);
+            createdUrls.push(url);
+            next[evidenceId] = url;
+          } catch {
+            // Thumbnail is best-effort; list still shows filename.
+          }
+        }),
+      );
+      if (!cancelled) {
+        setThumbUrls(next);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      for (const url of createdUrls) {
+        URL.revokeObjectURL(url);
+      }
+      setThumbUrls({});
+    };
+  }, [isSubtask, imageEvidenceIds, organizationId, projectId, task.id]);
+
+  async function uploadEvidenceFile(file: File) {
     setUploading(true);
     setQaError(null);
     try {
@@ -119,11 +221,53 @@ export function TaskQaSection({
     }
   }
 
+  const uploadEvidenceFileRef = useRef(uploadEvidenceFile);
+  uploadEvidenceFileRef.current = uploadEvidenceFile;
+  const uploadingRef = useRef(uploading);
+  uploadingRef.current = uploading;
+
+  async function handleUploadEvidence(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    await uploadEvidenceFile(file);
+  }
+
+  function handleEvidencePaste(clipboardData: DataTransfer | null) {
+    const file = extractClipboardImage(clipboardData);
+    if (!file || uploadingRef.current) return false;
+    void uploadEvidenceFileRef.current(file);
+    return true;
+  }
+
+  useEffect(() => {
+    if (isSubtask || !pasteZoneActive) return;
+
+    function onDocumentPaste(event: ClipboardEvent) {
+      const active = document.activeElement;
+      if (
+        isTypingTarget(active) &&
+        pasteZoneRef.current &&
+        !pasteZoneRef.current.contains(active)
+      ) {
+        return;
+      }
+      if (handleEvidencePaste(event.clipboardData)) {
+        event.preventDefault();
+      }
+    }
+
+    document.addEventListener('paste', onDocumentPaste);
+    return () => document.removeEventListener('paste', onDocumentPaste);
+  }, [isSubtask, pasteZoneActive]);
+
   async function handleDeleteEvidence(evidenceId: string) {
     setQaError(null);
     try {
       await deleteTaskEvidence(organizationId, projectId, task.id, evidenceId);
       setEvidence((current) => current.filter((row) => row.id !== evidenceId));
+      if (lightboxItem?.id === evidenceId) {
+        setLightboxItem(null);
+      }
     } catch (error: unknown) {
       setQaError(
         error instanceof Error ? error.message : 'Failed to delete evidence',
@@ -131,8 +275,13 @@ export function TaskQaSection({
     }
   }
 
-  async function handlePreviewEvidence(item: TaskEvidence) {
+  async function handleOpenEvidence(item: TaskEvidence) {
     setQaError(null);
+    if (isImageEvidence(item)) {
+      setLightboxItem(item);
+      return;
+    }
+
     try {
       const { blob } = await downloadTaskEvidence(
         organizationId,
@@ -189,6 +338,8 @@ export function TaskQaSection({
       setFlaggingBug(false);
     }
   }
+
+  const lightboxUrl = lightboxItem ? thumbUrls[lightboxItem.id] : undefined;
 
   return (
     <section className="task-details-section task-qa-section">
@@ -267,7 +418,23 @@ export function TaskQaSection({
       )}
 
       {!isSubtask && (
-        <div className="task-qa-evidence">
+        <div
+          ref={pasteZoneRef}
+          className="task-qa-evidence"
+          tabIndex={0}
+          onFocus={() => setPasteZoneFocused(true)}
+          onBlur={(event) => {
+            if (
+              event.relatedTarget instanceof Node &&
+              pasteZoneRef.current?.contains(event.relatedTarget)
+            ) {
+              return;
+            }
+            setPasteZoneFocused(false);
+          }}
+          onMouseEnter={() => setPasteZoneHovered(true)}
+          onMouseLeave={() => setPasteZoneHovered(false)}
+        >
           <div className="task-qa-evidence-header">
             <h5>Evidências</h5>
             <label className="btn btn-secondary btn-sm task-qa-upload-btn">
@@ -284,39 +451,79 @@ export function TaskQaSection({
             </label>
           </div>
 
+          <p className="task-qa-evidence-paste-hint">
+            Cole uma imagem (Ctrl+V / Cmd+V) ou use Enviar arquivo
+          </p>
+
           {loadingEvidence ? (
             <p className="task-details-muted">Loading evidence...</p>
           ) : evidence.length === 0 ? (
             <p className="task-details-muted">No evidence uploaded yet.</p>
           ) : (
             <ul className="task-qa-evidence-list">
-              {evidence.map((item) => (
-                <li key={item.id} className="task-qa-evidence-item">
-                  <button
-                    type="button"
-                    className="task-qa-evidence-link"
-                    onClick={() => void handlePreviewEvidence(item)}
-                  >
-                    {item.originalFilename}
-                  </button>
-                  <span className="task-qa-evidence-meta">
-                    {formatBytes(item.sizeBytes)}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => void handleDeleteEvidence(item.id)}
-                  >
-                    Remover
-                  </button>
-                </li>
-              ))}
+              {evidence.map((item) => {
+                const thumbUrl = thumbUrls[item.id];
+                const image = isImageEvidence(item);
+                return (
+                  <li key={item.id} className="task-qa-evidence-item">
+                    {image && thumbUrl ? (
+                      <button
+                        type="button"
+                        className="task-qa-evidence-thumb-btn"
+                        onClick={() => void handleOpenEvidence(item)}
+                        aria-label={`Preview ${item.originalFilename}`}
+                      >
+                        <img
+                          src={thumbUrl}
+                          alt=""
+                          className="task-qa-evidence-thumb"
+                        />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="task-qa-evidence-link"
+                      onClick={() => void handleOpenEvidence(item)}
+                    >
+                      {item.originalFilename}
+                    </button>
+                    <span className="task-qa-evidence-meta">
+                      {formatBytes(item.sizeBytes)}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => void handleDeleteEvidence(item.id)}
+                    >
+                      Remover
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
       )}
 
       {qaError && <p className="task-details-error">{qaError}</p>}
+
+      <Modal
+        open={Boolean(lightboxItem)}
+        onClose={() => setLightboxItem(null)}
+        title={lightboxItem?.originalFilename ?? 'Evidence'}
+        titleId="task-qa-evidence-lightbox-title"
+        className="task-qa-evidence-lightbox-modal"
+      >
+        {lightboxUrl ? (
+          <img
+            src={lightboxUrl}
+            alt={lightboxItem?.originalFilename ?? ''}
+            className="task-qa-evidence-lightbox-img"
+          />
+        ) : (
+          <p className="task-details-muted">Loading preview...</p>
+        )}
+      </Modal>
 
       {!isSubtask && (
         <TaskQaChecklistModal
