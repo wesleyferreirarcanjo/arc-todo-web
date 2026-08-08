@@ -22,6 +22,8 @@ interface TaskQaSectionProps {
   projectId: string;
   parentDisplayId?: string;
   onTaskChange?: (task: Task) => void;
+  /** Fired after a clipboard image upload succeeds while focus was in Comments. */
+  onEvidenceImagePastedFromComment?: () => void;
 }
 
 function formatBytes(size: number): string {
@@ -32,6 +34,26 @@ function formatBytes(size: number): string {
 
 function isImageEvidence(item: TaskEvidence): boolean {
   return item.mimeType.startsWith('image/');
+}
+
+function isTypingTarget(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  const tag = el.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    el.isContentEditable
+  );
+}
+
+type PasteCueSource = 'bug-reason' | 'comment' | 'other';
+
+function detectPasteCueSource(el: EventTarget | null): PasteCueSource | null {
+  if (!(el instanceof HTMLElement) || !isTypingTarget(el)) return null;
+  if (el.closest('.task-comment-form')) return 'comment';
+  if (el.closest('.task-qa-bug-reason')) return 'bug-reason';
+  return 'other';
 }
 
 function clipboardImageFileName(mimeType: string): string {
@@ -72,6 +94,7 @@ export function TaskQaSection({
   projectId,
   parentDisplayId,
   onTaskChange,
+  onEvidenceImagePastedFromComment,
 }: TaskQaSectionProps) {
   const isSubtask = Boolean(task.parentTaskId);
   const parentLabel = parentDisplayId ?? 'parent task';
@@ -85,6 +108,8 @@ export function TaskQaSection({
   const [flaggingBug, setFlaggingBug] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [lightboxItem, setLightboxItem] = useState<TaskEvidence | null>(null);
+  const [bugReasonPasteCue, setBugReasonPasteCue] = useState(false);
+  const [evidencePasteFlash, setEvidencePasteFlash] = useState(false);
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -186,7 +211,10 @@ export function TaskQaSection({
     };
   }, [isSubtask, imageEvidenceIds, organizationId, projectId, task.id]);
 
-  async function uploadEvidenceFile(file: File) {
+  async function uploadEvidenceFile(
+    file: File,
+    options?: { pasteCue?: PasteCueSource },
+  ) {
     setUploading(true);
     setQaError(null);
     try {
@@ -197,6 +225,13 @@ export function TaskQaSection({
         file,
       );
       setEvidence((current) => [created, ...current]);
+      if (options?.pasteCue === 'bug-reason') {
+        setBugReasonPasteCue(true);
+        setEvidencePasteFlash(true);
+      } else if (options?.pasteCue === 'comment') {
+        onEvidenceImagePastedFromComment?.();
+        setEvidencePasteFlash(true);
+      }
     } catch (error: unknown) {
       setQaError(
         error instanceof Error ? error.message : 'Failed to upload evidence',
@@ -211,6 +246,18 @@ export function TaskQaSection({
   const uploadingRef = useRef(uploading);
   uploadingRef.current = uploading;
 
+  useEffect(() => {
+    if (!bugReasonPasteCue) return;
+    const id = window.setTimeout(() => setBugReasonPasteCue(false), 4500);
+    return () => window.clearTimeout(id);
+  }, [bugReasonPasteCue]);
+
+  useEffect(() => {
+    if (!evidencePasteFlash) return;
+    const id = window.setTimeout(() => setEvidencePasteFlash(false), 1600);
+    return () => window.clearTimeout(id);
+  }, [evidencePasteFlash]);
+
   async function handleUploadEvidence(fileList: FileList | null) {
     const file = fileList?.[0];
     if (!file) return;
@@ -220,9 +267,10 @@ export function TaskQaSection({
   function handleEvidencePaste(clipboardData: DataTransfer | null) {
     const file = extractClipboardImage(clipboardData);
     if (!file || uploadingRef.current) return false;
+    const pasteCue = detectPasteCueSource(document.activeElement) ?? undefined;
     // Sync guard: document + element paste can both fire before setState.
     uploadingRef.current = true;
-    void uploadEvidenceFileRef.current(file);
+    void uploadEvidenceFileRef.current(file, { pasteCue });
     return true;
   }
 
@@ -390,6 +438,11 @@ export function TaskQaSection({
             onChange={(event) => setBugReason(event.target.value)}
             placeholder="Descreva o problema encontrado"
           />
+          {bugReasonPasteCue && (
+            <p className="task-qa-paste-cue" role="status">
+              Imagem enviada para Evidências
+            </p>
+          )}
         </label>
       )}
 
@@ -399,9 +452,15 @@ export function TaskQaSection({
         </p>
       )}
 
+      {task.isBug && bugReasonPasteCue && (
+        <p className="task-qa-paste-cue" role="status">
+          Imagem enviada para Evidências
+        </p>
+      )}
+
       {!isSubtask && (
         <div
-          className="task-qa-evidence"
+          className={`task-qa-evidence${evidencePasteFlash ? ' is-paste-flash' : ''}`}
           tabIndex={0}
           onPaste={(event) => {
             if (handleEvidencePaste(event.clipboardData)) {

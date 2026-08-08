@@ -116,6 +116,7 @@ export function TaskDetailsModal({
   const [error, setError] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState('');
   const [postingComment, setPostingComment] = useState(false);
+  const [commentPasteCue, setCommentPasteCue] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [planCodeOpen, setPlanCodeOpen] = useState(false);
@@ -133,10 +134,17 @@ export function TaskDetailsModal({
   }, [task.title, editingTitle]);
 
   useEffect(() => {
+    if (!commentPasteCue) return;
+    const id = window.setTimeout(() => setCommentPasteCue(false), 4500);
+    return () => window.clearTimeout(id);
+  }, [commentPasteCue]);
+
+  useEffect(() => {
     if (!open) {
       setPlanCodeOpen(false);
       setEditingTitle(false);
       setTitleDraft(task.title);
+      setCommentPasteCue(false);
       return;
     }
 
@@ -448,6 +456,7 @@ export function TaskDetailsModal({
           projectId={projectId}
           parentDisplayId={parentDisplayId}
           onTaskChange={onTaskSynced}
+          onEvidenceImagePastedFromComment={() => setCommentPasteCue(true)}
         />
 
         <dl className="task-details-meta-grid">
@@ -582,6 +591,11 @@ export function TaskDetailsModal({
                 placeholder="Write a comment..."
               />
             </label>
+            {commentPasteCue && (
+              <p className="task-comment-paste-cue" role="status">
+                Imagem enviada para Evidências
+              </p>
+            )}
             <button
               type="submit"
               className="btn btn-primary btn-sm"

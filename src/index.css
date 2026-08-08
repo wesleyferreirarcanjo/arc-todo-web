@@ -7016,8 +7016,26 @@ textarea {
   width: 100%;
 }
 
+.task-qa-paste-cue,
+.task-comment-paste-cue {
+  margin: 0.35rem 0 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
 .task-qa-evidence {
   outline: none;
+  border-radius: 0.35rem;
+  transition: box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+.task-qa-evidence.is-paste-flash {
+  box-shadow: 0 0 0 2px var(--ring);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .task-qa-evidence:focus-visible {
