@@ -3598,6 +3598,17 @@ textarea {
   box-shadow: var(--shadow-lift);
 }
 
+.task-card-context-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 11rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lift);
+}
+
 .task-action-menu-item {
   display: flex;
   align-items: center;
@@ -3923,6 +3934,37 @@ textarea {
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.02em;
+}
+
+.task-details-title-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.task-details-title-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.task-details-title-edit input {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.task-details-title-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .task-details-section h4 {

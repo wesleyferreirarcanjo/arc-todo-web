@@ -8,6 +8,7 @@ import {
   createTaskComment,
   fetchTaskComments,
   fetchTaskHistory,
+  updateProjectTask,
 } from '../lib/api/todos';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { MarkdownContent } from './MarkdownContent';
@@ -62,7 +63,8 @@ interface TaskDetailsModalProps {
   projectName?: string;
   parentDisplayId?: string;
   subtasks?: Task[];
-  onEdit: () => void;
+  /** Full edit form (status, descriptions, …). Omit when the host has no edit UI. */
+  onEdit?: () => void;
   onTaskSynced?: (task: Task) => void;
 }
 
@@ -117,13 +119,24 @@ export function TaskDetailsModal({
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [planCodeOpen, setPlanCodeOpen] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+  const [savingTitle, setSavingTitle] = useState(false);
 
   const descriptionFields = taskDescriptionFieldsFromTask(task);
   const hasPlanCode = Boolean(descriptionFields.planCodeDescription);
 
   useEffect(() => {
+    if (!editingTitle) {
+      setTitleDraft(task.title);
+    }
+  }, [task.title, editingTitle]);
+
+  useEffect(() => {
     if (!open) {
       setPlanCodeOpen(false);
+      setEditingTitle(false);
+      setTitleDraft(task.title);
       return;
     }
 
@@ -133,6 +146,8 @@ export function TaskDetailsModal({
     setCopyState('idle');
     setSmartCopyState('idle');
     setPlanCodeOpen(false);
+    setEditingTitle(false);
+    setTitleDraft(task.title);
 
     void Promise.all([
       fetchTaskComments(organizationId, projectId, task.id),
@@ -219,6 +234,50 @@ export function TaskDetailsModal({
     }
   }
 
+  function handleCancelTitleEdit() {
+    setTitleDraft(task.title);
+    setEditingTitle(false);
+  }
+
+  async function handleSaveTitle(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle) {
+      return;
+    }
+    if (nextTitle === task.title) {
+      setEditingTitle(false);
+      return;
+    }
+
+    setSavingTitle(true);
+    setError(null);
+    try {
+      const updated = await updateProjectTask(
+        organizationId,
+        projectId,
+        task.id,
+        { title: nextTitle },
+      );
+      onTaskSynced?.(updated);
+      setEditingTitle(false);
+      const nextHistory = await fetchTaskHistory(
+        organizationId,
+        projectId,
+        task.id,
+      );
+      setHistory(nextHistory);
+    } catch (saveError: unknown) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Failed to rename task',
+      );
+    } finally {
+      setSavingTitle(false);
+    }
+  }
+
   return (
     <Modal
       open={open}
@@ -271,9 +330,22 @@ export function TaskDetailsModal({
                 <CopyIcon />
               </button>
             </div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={onEdit}>
-              Edit
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setEditingTitle(true);
+                setTitleDraft(task.title);
+              }}
+              disabled={editingTitle}
+            >
+              Rename
             </button>
+            {onEdit && (
+              <button type="button" className="btn btn-secondary btn-sm" onClick={onEdit}>
+                Edit
+              </button>
+            )}
           </div>
         </div>
 
@@ -294,7 +366,44 @@ export function TaskDetailsModal({
           </p>
         )}
 
-        <h3 className="task-details-title">{task.title}</h3>
+        {editingTitle ? (
+          <form
+            className="task-details-title-edit"
+            onSubmit={(event) => void handleSaveTitle(event)}
+          >
+            <label>
+              Title
+              <input
+                type="text"
+                value={titleDraft}
+                onChange={(event) => setTitleDraft(event.target.value)}
+                autoFocus
+                required
+                disabled={savingTitle}
+                aria-label="Task title"
+              />
+            </label>
+            <div className="task-details-title-edit-actions">
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm"
+                disabled={savingTitle || !titleDraft.trim()}
+              >
+                {savingTitle ? 'Saving...' : 'Save title'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={savingTitle}
+                onClick={handleCancelTitleEdit}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <h3 className="task-details-title">{task.title}</h3>
+        )}
 
         {parentDisplayId && (
           <p className="task-details-parent">Subtask of {parentDisplayId}</p>

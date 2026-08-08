@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
@@ -40,6 +41,16 @@ import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 import { MarkdownContent } from './MarkdownContent';
+
+function clampContextMenuPosition(clientX: number, clientY: number) {
+  const pad = 8;
+  const menuWidth = 220;
+  const menuHeight = 340;
+  return {
+    x: Math.max(pad, Math.min(clientX, window.innerWidth - menuWidth - pad)),
+    y: Math.max(pad, Math.min(clientY, window.innerHeight - menuHeight - pad)),
+  };
+}
 
 function formatDueDateForInput(dueDate: string | null): string {
   if (!dueDate) return '';
@@ -274,12 +285,16 @@ export function TaskCard({
   const { shouldAnimateStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
   const menuRef = useRef<HTMLDivElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [subtaskModalOpen, setSubtaskModalOpen] = useState(false);
   const [setParentModalOpen, setSetParentModalOpen] = useState(false);
   const [qaChecklistOpen, setQaChecklistOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [smartCopyTooltip, setSmartCopyTooltip] = useState('Smart copy');
   const [title, setTitle] = useState(task.title);
@@ -298,13 +313,14 @@ export function TaskCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const menusOpen = actionMenuOpen || contextMenuPos !== null;
   const isInteractionLocked =
     detailsModalOpen ||
     editModalOpen ||
     subtaskModalOpen ||
     setParentModalOpen ||
     qaChecklistOpen ||
-    actionMenuOpen;
+    menusOpen;
   const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
   const resolvedProjectId = projectId ?? chatContextScope?.projectId;
   const canOpenDetails = Boolean(resolvedOrganizationId && resolvedProjectId);
@@ -326,18 +342,25 @@ export function TaskCard({
       ? { transform: CSS.Translate.toString(transform) }
       : undefined;
 
+  function closeActionMenus() {
+    setActionMenuOpen(false);
+    setContextMenuPos(null);
+  }
+
   useEffect(() => {
-    if (!actionMenuOpen) return;
+    if (!menusOpen) return;
 
     function handlePointerDown(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActionMenuOpen(false);
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target) || contextMenuRef.current?.contains(target)) {
+        return;
       }
+      closeActionMenus();
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setActionMenuOpen(false);
+        closeActionMenus();
       }
     }
 
@@ -348,7 +371,7 @@ export function TaskCard({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [actionMenuOpen]);
+  }, [menusOpen]);
 
   function resetEditFields() {
     setTitle(task.title);
@@ -364,7 +387,7 @@ export function TaskCard({
 
   function handleStartEdit() {
     resetEditFields();
-    setActionMenuOpen(false);
+    closeActionMenus();
     setDetailsModalOpen(false);
     setEditModalOpen(true);
   }
@@ -381,7 +404,7 @@ export function TaskCard({
     const target = event.target as HTMLElement;
     if (
       target.closest(
-        'button, a, input, select, textarea, label, [role="menu"], .task-card-actions, .task-card-copy-actions',
+        'button, a, input, select, textarea, label, [role="menu"], .task-card-actions, .task-card-copy-actions, .task-card-context-menu',
       )
     ) {
       return;
@@ -389,6 +412,28 @@ export function TaskCard({
 
     event.stopPropagation();
     handleOpenDetails();
+  }
+
+  function handleCardContextMenu(event: ReactMouseEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        'input, select, textarea, label, [role="menu"], .task-card-context-menu',
+      )
+    ) {
+      return;
+    }
+
+    // Nested TaskCard handles its own contextmenu; don't bubble to parent card.
+    const nestedCard = target.closest('.task-card');
+    if (nestedCard && nestedCard !== event.currentTarget) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    setActionMenuOpen(false);
+    setContextMenuPos(clampContextMenuPosition(event.clientX, event.clientY));
   }
 
   async function handleCopyTask() {
@@ -429,7 +474,7 @@ export function TaskCard({
       return;
     }
 
-    setActionMenuOpen(false);
+    closeActionMenus();
     toggleSmartCopyBasket(task, {
       organizationId: resolvedOrganizationId,
       projectId: resolvedProjectId,
@@ -485,7 +530,7 @@ export function TaskCard({
   }
 
   async function handleDelete() {
-    setActionMenuOpen(false);
+    closeActionMenus();
     setDeleting(true);
     try {
       await onDelete(task.id);
@@ -627,6 +672,114 @@ export function TaskCard({
     (!isSubtask || isDetachedSubtask) &&
     (Boolean(qaProgress) || showSmartCopy);
 
+  const taskMenuItems = (
+    <>
+      {canOpenDetails && isSubtask && !isDetachedSubtask && (
+        <button
+          type="button"
+          role="menuitem"
+          className="task-action-menu-item"
+          onClick={() => {
+            closeActionMenus();
+            handleOpenDetails();
+          }}
+        >
+          <EyeIcon />
+          View details
+        </button>
+      )}
+
+      <button
+        type="button"
+        role="menuitem"
+        className="task-action-menu-item"
+        onClick={handleStartEdit}
+      >
+        <PencilIcon />
+        Edit
+      </button>
+
+      <button
+        type="button"
+        role="menuitem"
+        className="task-action-menu-item"
+        onClick={() => {
+          closeActionMenus();
+          void handleCopyTask();
+        }}
+      >
+        <CopyIcon />
+        {copyTooltip}
+      </button>
+
+      {showSmartCopyBasketAction && (
+        <button
+          type="button"
+          role="menuitem"
+          className="task-action-menu-item"
+          onClick={handleToggleSmartCopyBasket}
+        >
+          <CopyIcon />
+          {inSmartCopyBasket ? 'Remove from Smart Copy' : 'Add to Smart Copy'}
+        </button>
+      )}
+
+      {canAddSubtask && (
+        <button
+          type="button"
+          role="menuitem"
+          className="task-action-menu-item"
+          onClick={() => {
+            closeActionMenus();
+            setSubtaskModalOpen(true);
+          }}
+        >
+          Add subtask
+        </button>
+      )}
+
+      {canSetParent && (
+        <button
+          type="button"
+          role="menuitem"
+          className="task-action-menu-item"
+          onClick={() => {
+            closeActionMenus();
+            setSelectedParentId(task.parentTaskId ?? '');
+            setSetParentModalOpen(true);
+          }}
+        >
+          Set parent task
+        </button>
+      )}
+
+      {isSubtask && onSetParent && (
+        <button
+          type="button"
+          role="menuitem"
+          className="task-action-menu-item"
+          onClick={() => {
+            closeActionMenus();
+            void onSetParent(task.id, null);
+          }}
+        >
+          Detach from parent
+        </button>
+      )}
+
+      <button
+        type="button"
+        role="menuitem"
+        className="task-action-menu-item task-action-menu-item-danger"
+        disabled={deleting}
+        onClick={() => void handleDelete()}
+      >
+        <TrashIcon />
+        {deleting ? 'Deleting...' : 'Delete'}
+      </button>
+    </>
+  );
+
   return (
     <>
       <motion.article
@@ -651,6 +804,7 @@ export function TaskCard({
           default: base,
         }}
         onDoubleClick={handleCardDoubleClick}
+        onContextMenu={handleCardContextMenu}
         {...draggableProps}
       >
         {task.displayId && isSubtask && !isDetachedSubtask && (
@@ -753,118 +907,17 @@ export function TaskCard({
               aria-label="Task actions"
               aria-haspopup="menu"
               aria-expanded={actionMenuOpen}
-              onClick={() => setActionMenuOpen((open) => !open)}
+              onClick={() => {
+                setContextMenuPos(null);
+                setActionMenuOpen((open) => !open);
+              }}
             >
               <MoreVerticalIcon />
             </button>
 
             {actionMenuOpen && (
               <div className="task-action-menu-panel" role="menu">
-                {canOpenDetails && isSubtask && !isDetachedSubtask && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="task-action-menu-item"
-                    onClick={() => {
-                      setActionMenuOpen(false);
-                      handleOpenDetails();
-                    }}
-                  >
-                    <EyeIcon />
-                    View details
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="task-action-menu-item"
-                  onClick={handleStartEdit}
-                >
-                  <PencilIcon />
-                  Edit
-                </button>
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="task-action-menu-item"
-                  onClick={() => {
-                    setActionMenuOpen(false);
-                    void handleCopyTask();
-                  }}
-                >
-                  <CopyIcon />
-                  {copyTooltip}
-                </button>
-
-                {showSmartCopyBasketAction && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="task-action-menu-item"
-                    onClick={handleToggleSmartCopyBasket}
-                  >
-                    <CopyIcon />
-                    {inSmartCopyBasket
-                      ? 'Remove from Smart Copy'
-                      : 'Add to Smart Copy'}
-                  </button>
-                )}
-
-                {canAddSubtask && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="task-action-menu-item"
-                    onClick={() => {
-                      setActionMenuOpen(false);
-                      setSubtaskModalOpen(true);
-                    }}
-                  >
-                    Add subtask
-                  </button>
-                )}
-
-                {canSetParent && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="task-action-menu-item"
-                    onClick={() => {
-                      setActionMenuOpen(false);
-                      setSelectedParentId(task.parentTaskId ?? '');
-                      setSetParentModalOpen(true);
-                    }}
-                  >
-                    Set parent task
-                  </button>
-                )}
-
-                {isSubtask && onSetParent && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="task-action-menu-item"
-                    onClick={() => {
-                      setActionMenuOpen(false);
-                      void onSetParent(task.id, null);
-                    }}
-                  >
-                    Detach from parent
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="task-action-menu-item task-action-menu-item-danger"
-                  disabled={deleting}
-                  onClick={() => void handleDelete()}
-                >
-                  <TrashIcon />
-                  {deleting ? 'Deleting...' : 'Delete'}
-                </button>
+                {taskMenuItems}
               </div>
             )}
           </div>
@@ -1029,6 +1082,26 @@ export function TaskCard({
         )}
 
       </motion.article>
+
+      {contextMenuPos &&
+        createPortal(
+          <div
+            ref={contextMenuRef}
+            className="task-card-context-menu"
+            role="menu"
+            aria-label="Task actions"
+            style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
+            onPointerDown={stopCardPointer}
+            onClick={stopCardPointer}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          >
+            {taskMenuItems}
+          </div>,
+          document.body,
+        )}
 
       {canOpenDetails && (qaProgress || qaChecklistOpen) && (
         <TaskQaChecklistModal

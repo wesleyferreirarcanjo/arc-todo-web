@@ -282,11 +282,29 @@ export function TaskListView({
           projectName={detailsContext.projectName}
           parentDisplayId={parentDisplayIdByTaskId.get(detailsTask.id)}
           subtasks={subtasksByParentId.get(detailsTask.id) ?? []}
-          onEdit={() => {
-            if (onEditTask) {
-              onEditTask(detailsTask);
-            }
-            setDetailsTask(null);
+          onEdit={
+            onEditTask
+              ? () => {
+                  onEditTask(detailsTask);
+                  setDetailsTask(null);
+                }
+              : undefined
+          }
+          onTaskSynced={(updated) => {
+            setDetailsTask((current) => {
+              if (!current || current.id !== updated.id) {
+                return current;
+              }
+              if (isTaskWithContext(current)) {
+                return {
+                  ...current,
+                  ...updated,
+                  organization: current.organization,
+                  project: current.project,
+                };
+              }
+              return { ...current, ...updated };
+            });
           }}
         />
       )}
