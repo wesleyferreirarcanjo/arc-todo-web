@@ -66,17 +66,6 @@ function extractClipboardImage(clipboardData: DataTransfer | null): File | null 
   return null;
 }
 
-function isTypingTarget(el: EventTarget | null): boolean {
-  if (!(el instanceof HTMLElement)) return false;
-  const tag = el.tagName;
-  return (
-    tag === 'INPUT' ||
-    tag === 'TEXTAREA' ||
-    tag === 'SELECT' ||
-    el.isContentEditable
-  );
-}
-
 export function TaskQaSection({
   task,
   organizationId,
@@ -96,7 +85,6 @@ export function TaskQaSection({
   const [flaggingBug, setFlaggingBug] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [lightboxItem, setLightboxItem] = useState<TaskEvidence | null>(null);
-  const pasteZoneRef = useRef<HTMLDivElement>(null);
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -238,20 +226,13 @@ export function TaskQaSection({
     return true;
   }
 
-  // Listen while parent Evidências is mounted — do not require hover/focus
-  // (that gate made Ctrl+V a no-op unless the zone was active first).
+  // Listen while parent Evidências is mounted — no hover/focus gate, and
+  // image paste still uploads even when comentário / Motivo do bug is focused
+  // (text-only clipboard is ignored so normal typing paste still works).
   useEffect(() => {
     if (isSubtask) return;
 
     function onDocumentPaste(event: ClipboardEvent) {
-      const active = document.activeElement;
-      if (
-        isTypingTarget(active) &&
-        pasteZoneRef.current &&
-        !pasteZoneRef.current.contains(active)
-      ) {
-        return;
-      }
       if (handleEvidencePaste(event.clipboardData)) {
         event.preventDefault();
       }
@@ -420,7 +401,6 @@ export function TaskQaSection({
 
       {!isSubtask && (
         <div
-          ref={pasteZoneRef}
           className="task-qa-evidence"
           tabIndex={0}
           onPaste={(event) => {
@@ -447,8 +427,8 @@ export function TaskQaSection({
 
           <p className="task-qa-evidence-paste-hint">
             Com os detalhes abertos, cole uma imagem (Ctrl+V / Cmd+V) para enviar
-            como evidência — ou use Enviar arquivo. Colar em campos de texto
-            (comentário / motivo do bug) não envia evidência.
+            como evidência — inclusive com foco em comentário ou Motivo do bug —
+            ou use Enviar arquivo. Colar só texto não envia evidência.
           </p>
 
           {loadingEvidence ? (
