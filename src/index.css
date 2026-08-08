@@ -6179,66 +6179,69 @@ textarea {
 }
 
 .mobile-board-fab-icon {
-  font-size: 1.65rem;
+  display: inline-flex;
   line-height: 1;
-  font-weight: 500;
 }
 
-.mobile-board-fab-menu {
+.mobile-board-fab-glyph {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: block;
+}
+
+.mobile-board-fab-button .mobile-board-fab-glyph {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.mobile-board-fab-dial {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: min(18rem, calc(100vw - 2rem));
-  max-height: min(70dvh, 28rem);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.5rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 0.75rem);
-  background: var(--bg-elevated, var(--bg-surface));
-  box-shadow: var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.12));
-}
-
-.mobile-board-fab-menu-category {
-  margin: 0.35rem 0 0.1rem;
-  padding: 0 0.75rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.mobile-board-fab-menu-item {
-  display: flex;
+  flex-direction: column-reverse;
   align-items: center;
-  min-height: 3.15rem;
-  padding: 0.7rem 0.95rem;
-  border: none;
-  border-radius: var(--radius-sm, 0.5rem);
-  background: transparent;
+  gap: 0.65rem;
+  margin-bottom: 0.15rem;
+  pointer-events: none;
+}
+
+.mobile-board-fab-dial-slot {
+  pointer-events: auto;
+}
+
+.mobile-board-fab-dial-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-elevated, var(--bg-surface));
   color: var(--text-primary);
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: left;
-  text-decoration: none;
+  box-shadow: var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.12));
   cursor: pointer;
+  text-decoration: none;
 }
 
-.mobile-board-fab-menu-subitem {
-  padding-left: 1.5rem;
-  font-weight: 550;
+.mobile-board-fab-dial-item:hover,
+.mobile-board-fab-dial-item:focus-visible,
+.mobile-board-fab-dial-item.is-active {
+  border-color: var(--accent, var(--border-strong));
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated, var(--bg-surface)));
+  outline: none;
 }
 
-.mobile-board-fab-menu-item.is-active,
-.mobile-board-fab-menu-item:hover,
-.mobile-board-fab-menu-item:focus-visible {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-.mobile-board-fab-menu-danger {
+.mobile-board-fab-dial-item.is-danger {
   color: var(--danger, #dc2626);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-board-fab-button,
+  .mobile-board-fab-dial-slot {
+    transition: none !important;
+  }
 }
 
 .mobile-filters-overlay {
