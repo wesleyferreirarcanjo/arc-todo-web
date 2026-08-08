@@ -2890,7 +2890,10 @@ textarea {
   gap: 0.65rem;
   padding: 1.1rem 1.15rem;
   border-bottom: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.12);
+  /* Opaque over page so cards don't show through while sticky. */
+  background:
+    linear-gradient(var(--bg-surface), var(--bg-surface)),
+    var(--bg-page);
 }
 
 .board-column-header-main {
@@ -5856,14 +5859,21 @@ textarea {
     padding: 1rem;
     padding-left: max(1rem, env(safe-area-inset-left, 0px));
     padding-right: max(1rem, env(safe-area-inset-right, 0px));
-    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    /* Top bar is hidden on mobile — only keep notch inset, no extra black band. */
+    padding-top: env(safe-area-inset-top, 0px);
+    background:
+      linear-gradient(var(--bg-surface), var(--bg-surface)),
+      var(--bg-page);
   }
 
   .content-area.is-board-page {
     padding: 0.5rem 0.75rem 0.75rem;
-    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
     padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
     padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    background:
+      linear-gradient(var(--bg-surface), var(--bg-surface)),
+      var(--bg-page);
   }
 
   .app-main,
@@ -5963,9 +5973,10 @@ textarea {
   position: absolute;
   inset: 0;
   border-top: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* Opaque chrome — translucent bar read as a black gap over --bg-page. */
+  background:
+    linear-gradient(var(--bg-surface), var(--bg-surface)),
+    var(--bg-page);
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -6100,6 +6111,7 @@ textarea {
 }
 
 .mobile-board-fab-dial {
+  position: relative;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -6109,6 +6121,7 @@ textarea {
 }
 
 .mobile-board-fab-dial-slot {
+  position: relative;
   pointer-events: auto;
 }
 

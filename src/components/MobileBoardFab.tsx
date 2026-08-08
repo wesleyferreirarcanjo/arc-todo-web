@@ -219,9 +219,10 @@ function DialActionButton({
           ? { duration: 0.12 }
           : {
               type: 'spring',
-              stiffness: 420,
-              damping: 24,
-              delay: index * 0.045,
+              stiffness: 520,
+              damping: 32,
+              mass: 0.7,
+              delay: index * 0.03,
             }
       }
     >
@@ -501,7 +502,8 @@ export function MobileBoardFab() {
           className={`mobile-board-fab${menuOpen ? ' is-open' : ''}`}
         >
           <div className="mobile-board-fab-dial" role="menu" aria-label={dialAriaLabel}>
-            <AnimatePresence mode="popLayout">
+            {/* sync: popLayout pulls slots out of flow and parks them high while springs finish */}
+            <AnimatePresence mode="sync">
               {menuOpen
                 ? dialActions.map((action, index) => (
                     <DialActionButton
