@@ -2881,19 +2881,14 @@ textarea {
 }
 
 .board-column-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  position: static;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.65rem;
   padding: 1.1rem 1.15rem;
   border-bottom: 1px solid var(--border);
-  /* Opaque over page so cards don't show through while sticky. */
-  background:
-    linear-gradient(var(--bg-surface), var(--bg-surface)),
-    var(--bg-page);
+  background: transparent;
 }
 
 .board-column-header-main {
@@ -5959,21 +5954,19 @@ textarea {
   bottom: 0;
   z-index: 40;
   pointer-events: none;
-  /* Slim bar; FAB overlaps above it (Material-style). */
-  height: calc(3.25rem + env(safe-area-inset-bottom, 0px));
-  overflow: visible;
+  /* Slim chrome only — FAB is a sibling and must not grow this box. */
+  height: calc(3rem + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
 }
 
 .mobile-bottom-app-bar.has-status-tabs {
-  /* Status steps + FAB share the Bottom App Bar. */
-  height: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  height: calc(3.25rem + env(safe-area-inset-bottom, 0px));
 }
 
 .mobile-bottom-app-bar-surface {
   position: absolute;
   inset: 0;
   border-top: 1px solid var(--border-subtle);
-  /* Opaque chrome — translucent bar read as a black gap over --bg-page. */
   background:
     linear-gradient(var(--bg-surface), var(--bg-surface)),
     var(--bg-page);
@@ -5981,7 +5974,7 @@ textarea {
   display: flex;
   align-items: center;
   padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-  /* Leave room for overlapping FAB on the right. */
+  /* Tabs stop before the floating FAB; does not grow bar height. */
   padding-right: calc(4.25rem + max(1rem, env(safe-area-inset-right, 0px)));
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -5999,21 +5992,25 @@ textarea {
   z-index: auto;
 }
 
+/* FAB is fixed sibling of the bar — dial expands upward without resizing chrome. */
 .mobile-board-fab {
-  position: absolute;
+  position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
-  /* Sit on top of the bar (half over the surface, half above). */
-  bottom: calc(1.65rem + env(safe-area-inset-bottom, 0px));
-  z-index: 1;
+  bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px));
+  z-index: 41;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.65rem;
+  justify-content: flex-end;
+  gap: 0.55rem;
   pointer-events: none;
+  /* Keep spring/layout transforms local to this corner. */
+  transform: translateZ(0);
+  isolation: isolate;
 }
 
-.mobile-bottom-app-bar.has-status-tabs .mobile-board-fab {
-  bottom: calc(1.9rem + env(safe-area-inset-bottom, 0px));
+.mobile-board-fab.has-status-tabs {
+  bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
 }
 
 .undo-toast {
@@ -6111,18 +6108,65 @@ textarea {
 }
 
 .mobile-board-fab-dial {
-  position: relative;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
-  gap: 0.65rem;
-  margin-bottom: 0.15rem;
+  gap: 0.55rem;
+  margin-bottom: 0.1rem;
   pointer-events: none;
+  /* Absolute above the + so open dial never participates in bar/FAB layout height. */
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.45rem);
+  width: 3rem;
 }
 
 .mobile-board-fab-dial-slot {
-  position: relative;
   pointer-events: auto;
+  transform-origin: bottom center;
+  animation: mobile-fab-dial-in 0.14s ease-out both;
+}
+
+.mobile-board-fab-dial-slot:nth-child(1) {
+  animation-delay: 0s;
+}
+.mobile-board-fab-dial-slot:nth-child(2) {
+  animation-delay: 0.02s;
+}
+.mobile-board-fab-dial-slot:nth-child(3) {
+  animation-delay: 0.04s;
+}
+.mobile-board-fab-dial-slot:nth-child(4) {
+  animation-delay: 0.06s;
+}
+.mobile-board-fab-dial-slot:nth-child(5) {
+  animation-delay: 0.08s;
+}
+.mobile-board-fab-dial-slot:nth-child(6) {
+  animation-delay: 0.1s;
+}
+.mobile-board-fab-dial-slot:nth-child(7) {
+  animation-delay: 0.12s;
+}
+.mobile-board-fab-dial-slot:nth-child(8) {
+  animation-delay: 0.14s;
+}
+
+@keyframes mobile-fab-dial-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-board-fab-dial-slot {
+    animation: none;
+  }
 }
 
 .mobile-board-fab-dial-item {

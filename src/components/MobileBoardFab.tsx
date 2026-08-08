@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBoardMobileShell } from '../context/BoardMobileShellContext';
@@ -195,37 +195,9 @@ type DialAction = {
   onClick: () => void;
 };
 
-function DialActionButton({
-  action,
-  index,
-  reducedMotion,
-}: {
-  action: DialAction;
-  index: number;
-  reducedMotion: boolean | null;
-}) {
+function DialActionButton({ action }: { action: DialAction }) {
   return (
-    <motion.div
-      className="mobile-board-fab-dial-slot"
-      initial={
-        reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.6 }
-      }
-      animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-      exit={
-        reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.7 }
-      }
-      transition={
-        reducedMotion
-          ? { duration: 0.12 }
-          : {
-              type: 'spring',
-              stiffness: 520,
-              damping: 32,
-              mass: 0.7,
-              delay: index * 0.03,
-            }
-      }
-    >
+    <div className="mobile-board-fab-dial-slot">
       <button
         type="button"
         role="menuitem"
@@ -238,7 +210,7 @@ function DialActionButton({
       >
         {action.icon}
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -497,40 +469,39 @@ export function MobileBoardFab() {
             />
           ) : null}
         </div>
-        <div
-          ref={rootRef}
-          className={`mobile-board-fab${menuOpen ? ' is-open' : ''}`}
-        >
-          <div className="mobile-board-fab-dial" role="menu" aria-label={dialAriaLabel}>
-            {/* sync: popLayout pulls slots out of flow and parks them high while springs finish */}
-            <AnimatePresence mode="sync">
-              {menuOpen
-                ? dialActions.map((action, index) => (
-                    <DialActionButton
-                      key={`${dialKey}-${action.id}`}
-                      action={action}
-                      index={index}
-                      reducedMotion={reducedMotion}
-                    />
-                  ))
-                : null}
-            </AnimatePresence>
-          </div>
+      </div>
 
-          <motion.button
-            type="button"
-            className="mobile-board-fab-button"
-            aria-label={menuOpen ? 'Close actions' : 'Open actions'}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-            animate={reducedMotion ? undefined : { rotate: menuOpen ? 45 : 0 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 22 }}
-          >
-            <span className="mobile-board-fab-icon" aria-hidden="true">
-              <NewTaskIcon />
-            </span>
-          </motion.button>
+      {/* Sibling of the bar so open dial never grows bar height/background. */}
+      <div
+        ref={rootRef}
+        className={`mobile-board-fab${menuOpen ? ' is-open' : ''}${
+          statusTabs ? ' has-status-tabs' : ''
+        }`}
+      >
+        <div className="mobile-board-fab-dial" role="menu" aria-label={dialAriaLabel}>
+          {menuOpen
+            ? dialActions.map((action) => (
+                <DialActionButton
+                  key={`${dialKey}-${action.id}`}
+                  action={action}
+                />
+              ))
+            : null}
         </div>
+
+        <motion.button
+          type="button"
+          className="mobile-board-fab-button"
+          aria-label={menuOpen ? 'Close actions' : 'Open actions'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+          animate={reducedMotion ? undefined : { rotate: menuOpen ? 45 : 0 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+        >
+          <span className="mobile-board-fab-icon" aria-hidden="true">
+            <NewTaskIcon />
+          </span>
+        </motion.button>
       </div>
 
       {actions ? (
