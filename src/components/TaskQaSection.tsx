@@ -96,10 +96,7 @@ export function TaskQaSection({
   const [flaggingBug, setFlaggingBug] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [lightboxItem, setLightboxItem] = useState<TaskEvidence | null>(null);
-  const [pasteZoneHovered, setPasteZoneHovered] = useState(false);
-  const [pasteZoneFocused, setPasteZoneFocused] = useState(false);
   const pasteZoneRef = useRef<HTMLDivElement>(null);
-  const pasteZoneActive = pasteZoneHovered || pasteZoneFocused;
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -235,12 +232,16 @@ export function TaskQaSection({
   function handleEvidencePaste(clipboardData: DataTransfer | null) {
     const file = extractClipboardImage(clipboardData);
     if (!file || uploadingRef.current) return false;
+    // Sync guard: document + element paste can both fire before setState.
+    uploadingRef.current = true;
     void uploadEvidenceFileRef.current(file);
     return true;
   }
 
+  // Listen while parent Evidências is mounted — do not require hover/focus
+  // (that gate made Ctrl+V a no-op unless the zone was active first).
   useEffect(() => {
-    if (isSubtask || !pasteZoneActive) return;
+    if (isSubtask) return;
 
     function onDocumentPaste(event: ClipboardEvent) {
       const active = document.activeElement;
@@ -258,7 +259,7 @@ export function TaskQaSection({
 
     document.addEventListener('paste', onDocumentPaste);
     return () => document.removeEventListener('paste', onDocumentPaste);
-  }, [isSubtask, pasteZoneActive]);
+  }, [isSubtask]);
 
   async function handleDeleteEvidence(evidenceId: string) {
     setQaError(null);
@@ -422,18 +423,11 @@ export function TaskQaSection({
           ref={pasteZoneRef}
           className="task-qa-evidence"
           tabIndex={0}
-          onFocus={() => setPasteZoneFocused(true)}
-          onBlur={(event) => {
-            if (
-              event.relatedTarget instanceof Node &&
-              pasteZoneRef.current?.contains(event.relatedTarget)
-            ) {
-              return;
+          onPaste={(event) => {
+            if (handleEvidencePaste(event.clipboardData)) {
+              event.preventDefault();
             }
-            setPasteZoneFocused(false);
           }}
-          onMouseEnter={() => setPasteZoneHovered(true)}
-          onMouseLeave={() => setPasteZoneHovered(false)}
         >
           <div className="task-qa-evidence-header">
             <h5>Evidências</h5>
@@ -452,7 +446,9 @@ export function TaskQaSection({
           </div>
 
           <p className="task-qa-evidence-paste-hint">
-            Cole uma imagem (Ctrl+V / Cmd+V) ou use Enviar arquivo
+            Com os detalhes abertos, cole uma imagem (Ctrl+V / Cmd+V) para enviar
+            como evidência — ou use Enviar arquivo. Colar em campos de texto
+            (comentário / motivo do bug) não envia evidência.
           </p>
 
           {loadingEvidence ? (
