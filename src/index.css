@@ -5948,19 +5948,21 @@ textarea {
 }
 
 .mobile-bottom-app-bar {
+  --mobile-bottom-bar-h: 2.75rem;
+  --mobile-fab-size: 3.5rem;
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 40;
   pointer-events: none;
-  /* Slim chrome only — FAB is a sibling and must not grow this box. */
-  height: calc(3rem + env(safe-area-inset-bottom, 0px));
+  /* Slim strip for tabs only — FAB is a floating sibling, not part of this box. */
+  height: calc(var(--mobile-bottom-bar-h) + env(safe-area-inset-bottom, 0px));
   overflow: hidden;
 }
 
 .mobile-bottom-app-bar.has-status-tabs {
-  height: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  --mobile-bottom-bar-h: 2.85rem;
 }
 
 .mobile-bottom-app-bar-surface {
@@ -5974,8 +5976,10 @@ textarea {
   display: flex;
   align-items: center;
   padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-  /* Tabs stop before the floating FAB; does not grow bar height. */
-  padding-right: calc(4.25rem + max(1rem, env(safe-area-inset-right, 0px)));
+  /* Clear the FAB circle; does not change bar height. */
+  padding-right: calc(
+    var(--mobile-fab-size, 3.5rem) + 1.25rem + max(0.5rem, env(safe-area-inset-right, 0px))
+  );
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -5984,19 +5988,31 @@ textarea {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  padding: 0.25rem 0;
+  padding: 0;
   border: none;
   background: transparent;
   position: static;
   top: auto;
   z-index: auto;
+  gap: 0.3rem;
 }
 
-/* FAB is fixed sibling of the bar — dial expands upward without resizing chrome. */
+.mobile-bottom-app-bar-surface .board-status-tab {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+/* FAB floats over the bar: center sits on the bar top edge → half in / half out. */
 .mobile-board-fab {
+  --mobile-bottom-bar-h: 2.75rem;
+  --mobile-fab-size: 3.5rem;
   position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
-  bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(
+    env(safe-area-inset-bottom, 0px) + var(--mobile-bottom-bar-h) -
+      (var(--mobile-fab-size) / 2)
+  );
   z-index: 41;
   display: flex;
   flex-direction: column;
@@ -6004,13 +6020,12 @@ textarea {
   justify-content: flex-end;
   gap: 0.55rem;
   pointer-events: none;
-  /* Keep spring/layout transforms local to this corner. */
   transform: translateZ(0);
   isolation: isolate;
 }
 
 .mobile-board-fab.has-status-tabs {
-  bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  --mobile-bottom-bar-h: 2.85rem;
 }
 
 .undo-toast {
@@ -6074,15 +6089,19 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  min-width: 3.5rem;
-  min-height: 3.5rem;
+  width: var(--mobile-fab-size, 3.5rem);
+  height: var(--mobile-fab-size, 3.5rem);
+  min-width: var(--mobile-fab-size, 3.5rem);
+  min-height: var(--mobile-fab-size, 3.5rem);
   border: none;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-contrast, #fff);
-  box-shadow: var(--shadow-lift, 0 8px 24px rgba(0, 0, 0, 0.18));
+  /* Strong lift so it reads as floating over the bar, not part of it. */
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.18),
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
   cursor: pointer;
 }
 
@@ -6346,8 +6365,8 @@ textarea {
   .board-page,
   .content-area,
   .page-shell {
-    /* Room for Bottom App Bar (status tabs + overlapping FAB). */
-    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    /* Slim bar (~2.85rem) + half FAB peeking above + safe area. */
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
