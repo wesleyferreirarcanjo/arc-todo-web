@@ -6066,23 +6066,334 @@ textarea {
   }
 }
 
+.mobile-board-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.65rem;
+  pointer-events: none;
+}
+
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(5.5rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: min(20rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--bg-elevated, var(--bg-surface));
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lift, 0 8px 24px rgba(0, 0, 0, 0.18));
+  transform: translateX(-50%);
+}
+
+.undo-toast-message {
+  flex: 1 1 auto;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.undo-toast-action {
+  min-height: 2.5rem;
+  padding: 0.35rem 0.75rem;
+  border: none;
+  border-radius: var(--radius-sm, 0.5rem);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-card-swipe-hint {
+  position: absolute;
+  top: 0.4rem;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bg-elevated, var(--bg-surface));
+  border: 1px solid var(--border-subtle);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.mobile-board-fab > * {
+  pointer-events: auto;
+}
+
+.mobile-board-fab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
+  box-shadow: var(--shadow-lift, 0 8px 24px rgba(0, 0, 0, 0.18));
+  cursor: pointer;
+}
+
+.mobile-board-fab-button:focus-visible {
+  outline: 2px solid var(--ring, var(--accent));
+  outline-offset: 3px;
+}
+
+.mobile-board-fab-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.mobile-board-fab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 10.5rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.12));
+}
+
+.mobile-board-fab-menu-item {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-radius: var(--radius-sm, 0.5rem);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-board-fab-menu-item:hover,
+.mobile-board-fab-menu-item:focus-visible {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mobile-quick-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.mobile-quick-create-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.chat-widget-mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  padding-top: max(0.65rem, env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.chat-widget-back {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: var(--bg-elevated, var(--bg-surface));
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-widget-mobile-title {
+  font-family: var(--font-display, inherit);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.chat-widget-root.is-full-page {
+  z-index: 60;
+}
+
+.chat-widget-panel.is-full-page {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 1024px) {
+  .mobile-board-fab {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .tasks-page,
+  .board-page {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-widget-root.is-mobile-shell.is-open .chat-widget-panel,
+  .chat-widget-panel.is-full-page {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .chat-widget-root.is-mobile-shell.is-open .chat-widget-tabs {
+    padding-top: 0.5rem;
+  }
+}
+
+.board-quick-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0.15rem 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.board-quick-filter-chip {
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.board-quick-filter-chip.is-active {
+  color: var(--text-primary);
+  border-color: var(--accent, var(--border-strong));
+  background: color-mix(in srgb, var(--accent, #3b82f6) 12%, var(--bg-surface));
+}
+
+.board-status-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0.15rem 0 0.65rem;
+  margin-bottom: 0.15rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.board-status-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.board-status-tab.is-active {
+  background: var(--bg-elevated, var(--bg-surface));
+  color: var(--text-primary);
+  border-color: var(--accent, var(--border-strong));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, #3b82f6) 35%, transparent);
+}
+
+.board-status-tab-count {
+  min-width: 1.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.board-status-tab.is-active .board-status-tab-count {
+  background: color-mix(in srgb, var(--accent, #3b82f6) 18%, transparent);
+}
+
+.task-board-scroll.is-mobile-tabbed {
+  overflow-x: hidden;
+}
+
+.task-board.is-mobile-tabbed {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.task-board.is-mobile-tabbed .board-column,
+.task-board.is-mobile-tabbed .board-column.is-focused,
+.task-board.is-mobile-tabbed .board-column.is-empty {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 0;
+}
+
 @media (max-width: 900px) {
-  .task-board-scroll .task-board,
-  .task-board-scroll .task-board.is-auto-fit,
-  .task-board-scroll .task-board.is-focus-mode {
+  /* Legacy horizontal multi-column only when JS tabbed mode is not active. */
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-auto-fit,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-focus-mode {
     flex-direction: row;
     flex-wrap: nowrap;
   }
 
-  .task-board-scroll .board-column,
-  .task-board-scroll .board-column.is-focused,
-  .task-board-scroll .board-column.is-compact,
-  .task-board-scroll .board-column.is-empty,
-  .task-board-scroll .task-board.is-auto-fit .board-column,
-  .task-board-scroll .task-board.is-auto-fit .board-column.is-focused,
-  .task-board-scroll .task-board.is-auto-fit .board-column.is-compact,
-  .task-board-scroll .task-board.is-auto-fit .board-column.is-empty,
-  .task-board-scroll .task-board.is-focus-mode .board-column {
+  .task-board-scroll:not(.is-mobile-tabbed) .board-column,
+  .task-board-scroll:not(.is-mobile-tabbed) .board-column.is-focused,
+  .task-board-scroll:not(.is-mobile-tabbed) .board-column.is-compact,
+  .task-board-scroll:not(.is-mobile-tabbed) .board-column.is-empty,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-auto-fit .board-column,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-auto-fit .board-column.is-focused,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-auto-fit .board-column.is-compact,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-auto-fit .board-column.is-empty,
+  .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-focus-mode .board-column {
     flex: 1 1 var(--board-column-min-width);
     min-width: var(--board-column-min-width);
     max-width: none;

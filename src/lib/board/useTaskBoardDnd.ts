@@ -9,6 +9,7 @@ import {
 } from '@dnd-kit/core';
 import type { TaskStatus } from '../../types/todo';
 import { TASK_STATUS_ORDER } from '../tasks/taskStatus';
+import { vibrateSafe } from '../ui/haptics';
 
 export const COLUMN_DROPPABLE_PREFIX = 'column:';
 
@@ -88,6 +89,7 @@ export function useTaskBoardDnd({
 
         try {
           await onMoveTask(id, destinationStatus);
+          vibrateSafe(14);
         } catch (error) {
           onMoveError?.(id, error);
           break;

@@ -6,6 +6,10 @@ import {
   type TaskSortDirection,
   type TaskSortField,
 } from '../tasks/taskSort';
+import {
+  isBoardQuickFilter,
+  type BoardQuickFilter,
+} from '../tasks/taskQuickFilter';
 
 const ORG_KEY = 'arc_todo_last_org';
 const PROJECT_KEY = 'arc_todo_last_project';
@@ -14,6 +18,7 @@ const SIDEBAR_COLLAPSED_KEY = 'arc_todo_sidebar_collapsed';
 const BOARD_HIDDEN_COLUMNS_KEY = 'arc_todo_board_hidden_columns';
 const BOARD_VIEW_MODE_KEY = 'arc_todo_board_view_mode';
 const BOARD_TASK_SORT_KEY = 'arc_todo_board_task_sort';
+const BOARD_QUICK_FILTER_KEY = 'arc_todo_board_quick_filter';
 
 export type Theme = 'dark' | 'light';
 export type BoardViewMode = 'board' | 'list';
@@ -150,4 +155,14 @@ export function getBoardTaskSort(): BoardTaskSort {
 
 export function setBoardTaskSort(sort: BoardTaskSort): void {
   localStorage.setItem(BOARD_TASK_SORT_KEY, JSON.stringify(sort));
+}
+
+export function getBoardQuickFilter(): BoardQuickFilter {
+  const stored = localStorage.getItem(BOARD_QUICK_FILTER_KEY);
+  if (!stored || !isBoardQuickFilter(stored)) return 'all';
+  return stored;
+}
+
+export function setBoardQuickFilter(filter: BoardQuickFilter): void {
+  localStorage.setItem(BOARD_QUICK_FILTER_KEY, filter);
 }

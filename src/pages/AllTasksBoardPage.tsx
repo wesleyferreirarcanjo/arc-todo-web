@@ -14,6 +14,10 @@ import {
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { filterTasksByCriticity, filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
 import {
+  filterTasksByQuickFilter,
+  type BoardQuickFilter,
+} from '../lib/tasks/taskQuickFilter';
+import {
   sortTasks,
   TASK_SORT_DIRECTION_OPTIONS,
   TASK_SORT_FIELD_OPTIONS,
@@ -22,9 +26,11 @@ import {
 } from '../lib/tasks/taskSort';
 import { canHideColumn } from '../lib/tasks/taskStatus';
 import {
+  getBoardQuickFilter,
   getBoardTaskSort,
   getBoardViewMode,
   getHiddenBoardColumns,
+  setBoardQuickFilter,
   setBoardTaskSort,
   setBoardViewMode,
   setHiddenBoardColumns,
@@ -35,13 +41,16 @@ import { getProjectColor } from '../lib/color/entityColor';
 import { BoardColumnVisibilityMenu } from '../components/BoardColumnVisibilityMenu';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
+import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
 import { BoardViewToggle } from '../components/BoardViewToggle';
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
+import { MobileBoardFab } from '../components/MobileBoardFab';
 import { QuickTaskCreate } from '../components/QuickTaskCreate';
 import { TaskImportExportMenu } from '../components/TaskImportExportMenu';
 import { Select } from '../components/Select';
+import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
   BoardCycle,
@@ -77,6 +86,7 @@ function removeMovingTaskId(current: Set<string>, taskId: string): Set<string> {
 
 export function AllTasksBoardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
   const { organizations, projects, refreshProjects } = useWorkspace();
   const [tasks, setTasks] = useState<TaskWithContext[]>([]);
   const [cycleTasks, setCycleTasks] = useState<Task[]>([]);
@@ -98,19 +108,27 @@ export function AllTasksBoardPage() {
   const [sortDirection, setSortDirection] = useState<TaskSortDirection>(
     () => getBoardTaskSort().direction,
   );
+  const [quickFilter, setQuickFilter] = useState<BoardQuickFilter>(() => {
+    const stored = getBoardQuickFilter();
+    if (stored !== 'all') return stored;
+    // Migrate legacy URL ?createdByMe=true into the My Tasks chip once.
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('createdByMe') === 'true') return 'mine';
+    }
+    return 'all';
+  });
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
-  const createdByMe = searchParams.get('createdByMe') === 'true';
   const projectFocus = Boolean(organizationId && projectId);
 
   const query = useMemo<ListTasksQuery>(
     () => ({
       organizationId,
       projectId,
-      createdByMe: createdByMe || undefined,
     }),
-    [organizationId, projectId, createdByMe],
+    [organizationId, projectId],
   );
 
   const hasFilters = Boolean(organizationId || projectId);
@@ -190,11 +208,20 @@ export function AllTasksBoardPage() {
     }
   }, [organizationId, refreshProjects]);
 
-  function updateFilters(
-    nextOrgId?: string,
-    nextProjectId?: string,
-    nextCreatedByMe?: boolean,
-  ) {
+  useEffect(() => {
+    // Drop legacy createdByMe query once chips own My Tasks.
+    if (searchParams.get('createdByMe') === 'true') {
+      const params = new URLSearchParams(searchParams);
+      params.delete('createdByMe');
+      setSearchParams(params, { replace: true });
+      if (quickFilter === 'all') {
+        setQuickFilter('mine');
+        setBoardQuickFilter('mine');
+      }
+    }
+  }, [searchParams, setSearchParams, quickFilter]);
+
+  function updateFilters(nextOrgId?: string, nextProjectId?: string) {
     const params = new URLSearchParams();
     if (nextOrgId) {
       params.set('organizationId', nextOrgId);
@@ -204,11 +231,6 @@ export function AllTasksBoardPage() {
       params.set('projectId', nextProjectId);
       setLastProjectId(nextProjectId);
     }
-    const myTasks =
-      nextCreatedByMe !== undefined ? nextCreatedByMe : createdByMe;
-    if (myTasks) {
-      params.set('createdByMe', 'true');
-    }
     setSearchParams(params);
   }
 
@@ -216,9 +238,7 @@ export function AllTasksBoardPage() {
     if (nextOrgId) {
       updateFilters(nextOrgId, undefined);
     } else {
-      const params = new URLSearchParams();
-      if (createdByMe) params.set('createdByMe', 'true');
-      setSearchParams(params);
+      setSearchParams(new URLSearchParams());
     }
   }
 
@@ -230,8 +250,9 @@ export function AllTasksBoardPage() {
     }
   }
 
-  function handleCreatedByMeChange(enabled: boolean) {
-    updateFilters(organizationId, projectId, enabled);
+  function handleQuickFilterChange(next: BoardQuickFilter) {
+    setQuickFilter(next);
+    setBoardQuickFilter(next);
   }
 
   async function handleAdvanceCycle() {
@@ -444,20 +465,23 @@ export function AllTasksBoardPage() {
 
   const searchActive = normalizeTaskSearchQuery(searchQuery).length > 0;
   const priorityActive = priorityFilter !== '';
-  const listFiltersActive = searchActive || priorityActive;
+  const quickFilterActive = quickFilter !== 'all';
+  const listFiltersActive = searchActive || priorityActive || quickFilterActive;
 
   const filteredTasks = useMemo(() => {
     const byPriority = filterTasksByCriticity(tasks, priorityFilter);
-    return filterTasksBySearch(byPriority, searchQuery, (task) => ({
+    const bySearch = filterTasksBySearch(byPriority, searchQuery, (task) => ({
       orgName: task.organization.name,
       projectName: task.project.name,
     }));
-  }, [tasks, searchQuery, priorityFilter]);
+    return filterTasksByQuickFilter(bySearch, quickFilter, user?.id);
+  }, [tasks, searchQuery, priorityFilter, quickFilter, user?.id]);
 
   const filteredCycleTasks = useMemo(() => {
     const byPriority = filterTasksByCriticity(cycleTasks, priorityFilter);
-    return filterTasksBySearch(byPriority, searchQuery);
-  }, [cycleTasks, searchQuery, priorityFilter]);
+    const bySearch = filterTasksBySearch(byPriority, searchQuery);
+    return filterTasksByQuickFilter(bySearch, quickFilter, user?.id);
+  }, [cycleTasks, searchQuery, priorityFilter, quickFilter, user?.id]);
 
   const sortedTasks = useMemo(
     () =>
@@ -593,25 +617,17 @@ export function AllTasksBoardPage() {
           />
         </label>
 
-        {!projectFocus && (
-          <label className="checkbox-field board-filter-checkbox">
-            <input
-              type="checkbox"
-              checked={createdByMe}
-              onChange={(event) => handleCreatedByMeChange(event.target.checked)}
-            />
-            My tasks
-          </label>
-        )}
+        <BoardQuickFilterChips
+          value={quickFilter}
+          onChange={handleQuickFilterChange}
+        />
 
         {hasFilters && (
           <button
             type="button"
             className="btn btn-secondary board-filter-clear"
             onClick={() => {
-              const params = new URLSearchParams();
-              if (createdByMe) params.set('createdByMe', 'true');
-              setSearchParams(params);
+              setSearchParams(new URLSearchParams());
             }}
           >
             Clear focus
@@ -751,6 +767,15 @@ export function AllTasksBoardPage() {
           loading={historyLoading}
         />
       )}
+
+      <MobileBoardFab
+        onCreated={projectFocus ? loadProjectCycle : loadTasks}
+        scope={
+          projectFocus && organizationId && projectId
+            ? { organizationId, projectId }
+            : undefined
+        }
+      />
     </div>
   );
 }

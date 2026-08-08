@@ -9,6 +9,7 @@ import {
 import { fetchProjectKnowledgeAccess } from '../lib/api/knowledge';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
+import { MobileBoardFab } from '../components/MobileBoardFab';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
 import { useAuth } from '../context/AuthContext';
@@ -162,6 +163,11 @@ export function ProjectTasksPage() {
           onSetParent={handleSetParent}
         />
       )}
+
+      <MobileBoardFab
+        onCreated={loadTasks}
+        scope={{ organizationId: orgId, projectId }}
+      />
     </div>
   );
 }

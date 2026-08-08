@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { LayoutGroup } from 'framer-motion';
 import type { CreateTaskInput, Task, TaskStatus, UpdateTaskInput } from '../types/todo';
-import { attachSubtasks, collectDescendantIds, listBoardColumnItems } from '../lib/tasks/taskTree';
+import { attachSubtasks, collectDescendantIds, listBoardColumnItems, type BoardColumnItem } from '../lib/tasks/taskTree';
 import {
   getHiddenBoardColumnCount,
   getVisibleBoardColumnItems,
   useExpandedBoardColumns,
 } from '../lib/board/boardColumnLimit';
 import { getFullBoardWidth } from '../lib/board/boardLayout';
+import { useMobileBoardStatusTab } from '../lib/board/useMobileBoardStatusTab';
 import { useTaskBoardDnd } from '../lib/board/useTaskBoardDnd';
 import {
   StatusMoveAnimationProvider,
@@ -19,8 +20,10 @@ import {
   getVisibleStatusColumns,
   type StatusColumn,
 } from '../lib/tasks/taskStatus';
+import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { BoardColumn } from './BoardColumn';
 import { BoardColumnShowMore } from './BoardColumnShowMore';
+import { BoardStatusTabs } from './BoardStatusTabs';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
 interface TaskBoardProps {
@@ -71,10 +74,12 @@ function TaskBoardInner({
   const { markStatusMove } = useStatusMoveAnimation();
   const { expandedColumns, expandColumn } = useExpandedBoardColumns();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
   const columns = useMemo(
     () => getVisibleStatusColumns(hiddenColumns),
     [hiddenColumns],
   );
+  const { activeStatus, setActiveStatus } = useMobileBoardStatusTab(columns);
   const fullBoardWidth = useMemo(
     () => getFullBoardWidth(columns.length),
     [columns.length],
@@ -90,6 +95,14 @@ function TaskBoardInner({
     [tasks],
   );
 
+  const statusCounts = useMemo(() => {
+    const counts: Partial<Record<TaskStatus, number>> = {};
+    for (const column of columns) {
+      counts[column.status] = listBoardColumnItems(boardTasks, column.status).length;
+    }
+    return counts;
+  }, [boardTasks, columns]);
+
   useEffect(() => {
     if (focusedStatus && columns.some((column) => column.status === focusedStatus)) {
       return;
@@ -98,6 +111,11 @@ function TaskBoardInner({
   }, [columns, focusedStatus, tasks]);
 
   useEffect(() => {
+    if (isMobileBoard) {
+      setFocusMode(false);
+      return;
+    }
+
     const viewport = scrollRef.current;
     if (!viewport) {
       return;
@@ -111,7 +129,7 @@ function TaskBoardInner({
     const observer = new ResizeObserver(syncFocusMode);
     observer.observe(viewport);
     return () => observer.disconnect();
-  }, [fullBoardWidth]);
+  }, [fullBoardWidth, isMobileBoard]);
 
   const getTaskStatus = useCallback(
     (taskId: string) => taskById.get(taskId)?.status,
@@ -145,19 +163,106 @@ function TaskBoardInner({
   });
 
   const activeTask = activeTaskId ? taskById.get(activeTaskId) : undefined;
+  const visibleColumns = isMobileBoard
+    ? columns.filter((column) => column.status === activeStatus)
+    : columns;
+  const cardDraggable = !isMobileBoard;
+
+  function renderColumnCards(
+    visibleItems: BoardColumnItem<Task>[],
+    isCompact: boolean,
+  ) {
+    return visibleItems.map((item) => {
+      if (item.kind === 'parent') {
+        const task = item.task;
+        return (
+          <TaskCard
+            key={task.id}
+            task={task}
+            subtasks={task.subtasks}
+            organizationId={organizationId}
+            projectId={projectId}
+            accentColor={accentColor}
+            compact={isCompact}
+            draggable={cardDraggable}
+            isDragging={activeDragIds.has(task.id)}
+            isMoving={movingTaskIds?.has(task.id)}
+            draggingTaskId={activeTaskId ?? undefined}
+            chatContextScope={
+              organizationId && projectId
+                ? { organizationId, projectId }
+                : undefined
+            }
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            onCreateSubtask={onCreateSubtask}
+            onSetParent={onSetParent}
+            parentCandidates={tasks}
+          />
+        );
+      }
+
+      return (
+        <TaskCard
+          key={item.task.id}
+          task={item.task}
+          isSubtask
+          isDetachedSubtask
+          parentDisplayId={item.parentDisplayId}
+          organizationId={organizationId}
+          projectId={projectId}
+          accentColor={accentColor}
+          compact={isCompact}
+          draggable={cardDraggable}
+          isDragging={activeDragIds.has(item.task.id)}
+          isMoving={movingTaskIds?.has(item.task.id)}
+          draggingTaskId={activeTaskId ?? undefined}
+          chatContextScope={
+            organizationId && projectId
+              ? { organizationId, projectId }
+              : undefined
+          }
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+          onSetParent={onSetParent}
+          parentCandidates={tasks}
+        />
+      );
+    });
+  }
 
   return (
     <LayoutGroup id="task-board">
       <DndContext
-        sensors={sensors}
+        sensors={isMobileBoard ? [] : sensors}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        <div className="task-board-scroll" ref={scrollRef}>
-          <div className={`task-board${focusMode ? ' is-focus-mode' : ' is-auto-fit'}`}>
-            {columns.map((column) => {
+        {isMobileBoard && activeStatus ? (
+          <BoardStatusTabs
+            columns={columns}
+            activeStatus={activeStatus}
+            counts={statusCounts}
+            onChange={setActiveStatus}
+          />
+        ) : null}
+
+        <div
+          className={`task-board-scroll${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
+          ref={scrollRef}
+        >
+          <div
+            className={`task-board${
+              isMobileBoard
+                ? ' is-mobile-tabbed'
+                : focusMode
+                  ? ' is-focus-mode'
+                  : ' is-auto-fit'
+            }`}
+          >
+            {visibleColumns.map((column) => {
               const columnItems = listBoardColumnItems(boardTasks, column.status);
               const visibleItems = getVisibleBoardColumnItems(
                 columnItems,
@@ -169,8 +274,8 @@ function TaskBoardInner({
                 column.status,
                 expandedColumns,
               );
-              const isFocused = focusMode && focusedStatus === column.status;
-              const isCompact = focusMode && !isFocused;
+              const isFocused = !isMobileBoard && focusMode && focusedStatus === column.status;
+              const isCompact = !isMobileBoard && focusMode && !isFocused;
 
               return (
                 <BoardColumn
@@ -179,10 +284,10 @@ function TaskBoardInner({
                   title={column.label}
                   taskCount={columnItems.length}
                   isDropTarget={overColumnStatus === column.status}
-                  isFocused={isFocused}
+                  isFocused={isFocused || isMobileBoard}
                   isCompact={isCompact}
                   canHideColumn={canHideColumn(column.status, hiddenColumns)}
-                  focusEnabled={focusMode}
+                  focusEnabled={!isMobileBoard && focusMode}
                   onFocus={() => setFocusedStatus(column.status)}
                   onToggleVisibility={
                     onToggleColumnVisibility
@@ -193,63 +298,7 @@ function TaskBoardInner({
                   {columnItems.length === 0 ? (
                     <p className="empty-column">No tasks here yet.</p>
                   ) : (
-                    visibleItems.map((item) => {
-                      if (item.kind === 'parent') {
-                        const task = item.task;
-                        return (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            subtasks={task.subtasks}
-                            organizationId={organizationId}
-                            projectId={projectId}
-                            accentColor={accentColor}
-                            compact={isCompact}
-                            draggable
-                            isDragging={activeDragIds.has(task.id)}
-                            isMoving={movingTaskIds?.has(task.id)}
-                            draggingTaskId={activeTaskId ?? undefined}
-                            chatContextScope={
-                              organizationId && projectId
-                                ? { organizationId, projectId }
-                                : undefined
-                            }
-                            onUpdate={onUpdate}
-                            onDelete={onDelete}
-                            onCreateSubtask={onCreateSubtask}
-                            onSetParent={onSetParent}
-                            parentCandidates={tasks}
-                          />
-                        );
-                      }
-
-                      return (
-                        <TaskCard
-                          key={item.task.id}
-                          task={item.task}
-                          isSubtask
-                          isDetachedSubtask
-                          parentDisplayId={item.parentDisplayId}
-                          organizationId={organizationId}
-                          projectId={projectId}
-                          accentColor={accentColor}
-                          compact={isCompact}
-                          draggable
-                          isDragging={activeDragIds.has(item.task.id)}
-                          isMoving={movingTaskIds?.has(item.task.id)}
-                          draggingTaskId={activeTaskId ?? undefined}
-                          chatContextScope={
-                            organizationId && projectId
-                              ? { organizationId, projectId }
-                              : undefined
-                          }
-                          onUpdate={onUpdate}
-                          onDelete={onDelete}
-                          onSetParent={onSetParent}
-                          parentCandidates={tasks}
-                        />
-                      );
-                    })
+                    renderColumnCards(visibleItems, isCompact)
                   )}
                   <BoardColumnShowMore
                     hiddenCount={hiddenCount}

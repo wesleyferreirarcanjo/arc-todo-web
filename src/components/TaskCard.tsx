@@ -22,17 +22,21 @@ import {
   computeQaChecklistProgress,
   normalizeQaChecklistState,
 } from '../lib/tasks/taskQaChecklist';
+import { getAdjacentStatus } from '../lib/tasks/adjacentStatus';
 import {
   formatTaskStatusLabel,
   isSmartCopyStatus,
   TASK_STATUS_OPTIONS,
 } from '../lib/tasks/taskStatus';
+import { vibrateSafe } from '../lib/ui/haptics';
+import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { useChat } from '../context/ChatContext';
 import { useSmartCopyBasket } from '../context/SmartCopyBasketContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
+import { ConfirmDialog } from './ConfirmDialog';
 import { Modal } from './Modal';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
@@ -41,6 +45,7 @@ import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 import { MarkdownContent } from './MarkdownContent';
+import { UndoToast } from './UndoToast';
 
 function clampContextMenuPosition(clientX: number, clientY: number) {
   const pad = 8;
@@ -282,7 +287,7 @@ export function TaskCard({
     toggleTask: toggleSmartCopyBasket,
   } = useSmartCopyBasket();
   const { base } = useMotionTransition();
-  const { shouldAnimateStatusMove } = useStatusMoveAnimation();
+  const { shouldAnimateStatusMove, markStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
   const menuRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
@@ -312,6 +317,17 @@ export function TaskCard({
   const [selectedParentId, setSelectedParentId] = useState(task.parentTaskId ?? '');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipeHint, setSwipeHint] = useState<string | null>(null);
+  const swipeRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    locked: 'horizontal' | 'vertical' | null;
+  } | null>(null);
+  const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
 
   const menusOpen = actionMenuOpen || contextMenuPos !== null;
   const isInteractionLocked =
@@ -529,13 +545,104 @@ export function TaskCard({
     }
   }
 
-  async function handleDelete() {
-    closeActionMenus();
+  async function finalizeDelete() {
     setDeleting(true);
     try {
       await onDelete(task.id);
     } finally {
       setDeleting(false);
+      setPendingDelete(false);
+      setConfirmDeleteOpen(false);
+    }
+  }
+
+  function handleDelete() {
+    closeActionMenus();
+    if (isMobileBoard) {
+      setPendingDelete(true);
+      return;
+    }
+    setConfirmDeleteOpen(true);
+  }
+
+  async function handleSwipeStatus(direction: 'next' | 'previous') {
+    const result = getAdjacentStatus(task.status, direction);
+    if (result.clamped) {
+      setSwipeHint(
+        direction === 'next' ? 'Already at Done' : 'Already at To Do',
+      );
+      window.setTimeout(() => setSwipeHint(null), 1200);
+      vibrateSafe(8);
+      return;
+    }
+
+    try {
+      await onUpdate(task.id, { status: result.status });
+      markStatusMove(task.id);
+      vibrateSafe(14);
+    } catch {
+      setSwipeHint('Could not update status');
+      window.setTimeout(() => setSwipeHint(null), 1500);
+    }
+  }
+
+  function handleSwipePointerDown(event: ReactPointerEvent<HTMLElement>) {
+    if (!isMobileBoard || isInteractionLocked || isDraggable) return;
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, select, textarea, [role="menuitem"]')) {
+      return;
+    }
+    swipeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      locked: null,
+    };
+    setSwipeOffset(0);
+  }
+
+  function handleSwipePointerMove(event: ReactPointerEvent<HTMLElement>) {
+    const swipe = swipeRef.current;
+    if (!swipe || swipe.pointerId !== event.pointerId) return;
+
+    const dx = event.clientX - swipe.startX;
+    const dy = event.clientY - swipe.startY;
+
+    if (!swipe.locked) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      swipe.locked = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+      if (swipe.locked === 'vertical') {
+        swipeRef.current = null;
+        setSwipeOffset(0);
+        return;
+      }
+    }
+
+    if (swipe.locked === 'horizontal') {
+      event.preventDefault();
+      setSwipeOffset(Math.max(-80, Math.min(80, dx)));
+    }
+  }
+
+  function handleSwipePointerUp(event: ReactPointerEvent<HTMLElement>) {
+    const swipe = swipeRef.current;
+    if (!swipe || swipe.pointerId !== event.pointerId) return;
+    const dx = event.clientX - swipe.startX;
+    swipeRef.current = null;
+    setSwipeOffset(0);
+
+    if (swipe.locked !== 'horizontal' || Math.abs(dx) < 56) {
+      return;
+    }
+
+    void handleSwipeStatus(dx > 0 ? 'next' : 'previous');
+  }
+
+  function handleSwipePointerCancel(event: ReactPointerEvent<HTMLElement>) {
+    if (swipeRef.current?.pointerId === event.pointerId) {
+      swipeRef.current = null;
+      setSwipeOffset(0);
     }
   }
 
@@ -603,16 +710,19 @@ export function TaskCard({
       return;
     }
 
-    if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      handleChatContextAction(event);
       return;
     }
 
-    handleChatContextAction(event);
+    handleSwipePointerDown(event);
   }
 
   const draggableProps = useMemo(() => {
     if (!isDraggable) {
-      return {};
+      return {
+        onPointerDown: handleCardPointerDown,
+      };
     }
 
     return {
@@ -654,9 +764,16 @@ export function TaskCard({
     availableParents.length > 0;
   const canAddSubtask = Boolean(onCreateSubtask) && !isSubtask;
 
-  const cardStyle = accentColor
-    ? ({ '--entity-accent': accentColor, ...dragStyle } as CSSProperties)
-    : dragStyle;
+  const cardStyle = {
+    ...(accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : null),
+    ...dragStyle,
+    ...(swipeOffset
+      ? {
+          transform: `${dragStyle?.transform ? `${dragStyle.transform} ` : ''}translateX(${swipeOffset}px)`,
+        }
+      : null),
+    ...(isMobileBoard && !isDraggable ? { touchAction: 'pan-y' as const } : null),
+  } as CSSProperties | undefined;
 
   const showAsDragging = isDragging || isDndDragging;
   const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
@@ -782,10 +899,11 @@ export function TaskCard({
 
   return (
     <>
+      {!pendingDelete ? (
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${swipeHint ? ' has-swipe-hint' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -805,8 +923,16 @@ export function TaskCard({
         }}
         onDoubleClick={handleCardDoubleClick}
         onContextMenu={handleCardContextMenu}
+        onPointerMove={handleSwipePointerMove}
+        onPointerUp={handleSwipePointerUp}
+        onPointerCancel={handleSwipePointerCancel}
         {...draggableProps}
       >
+        {swipeHint ? (
+          <span className="task-card-swipe-hint" role="status">
+            {swipeHint}
+          </span>
+        ) : null}
         {task.displayId && isSubtask && !isDetachedSubtask && (
           <span className="task-display-id" title={task.displayId}>
             {task.displayId}
@@ -1067,7 +1193,7 @@ export function TaskCard({
                 projectName={projectName}
                 accentColor={accentColor}
                 compact={false}
-                draggable
+                draggable={isDraggable}
                 isDragging={draggingTaskId === subtask.id || draggingTaskId === task.id}
                 draggingTaskId={draggingTaskId}
                 chatContextScope={chatContextScope}
@@ -1082,6 +1208,7 @@ export function TaskCard({
         )}
 
       </motion.article>
+      ) : null}
 
       {contextMenuPos &&
         createPortal(
@@ -1298,6 +1425,26 @@ export function TaskCard({
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Delete task"
+        description="Delete this task? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={() => void finalizeDelete()}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
+
+      <UndoToast
+        open={pendingDelete}
+        message="Task deleted"
+        onUndo={() => setPendingDelete(false)}
+        onDismiss={() => {
+          void finalizeDelete();
+        }}
+      />
     </>
   );
 }

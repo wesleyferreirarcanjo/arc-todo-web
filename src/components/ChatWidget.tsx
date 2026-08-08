@@ -17,6 +17,7 @@ import {
   chatPanelSpringTransition,
   chatPanelVariants,
 } from '../lib/motion/variants';
+import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
 
 function AssistantIcon() {
@@ -197,6 +198,7 @@ function MessageBody({ content }: { content: string }) {
 
 export function ChatWidget() {
   const { currentOrgId, currentProjectId } = useWorkspace();
+  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const {
     chatOpen,
     setChatOpen,
@@ -433,15 +435,19 @@ export function ChatWidget() {
 
   return (
     <LayoutGroup id="chat-widget">
-      <div className={`chat-widget-root${chatOpen ? ' is-open' : ''}`}>
+      <div
+        className={`chat-widget-root${chatOpen ? ' is-open' : ''}${
+          isMobileShell && chatOpen ? ' is-full-page' : ''
+        }${isMobileShell ? ' is-mobile-shell' : ''}`}
+      >
         <AnimatePresence>
           {chatOpen ? (
             <motion.section
               key="chat-panel"
               id={panelId}
-              className="chat-widget-panel"
+              className={`chat-widget-panel${isMobileShell ? ' is-full-page' : ''}`}
               role="dialog"
-              aria-modal="false"
+              aria-modal={isMobileShell ? true : false}
               aria-label="Arc Todo assistant"
               variants={chatPanelVariants}
               initial="hidden"
@@ -449,6 +455,18 @@ export function ChatWidget() {
               exit="exit"
               transition={panelTransition}
             >
+            {isMobileShell ? (
+              <div className="chat-widget-mobile-header">
+                <button
+                  type="button"
+                  className="chat-widget-back"
+                  onClick={() => setChatOpen(false)}
+                >
+                  Back
+                </button>
+                <span className="chat-widget-mobile-title">Chatbot</span>
+              </div>
+            ) : null}
             <div className="chat-widget-tabs" role="tablist" aria-label="Conversations">
               <div className="chat-widget-tab-list">
                 {loadingConversations ? (
@@ -505,13 +523,15 @@ export function ChatWidget() {
               >
                 <PlusIcon />
               </button>
-              <ChatLauncherButton
-                chatOpen={chatOpen}
-                iconOpen={launcherIconOpen}
-                panelId={panelId}
-                fabIconTransition={fabIconTransition}
-                onToggle={() => setChatOpen(!chatOpen)}
-              />
+              {!isMobileShell ? (
+                <ChatLauncherButton
+                  chatOpen={chatOpen}
+                  iconOpen={launcherIconOpen}
+                  panelId={panelId}
+                  fabIconTransition={fabIconTransition}
+                  onToggle={() => setChatOpen(!chatOpen)}
+                />
+              ) : null}
             </div>
 
             <div className="chat-widget-messages" aria-live="polite">
@@ -588,7 +608,8 @@ export function ChatWidget() {
       </AnimatePresence>
       </div>
 
-      {!chatOpen ? (
+      {/* Mobile shell: FAB owns chat entry — hide floating bubble launcher. */}
+      {!chatOpen && !isMobileShell ? (
         <ChatLauncherButton
           chatOpen={chatOpen}
           iconOpen={launcherIconOpen}
