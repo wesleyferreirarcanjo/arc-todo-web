@@ -8,6 +8,7 @@ import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import {
   MobileQuickCreateSheet,
 } from './MobileQuickCreateSheet';
+import { BoardStatusTabs } from './BoardStatusTabs';
 
 export function MobileBoardFab() {
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
@@ -16,7 +17,7 @@ export function MobileBoardFab() {
   const { logout, isAdmin } = useAuth();
   const { setChatOpen } = useChat();
   const { toggleTheme } = useTheme();
-  const { actions } = useBoardMobileShell();
+  const { actions, statusTabs } = useBoardMobileShell();
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ragMenuOpen, setRagMenuOpen] = useState(false);
@@ -71,8 +72,20 @@ export function MobileBoardFab() {
 
   return (
     <>
-      <div className="mobile-bottom-app-bar" aria-hidden="false">
-        <div className="mobile-bottom-app-bar-surface" />
+      <div
+        className={`mobile-bottom-app-bar${statusTabs ? ' has-status-tabs' : ''}`}
+        aria-hidden="false"
+      >
+        <div className="mobile-bottom-app-bar-surface">
+          {statusTabs ? (
+            <BoardStatusTabs
+              columns={statusTabs.columns}
+              activeStatus={statusTabs.activeStatus}
+              counts={statusTabs.counts}
+              onChange={statusTabs.onChange}
+            />
+          ) : null}
+        </div>
         <div
           ref={rootRef}
           className={`mobile-board-fab${menuOpen ? ' is-open' : ''}`}

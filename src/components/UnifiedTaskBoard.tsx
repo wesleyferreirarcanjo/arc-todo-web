@@ -29,9 +29,9 @@ import {
   type StatusColumn,
 } from '../lib/tasks/taskStatus';
 import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { useRegisterBoardMobileStatusTabs } from '../context/BoardMobileShellContext';
 import { BoardColumn } from './BoardColumn';
 import { BoardColumnShowMore } from './BoardColumnShowMore';
-import { BoardStatusTabs } from './BoardStatusTabs';
 import { TaskCard, TaskCardOverlay } from './TaskCard';
 
 interface UnifiedTaskBoardProps {
@@ -117,6 +117,17 @@ function UnifiedTaskBoardInner({
     }
     return counts;
   }, [boardTasks, columns]);
+
+  useRegisterBoardMobileStatusTabs(
+    isMobileBoard && activeStatus
+      ? {
+          columns,
+          activeStatus,
+          counts: statusCounts,
+          onChange: setActiveStatus,
+        }
+      : null,
+  );
 
   useEffect(() => {
     if (focusedStatus && columns.some((column) => column.status === focusedStatus)) {
@@ -299,19 +310,10 @@ function UnifiedTaskBoardInner({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        {/* Flex shell so tabbed columns keep a real height under sticky status tabs. */}
+        {/* Flex shell so tabbed columns keep a real height; status tabs live in Bottom App Bar. */}
         <div
           className={`task-board-shell${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
         >
-          {isMobileBoard && activeStatus ? (
-            <BoardStatusTabs
-              columns={columns}
-              activeStatus={activeStatus}
-              counts={statusCounts}
-              onChange={setActiveStatus}
-            />
-          ) : null}
-
           <div
             className={`task-board-scroll${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
             ref={scrollRef}

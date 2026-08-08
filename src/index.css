@@ -6049,6 +6049,11 @@ textarea {
   overflow: visible;
 }
 
+.mobile-bottom-app-bar.has-status-tabs {
+  /* Status steps + FAB share the Bottom App Bar. */
+  height: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+}
+
 .mobile-bottom-app-bar-surface {
   position: absolute;
   inset: 0;
@@ -6057,6 +6062,25 @@ textarea {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+  /* Leave room for overlapping FAB on the right. */
+  padding-right: calc(4.25rem + max(1rem, env(safe-area-inset-right, 0px)));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-bottom-app-bar-surface .board-status-tabs {
+  pointer-events: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0.25rem 0;
+  border: none;
+  background: transparent;
+  position: static;
+  top: auto;
+  z-index: auto;
 }
 
 .mobile-board-fab {
@@ -6072,10 +6096,14 @@ textarea {
   pointer-events: none;
 }
 
+.mobile-bottom-app-bar.has-status-tabs .mobile-board-fab {
+  bottom: calc(1.9rem + env(safe-area-inset-bottom, 0px));
+}
+
 .undo-toast {
   position: fixed;
   left: 50%;
-  bottom: max(5.75rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)));
+  bottom: max(6.25rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
   z-index: 80;
   display: flex;
   align-items: center;
@@ -6353,8 +6381,8 @@ textarea {
   .board-page,
   .content-area,
   .page-shell {
-    /* Room for slim Bottom App Bar + overlapping FAB. */
-    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    /* Room for Bottom App Bar (status tabs + overlapping FAB). */
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
@@ -6430,21 +6458,6 @@ textarea {
   scrollbar-width: thin;
 }
 
-@media (max-width: 900px) {
-  .board-status-tabs {
-    position: sticky;
-    top: var(--mobile-top-nav-height, 4.25rem);
-    z-index: 25;
-    margin-inline: -0.75rem;
-    padding-inline: 0.75rem;
-    padding-top: 0.35rem;
-    padding-bottom: 0.55rem;
-    margin-bottom: 0.35rem;
-    background: var(--bg-page);
-    border-bottom: 1px solid var(--border-subtle);
-  }
-}
-
 .board-status-tab {
   flex: 0 0 auto;
   display: inline-flex;
@@ -6491,10 +6504,6 @@ textarea {
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
-}
-
-.task-board-shell.is-mobile-tabbed .board-status-tabs {
-  flex: 0 0 auto;
 }
 
 .task-board-scroll.is-mobile-tabbed {
