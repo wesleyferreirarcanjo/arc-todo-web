@@ -7576,7 +7576,8 @@ textarea {
 }
 
 .task-qa-bug-reason input,
-.task-qa-improvement-reason input {
+.task-qa-improvement-reason input,
+.task-qa-improvement-reason textarea {
   width: 100%;
 }
 
@@ -7955,8 +7956,15 @@ textarea {
   font-size: 0.82rem;
 }
 
-.task-qa-checklist-report input[type='text'] {
+.task-qa-checklist-report input[type='text'],
+.task-qa-checklist-report textarea {
   width: 100%;
+}
+
+.task-qa-checklist-report.is-improvement,
+.task-qa-checklist-item.has-improvement .task-qa-checklist-report {
+  border-color: color-mix(in srgb, #175cd3 45%, var(--border));
+  background: color-mix(in srgb, #175cd3 6%, var(--bg-surface));
 }
 
 .task-qa-checklist-report-actions {

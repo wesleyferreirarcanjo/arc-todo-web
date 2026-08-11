@@ -79,7 +79,8 @@ export function TaskQaSection({
   const [qaError, setQaError] = useState<string | null>(null);
   const [bugReason, setBugReason] = useState(task.bugReason ?? '');
   const [flaggingBug, setFlaggingBug] = useState(false);
-  const [improvementReason, setImprovementReason] = useState('');
+  const [improvementTitle, setImprovementTitle] = useState('');
+  const [improvementDescription, setImprovementDescription] = useState('');
   const [improvementFile, setImprovementFile] = useState<File | null>(null);
   const [creatingImprovement, setCreatingImprovement] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
@@ -354,9 +355,14 @@ export function TaskQaSection({
   }
 
   async function handleCreateImprovement() {
-    const reason = improvementReason.trim();
-    if (!reason) {
-      setQaError('O motivo da melhoria é obrigatório.');
+    const title = improvementTitle.trim();
+    const description = improvementDescription.trim();
+    if (!title) {
+      setQaError('O título da melhoria é obrigatório.');
+      return;
+    }
+    if (!description) {
+      setQaError('A descrição da melhoria é obrigatória.');
       return;
     }
 
@@ -368,7 +374,8 @@ export function TaskQaSection({
           displayId: task.displayId ?? task.id,
           title: task.title,
         },
-        reason,
+        title,
+        description,
       );
       const created = await createProjectTask(organizationId, projectId, {
         title: draft.title,
@@ -397,7 +404,8 @@ export function TaskQaSection({
         task.id,
         { qaChecklistState: nextState },
       );
-      setImprovementReason('');
+      setImprovementTitle('');
+      setImprovementDescription('');
       setImprovementFile(null);
       onTaskChange?.(updated);
     } catch (error: unknown) {
@@ -414,7 +422,9 @@ export function TaskQaSection({
   const lightboxUrl = lightboxItem ? thumbUrls[lightboxItem.id] : undefined;
   const bugBadgeLabel = getTaskBugBadgeLabel(task);
   const canFlagBug = bugReason.trim().length > 0;
-  const canCreateImprovement = improvementReason.trim().length > 0;
+  const canCreateImprovement =
+    improvementTitle.trim().length > 0 &&
+    improvementDescription.trim().length > 0;
   const taskLevelEvidence = evidence.filter((item) => !item.checklistItemId);
   const improvementTasks = checklistState.improvementTasks;
 
@@ -541,15 +551,27 @@ export function TaskQaSection({
 
       <div className="task-qa-improvement-reason">
         <label>
-          Melhoria (obrigatório)
+          Título da melhoria (obrigatório)
           <input
             type="text"
-            value={improvementReason}
-            onChange={(event) => setImprovementReason(event.target.value)}
+            value={improvementTitle}
+            onChange={(event) => setImprovementTitle(event.target.value)}
+            placeholder="Ex.: Botão de salvar maior"
+            required
+            aria-required="true"
+            disabled={creatingImprovement}
+          />
+        </label>
+        <label>
+          Descrição da melhoria (obrigatório)
+          <textarea
+            value={improvementDescription}
+            onChange={(event) => setImprovementDescription(event.target.value)}
             placeholder="Descreva a melhoria sugerida"
             required
             aria-required="true"
             disabled={creatingImprovement}
+            rows={3}
           />
         </label>
         <label className="btn btn-secondary btn-sm task-qa-upload-btn">
@@ -579,7 +601,7 @@ export function TaskQaSection({
         )}
         {!canCreateImprovement && (
           <p className="task-qa-bug-reason-hint" role="status">
-            Informe o motivo para criar uma tarefa de melhoria.
+            Informe título e descrição para criar uma tarefa de melhoria.
           </p>
         )}
       </div>

@@ -182,18 +182,38 @@ All pass.`);
     });
   });
 
-  it('builds improvement task draft with source and optional item label', () => {
+  it('builds improvement task draft with title, description, and optional item label', () => {
     const draft = buildImprovementTaskDraft(
       { displayId: '#arc-216', title: 'Parent task' },
-      'o botão poderia ser maior',
+      'Botão maior',
+      'o botão poderia ser maior e mais fácil de tocar',
       'Verificar botão de salvar',
     );
-    expect(draft.title).toBe('o botão poderia ser maior');
+    expect(draft.title).toBe('Botão maior');
     expect(draft.planCodeDescription).toContain('#arc-216');
     expect(draft.planCodeDescription).toContain('Parent task');
     expect(draft.planCodeDescription).toContain('Verificar botão de salvar');
-    expect(draft.planCodeDescription).toContain('o botão poderia ser maior');
+    expect(draft.planCodeDescription).toContain(
+      'o botão poderia ser maior e mais fácil de tocar',
+    );
     expect(draft.planCodeDescription).toContain('arc-todo-improve-task');
+  });
+
+  it('rejects empty title or description for improvement draft', () => {
+    expect(() =>
+      buildImprovementTaskDraft(
+        { displayId: '#arc-216', title: 'Parent' },
+        '   ',
+        'desc',
+      ),
+    ).toThrow(/title is required/);
+    expect(() =>
+      buildImprovementTaskDraft(
+        { displayId: '#arc-216', title: 'Parent' },
+        'Title',
+        '   ',
+      ),
+    ).toThrow(/description is required/);
   });
 
   it('appends task-level and per-item improvement refs', () => {

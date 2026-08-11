@@ -173,6 +173,7 @@ export function TaskQaChecklistModal({
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [reportingItemId, setReportingItemId] = useState<string | null>(null);
   const [reportMode, setReportMode] = useState<ReportMode | null>(null);
+  const [reportTitle, setReportTitle] = useState('');
   const [reportNote, setReportNote] = useState('');
   const [reportFiles, setReportFiles] = useState<File[]>([]);
   const [reportPasteCue, setReportPasteCue] = useState(false);
@@ -206,6 +207,7 @@ export function TaskQaChecklistModal({
     setDraftState(normalizeQaChecklistState(task.qaChecklistState));
     setReportingItemId(null);
     setReportMode(null);
+    setReportTitle('');
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -308,6 +310,7 @@ export function TaskQaChecklistModal({
   function startReportItem(itemId: string, mode: ReportMode) {
     setReportingItemId(itemId);
     setReportMode(mode);
+    setReportTitle('');
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -316,6 +319,7 @@ export function TaskQaChecklistModal({
   function cancelReportItem() {
     setReportingItemId(null);
     setReportMode(null);
+    setReportTitle('');
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -347,12 +351,19 @@ export function TaskQaChecklistModal({
 
   async function confirmReportItem(itemId: string) {
     const note = reportNote.trim();
-    if (!note) {
-      onError?.(
-        reportMode === 'improvement'
-          ? 'O motivo da melhoria do item é obrigatório.'
-          : 'O motivo do bug do item é obrigatório.',
-      );
+    const title = reportTitle.trim();
+
+    if (reportMode === 'improvement') {
+      if (!title) {
+        onError?.('O título da melhoria do item é obrigatório.');
+        return;
+      }
+      if (!note) {
+        onError?.('A descrição da melhoria do item é obrigatória.');
+        return;
+      }
+    } else if (!note) {
+      onError?.('O motivo do bug do item é obrigatório.');
       return;
     }
 
@@ -367,6 +378,7 @@ export function TaskQaChecklistModal({
             displayId: task.displayId ?? task.id,
             title: task.title,
           },
+          title,
           note,
           item?.label,
         );
@@ -487,6 +499,7 @@ export function TaskQaChecklistModal({
     // Incomplete inline Bug/Melhoria form is discarded; only confirmed draftState persists.
     setReportingItemId(null);
     setReportMode(null);
+    setReportTitle('');
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -582,8 +595,10 @@ export function TaskQaChecklistModal({
               const itemEvidence = evidence.filter(
                 (row) => row.checklistItemId === item.id,
               );
-              const canConfirmReport = reportNote.trim().length > 0;
               const isImprovementReport = reportMode === 'improvement';
+              const canConfirmReport = isImprovementReport
+                ? reportTitle.trim().length > 0 && reportNote.trim().length > 0
+                : reportNote.trim().length > 0;
 
               return (
                 <li
@@ -670,26 +685,52 @@ export function TaskQaChecklistModal({
                       </ul>
                     )}
                     {isReporting && (
-                      <div className="task-qa-checklist-report">
-                        <label>
-                          {isImprovementReport
-                            ? 'Melhoria (obrigatório)'
-                            : 'Motivo do bug (obrigatório)'}
-                          <input
-                            type="text"
-                            value={reportNote}
-                            onChange={(event) =>
-                              setReportNote(event.target.value)
-                            }
-                            placeholder={
-                              isImprovementReport
-                                ? 'Descreva a melhoria neste item'
-                                : 'Descreva o problema neste item'
-                            }
-                            disabled={saving || uploadingItemId === item.id}
-                            autoFocus
-                          />
-                        </label>
+                      <div
+                        className={`task-qa-checklist-report${isImprovementReport ? ' is-improvement' : ''}`}
+                      >
+                        {isImprovementReport ? (
+                          <>
+                            <label>
+                              Título da melhoria (obrigatório)
+                              <input
+                                type="text"
+                                value={reportTitle}
+                                onChange={(event) =>
+                                  setReportTitle(event.target.value)
+                                }
+                                placeholder="Ex.: Atalho de teclado neste passo"
+                                disabled={saving || uploadingItemId === item.id}
+                                autoFocus
+                              />
+                            </label>
+                            <label>
+                              Descrição da melhoria (obrigatório)
+                              <textarea
+                                value={reportNote}
+                                onChange={(event) =>
+                                  setReportNote(event.target.value)
+                                }
+                                placeholder="Descreva a melhoria neste item"
+                                disabled={saving || uploadingItemId === item.id}
+                                rows={3}
+                              />
+                            </label>
+                          </>
+                        ) : (
+                          <label>
+                            Motivo do bug (obrigatório)
+                            <input
+                              type="text"
+                              value={reportNote}
+                              onChange={(event) =>
+                                setReportNote(event.target.value)
+                              }
+                              placeholder="Descreva o problema neste item"
+                              disabled={saving || uploadingItemId === item.id}
+                              autoFocus
+                            />
+                          </label>
+                        )}
                         <label className="btn btn-secondary btn-sm task-qa-upload-btn">
                           {uploadingItemId === item.id
                             ? 'Enviando...'
@@ -752,7 +793,7 @@ export function TaskQaChecklistModal({
                         {!canConfirmReport && (
                           <p className="task-qa-bug-reason-hint" role="status">
                             {isImprovementReport
-                              ? 'Informe o motivo para criar uma melhoria neste item.'
+                              ? 'Informe título e descrição para criar uma melhoria neste item.'
                               : 'Informe o motivo para marcar este item como bug.'}
                           </p>
                         )}
