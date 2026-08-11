@@ -805,6 +805,30 @@ textarea:focus-visible {
   border-left-width: 4px;
 }
 
+.project-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.project-nav-sublink {
+  display: block;
+  margin-left: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted, var(--text-secondary));
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.project-nav-sublink:hover,
+.project-nav-sublink.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
 .breadcrumbs {
   display: flex;
   flex-wrap: wrap;
@@ -7576,6 +7600,7 @@ textarea {
 }
 
 .task-qa-bug-reason input,
+.task-qa-bug-reason textarea,
 .task-qa-improvement-reason input,
 .task-qa-improvement-reason textarea {
   width: 100%;
@@ -7605,6 +7630,10 @@ textarea {
   margin: 0;
   font-size: 0.82rem;
   color: #b42318;
+}
+
+.task-qa-bug-reason-display {
+  white-space: pre-wrap;
 }
 
 .task-qa-paste-cue,
@@ -7997,6 +8026,7 @@ textarea {
 .task-qa-checklist-bug-note p {
   margin: 0;
   flex: 1 1 12rem;
+  white-space: pre-wrap;
 }
 
 .task-qa-checklist-staged-files {

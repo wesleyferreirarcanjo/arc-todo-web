@@ -22,25 +22,40 @@ export function ProjectNavList() {
     <nav className="project-nav">
       <p className="sidebar-label">Projects</p>
       <ul className="project-nav-list">
-        {projects.map((project) => (
-          <li key={project.id}>
-            <NavLink
-              to={`/organizations/${orgId}/projects/${project.id}`}
-              className={({ isActive }) =>
-                isActive
-                  ? 'project-nav-link active has-accent'
-                  : 'project-nav-link has-accent'
-              }
-              style={
-                {
-                  '--entity-accent': getProjectColor(project),
-                } as React.CSSProperties
-              }
-            >
-              {project.name}
-            </NavLink>
-          </li>
-        ))}
+        {projects.map((project) => {
+          const boardPath = `/organizations/${orgId}/projects/${project.id}`;
+          const diagramsPath = `${boardPath}/diagrams`;
+          const accentStyle = {
+            '--entity-accent': getProjectColor(project),
+          } as React.CSSProperties;
+
+          return (
+            <li key={project.id} className="project-nav-item">
+              <NavLink
+                to={boardPath}
+                end
+                className={({ isActive }) =>
+                  isActive
+                    ? 'project-nav-link active has-accent'
+                    : 'project-nav-link has-accent'
+                }
+                style={accentStyle}
+              >
+                {project.name}
+              </NavLink>
+              <NavLink
+                to={diagramsPath}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'project-nav-sublink active'
+                    : 'project-nav-sublink'
+                }
+              >
+                Diagrams
+              </NavLink>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

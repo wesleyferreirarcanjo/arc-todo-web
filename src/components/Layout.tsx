@@ -3,7 +3,6 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { OrgKnowledgeNav } from './OrgKnowledgeNav';
-import { ProjectDiagramsNav } from './ProjectDiagramsNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
 import { ChatProvider } from '../context/ChatContext';
@@ -340,7 +339,6 @@ export function Layout() {
             <div className="sidebar-context">
               <ProjectNavList />
               <OrgKnowledgeNav />
-              <ProjectDiagramsNav />
             </div>
           )}
 
