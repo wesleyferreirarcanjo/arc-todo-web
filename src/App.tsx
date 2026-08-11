@@ -17,6 +17,7 @@ import { McpToolsSettingsPage } from './pages/McpToolsSettingsPage';
 import { RagChunksPage } from './pages/RagChunksPage';
 import { RagSettingsPage } from './pages/RagSettingsPage';
 import { RagTestingPage } from './pages/RagTestingPage';
+import { StorageSettingsPage } from './pages/StorageSettingsPage';
 import { OrganizationActivityPage } from './pages/OrganizationActivityPage';
 import { OrganizationKnowledgePage } from './pages/OrganizationKnowledgePage';
 import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
@@ -63,6 +64,10 @@ export default function App() {
                   <Route
                     path="/settings/mcp-tools"
                     element={<McpToolsSettingsPage />}
+                  />
+                  <Route
+                    path="/settings/storage"
+                    element={<StorageSettingsPage />}
                   />
                   <Route
                     path="/settings/rag/settings"

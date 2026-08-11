@@ -124,6 +124,16 @@ function McpIcon() {
   );
 }
 
+function StorageIcon() {
+  return (
+    <Icon className="sidebar-menu-item-icon">
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+    </Icon>
+  );
+}
+
 function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
     <Icon className="sidebar-toggle-icon">
@@ -393,6 +403,20 @@ export function Layout() {
                   >
                     <McpIcon />
                     MCP Tools
+                  </NavLink>
+                  <p className="sidebar-settings-category">System</p>
+                  <NavLink
+                    to="/settings/storage"
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'sidebar-settings-menu-item active'
+                        : 'sidebar-settings-menu-item'
+                    }
+                    onClick={closeSettingsMenu}
+                  >
+                    <StorageIcon />
+                    Storage
                   </NavLink>
                   <p className="sidebar-settings-category">RAG</p>
                   <button
