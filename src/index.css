@@ -7720,7 +7720,8 @@ textarea {
 }
 
 .task-qa-checklist-modal {
-  width: min(100%, 44rem);
+  width: min(96vw, 60rem);
+  max-height: min(92dvh, 920px);
 }
 
 .task-bug-history-modal {
@@ -7969,19 +7970,63 @@ textarea {
   gap: 0.3rem;
 }
 
-.task-qa-checklist-bug-btn {
-  min-height: 1.9rem;
-  padding: 0.25rem 0.6rem;
-  border-color: color-mix(in srgb, #b42318 78%, var(--border));
-  color: #e5484d;
+.task-qa-checklist-bug-btn,
+.task-qa-checklist-resolve-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  min-height: 1.95rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-pill, 999px);
   font-size: 0.74rem;
+  font-weight: 600;
   line-height: 1;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.task-qa-checklist-bug-btn svg,
+.task-qa-checklist-resolve-btn svg {
+  flex: none;
+}
+
+.task-qa-checklist-bug-btn:hover:not(:disabled),
+.task-qa-checklist-resolve-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.task-qa-checklist-bug-btn {
+  border-color: color-mix(in srgb, #b42318 78%, var(--border));
+  background: color-mix(in srgb, #b42318 8%, var(--bg-surface));
+  color: #e5484d;
+}
+
+.task-qa-checklist-bug-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, #b42318 16%, var(--bg-surface));
 }
 
 .task-qa-checklist-bug-btn.is-active {
   background: #b42318;
   border-color: #b42318;
   color: #fff;
+}
+
+.task-qa-checklist-bug-btn.is-active:hover:not(:disabled) {
+  background: color-mix(in srgb, #b42318 88%, #000);
+}
+
+.task-qa-checklist-resolve-btn {
+  border-color: color-mix(in srgb, #16a34a 55%, var(--border));
+  background: color-mix(in srgb, #16a34a 10%, var(--bg-surface));
+  color: #15803d;
+}
+
+.task-qa-checklist-resolve-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, #16a34a 20%, var(--bg-surface));
 }
 
 .task-qa-checklist-footer {

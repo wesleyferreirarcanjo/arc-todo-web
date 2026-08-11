@@ -54,6 +54,63 @@ function isImageEvidence(item: TaskEvidence): boolean {
   return item.mimeType.startsWith('image/');
 }
 
+function BugIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 5.5V4a3 3 0 0 1 6 0v1.5" />
+      <rect x="6" y="8" width="12" height="10.5" rx="5" />
+      <path d="M6 12H3M21 12h-3M6 16.5 3.5 18M18 16.5l2.5 1.5M6 8.5 4 6.5M18 8.5 20 6.5M12 8.5v10.5" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 12.5 9.5 18 20 6" />
+    </svg>
+  );
+}
+
+function CheckAllIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 12.5 6.5 17 15 7" />
+      <path d="M11 12.5 15.5 17 22 7" />
+    </svg>
+  );
+}
+
 export function TaskQaChecklistModal({
   open,
   onClose,
@@ -458,12 +515,13 @@ export function TaskQaChecklistModal({
                             </p>
                             <button
                               type="button"
-                              className="btn btn-secondary btn-sm"
+                              className="btn btn-secondary btn-sm task-qa-checklist-resolve-btn"
                               disabled={saving}
                               onClick={() =>
                                 handleSolveItemNote(item.id, noteIndex)
                               }
                             >
+                              <CheckIcon />
                               Resolvido
                             </button>
                           </li>
@@ -606,18 +664,21 @@ export function TaskQaChecklistModal({
                         className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
                         disabled={saving}
                         onClick={() => startReportItem(item.id)}
+                        title={isBugged ? 'Reportar outro bug neste item' : 'Marcar como bug'}
                       >
-                        {isBugged ? 'Outro bug' : 'Bug'}
+                        <BugIcon />
+                        {isBugged ? '+ Bug' : 'Bug'}
                       </button>
                     )}
                     {isBugged && notes.length > 1 && !isReporting && (
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm task-qa-checklist-resolve-btn"
                         disabled={saving}
                         onClick={() => handleSolveItem(item.id)}
                         title="Marcar todos os motivos deste item como resolvidos"
                       >
+                        <CheckAllIcon />
                         Resolver todos
                       </button>
                     )}
