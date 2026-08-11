@@ -8134,36 +8134,6 @@ textarea {
   }
 }
 
-.diagrams-hub-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.diagrams-hub-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
-  padding: 1rem 1.1rem;
-}
-
-.diagrams-hub-org {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-muted, var(--text-secondary));
-}
-
-.diagrams-hub-project {
-  margin: 0.2rem 0 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
 /* Project diagrams (Excalidraw) */
 .diagrams-empty {
   display: flex;
@@ -8239,6 +8209,13 @@ textarea {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.85rem 1rem 1rem;
+}
+
+.diagram-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .diagram-card-title {

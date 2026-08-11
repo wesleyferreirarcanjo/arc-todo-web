@@ -1,20 +1,73 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
+import { Select } from '../components/Select';
+import { getProjectColor } from '../lib/color/entityColor';
+import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
+import type { ProjectDiagramSummary } from '../types/diagram';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
-interface ProjectOption {
+interface HubDiagram {
+  diagram: ProjectDiagramSummary;
   org: Organization;
   project: Project;
 }
 
+type DiagramSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
+
+const SORT_OPTIONS: { value: DiagramSort; label: string }[] = [
+  { value: 'updated_desc', label: 'Recently updated' },
+  { value: 'updated_asc', label: 'Least recently updated' },
+  { value: 'title_asc', label: 'Title (A-Z)' },
+  { value: 'title_desc', label: 'Title (Z-A)' },
+];
+
+function sortHubDiagrams(items: HubDiagram[], sort: DiagramSort): HubDiagram[] {
+  const sorted = [...items];
+  sorted.sort((a, b) => {
+    switch (sort) {
+      case 'title_asc':
+        return a.diagram.title.localeCompare(b.diagram.title, undefined, {
+          sensitivity: 'base',
+        });
+      case 'title_desc':
+        return b.diagram.title.localeCompare(a.diagram.title, undefined, {
+          sensitivity: 'base',
+        });
+      case 'updated_asc':
+        return Date.parse(a.diagram.updatedAt) - Date.parse(b.diagram.updatedAt);
+      case 'updated_desc':
+      default:
+        return Date.parse(b.diagram.updatedAt) - Date.parse(a.diagram.updatedAt);
+    }
+  });
+  return sorted;
+}
+
+function formatUpdatedAt(value: string): string {
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return value;
+  }
+}
+
+function formatBadgeLabel(label: string): string {
+  return label.length > 18 ? `${label.slice(0, 18)}...` : label;
+}
+
 export function DiagramsHubPage() {
-  const [options, setOptions] = useState<ProjectOption[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [items, setItems] = useState<HubDiagram[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orgFilter, setOrgFilter] = useState('');
+  const [projectFilter, setProjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sort, setSort] = useState<DiagramSort>('updated_desc');
 
   useEffect(() => {
     let cancelled = false;
@@ -24,18 +77,27 @@ export function DiagramsHubPage() {
       setError(null);
       try {
         const orgs = await fetchOrganizations();
-        const nested = await Promise.all(
+        const projectsByOrg = await Promise.all(
           orgs.map(async (org) => {
-            const projects = await fetchProjects(org.id);
-            return projects.map((project) => ({ org, project }));
+            const orgProjects = await fetchProjects(org.id);
+            return orgProjects.map((project) => ({ org, project }));
+          }),
+        );
+        const projectEntries = projectsByOrg.flat();
+        const diagramsByProject = await Promise.all(
+          projectEntries.map(async ({ org, project }) => {
+            const diagrams = await fetchProjectDiagrams(org.id, project.id);
+            return diagrams.map((diagram) => ({ diagram, org, project }));
           }),
         );
         if (!cancelled) {
-          setOptions(nested.flat());
+          setOrganizations(orgs);
+          setProjects(projectEntries.map((entry) => entry.project));
+          setItems(diagramsByProject.flat());
         }
       } catch {
         if (!cancelled) {
-          setError('Failed to load projects for diagrams.');
+          setError('Failed to load diagrams.');
         }
       } finally {
         if (!cancelled) {
@@ -50,71 +112,148 @@ export function DiagramsHubPage() {
     };
   }, []);
 
-  const filteredOptions = useMemo(() => {
+  const projectOptions = useMemo(
+    () => (orgFilter ? projects.filter((project) => project.organizationId === orgFilter) : projects),
+    [projects, orgFilter],
+  );
+
+  const visibleItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return options;
-    return options.filter(
-      ({ org, project }) =>
-        project.name.toLowerCase().includes(query) ||
-        org.name.toLowerCase().includes(query),
-    );
-  }, [options, searchQuery]);
+    const filtered = items.filter(({ diagram, org, project }) => {
+      if (orgFilter && org.id !== orgFilter) return false;
+      if (projectFilter && project.id !== projectFilter) return false;
+      if (query && !diagram.title.toLowerCase().includes(query)) return false;
+      return true;
+    });
+    return sortHubDiagrams(filtered, sort);
+  }, [items, orgFilter, projectFilter, searchQuery, sort]);
+
+  function handleOrgFilterChange(value: string) {
+    setOrgFilter(value);
+    setProjectFilter('');
+  }
 
   return (
     <div className="page-shell diagrams-hub-page">
       <header className="page-header">
         <h2>Diagrams</h2>
         <p className="page-subtitle">
-          Open a project to view its Excalidraw boards or create a new diagram.
+          Browse every Excalidraw board across your projects.
+          {!loading && !error && items.length > 0 && (
+            <>
+              {' '}
+              {items.length} diagram{items.length === 1 ? '' : 's'}.
+            </>
+          )}
         </p>
       </header>
 
-      {loading && <p className="status-message">Loading projects...</p>}
+      {loading && <p className="status-message">Loading diagrams...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && options.length === 0 && (
+      {!loading && !error && items.length === 0 && (
         <p className="status-message">
-          No projects yet.{' '}
+          No diagrams yet.{' '}
           <Link to="/organizations" className="text-link">
-            Create or open an organization
+            Open a project
           </Link>{' '}
-          first.
+          and create the first whiteboard.
         </p>
       )}
 
-      {!loading && !error && options.length > 0 && (
+      {!loading && !error && items.length > 0 && (
         <>
           <div className="board-filters diagrams-hub-filters">
             <label className="board-filter-field board-filter-search">
-              Project / organization
+              Search
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search projects or organizations"
-                aria-label="Search projects or organizations"
+                placeholder="Filter by title"
+                aria-label="Filter diagrams by title"
+              />
+            </label>
+            <label className="board-filter-field">
+              Organization
+              <Select
+                value={orgFilter}
+                placeholder="All organizations"
+                onChange={handleOrgFilterChange}
+                options={[
+                  { value: '', label: 'All organizations' },
+                  ...organizations.map((org) => ({ value: org.id, label: org.name })),
+                ]}
+              />
+            </label>
+            <label className="board-filter-field">
+              Project
+              <Select
+                value={projectFilter}
+                placeholder="All projects"
+                onChange={setProjectFilter}
+                options={[
+                  { value: '', label: 'All projects' },
+                  ...projectOptions.map((project) => ({
+                    value: project.id,
+                    label: project.name,
+                  })),
+                ]}
+              />
+            </label>
+            <label className="board-filter-field">
+              Sort by
+              <Select
+                value={sort}
+                onChange={(value) => setSort(value as DiagramSort)}
+                options={SORT_OPTIONS}
               />
             </label>
           </div>
 
-          {filteredOptions.length === 0 ? (
-            <p className="status-message">No projects match "{searchQuery}".</p>
+          {visibleItems.length === 0 ? (
+            <p className="status-message">No diagrams match these filters.</p>
           ) : (
-            <ul className="diagrams-hub-list">
-              {filteredOptions.map(({ org, project }) => (
-                <li key={project.id} className="diagrams-hub-item entity-card">
-                  <div>
-                    <p className="diagrams-hub-org">{org.name}</p>
-                    <h3 className="diagrams-hub-project">{project.name}</h3>
-                  </div>
-                  <Link
-                    className="btn btn-primary"
-                    to={`/organizations/${org.id}/projects/${project.id}/diagrams`}
-                  >
-                    Open diagrams
-                  </Link>
-                </li>
-              ))}
+            <ul className="diagrams-grid">
+              {visibleItems.map(({ diagram, org, project }) => {
+                const editorPath = `/organizations/${org.id}/projects/${project.id}/diagrams/${diagram.id}`;
+                const accentColor = getProjectColor(project);
+                return (
+                  <li key={diagram.id} className="diagram-card entity-card">
+                    <Link to={editorPath} className="diagram-card-preview-link">
+                      {diagram.thumbnail ? (
+                        <img
+                          src={diagram.thumbnail}
+                          alt=""
+                          className="diagram-card-thumbnail"
+                        />
+                      ) : (
+                        <div className="diagram-card-placeholder">Empty canvas</div>
+                      )}
+                    </Link>
+                    <div className="diagram-card-body">
+                      <div className="diagram-card-badges">
+                        <span className="task-badge task-badge-org" title={org.name}>
+                          {formatBadgeLabel(org.name)}
+                        </span>
+                        <span
+                          className="task-badge task-badge-project"
+                          title={project.name}
+                          style={{ '--entity-accent': accentColor } as CSSProperties}
+                        >
+                          {formatBadgeLabel(project.name)}
+                        </span>
+                      </div>
+                      <h3 className="diagram-card-title">
+                        <Link to={editorPath}>{diagram.title}</Link>
+                      </h3>
+                      <p className="diagram-card-meta">
+                        Updated {formatUpdatedAt(diagram.updatedAt)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>
