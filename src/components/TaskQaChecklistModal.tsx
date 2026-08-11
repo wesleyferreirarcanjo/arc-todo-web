@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  createProjectTask,
   downloadTaskEvidence,
   fetchTaskEvidence,
   updateProjectTask,
@@ -7,7 +8,9 @@ import {
 } from '../lib/api/todos';
 import { extractClipboardImage } from '../lib/tasks/clipboardImage';
 import {
+  addChecklistItemImprovementTaskRef,
   buildChecklistTaskUpdate,
+  buildImprovementTaskDraft,
   clearChecklistItemBug,
   clearChecklistItemBugNote,
   formatChecklistLabel,
@@ -31,6 +34,8 @@ interface TaskQaChecklistModalProps {
   onEvidenceChange?: (evidence: TaskEvidence[]) => void;
 }
 
+type ReportMode = 'bug' | 'improvement';
+
 function sortIds(ids: string[]): string {
   return [...ids].sort().join(',');
 }
@@ -42,11 +47,27 @@ function sortNotes(notes: Record<string, string[]>): string {
     .join('|');
 }
 
+function sortImprovementRefs(
+  refs: Record<string, { id: string; displayId: string }[]>,
+): string {
+  return Object.keys(refs)
+    .sort()
+    .map(
+      (key) =>
+        `${key}:${refs[key].map((ref) => `${ref.id}:${ref.displayId}`).join(',')}`,
+    )
+    .join('|');
+}
+
 function isSameChecklistState(a: QaChecklistState, b: QaChecklistState): boolean {
   return (
     sortIds(a.checkedItemIds) === sortIds(b.checkedItemIds) &&
     sortIds(a.buggedItemIds) === sortIds(b.buggedItemIds) &&
-    sortNotes(a.buggedItemNotes) === sortNotes(b.buggedItemNotes)
+    sortNotes(a.buggedItemNotes) === sortNotes(b.buggedItemNotes) &&
+    sortIds(a.improvementTasks.map((ref) => ref.id)) ===
+      sortIds(b.improvementTasks.map((ref) => ref.id)) &&
+    sortImprovementRefs(a.improvementItemTasks) ===
+      sortImprovementRefs(b.improvementItemTasks)
   );
 }
 
@@ -111,6 +132,25 @@ function CheckAllIcon() {
   );
 }
 
+function MelhoriaIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+      <circle cx="12" cy="12" r="3.5" />
+    </svg>
+  );
+}
+
 export function TaskQaChecklistModal({
   open,
   onClose,
@@ -125,11 +165,14 @@ export function TaskQaChecklistModal({
     checkedItemIds: [],
     buggedItemIds: [],
     buggedItemNotes: {},
+    improvementTasks: [],
+    improvementItemTasks: {},
   });
   const [saving, setSaving] = useState(false);
   const [evidence, setEvidence] = useState<TaskEvidence[]>([]);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [reportingItemId, setReportingItemId] = useState<string | null>(null);
+  const [reportMode, setReportMode] = useState<ReportMode | null>(null);
   const [reportNote, setReportNote] = useState('');
   const [reportFiles, setReportFiles] = useState<File[]>([]);
   const [reportPasteCue, setReportPasteCue] = useState(false);
@@ -162,6 +205,7 @@ export function TaskQaChecklistModal({
     openedForTaskRef.current = task.id;
     setDraftState(normalizeQaChecklistState(task.qaChecklistState));
     setReportingItemId(null);
+    setReportMode(null);
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -261,8 +305,9 @@ export function TaskQaChecklistModal({
     });
   }
 
-  function startReportItem(itemId: string) {
+  function startReportItem(itemId: string, mode: ReportMode) {
     setReportingItemId(itemId);
+    setReportMode(mode);
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -270,6 +315,7 @@ export function TaskQaChecklistModal({
 
   function cancelReportItem() {
     setReportingItemId(null);
+    setReportMode(null);
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -302,7 +348,66 @@ export function TaskQaChecklistModal({
   async function confirmReportItem(itemId: string) {
     const note = reportNote.trim();
     if (!note) {
-      onError?.('O motivo do bug do item é obrigatório.');
+      onError?.(
+        reportMode === 'improvement'
+          ? 'O motivo da melhoria do item é obrigatório.'
+          : 'O motivo do bug do item é obrigatório.',
+      );
+      return;
+    }
+
+    const filesToUpload = [...reportFiles];
+    const item = checklistItems.find((entry) => entry.id === itemId);
+
+    if (reportMode === 'improvement') {
+      setUploadingItemId(itemId);
+      try {
+        const draft = buildImprovementTaskDraft(
+          {
+            displayId: task.displayId ?? task.id,
+            title: task.title,
+          },
+          note,
+          item?.label,
+        );
+        const created = await createProjectTask(organizationId, projectId, {
+          title: draft.title,
+          planCodeDescription: draft.planCodeDescription,
+          status: 'todo',
+          criticity: task.criticity ?? 'medium',
+          category: task.category,
+        });
+
+        if (filesToUpload.length > 0) {
+          for (const file of filesToUpload) {
+            await uploadTaskEvidence(
+              organizationId,
+              projectId,
+              created.id,
+              file,
+            );
+          }
+        }
+
+        const nextState = addChecklistItemImprovementTaskRef(
+          draftState,
+          itemId,
+          {
+            id: created.id,
+            displayId: created.displayId ?? created.id,
+          },
+        );
+        setDraftState(nextState);
+        cancelReportItem();
+      } catch (error: unknown) {
+        onError?.(
+          error instanceof Error
+            ? error.message
+            : 'Failed to create improvement task',
+        );
+      } finally {
+        setUploadingItemId(null);
+      }
       return;
     }
 
@@ -317,12 +422,8 @@ export function TaskQaChecklistModal({
       return;
     }
 
-    const filesToUpload = [...reportFiles];
     setDraftState(nextState);
-    setReportingItemId(null);
-    setReportNote('');
-    setReportFiles([]);
-    setReportPasteCue(false);
+    cancelReportItem();
 
     if (filesToUpload.length === 0) return;
 
@@ -383,8 +484,9 @@ export function TaskQaChecklistModal({
   async function persistAndClose() {
     if (savingRef.current || uploadingItemIdRef.current) return;
 
-    // Incomplete inline Bug form is discarded; only confirmed draftState persists.
+    // Incomplete inline Bug/Melhoria form is discarded; only confirmed draftState persists.
     setReportingItemId(null);
+    setReportMode(null);
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
@@ -468,22 +570,25 @@ export function TaskQaChecklistModal({
           <div className="task-qa-checklist-heading" aria-hidden="true">
             <span>OK</span>
             <span>Verificação</span>
-            <span>Bug</span>
+            <span>Ações</span>
           </div>
           <ul className="task-qa-checklist-items">
             {checklistItems.map((item) => {
               const isBugged = buggedIds.has(item.id);
               const isReporting = reportingItemId === item.id;
               const notes = getChecklistItemNotes(draftState, item.id);
+              const itemImprovements =
+                draftState.improvementItemTasks[item.id] ?? [];
               const itemEvidence = evidence.filter(
                 (row) => row.checklistItemId === item.id,
               );
               const canConfirmReport = reportNote.trim().length > 0;
+              const isImprovementReport = reportMode === 'improvement';
 
               return (
                 <li
                   key={item.id}
-                  className={`task-qa-checklist-item${isBugged ? ' is-bugged' : ''}`}
+                  className={`task-qa-checklist-item${isBugged ? ' is-bugged' : ''}${itemImprovements.length > 0 ? ' has-improvement' : ''}`}
                 >
                   <label className="task-qa-checklist-check">
                     <input
@@ -528,6 +633,17 @@ export function TaskQaChecklistModal({
                         ))}
                       </ul>
                     )}
+                    {itemImprovements.length > 0 && (
+                      <ul className="task-qa-checklist-improvement-refs">
+                        {itemImprovements.map((ref) => (
+                          <li key={ref.id}>
+                            <span className="task-qa-improvement-link">
+                              Melhoria criada: {ref.displayId}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {itemEvidence.length > 0 && (
                       <ul className="task-qa-checklist-item-evidence">
                         {itemEvidence.map((row) => {
@@ -556,14 +672,20 @@ export function TaskQaChecklistModal({
                     {isReporting && (
                       <div className="task-qa-checklist-report">
                         <label>
-                          Motivo do bug (obrigatório)
+                          {isImprovementReport
+                            ? 'Melhoria (obrigatório)'
+                            : 'Motivo do bug (obrigatório)'}
                           <input
                             type="text"
                             value={reportNote}
                             onChange={(event) =>
                               setReportNote(event.target.value)
                             }
-                            placeholder="Descreva o problema neste item"
+                            placeholder={
+                              isImprovementReport
+                                ? 'Descreva a melhoria neste item'
+                                : 'Descreva o problema neste item'
+                            }
                             disabled={saving || uploadingItemId === item.id}
                             autoFocus
                           />
@@ -618,9 +740,9 @@ export function TaskQaChecklistModal({
                           </ul>
                         )}
                         <p className="task-qa-evidence-paste-hint">
-                          Cole imagens (Ctrl+V / Cmd+V) ou escolha arquivos. As
-                          imagens só são enviadas ao confirmar. Você pode
-                          adicionar vários motivos neste mesmo item.
+                          {isImprovementReport
+                            ? 'Cole imagens (Ctrl+V / Cmd+V) ou escolha arquivos. As imagens vão para a nova tarefa de melhoria ao confirmar.'
+                            : 'Cole imagens (Ctrl+V / Cmd+V) ou escolha arquivos. As imagens só são enviadas ao confirmar. Você pode adicionar vários motivos neste mesmo item.'}
                         </p>
                         {reportPasteCue && reportFiles.length > 0 && (
                           <p className="task-qa-paste-cue" role="status">
@@ -629,7 +751,9 @@ export function TaskQaChecklistModal({
                         )}
                         {!canConfirmReport && (
                           <p className="task-qa-bug-reason-hint" role="status">
-                            Informe o motivo para marcar este item como bug.
+                            {isImprovementReport
+                              ? 'Informe o motivo para criar uma melhoria neste item.'
+                              : 'Informe o motivo para marcar este item como bug.'}
                           </p>
                         )}
                         <div className="task-qa-checklist-report-actions">
@@ -643,7 +767,9 @@ export function TaskQaChecklistModal({
                             }
                             onClick={() => void confirmReportItem(item.id)}
                           >
-                            Confirmar bug
+                            {isImprovementReport
+                              ? 'Confirmar melhoria'
+                              : 'Confirmar bug'}
                           </button>
                           <button
                             type="button"
@@ -659,16 +785,34 @@ export function TaskQaChecklistModal({
                   </div>
                   <div className="task-qa-checklist-item-actions">
                     {!isReporting && (
-                      <button
-                        type="button"
-                        className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
-                        disabled={saving}
-                        onClick={() => startReportItem(item.id)}
-                        title={isBugged ? 'Reportar outro bug neste item' : 'Marcar como bug'}
-                      >
-                        <BugIcon />
-                        {isBugged ? '+ Bug' : 'Bug'}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
+                          disabled={saving}
+                          onClick={() => startReportItem(item.id, 'bug')}
+                          title={
+                            isBugged
+                              ? 'Reportar outro bug neste item'
+                              : 'Marcar como bug'
+                          }
+                        >
+                          <BugIcon />
+                          {isBugged ? '+ Bug' : 'Bug'}
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-secondary btn-sm task-qa-checklist-improvement-btn${itemImprovements.length > 0 ? ' is-active' : ''}`}
+                          disabled={saving}
+                          onClick={() =>
+                            startReportItem(item.id, 'improvement')
+                          }
+                          title="Criar tarefa de melhoria a partir deste item"
+                        >
+                          <MelhoriaIcon />
+                          Melhoria
+                        </button>
+                      </>
                     )}
                     {isBugged && notes.length > 1 && !isReporting && (
                       <button

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  createProjectTask,
   deleteTaskEvidence,
   downloadTaskEvidence,
   fetchTaskEvidence,
@@ -8,6 +9,8 @@ import {
 } from '../lib/api/todos';
 import { extractClipboardImage } from '../lib/tasks/clipboardImage';
 import {
+  addImprovementTaskRef,
+  buildImprovementTaskDraft,
   computeQaChecklistProgress,
   getTaskBugBadgeLabel,
   normalizeQaChecklistState,
@@ -76,6 +79,9 @@ export function TaskQaSection({
   const [qaError, setQaError] = useState<string | null>(null);
   const [bugReason, setBugReason] = useState(task.bugReason ?? '');
   const [flaggingBug, setFlaggingBug] = useState(false);
+  const [improvementReason, setImprovementReason] = useState('');
+  const [improvementFile, setImprovementFile] = useState<File | null>(null);
+  const [creatingImprovement, setCreatingImprovement] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [lightboxItem, setLightboxItem] = useState<TaskEvidence | null>(null);
   const [bugReasonPasteCue, setBugReasonPasteCue] = useState(false);
@@ -331,7 +337,7 @@ export function TaskQaSection({
       const updated = await updateProjectTask(organizationId, projectId, task.id, {
         isBug: false,
         qaChecklistState: {
-          checkedItemIds: checklistState.checkedItemIds,
+          ...checklistState,
           buggedItemIds: [],
           buggedItemNotes: {},
         },
@@ -347,10 +353,70 @@ export function TaskQaSection({
     }
   }
 
+  async function handleCreateImprovement() {
+    const reason = improvementReason.trim();
+    if (!reason) {
+      setQaError('O motivo da melhoria é obrigatório.');
+      return;
+    }
+
+    setCreatingImprovement(true);
+    setQaError(null);
+    try {
+      const draft = buildImprovementTaskDraft(
+        {
+          displayId: task.displayId ?? task.id,
+          title: task.title,
+        },
+        reason,
+      );
+      const created = await createProjectTask(organizationId, projectId, {
+        title: draft.title,
+        planCodeDescription: draft.planCodeDescription,
+        status: 'todo',
+        criticity: task.criticity ?? 'medium',
+        category: task.category,
+      });
+
+      if (improvementFile) {
+        await uploadTaskEvidence(
+          organizationId,
+          projectId,
+          created.id,
+          improvementFile,
+        );
+      }
+
+      const nextState = addImprovementTaskRef(checklistState, {
+        id: created.id,
+        displayId: created.displayId ?? created.id,
+      });
+      const updated = await updateProjectTask(
+        organizationId,
+        projectId,
+        task.id,
+        { qaChecklistState: nextState },
+      );
+      setImprovementReason('');
+      setImprovementFile(null);
+      onTaskChange?.(updated);
+    } catch (error: unknown) {
+      setQaError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to create improvement task',
+      );
+    } finally {
+      setCreatingImprovement(false);
+    }
+  }
+
   const lightboxUrl = lightboxItem ? thumbUrls[lightboxItem.id] : undefined;
   const bugBadgeLabel = getTaskBugBadgeLabel(task);
   const canFlagBug = bugReason.trim().length > 0;
+  const canCreateImprovement = improvementReason.trim().length > 0;
   const taskLevelEvidence = evidence.filter((item) => !item.checklistItemId);
+  const improvementTasks = checklistState.improvementTasks;
 
   return (
     <section className="task-details-section task-qa-section">
@@ -368,12 +434,17 @@ export function TaskQaSection({
             {bugBadgeLabel}
           </span>
         )}
+        {improvementTasks.length > 0 && (
+          <span className="task-improvement-badge">
+            Melhoria {improvementTasks.length}
+          </span>
+        )}
       </div>
 
       {isSubtask ? (
         <p className="task-qa-parent-owned-notice">
           Acceptance QA (Ver checklist and evidence) lives on the parent{' '}
-          <strong>{parentLabel}</strong>. Use bug actions below for
+          <strong>{parentLabel}</strong>. Use bug/melhoria actions below for
           implementation issues on this subtask.
         </p>
       ) : null}
@@ -415,6 +486,19 @@ export function TaskQaSection({
             Marcar como resolvido
           </button>
         )}
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm task-qa-improvement-btn"
+          disabled={creatingImprovement || !canCreateImprovement}
+          onClick={() => void handleCreateImprovement()}
+          title={
+            !canCreateImprovement
+              ? 'Informe o motivo da melhoria'
+              : undefined
+          }
+        >
+          Marcar como melhoria
+        </button>
       </div>
 
       {!task.isBug && (
@@ -453,6 +537,63 @@ export function TaskQaSection({
             </p>
           )}
         </div>
+      )}
+
+      <div className="task-qa-improvement-reason">
+        <label>
+          Melhoria (obrigatório)
+          <input
+            type="text"
+            value={improvementReason}
+            onChange={(event) => setImprovementReason(event.target.value)}
+            placeholder="Descreva a melhoria sugerida"
+            required
+            aria-required="true"
+            disabled={creatingImprovement}
+          />
+        </label>
+        <label className="btn btn-secondary btn-sm task-qa-upload-btn">
+          {improvementFile
+            ? improvementFile.name
+            : 'Imagem opcional'}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            disabled={creatingImprovement}
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              setImprovementFile(file);
+              event.target.value = '';
+            }}
+          />
+        </label>
+        {improvementFile && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={creatingImprovement}
+            onClick={() => setImprovementFile(null)}
+          >
+            Remover imagem
+          </button>
+        )}
+        {!canCreateImprovement && (
+          <p className="task-qa-bug-reason-hint" role="status">
+            Informe o motivo para criar uma tarefa de melhoria.
+          </p>
+        )}
+      </div>
+
+      {improvementTasks.length > 0 && (
+        <ul className="task-qa-improvement-list">
+          {improvementTasks.map((ref) => (
+            <li key={ref.id}>
+              <span className="task-qa-improvement-link">
+                Melhoria criada: {ref.displayId}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
 
       {task.isBug && task.bugReason && (

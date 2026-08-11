@@ -7,11 +7,20 @@ export type TaskCategory =
   | 'marketing'
   | 'other';
 
+export interface QaImprovementTaskRef {
+  id: string;
+  displayId: string;
+}
+
 export interface QaChecklistState {
   checkedItemIds: string[];
   buggedItemIds: string[];
   /** Per-item bug notes keyed by checklist item id — one or more reasons each. */
   buggedItemNotes: Record<string, string[]>;
+  /** Task-level Melhoria generations (standalone sibling tasks). */
+  improvementTasks: QaImprovementTaskRef[];
+  /** Per-checklist-item Melhoria generations keyed by item id. */
+  improvementItemTasks: Record<string, QaImprovementTaskRef[]>;
 }
 
 export interface QaChecklistItem {

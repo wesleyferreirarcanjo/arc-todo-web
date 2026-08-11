@@ -1,6 +1,13 @@
-import type { QaChecklistItem, QaChecklistProgress, QaChecklistState } from '../../types/todo';
+import type {
+  QaChecklistItem,
+  QaChecklistProgress,
+  QaChecklistState,
+  QaImprovementTaskRef,
+} from '../../types/todo';
 
 const CHECKLIST_SECTION_TITLE = 'o que verificar';
+const MAX_IMPROVEMENT_REFS = 50;
+const IMPROVEMENT_TITLE_MAX = 80;
 
 const KNOWN_PLAIN_SECTION_TITLES = new Set([
   'onde testar',
@@ -63,6 +70,41 @@ function normalizeBuggedItemNotes(
   return notes;
 }
 
+function normalizeImprovementTaskRef(
+  value: unknown,
+): QaImprovementTaskRef | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as { id?: unknown; displayId?: unknown };
+  if (typeof raw.id !== 'string' || !raw.id.trim()) return null;
+  if (typeof raw.displayId !== 'string' || !raw.displayId.trim()) return null;
+  return { id: raw.id.trim(), displayId: raw.displayId.trim() };
+}
+
+function normalizeImprovementTaskRefs(value: unknown): QaImprovementTaskRef[] {
+  if (!Array.isArray(value)) return [];
+  const refs: QaImprovementTaskRef[] = [];
+  for (const entry of value) {
+    const ref = normalizeImprovementTaskRef(entry);
+    if (ref) refs.push(ref);
+  }
+  return refs.slice(0, MAX_IMPROVEMENT_REFS);
+}
+
+function normalizeImprovementItemTasks(
+  value: unknown,
+): Record<string, QaImprovementTaskRef[]> {
+  const result: Record<string, QaImprovementTaskRef[]> = {};
+  if (!value || typeof value !== 'object') return result;
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof key !== 'string' || !key.trim()) continue;
+    const refs = normalizeImprovementTaskRefs(entry);
+    if (refs.length > 0) {
+      result[key.trim()] = refs;
+    }
+  }
+  return result;
+}
+
 /** Flatten notes for one item (supports legacy string or string[]). */
 export function getChecklistItemNotes(
   state: QaChecklistState,
@@ -83,6 +125,8 @@ export function normalizeQaChecklistState(value: unknown): QaChecklistState {
       checkedItemIds: [],
       buggedItemIds: [],
       buggedItemNotes: {},
+      improvementTasks: [],
+      improvementItemTasks: {},
     };
   }
 
@@ -90,6 +134,8 @@ export function normalizeQaChecklistState(value: unknown): QaChecklistState {
     checkedItemIds?: unknown;
     buggedItemIds?: unknown;
     buggedItemNotes?: unknown;
+    improvementTasks?: unknown;
+    improvementItemTasks?: unknown;
   };
   const checkedItemIds = normalizeIdList(raw.checkedItemIds);
   const buggedItemIds = normalizeIdList(raw.buggedItemIds);
@@ -97,6 +143,8 @@ export function normalizeQaChecklistState(value: unknown): QaChecklistState {
     checkedItemIds,
     buggedItemIds,
     buggedItemNotes: normalizeBuggedItemNotes(raw.buggedItemNotes, buggedItemIds),
+    improvementTasks: normalizeImprovementTaskRefs(raw.improvementTasks),
+    improvementItemTasks: normalizeImprovementItemTasks(raw.improvementItemTasks),
   };
 }
 
@@ -299,6 +347,7 @@ export function setChecklistItemBugged(
   };
 
   const nextState: QaChecklistState = {
+    ...state,
     checkedItemIds: state.checkedItemIds,
     buggedItemIds: [...bugged],
     buggedItemNotes: notes,
@@ -324,6 +373,7 @@ export function clearChecklistItemBug(
   delete notes[itemId];
 
   const nextState: QaChecklistState = {
+    ...state,
     checkedItemIds: state.checkedItemIds,
     buggedItemIds: [...bugged],
     buggedItemNotes: notes,
@@ -358,6 +408,7 @@ export function clearChecklistItemBugNote(
   }
 
   const nextState: QaChecklistState = {
+    ...state,
     checkedItemIds: state.checkedItemIds,
     buggedItemIds: state.buggedItemIds,
     buggedItemNotes: { ...state.buggedItemNotes, [itemId]: remaining },
@@ -377,4 +428,77 @@ export function getTaskBugBadgeLabel(task: {
   if (task.isBug) return 'Bug';
   if ((task.bugResolveCount ?? 0) > 0) return 'Bug resolvido';
   return null;
+}
+
+function truncateTitle(text: string, max = IMPROVEMENT_TITLE_MAX): string {
+  const trimmed = text.trim().replace(/\s+/g, ' ');
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1).trimEnd()}…`;
+}
+
+/**
+ * Build a simple-text Melhoria task draft. Plan/code holds the full template;
+ * improve-task skill is expected to enrich it later.
+ */
+export function buildImprovementTaskDraft(
+  source: { displayId: string; title: string },
+  reasonText: string,
+  itemLabel?: string,
+): { title: string; planCodeDescription: string } {
+  const reason = reasonText.trim();
+  if (!reason) {
+    throw new Error('Improvement reason is required');
+  }
+
+  const sourceLabel = source.displayId?.trim() || source.title;
+  const title = truncateTitle(reason);
+  const itemBlock = itemLabel?.trim()
+    ? `\n- Checklist item: ${formatChecklistLabel(itemLabel.trim())}`
+    : '';
+
+  const planCodeDescription = `## Melhoria gerada a partir de teste QA
+
+- Origem: ${sourceLabel} — ${source.title}${itemBlock}
+- Motivo (texto do tester):
+${reason}
+
+> Tarefa gerada automaticamente pela ação **Melhoria** na seção de QA.
+> Use a skill **arc-todo-improve-task** para enriquecer título, business description, plan/code e test description.`;
+
+  return { title, planCodeDescription };
+}
+
+/** Append a task-level Melhoria generation ref. */
+export function addImprovementTaskRef(
+  state: QaChecklistState,
+  ref: QaImprovementTaskRef,
+): QaChecklistState {
+  const next = normalizeImprovementTaskRef(ref);
+  if (!next) return state;
+  return {
+    ...state,
+    improvementTasks: [...state.improvementTasks, next].slice(
+      0,
+      MAX_IMPROVEMENT_REFS,
+    ),
+  };
+}
+
+/** Append a per-checklist-item Melhoria generation ref. */
+export function addChecklistItemImprovementTaskRef(
+  state: QaChecklistState,
+  itemId: string,
+  ref: QaImprovementTaskRef,
+): QaChecklistState {
+  const next = normalizeImprovementTaskRef(ref);
+  if (!next || !itemId.trim()) return state;
+  const id = itemId.trim();
+  const existing = state.improvementItemTasks[id] ?? [];
+  return {
+    ...state,
+    improvementItemTasks: {
+      ...state.improvementItemTasks,
+      [id]: [...existing, next].slice(0, MAX_IMPROVEMENT_REFS),
+    },
+  };
 }

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { QaChecklistState } from '../../types/todo';
 import {
+  addChecklistItemImprovementTaskRef,
+  addImprovementTaskRef,
   buildChecklistTaskUpdate,
+  buildImprovementTaskDraft,
   clearChecklistItemBug,
   clearChecklistItemBugNote,
   computeQaChecklistProgress,
@@ -11,6 +15,14 @@ import {
   parseQaChecklistItems,
   setChecklistItemBugged,
 } from './taskQaChecklist';
+
+const emptyState = (): QaChecklistState => ({
+  checkedItemIds: [],
+  buggedItemIds: [],
+  buggedItemNotes: {},
+  improvementTasks: [],
+  improvementItemTasks: {},
+});
 
 describe('taskQaChecklist', () => {
   it('parses markdown checkbox items from test description', () => {
@@ -94,19 +106,14 @@ All pass.`);
 
   it('computes checklist progress from checked ids', () => {
     const progress = computeQaChecklistProgress('- [ ] A\n- [ ] B', {
+      ...emptyState(),
       checkedItemIds: ['item-0'],
-      buggedItemIds: [],
-      buggedItemNotes: {},
     });
     expect(progress).toEqual({ done: 1, total: 2 });
   });
 
   it('normalizes invalid checklist state and drops orphan notes', () => {
-    expect(normalizeQaChecklistState(null)).toEqual({
-      checkedItemIds: [],
-      buggedItemIds: [],
-      buggedItemNotes: {},
-    });
+    expect(normalizeQaChecklistState(null)).toEqual(emptyState());
     expect(
       normalizeQaChecklistState({
         checkedItemIds: ['item-0'],
@@ -118,6 +125,7 @@ All pass.`);
         },
       }),
     ).toEqual({
+      ...emptyState(),
       checkedItemIds: ['item-0'],
       buggedItemIds: ['item-1'],
       buggedItemNotes: { 'item-1': ['broken'] },
@@ -132,10 +140,80 @@ All pass.`);
         buggedItemNotes: { 'item-0': [' first ', 'second', ''] },
       }),
     ).toEqual({
-      checkedItemIds: [],
+      ...emptyState(),
       buggedItemIds: ['item-0'],
       buggedItemNotes: { 'item-0': ['first', 'second'] },
     });
+  });
+
+  it('normalizes improvement task refs and drops malformed entries', () => {
+    expect(
+      normalizeQaChecklistState({
+        improvementTasks: [
+          { id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', displayId: '#arc-230' },
+          { id: 'bad' },
+        ],
+        improvementItemTasks: {
+          'item-0': [
+            {
+              id: '11111111-2222-3333-4444-555555555555',
+              displayId: '#arc-231',
+            },
+          ],
+          'item-1': 'not-an-array',
+        },
+      }),
+    ).toEqual({
+      ...emptyState(),
+      improvementTasks: [
+        {
+          id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+          displayId: '#arc-230',
+        },
+      ],
+      improvementItemTasks: {
+        'item-0': [
+          {
+            id: '11111111-2222-3333-4444-555555555555',
+            displayId: '#arc-231',
+          },
+        ],
+      },
+    });
+  });
+
+  it('builds improvement task draft with source and optional item label', () => {
+    const draft = buildImprovementTaskDraft(
+      { displayId: '#arc-216', title: 'Parent task' },
+      'o botão poderia ser maior',
+      'Verificar botão de salvar',
+    );
+    expect(draft.title).toBe('o botão poderia ser maior');
+    expect(draft.planCodeDescription).toContain('#arc-216');
+    expect(draft.planCodeDescription).toContain('Parent task');
+    expect(draft.planCodeDescription).toContain('Verificar botão de salvar');
+    expect(draft.planCodeDescription).toContain('o botão poderia ser maior');
+    expect(draft.planCodeDescription).toContain('arc-todo-improve-task');
+  });
+
+  it('appends task-level and per-item improvement refs', () => {
+    const withTask = addImprovementTaskRef(emptyState(), {
+      id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      displayId: '#arc-230',
+    });
+    expect(withTask.improvementTasks).toEqual([
+      { id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', displayId: '#arc-230' },
+    ]);
+
+    const withItem = addChecklistItemImprovementTaskRef(
+      withTask,
+      'item-0',
+      { id: '11111111-2222-3333-4444-555555555555', displayId: '#arc-231' },
+    );
+    expect(withItem.improvementItemTasks['item-0']).toEqual([
+      { id: '11111111-2222-3333-4444-555555555555', displayId: '#arc-231' },
+    ]);
+    expect(withItem.improvementTasks).toHaveLength(1);
   });
 
   it('strips markdown emphasis from checklist labels', () => {
@@ -147,7 +225,7 @@ All pass.`);
   it('builds task bug payload from all bugged item notes', () => {
     expect(
       buildChecklistTaskUpdate({
-        checkedItemIds: [],
+        ...emptyState(),
         buggedItemIds: ['item-0', 'item-1'],
         buggedItemNotes: {
           'item-0': ['botao nao responde', 'layout quebrado'],
@@ -158,13 +236,7 @@ All pass.`);
       isBug: true,
       bugReason: 'botao nao responde; layout quebrado; tela em branco',
     });
-    expect(
-      buildChecklistTaskUpdate({
-        checkedItemIds: [],
-        buggedItemIds: [],
-        buggedItemNotes: {},
-      }),
-    ).toEqual({
+    expect(buildChecklistTaskUpdate(emptyState())).toEqual({
       isBug: false,
       bugReason: null,
     });
@@ -172,7 +244,7 @@ All pass.`);
 
   it('appends multiple bugs on the same checklist item', () => {
     const first = setChecklistItemBugged(
-      { checkedItemIds: [], buggedItemIds: [], buggedItemNotes: {} },
+      emptyState(),
       'item-0',
       'Broken flow',
     );
@@ -217,11 +289,7 @@ All pass.`);
 
   it('rejects empty note when marking a checklist item as bug', () => {
     expect(() =>
-      setChecklistItemBugged(
-        { checkedItemIds: [], buggedItemIds: [], buggedItemNotes: {} },
-        'item-0',
-        '   ',
-      ),
+      setChecklistItemBugged(emptyState(), 'item-0', '   '),
     ).toThrow(/Bug note is required/);
   });
 });
