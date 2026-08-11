@@ -3,6 +3,7 @@ import type { CodingTaskMetadata } from '../lib/tasks/taskCategory';
 import { formatTaskCategoryLabel } from '../lib/tasks/taskCategory';
 import { taskDescriptionFieldsFromTask } from '../lib/tasks/taskDescriptions';
 import { formatTaskStatusLabel, isSmartCopyStatus } from '../lib/tasks/taskStatus';
+import { getTaskBugBadgeLabel } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskComment, TaskHistoryEntry } from '../types/todo';
 import {
   createTaskComment,
@@ -286,6 +287,8 @@ export function TaskDetailsModal({
     }
   }
 
+  const bugBadgeLabel = getTaskBugBadgeLabel(task);
+
   return (
     <Modal
       open={open}
@@ -317,7 +320,13 @@ export function TaskDetailsModal({
             <span className="task-details-status">
               {formatTaskStatusLabel(task.status)}
             </span>
-            {task.isBug && <span className="task-bug-badge">Bug</span>}
+            {bugBadgeLabel && (
+              <span
+                className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
+              >
+                {bugBadgeLabel}
+              </span>
+            )}
           </div>
           <div className="task-details-actions">
             <div className="task-details-copy-group">

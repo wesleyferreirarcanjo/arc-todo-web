@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildChecklistTaskUpdate,
+  clearChecklistItemBug,
   computeQaChecklistProgress,
   formatChecklistLabel,
   normalizeQaChecklistState,
   parseQaChecklistDocument,
   parseQaChecklistItems,
-  toggleChecklistItemBug,
+  setChecklistItemBugged,
 } from './taskQaChecklist';
 
 describe('taskQaChecklist', () => {
@@ -90,26 +91,34 @@ All pass.`);
   });
 
   it('computes checklist progress from checked ids', () => {
-    const progress = computeQaChecklistProgress(
-      '- [ ] A\n- [ ] B',
-      { checkedItemIds: ['item-0'], buggedItemIds: [] },
-    );
+    const progress = computeQaChecklistProgress('- [ ] A\n- [ ] B', {
+      checkedItemIds: ['item-0'],
+      buggedItemIds: [],
+      buggedItemNotes: {},
+    });
     expect(progress).toEqual({ done: 1, total: 2 });
   });
 
-  it('normalizes invalid checklist state', () => {
+  it('normalizes invalid checklist state and drops orphan notes', () => {
     expect(normalizeQaChecklistState(null)).toEqual({
       checkedItemIds: [],
       buggedItemIds: [],
+      buggedItemNotes: {},
     });
     expect(
       normalizeQaChecklistState({
         checkedItemIds: ['item-0'],
         buggedItemIds: ['item-1'],
+        buggedItemNotes: {
+          'item-1': '  broken  ',
+          'item-9': 'orphan',
+          'item-2': '',
+        },
       }),
     ).toEqual({
       checkedItemIds: ['item-0'],
       buggedItemIds: ['item-1'],
+      buggedItemNotes: { 'item-1': 'broken' },
     });
   });
 
@@ -119,42 +128,63 @@ All pass.`);
     );
   });
 
-  it('builds task bug payload from multiple bugged checklist items', () => {
-    const items = parseQaChecklistItems('- [ ] First\n- [ ] Second');
+  it('builds task bug payload from bugged item notes (not labels)', () => {
     expect(
-      buildChecklistTaskUpdate(
-        { checkedItemIds: [], buggedItemIds: ['item-0', 'item-1'] },
-        items,
-      ),
+      buildChecklistTaskUpdate({
+        checkedItemIds: [],
+        buggedItemIds: ['item-0', 'item-1'],
+        buggedItemNotes: {
+          'item-0': 'botao nao responde',
+          'item-1': 'tela em branco',
+        },
+      }),
     ).toEqual({
       isBug: true,
-      bugReason: 'First; Second',
+      bugReason: 'botao nao responde; tela em branco',
     });
     expect(
-      buildChecklistTaskUpdate({ checkedItemIds: [], buggedItemIds: [] }, items),
+      buildChecklistTaskUpdate({
+        checkedItemIds: [],
+        buggedItemIds: [],
+        buggedItemNotes: {},
+      }),
     ).toEqual({
       isBug: false,
       bugReason: null,
     });
   });
 
-  it('toggles checklist item bug state and task bug payload', () => {
-    const flagged = toggleChecklistItemBug(
-      { checkedItemIds: [], buggedItemIds: [] },
+  it('sets and clears checklist item bugs with notes (solve semantics)', () => {
+    const flagged = setChecklistItemBugged(
+      { checkedItemIds: [], buggedItemIds: [], buggedItemNotes: {} },
       'item-0',
       'Broken flow',
     );
     expect(flagged.nextState.buggedItemIds).toEqual(['item-0']);
+    expect(flagged.nextState.buggedItemNotes).toEqual({
+      'item-0': 'Broken flow',
+    });
     expect(flagged.taskUpdate).toEqual({
       isBug: true,
       bugReason: 'Broken flow',
     });
 
-    const cleared = toggleChecklistItemBug(flagged.nextState, 'item-0', 'Broken flow');
+    const cleared = clearChecklistItemBug(flagged.nextState, 'item-0');
     expect(cleared.nextState.buggedItemIds).toEqual([]);
+    expect(cleared.nextState.buggedItemNotes).toEqual({});
     expect(cleared.taskUpdate).toEqual({
       isBug: false,
       bugReason: null,
     });
+  });
+
+  it('rejects empty note when marking a checklist item as bug', () => {
+    expect(() =>
+      setChecklistItemBugged(
+        { checkedItemIds: [], buggedItemIds: [], buggedItemNotes: {} },
+        'item-0',
+        '   ',
+      ),
+    ).toThrow(/Bug note is required/);
   });
 });

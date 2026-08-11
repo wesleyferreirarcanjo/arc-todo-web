@@ -10,6 +10,8 @@ export type TaskCategory =
 export interface QaChecklistState {
   checkedItemIds: string[];
   buggedItemIds: string[];
+  /** Per-item bug notes keyed by checklist item id (e.g. item-0). */
+  buggedItemNotes: Record<string, string>;
 }
 
 export interface QaChecklistItem {
@@ -29,6 +31,8 @@ export interface TaskEvidence {
   mimeType: string;
   sizeBytes: number;
   uploadedById: string;
+  /** null = task-level evidence; otherwise checklist item id (e.g. item-3). */
+  checklistItemId: string | null;
   createdAt: string;
 }
 

@@ -20,6 +20,7 @@ import {
 } from '../lib/tasks/taskDescriptions';
 import {
   computeQaChecklistProgress,
+  getTaskBugBadgeLabel,
   normalizeQaChecklistState,
 } from '../lib/tasks/taskQaChecklist';
 import { getAdjacentStatus } from '../lib/tasks/adjacentStatus';
@@ -900,6 +901,8 @@ export function TaskCard({
     </>
   );
 
+  const bugBadgeLabel = getTaskBugBadgeLabel(task);
+
   return (
     <>
       {!pendingDelete ? (
@@ -970,7 +973,13 @@ export function TaskCard({
               )}
             </div>
             <div className="task-context-badges-meta">
-              {task.isBug && <span className="task-bug-badge">Bug</span>}
+              {bugBadgeLabel && (
+                <span
+                  className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
+                >
+                  {bugBadgeLabel}
+                </span>
+              )}
               <span className={`category-badge category-${task.category ?? 'other'}`}>
                 {formatTaskCategoryLabel(task.category ?? 'other')}
               </span>

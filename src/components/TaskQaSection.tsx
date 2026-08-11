@@ -8,6 +8,7 @@ import {
 } from '../lib/api/todos';
 import {
   computeQaChecklistProgress,
+  getTaskBugBadgeLabel,
   normalizeQaChecklistState,
   parseQaChecklistDocument,
 } from '../lib/tasks/taskQaChecklist';
@@ -213,7 +214,7 @@ export function TaskQaSection({
 
   async function uploadEvidenceFile(
     file: File,
-    options?: { pasteCue?: PasteCueSource },
+    options?: { pasteCue?: PasteCueSource; checklistItemId?: string | null },
   ) {
     setUploading(true);
     setQaError(null);
@@ -223,6 +224,7 @@ export function TaskQaSection({
         projectId,
         task.id,
         file,
+        options?.checklistItemId,
       );
       setEvidence((current) => [created, ...current]);
       if (options?.pasteCue === 'bug-reason') {
@@ -330,12 +332,17 @@ export function TaskQaSection({
   }
 
   async function handleFlagBug() {
+    const reason = bugReason.trim();
+    if (!reason) {
+      setQaError('O motivo do bug é obrigatório.');
+      return;
+    }
     setFlaggingBug(true);
     setQaError(null);
     try {
       const updated = await updateProjectTask(organizationId, projectId, task.id, {
         isBug: true,
-        bugReason: bugReason.trim() || null,
+        bugReason: reason,
       });
       onTaskChange?.(updated);
     } catch (error: unknown) {
@@ -347,7 +354,7 @@ export function TaskQaSection({
     }
   }
 
-  async function handleClearBugFlag() {
+  async function handleSolveBug() {
     setFlaggingBug(true);
     setQaError(null);
     try {
@@ -356,13 +363,14 @@ export function TaskQaSection({
         qaChecklistState: {
           checkedItemIds: checklistState.checkedItemIds,
           buggedItemIds: [],
+          buggedItemNotes: {},
         },
       });
       setBugReason('');
       onTaskChange?.(updated);
     } catch (error: unknown) {
       setQaError(
-        error instanceof Error ? error.message : 'Failed to clear bug flag',
+        error instanceof Error ? error.message : 'Failed to mark bug as solved',
       );
     } finally {
       setFlaggingBug(false);
@@ -370,6 +378,9 @@ export function TaskQaSection({
   }
 
   const lightboxUrl = lightboxItem ? thumbUrls[lightboxItem.id] : undefined;
+  const bugBadgeLabel = getTaskBugBadgeLabel(task);
+  const canFlagBug = bugReason.trim().length > 0;
+  const taskLevelEvidence = evidence.filter((item) => !item.checklistItemId);
 
   return (
     <section className="task-details-section task-qa-section">
@@ -380,7 +391,13 @@ export function TaskQaSection({
             Checklist {checklistProgress.done}/{checklistProgress.total}
           </span>
         )}
-        {task.isBug && <span className="task-bug-badge">Bug</span>}
+        {bugBadgeLabel && (
+          <span
+            className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
+          >
+            {bugBadgeLabel}
+          </span>
+        )}
       </div>
 
       {isSubtask ? (
@@ -412,8 +429,9 @@ export function TaskQaSection({
           <button
             type="button"
             className="btn btn-secondary btn-sm task-qa-bug-btn"
-            disabled={flaggingBug}
+            disabled={flaggingBug || !canFlagBug}
             onClick={() => void handleFlagBug()}
+            title={!canFlagBug ? 'Informe o motivo do bug' : undefined}
           >
             Marcar como bug
           </button>
@@ -422,28 +440,49 @@ export function TaskQaSection({
             type="button"
             className="btn btn-secondary btn-sm"
             disabled={flaggingBug}
-            onClick={() => void handleClearBugFlag()}
+            onClick={() => void handleSolveBug()}
           >
-            Remover flag de bug
+            Marcar como resolvido
           </button>
         )}
       </div>
 
       {!task.isBug && (
-        <label className="task-qa-bug-reason">
-          Motivo do bug (opcional)
-          <input
-            type="text"
-            value={bugReason}
-            onChange={(event) => setBugReason(event.target.value)}
-            placeholder="Descreva o problema encontrado"
-          />
+        <div className="task-qa-bug-reason">
+          <label>
+            Motivo do bug (obrigatório)
+            <input
+              type="text"
+              value={bugReason}
+              onChange={(event) => setBugReason(event.target.value)}
+              placeholder="Descreva o problema encontrado"
+              required
+              aria-required="true"
+            />
+          </label>
+          <label className="btn btn-secondary btn-sm task-qa-upload-btn">
+            {uploading ? 'Enviando...' : 'Imagem opcional'}
+            <input
+              type="file"
+              accept="image/*,video/*"
+              disabled={uploading}
+              onChange={(event) => {
+                void handleUploadEvidence(event.target.files);
+                event.target.value = '';
+              }}
+            />
+          </label>
           {bugReasonPasteCue && (
             <p className="task-qa-paste-cue" role="status">
               Imagem enviada para Evidências
             </p>
           )}
-        </label>
+          {!canFlagBug && (
+            <p className="task-qa-bug-reason-hint" role="status">
+              Informe o motivo para marcar como bug.
+            </p>
+          )}
+        </div>
       )}
 
       {task.isBug && task.bugReason && (
@@ -487,16 +526,17 @@ export function TaskQaSection({
           <p className="task-qa-evidence-paste-hint">
             Com os detalhes abertos, cole uma imagem (Ctrl+V / Cmd+V) para enviar
             como evidência — inclusive com foco em comentário ou Motivo do bug —
-            ou use Enviar arquivo. Colar só texto não envia evidência.
+            ou use Enviar arquivo. Colar só texto não envia evidência. Evidências
+            de itens do checklist ficam no Ver checklist.
           </p>
 
           {loadingEvidence ? (
             <p className="task-details-muted">Loading evidence...</p>
-          ) : evidence.length === 0 ? (
+          ) : taskLevelEvidence.length === 0 ? (
             <p className="task-details-muted">No evidence uploaded yet.</p>
           ) : (
             <ul className="task-qa-evidence-list">
-              {evidence.map((item) => {
+              {taskLevelEvidence.map((item) => {
                 const thumbUrl = thumbUrls[item.id];
                 const image = isImageEvidence(item);
                 return (
@@ -569,6 +609,7 @@ export function TaskQaSection({
           projectId={projectId}
           onTaskChange={onTaskChange}
           onError={setQaError}
+          onEvidenceChange={setEvidence}
         />
       )}
 

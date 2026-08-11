@@ -141,9 +141,13 @@ export function uploadTaskEvidence(
   projectId: string,
   taskId: string,
   file: File,
+  checklistItemId?: string | null,
 ): Promise<TaskEvidence> {
   const formData = new FormData();
   formData.append('file', file);
+  if (checklistItemId) {
+    formData.append('checklistItemId', checklistItemId);
+  }
   return apiUpload<TaskEvidence>(
     `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/evidence`,
     formData,

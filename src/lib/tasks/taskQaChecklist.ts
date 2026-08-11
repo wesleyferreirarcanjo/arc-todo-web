@@ -1,7 +1,5 @@
 import type { QaChecklistItem, QaChecklistProgress, QaChecklistState } from '../../types/todo';
 
-const EMPTY_STATE: QaChecklistState = { checkedItemIds: [], buggedItemIds: [] };
-
 const CHECKLIST_SECTION_TITLE = 'o que verificar';
 
 const KNOWN_PLAIN_SECTION_TITLES = new Set([
@@ -31,15 +29,48 @@ function normalizeIdList(value: unknown): string[] {
     .map((id) => id.trim());
 }
 
-export function normalizeQaChecklistState(value: unknown): QaChecklistState {
+function normalizeBuggedItemNotes(
+  value: unknown,
+  buggedItemIds: string[],
+): Record<string, string> {
+  const notes: Record<string, string> = {};
   if (!value || typeof value !== 'object') {
-    return { ...EMPTY_STATE };
+    return notes;
   }
 
-  const raw = value as { checkedItemIds?: unknown; buggedItemIds?: unknown };
+  const buggedSet = new Set(buggedItemIds);
+  for (const [key, note] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof key !== 'string' || !key.trim()) continue;
+    if (typeof note !== 'string') continue;
+    const trimmed = note.trim();
+    if (!trimmed) continue;
+    const id = key.trim();
+    if (!buggedSet.has(id)) continue;
+    notes[id] = trimmed;
+  }
+  return notes;
+}
+
+export function normalizeQaChecklistState(value: unknown): QaChecklistState {
+  if (!value || typeof value !== 'object') {
+    return {
+      checkedItemIds: [],
+      buggedItemIds: [],
+      buggedItemNotes: {},
+    };
+  }
+
+  const raw = value as {
+    checkedItemIds?: unknown;
+    buggedItemIds?: unknown;
+    buggedItemNotes?: unknown;
+  };
+  const checkedItemIds = normalizeIdList(raw.checkedItemIds);
+  const buggedItemIds = normalizeIdList(raw.buggedItemIds);
   return {
-    checkedItemIds: normalizeIdList(raw.checkedItemIds),
-    buggedItemIds: normalizeIdList(raw.buggedItemIds),
+    checkedItemIds,
+    buggedItemIds,
+    buggedItemNotes: normalizeBuggedItemNotes(raw.buggedItemNotes, buggedItemIds),
   };
 }
 
@@ -188,9 +219,16 @@ export function computeQaChecklistProgress(
   return { done, total: items.length };
 }
 
+/**
+ * Derive the task-level isBug + bugReason PATCH from checklist bug state.
+ * When any items are bugged, join their notes into bugReason.
+ * Empty buggedItemIds means solve (isBug: false) — same clear-of-open-bug path.
+ * Legacy rows without notes fall back to item labels so save still satisfies
+ * the mandatory bugReason server rule.
+ */
 export function buildChecklistTaskUpdate(
   state: QaChecklistState,
-  items: QaChecklistItem[],
+  items: QaChecklistItem[] = [],
 ): { isBug: boolean; bugReason: string | null } {
   if (state.buggedItemIds.length === 0) {
     return { isBug: false, bugReason: null };
@@ -200,8 +238,11 @@ export function buildChecklistTaskUpdate(
     items.map((item) => [item.id, formatChecklistLabel(item.label)]),
   );
   const reasons = state.buggedItemIds
-    .map((itemId) => labelsById.get(itemId))
-    .filter((label): label is string => Boolean(label));
+    .map(
+      (itemId) =>
+        state.buggedItemNotes[itemId]?.trim() || labelsById.get(itemId) || null,
+    )
+    .filter((note): note is string => Boolean(note));
 
   return {
     isBug: true,
@@ -209,35 +250,67 @@ export function buildChecklistTaskUpdate(
   };
 }
 
-export function toggleChecklistItemBug(
+/** Mark a checklist item as an open bug with a mandatory note (report). */
+export function setChecklistItemBugged(
   state: QaChecklistState,
   itemId: string,
-  itemLabel: string,
+  note: string,
+): {
+  nextState: QaChecklistState;
+  taskUpdate: { isBug: boolean; bugReason: string | null };
+} {
+  const trimmed = note.trim();
+  if (!trimmed) {
+    throw new Error('Bug note is required to mark a checklist item as bug');
+  }
+
+  const bugged = new Set(state.buggedItemIds);
+  bugged.add(itemId);
+  const notes = { ...state.buggedItemNotes, [itemId]: trimmed };
+
+  const nextState: QaChecklistState = {
+    checkedItemIds: state.checkedItemIds,
+    buggedItemIds: [...bugged],
+    buggedItemNotes: notes,
+  };
+
+  return {
+    nextState,
+    taskUpdate: buildChecklistTaskUpdate(nextState),
+  };
+}
+
+/** Clear one checklist item's open bug (solve that item). Last item solve → task solve. */
+export function clearChecklistItemBug(
+  state: QaChecklistState,
+  itemId: string,
 ): {
   nextState: QaChecklistState;
   taskUpdate: { isBug: boolean; bugReason: string | null };
 } {
   const bugged = new Set(state.buggedItemIds);
-  if (bugged.has(itemId)) {
-    bugged.delete(itemId);
-  } else {
-    bugged.add(itemId);
-  }
+  bugged.delete(itemId);
+  const notes = { ...state.buggedItemNotes };
+  delete notes[itemId];
 
   const nextState: QaChecklistState = {
     checkedItemIds: state.checkedItemIds,
     buggedItemIds: [...bugged],
+    buggedItemNotes: notes,
   };
-
-  if (bugged.size === 0) {
-    return {
-      nextState,
-      taskUpdate: { isBug: false, bugReason: null },
-    };
-  }
 
   return {
     nextState,
-    taskUpdate: { isBug: true, bugReason: formatChecklistLabel(itemLabel) },
+    taskUpdate: buildChecklistTaskUpdate(nextState),
   };
+}
+
+/** Badge label for board/details/QA: open Bug, soft Bug resolvido, or none. */
+export function getTaskBugBadgeLabel(task: {
+  isBug?: boolean;
+  bugResolveCount?: number;
+}): 'Bug' | 'Bug resolvido' | null {
+  if (task.isBug) return 'Bug';
+  if ((task.bugResolveCount ?? 0) > 0) return 'Bug resolvido';
+  return null;
 }

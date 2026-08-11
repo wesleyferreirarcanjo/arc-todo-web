@@ -21,7 +21,7 @@ function describeBugEvent(entry: TaskHistoryEntry): string {
       return 'Marcado como bug';
     }
     if (entry.newValue === 'false') {
-      return 'Bug resolvido/limpo';
+      return 'Bug resolvido';
     }
   }
   if (entry.field === 'bugReason') {
