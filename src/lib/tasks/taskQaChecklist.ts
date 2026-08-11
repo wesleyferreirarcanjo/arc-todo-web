@@ -438,15 +438,19 @@ function truncateTitle(text: string, max = IMPROVEMENT_TITLE_MAX): string {
 
 /**
  * Build a simple-text Melhoria task draft from explicit title + description.
- * Plan/code wraps the tester description with source context; improve-task
- * skill is expected to enrich it later.
+ * Description becomes businessDescription; plan/code keeps source context for
+ * the improve-task skill.
  */
 export function buildImprovementTaskDraft(
   source: { displayId: string; title: string },
   titleText: string,
   descriptionText: string,
   itemLabel?: string,
-): { title: string; planCodeDescription: string } {
+): {
+  title: string;
+  businessDescription: string;
+  planCodeDescription: string;
+} {
   const titleInput = titleText.trim().replace(/\s+/g, ' ');
   const description = descriptionText.trim();
   if (!titleInput) {
@@ -465,13 +469,15 @@ export function buildImprovementTaskDraft(
   const planCodeDescription = `## Melhoria gerada a partir de teste QA
 
 - Origem: ${sourceLabel} — ${source.title}${itemBlock}
-- Descrição (texto do tester):
-${description}
 
 > Tarefa gerada automaticamente pela ação **Melhoria** na seção de QA.
 > Use a skill **arc-todo-improve-task** para enriquecer título, business description, plan/code e test description.`;
 
-  return { title, planCodeDescription };
+  return {
+    title,
+    businessDescription: description,
+    planCodeDescription,
+  };
 }
 
 /** Append a task-level Melhoria generation ref. */

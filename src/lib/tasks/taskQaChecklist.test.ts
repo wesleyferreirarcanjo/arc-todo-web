@@ -190,12 +190,12 @@ All pass.`);
       'Verificar botão de salvar',
     );
     expect(draft.title).toBe('Botão maior');
+    expect(draft.businessDescription).toBe(
+      'o botão poderia ser maior e mais fácil de tocar',
+    );
     expect(draft.planCodeDescription).toContain('#arc-216');
     expect(draft.planCodeDescription).toContain('Parent task');
     expect(draft.planCodeDescription).toContain('Verificar botão de salvar');
-    expect(draft.planCodeDescription).toContain(
-      'o botão poderia ser maior e mais fácil de tocar',
-    );
     expect(draft.planCodeDescription).toContain('arc-todo-improve-task');
   });
 

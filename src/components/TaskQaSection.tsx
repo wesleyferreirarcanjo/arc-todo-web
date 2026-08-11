@@ -379,6 +379,7 @@ export function TaskQaSection({
       );
       const created = await createProjectTask(organizationId, projectId, {
         title: draft.title,
+        businessDescription: draft.businessDescription,
         planCodeDescription: draft.planCodeDescription,
         status: 'todo',
         criticity: task.criticity ?? 'medium',
