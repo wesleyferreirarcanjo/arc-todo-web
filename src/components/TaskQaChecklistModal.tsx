@@ -185,7 +185,6 @@ export function TaskQaChecklistModal({
 
   const checkedIds = new Set(draftState.checkedItemIds);
   const buggedIds = new Set(draftState.buggedItemIds);
-  const isDirty = !isSameChecklistState(draftState, savedState);
 
   function handleToggleChecklistItem(itemId: string) {
     setDraftState((current) => {
@@ -301,7 +300,33 @@ export function TaskQaChecklistModal({
     }
   }
 
-  async function handleSaveAndClose() {
+  const draftStateRef = useRef(draftState);
+  draftStateRef.current = draftState;
+  const savedStateRef = useRef(savedState);
+  savedStateRef.current = savedState;
+  const checklistItemsRef = useRef(checklistItems);
+  checklistItemsRef.current = checklistItems;
+  const savingRef = useRef(false);
+  const uploadingItemIdRef = useRef(uploadingItemId);
+  uploadingItemIdRef.current = uploadingItemId;
+
+  async function persistAndClose() {
+    if (savingRef.current || uploadingItemIdRef.current) return;
+
+    // Incomplete inline Bug form is discarded; only confirmed draftState persists.
+    setReportingItemId(null);
+    setReportNote('');
+    setReportFile(null);
+    setReportPasteCue(false);
+
+    const current = draftStateRef.current;
+    const dirty = !isSameChecklistState(current, savedStateRef.current);
+    if (!dirty) {
+      onClose();
+      return;
+    }
+
+    savingRef.current = true;
     setSaving(true);
     try {
       const updated = await updateProjectTask(
@@ -309,8 +334,8 @@ export function TaskQaChecklistModal({
         projectId,
         task.id,
         {
-          qaChecklistState: draftState,
-          ...buildChecklistTaskUpdate(draftState, checklistItems),
+          qaChecklistState: current,
+          ...buildChecklistTaskUpdate(current, checklistItemsRef.current),
         },
       );
       onTaskChange?.(updated);
@@ -320,6 +345,7 @@ export function TaskQaChecklistModal({
         error instanceof Error ? error.message : 'Failed to save checklist',
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -349,7 +375,7 @@ export function TaskQaChecklistModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => void persistAndClose()}
       title="Checklist de QA"
       titleId={`task-qa-checklist-${task.id}`}
       className="task-qa-checklist-modal"
@@ -368,178 +394,170 @@ export function TaskQaChecklistModal({
       {checklistItems.length === 0 ? (
         <p className="task-details-muted">No checklist items found.</p>
       ) : (
-        <>
-          <div className="task-qa-checklist-panel">
-            <div className="task-qa-checklist-heading" aria-hidden="true">
-              <span>OK</span>
-              <span>Verificação</span>
-              <span>Bug</span>
-            </div>
-            <ul className="task-qa-checklist-items">
-              {checklistItems.map((item) => {
-                const isBugged = buggedIds.has(item.id);
-                const isReporting = reportingItemId === item.id;
-                const note = draftState.buggedItemNotes[item.id];
-                const itemEvidence = evidence.filter(
-                  (row) => row.checklistItemId === item.id,
-                );
-                const canConfirmReport = reportNote.trim().length > 0;
+        <div className="task-qa-checklist-panel">
+          <div className="task-qa-checklist-heading" aria-hidden="true">
+            <span>OK</span>
+            <span>Verificação</span>
+            <span>Bug</span>
+          </div>
+          <ul className="task-qa-checklist-items">
+            {checklistItems.map((item) => {
+              const isBugged = buggedIds.has(item.id);
+              const isReporting = reportingItemId === item.id;
+              const note = draftState.buggedItemNotes[item.id];
+              const itemEvidence = evidence.filter(
+                (row) => row.checklistItemId === item.id,
+              );
+              const canConfirmReport = reportNote.trim().length > 0;
 
-                return (
-                  <li
-                    key={item.id}
-                    className={`task-qa-checklist-item${isBugged ? ' is-bugged' : ''}`}
-                  >
-                    <label className="task-qa-checklist-check">
-                      <input
-                        type="checkbox"
-                        aria-label={`Marcar ${formatChecklistLabel(item.label)} como verificado`}
-                        checked={checkedIds.has(item.id)}
-                        disabled={saving}
-                        onChange={() => handleToggleChecklistItem(item.id)}
-                      />
-                    </label>
-                    <div className="task-qa-checklist-main">
-                      <p className="task-qa-checklist-label">
-                        {formatChecklistLabel(item.label)}
+              return (
+                <li
+                  key={item.id}
+                  className={`task-qa-checklist-item${isBugged ? ' is-bugged' : ''}`}
+                >
+                  <label className="task-qa-checklist-check">
+                    <input
+                      type="checkbox"
+                      aria-label={`Marcar ${formatChecklistLabel(item.label)} como verificado`}
+                      checked={checkedIds.has(item.id)}
+                      disabled={saving}
+                      onChange={() => handleToggleChecklistItem(item.id)}
+                    />
+                  </label>
+                  <div className="task-qa-checklist-main">
+                    <p className="task-qa-checklist-label">
+                      {formatChecklistLabel(item.label)}
+                    </p>
+                    {isBugged && note && (
+                      <p className="task-qa-checklist-bug-note">
+                        <strong>Motivo:</strong> {note}
                       </p>
-                      {isBugged && note && (
-                        <p className="task-qa-checklist-bug-note">
-                          <strong>Motivo:</strong> {note}
-                        </p>
-                      )}
-                      {itemEvidence.length > 0 && (
-                        <ul className="task-qa-checklist-item-evidence">
-                          {itemEvidence.map((row) => {
-                            const thumbUrl = thumbUrls[row.id];
-                            return (
-                              <li key={row.id}>
-                                <button
-                                  type="button"
-                                  className="task-qa-checklist-evidence-btn"
-                                  onClick={() => void handleOpenEvidence(row)}
-                                >
-                                  {isImageEvidence(row) && thumbUrl ? (
-                                    <img
-                                      src={thumbUrl}
-                                      alt=""
-                                      className="task-qa-checklist-evidence-thumb"
-                                    />
-                                  ) : null}
-                                  <span>{row.originalFilename}</span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                      {isReporting && (
-                        <div className="task-qa-checklist-report">
-                          <label>
-                            Motivo do bug (obrigatório)
-                            <input
-                              type="text"
-                              value={reportNote}
-                              onChange={(event) =>
-                                setReportNote(event.target.value)
-                              }
-                              placeholder="Descreva o problema neste item"
-                              disabled={saving || uploadingItemId === item.id}
-                              autoFocus
-                            />
-                          </label>
-                          <label className="btn btn-secondary btn-sm task-qa-upload-btn">
-                            {uploadingItemId === item.id
-                              ? 'Enviando...'
-                              : reportFile
-                                ? reportFile.name
-                                : 'Imagem opcional'}
-                            <input
-                              type="file"
-                              accept="image/*,video/*"
-                              disabled={saving || uploadingItemId === item.id}
-                              onChange={(event) => {
-                                setReportFile(event.target.files?.[0] ?? null);
-                                setReportPasteCue(false);
-                                event.target.value = '';
-                              }}
-                            />
-                          </label>
-                          <p className="task-qa-evidence-paste-hint">
-                            Cole uma imagem (Ctrl+V / Cmd+V) ou escolha um
-                            arquivo. A imagem só é enviada ao confirmar.
-                          </p>
-                          {reportPasteCue && reportFile && (
-                            <p className="task-qa-paste-cue" role="status">
-                              Imagem colada: {reportFile.name}
-                            </p>
-                          )}
-                          {!canConfirmReport && (
-                            <p className="task-qa-bug-reason-hint" role="status">
-                              Informe o motivo para marcar este item como bug.
-                            </p>
-                          )}
-                          <div className="task-qa-checklist-report-actions">
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-sm"
-                              disabled={
-                                saving ||
-                                !canConfirmReport ||
-                                uploadingItemId === item.id
-                              }
-                              onClick={() => void confirmReportItem(item.id)}
-                            >
-                              Confirmar bug
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              disabled={saving || uploadingItemId === item.id}
-                              onClick={cancelReportItem}
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {isBugged ? (
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm task-qa-checklist-bug-btn is-active"
-                        disabled={saving}
-                        onClick={() => handleSolveItem(item.id)}
-                      >
-                        Resolvido
-                      </button>
-                    ) : isReporting ? null : (
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm task-qa-checklist-bug-btn"
-                        disabled={saving}
-                        onClick={() => startReportItem(item.id)}
-                      >
-                        Bug
-                      </button>
                     )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div className="task-qa-checklist-footer">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={saving || !isDirty}
-              onClick={() => void handleSaveAndClose()}
-            >
-              {saving ? 'Salvando...' : 'Salvar e fechar'}
-            </button>
-          </div>
-        </>
+                    {itemEvidence.length > 0 && (
+                      <ul className="task-qa-checklist-item-evidence">
+                        {itemEvidence.map((row) => {
+                          const thumbUrl = thumbUrls[row.id];
+                          return (
+                            <li key={row.id}>
+                              <button
+                                type="button"
+                                className="task-qa-checklist-evidence-btn"
+                                onClick={() => void handleOpenEvidence(row)}
+                              >
+                                {isImageEvidence(row) && thumbUrl ? (
+                                  <img
+                                    src={thumbUrl}
+                                    alt=""
+                                    className="task-qa-checklist-evidence-thumb"
+                                  />
+                                ) : null}
+                                <span>{row.originalFilename}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    {isReporting && (
+                      <div className="task-qa-checklist-report">
+                        <label>
+                          Motivo do bug (obrigatório)
+                          <input
+                            type="text"
+                            value={reportNote}
+                            onChange={(event) =>
+                              setReportNote(event.target.value)
+                            }
+                            placeholder="Descreva o problema neste item"
+                            disabled={saving || uploadingItemId === item.id}
+                            autoFocus
+                          />
+                        </label>
+                        <label className="btn btn-secondary btn-sm task-qa-upload-btn">
+                          {uploadingItemId === item.id
+                            ? 'Enviando...'
+                            : reportFile
+                              ? reportFile.name
+                              : 'Imagem opcional'}
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            disabled={saving || uploadingItemId === item.id}
+                            onChange={(event) => {
+                              setReportFile(event.target.files?.[0] ?? null);
+                              setReportPasteCue(false);
+                              event.target.value = '';
+                            }}
+                          />
+                        </label>
+                        <p className="task-qa-evidence-paste-hint">
+                          Cole uma imagem (Ctrl+V / Cmd+V) ou escolha um
+                          arquivo. A imagem só é enviada ao confirmar.
+                        </p>
+                        {reportPasteCue && reportFile && (
+                          <p className="task-qa-paste-cue" role="status">
+                            Imagem colada: {reportFile.name}
+                          </p>
+                        )}
+                        {!canConfirmReport && (
+                          <p className="task-qa-bug-reason-hint" role="status">
+                            Informe o motivo para marcar este item como bug.
+                          </p>
+                        )}
+                        <div className="task-qa-checklist-report-actions">
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            disabled={
+                              saving ||
+                              !canConfirmReport ||
+                              uploadingItemId === item.id
+                            }
+                            onClick={() => void confirmReportItem(item.id)}
+                          >
+                            Confirmar bug
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={saving || uploadingItemId === item.id}
+                            onClick={cancelReportItem}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {isBugged ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm task-qa-checklist-bug-btn is-active"
+                      disabled={saving}
+                      onClick={() => handleSolveItem(item.id)}
+                    >
+                      Resolvido
+                    </button>
+                  ) : isReporting ? null : (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm task-qa-checklist-bug-btn"
+                      disabled={saving}
+                      onClick={() => startReportItem(item.id)}
+                    >
+                      Bug
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {saving && (
+            <p className="task-details-muted" role="status">
+              Salvando...
+            </p>
+          )}
+        </div>
       )}
     </Modal>
   );
