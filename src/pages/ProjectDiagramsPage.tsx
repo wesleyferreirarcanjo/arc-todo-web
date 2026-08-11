@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import {
@@ -18,6 +19,36 @@ function formatUpdatedAt(value: string): string {
   } catch {
     return value;
   }
+}
+
+type DiagramSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
+
+const SORT_OPTIONS: { value: DiagramSort; label: string }[] = [
+  { value: 'updated_desc', label: 'Recently updated' },
+  { value: 'updated_asc', label: 'Least recently updated' },
+  { value: 'title_asc', label: 'Title (A-Z)' },
+  { value: 'title_desc', label: 'Title (Z-A)' },
+];
+
+function sortDiagrams(
+  diagrams: ProjectDiagramSummary[],
+  sort: DiagramSort,
+): ProjectDiagramSummary[] {
+  const sorted = [...diagrams];
+  sorted.sort((a, b) => {
+    switch (sort) {
+      case 'title_asc':
+        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      case 'title_desc':
+        return b.title.localeCompare(a.title, undefined, { sensitivity: 'base' });
+      case 'updated_asc':
+        return Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
+      case 'updated_desc':
+      default:
+        return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+    }
+  });
+  return sorted;
 }
 
 export function ProjectDiagramsPage() {
@@ -42,6 +73,8 @@ export function ProjectDiagramsPage() {
     null,
   );
   const [deleting, setDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sort, setSort] = useState<DiagramSort>('updated_desc');
 
   const loadDiagrams = useCallback(async () => {
     if (!orgId || !projectId) return;
@@ -65,6 +98,14 @@ export function ProjectDiagramsPage() {
   useEffect(() => {
     void loadDiagrams();
   }, [loadDiagrams]);
+
+  const visibleDiagrams = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const filtered = query
+      ? diagrams.filter((diagram) => diagram.title.toLowerCase().includes(query))
+      : diagrams;
+    return sortDiagrams(filtered, sort);
+  }, [diagrams, searchQuery, sort]);
 
   async function handleCreate() {
     if (!orgId || !projectId) return;
@@ -174,6 +215,12 @@ export function ProjectDiagramsPage() {
           <p className="page-subtitle">
             Draw architecture, flows, and board visuals on Excalidraw canvases
             for this project.
+            {!loading && !error && diagrams.length > 0 && (
+              <>
+                {' '}
+                {diagrams.length} diagram{diagrams.length === 1 ? '' : 's'}.
+              </>
+            )}
           </p>
           <div className="page-links">
             <Link
@@ -220,8 +267,35 @@ export function ProjectDiagramsPage() {
       )}
 
       {!loading && !error && diagrams.length > 0 && (
+        <div className="board-filters diagrams-filters">
+          <label className="board-filter-field board-filter-search">
+            Search
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Filter by title"
+              aria-label="Filter diagrams by title"
+            />
+          </label>
+          <label className="board-filter-field">
+            Sort by
+            <Select
+              value={sort}
+              onChange={(value) => setSort(value as DiagramSort)}
+              options={SORT_OPTIONS}
+            />
+          </label>
+        </div>
+      )}
+
+      {!loading && !error && diagrams.length > 0 && visibleDiagrams.length === 0 && (
+        <p className="status-message">No diagrams match "{searchQuery}".</p>
+      )}
+
+      {!loading && !error && visibleDiagrams.length > 0 && (
         <ul className="diagrams-grid">
-          {diagrams.map((diagram) => (
+          {visibleDiagrams.map((diagram) => (
             <li key={diagram.id} className="diagram-card entity-card">
               <Link
                 to={`/organizations/${orgId}/projects/${projectId}/diagrams/${diagram.id}`}

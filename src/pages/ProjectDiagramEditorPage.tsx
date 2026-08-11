@@ -23,6 +23,8 @@ type ExcalidrawFiles = Parameters<
   NonNullable<React.ComponentProps<typeof Excalidraw>['onChange']>
 >[2];
 
+const AUTOSAVE_DELAY_MS = 2000;
+
 async function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -88,6 +90,8 @@ function sceneFromDiagram(diagram: ProjectDiagram): {
   };
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'unsaved' | 'error';
+
 export function ProjectDiagramEditorPage() {
   const { orgId, projectId, diagramId } = useParams();
   const { theme } = useTheme();
@@ -95,17 +99,29 @@ export function ProjectDiagramEditorPage() {
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [forbidden, setForbidden] = useState(false);
 
   const elementsRef = useRef<ExcalidrawElements>([]);
   const appStateRef = useRef<ExcalidrawAppState | null>(null);
   const filesRef = useRef<ExcalidrawFiles>({});
+  const titleRef = useRef('');
+  const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+  const skipNextChangeRef = useRef(true);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const initialData = useMemo(() => {
     if (!diagram) return null;
     return sceneFromDiagram(diagram);
   }, [diagram]);
+
+  const clearAutosaveTimer = useCallback(() => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+  }, []);
 
   const loadDiagram = useCallback(async () => {
     if (!orgId || !projectId || !diagramId) return;
@@ -116,9 +132,14 @@ export function ProjectDiagramEditorPage() {
       const data = await fetchProjectDiagram(orgId, projectId, diagramId);
       setDiagram(data);
       setTitle(data.title);
+      titleRef.current = data.title;
       const scene = sceneFromDiagram(data);
       elementsRef.current = scene.elements;
+      appStateRef.current = scene.appState as ExcalidrawAppState;
       filesRef.current = scene.files;
+      dirtyRef.current = false;
+      skipNextChangeRef.current = true;
+      setSaveStatus('idle');
     } catch (err) {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
@@ -132,56 +153,89 @@ export function ProjectDiagramEditorPage() {
 
   useEffect(() => {
     void loadDiagram();
-  }, [loadDiagram]);
+    return () => clearAutosaveTimer();
+  }, [loadDiagram, clearAutosaveTimer]);
 
-  async function handleSave() {
-    if (!orgId || !projectId || !diagramId) return;
-    const trimmed = title.trim();
-    if (!trimmed) {
-      setSaveMessage('Title is required.');
-      return;
+  useEffect(() => {
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if (!dirtyRef.current) return;
+      event.preventDefault();
+      event.returnValue = '';
     }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
-    setSaving(true);
-    setSaveMessage(null);
-    try {
-      const elements = elementsRef.current;
-      const appState = appStateRef.current;
-      const files = filesRef.current;
-      const sceneJson: ExcalidrawSceneJson = {
-        elements,
-        appState: appState
-          ? {
-              viewBackgroundColor: appState.viewBackgroundColor,
-              gridSize: appState.gridSize,
-              theme: appState.theme,
-            }
-          : {},
-        files,
-      };
-      const thumbnail =
-        appState != null
-          ? await buildThumbnail(elements, appState, files)
-          : null;
+  const handleSave = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!orgId || !projectId || !diagramId) return;
+      const trimmed = titleRef.current.trim();
+      if (!trimmed) {
+        if (!options?.silent) setSaveStatus('error');
+        return;
+      }
+      if (savingRef.current) return;
 
-      const updated = await updateProjectDiagram(
-        orgId,
-        projectId,
-        diagramId,
-        {
-          title: trimmed,
-          sceneJson,
-          thumbnail,
-        },
-      );
-      setDiagram(updated);
-      setTitle(updated.title);
-      setSaveMessage('Saved.');
-    } catch {
-      setSaveMessage('Failed to save diagram.');
-    } finally {
-      setSaving(false);
-    }
+      clearAutosaveTimer();
+      savingRef.current = true;
+      setSaveStatus('saving');
+      try {
+        const elements = elementsRef.current;
+        const appState = appStateRef.current;
+        const files = filesRef.current;
+        const sceneJson: ExcalidrawSceneJson = {
+          elements,
+          appState: appState
+            ? {
+                viewBackgroundColor: appState.viewBackgroundColor,
+                gridSize: appState.gridSize,
+                theme: appState.theme,
+              }
+            : {},
+          files,
+        };
+        const thumbnail =
+          appState != null
+            ? await buildThumbnail(elements, appState, files)
+            : null;
+
+        const updated = await updateProjectDiagram(
+          orgId,
+          projectId,
+          diagramId,
+          {
+            title: trimmed,
+            sceneJson,
+            thumbnail,
+          },
+        );
+        setDiagram(updated);
+        setTitle(updated.title);
+        titleRef.current = updated.title;
+        dirtyRef.current = false;
+        setSaveStatus('saved');
+      } catch {
+        setSaveStatus('error');
+      } finally {
+        savingRef.current = false;
+      }
+    },
+    [orgId, projectId, diagramId, clearAutosaveTimer],
+  );
+
+  const scheduleAutosave = useCallback(() => {
+    dirtyRef.current = true;
+    setSaveStatus('unsaved');
+    clearAutosaveTimer();
+    autosaveTimerRef.current = setTimeout(() => {
+      void handleSave({ silent: true });
+    }, AUTOSAVE_DELAY_MS);
+  }, [clearAutosaveTimer, handleSave]);
+
+  function handleTitleChange(value: string) {
+    setTitle(value);
+    titleRef.current = value;
+    if (diagram) scheduleAutosave();
   }
 
   if (!orgId || !projectId || !diagramId) {
@@ -206,6 +260,14 @@ export function ProjectDiagramEditorPage() {
     );
   }
 
+  const statusLabel: Record<SaveStatus, string | null> = {
+    idle: null,
+    saving: 'Saving…',
+    saved: 'All changes saved',
+    unsaved: 'Unsaved changes',
+    error: 'Failed to save diagram',
+  };
+
   return (
     <div className="diagram-editor-page">
       <header className="diagram-editor-header">
@@ -220,21 +282,25 @@ export function ProjectDiagramEditorPage() {
             className="diagram-editor-title"
             type="text"
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => handleTitleChange(event.target.value)}
             aria-label="Diagram title"
           />
         </div>
         <div className="diagram-editor-header-actions">
-          {saveMessage && (
-            <span className="diagram-editor-status">{saveMessage}</span>
+          {statusLabel[saveStatus] && (
+            <span
+              className={`diagram-editor-status diagram-editor-status-${saveStatus}`}
+            >
+              {statusLabel[saveStatus]}
+            </span>
           )}
           <button
             type="button"
             className="btn btn-primary"
-            disabled={saving || loading || !diagram}
+            disabled={saveStatus === 'saving' || loading || !diagram}
             onClick={() => void handleSave()}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saveStatus === 'saving' ? 'Saving...' : 'Save'}
           </button>
         </div>
       </header>
@@ -258,6 +324,11 @@ export function ProjectDiagramEditorPage() {
               elementsRef.current = elements;
               appStateRef.current = appState;
               filesRef.current = files;
+              if (skipNextChangeRef.current) {
+                skipNextChangeRef.current = false;
+                return;
+              }
+              scheduleAutosave();
             }}
           />
         </div>

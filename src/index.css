@@ -8173,6 +8173,11 @@ textarea {
   padding: 1.5rem 0;
 }
 
+.diagrams-filters,
+.diagrams-hub-filters {
+  margin-bottom: 1.25rem;
+}
+
 .diagrams-grid {
   list-style: none;
   margin: 0;
@@ -8189,12 +8194,25 @@ textarea {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.diagram-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
 }
 
 .diagram-card-preview-link {
   display: block;
+  position: relative;
   aspect-ratio: 16 / 10;
-  background: color-mix(in srgb, var(--bg-page) 70%, var(--bg-surface));
+  background-color: color-mix(in srgb, var(--bg-page) 70%, var(--bg-surface));
+  background-image: radial-gradient(
+    var(--border) 1px,
+    transparent 1px
+  );
+  background-size: 14px 14px;
   border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
@@ -8204,6 +8222,7 @@ textarea {
   height: 100%;
   object-fit: contain;
   display: block;
+  background: var(--bg-surface);
 }
 
 .diagram-card-placeholder {
@@ -8307,6 +8326,14 @@ textarea {
 .diagram-editor-status {
   font-size: 0.875rem;
   color: var(--text-muted, var(--text-secondary));
+}
+
+.diagram-editor-status-error {
+  color: var(--danger-text);
+}
+
+.diagram-editor-status-saved {
+  color: var(--accent);
 }
 
 .diagram-editor-canvas {

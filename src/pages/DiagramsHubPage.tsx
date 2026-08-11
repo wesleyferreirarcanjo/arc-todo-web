@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
-import {
-  getLastOrganizationId,
-  getLastProjectId,
-} from '../lib/storage/appStorage';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
@@ -18,6 +14,7 @@ export function DiagramsHubPage() {
   const [options, setOptions] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -53,21 +50,15 @@ export function DiagramsHubPage() {
     };
   }, []);
 
-  const lastPath = useMemo(() => {
-    const lastOrgId = getLastOrganizationId();
-    const lastProjectId = getLastProjectId();
-    if (!lastOrgId || !lastProjectId) return null;
-    const match = options.find(
-      (item) =>
-        item.org.id === lastOrgId && item.project.id === lastProjectId,
+  const filteredOptions = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return options;
+    return options.filter(
+      ({ org, project }) =>
+        project.name.toLowerCase().includes(query) ||
+        org.name.toLowerCase().includes(query),
     );
-    if (!match) return null;
-    return `/organizations/${match.org.id}/projects/${match.project.id}/diagrams`;
-  }, [options]);
-
-  if (!loading && !error && lastPath) {
-    return <Navigate to={lastPath} replace />;
-  }
+  }, [options, searchQuery]);
 
   return (
     <div className="page-shell diagrams-hub-page">
@@ -92,22 +83,41 @@ export function DiagramsHubPage() {
       )}
 
       {!loading && !error && options.length > 0 && (
-        <ul className="diagrams-hub-list">
-          {options.map(({ org, project }) => (
-            <li key={project.id} className="diagrams-hub-item entity-card">
-              <div>
-                <p className="diagrams-hub-org">{org.name}</p>
-                <h3 className="diagrams-hub-project">{project.name}</h3>
-              </div>
-              <Link
-                className="btn btn-primary"
-                to={`/organizations/${org.id}/projects/${project.id}/diagrams`}
-              >
-                Open diagrams
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="board-filters diagrams-hub-filters">
+            <label className="board-filter-field board-filter-search">
+              Project / organization
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search projects or organizations"
+                aria-label="Search projects or organizations"
+              />
+            </label>
+          </div>
+
+          {filteredOptions.length === 0 ? (
+            <p className="status-message">No projects match "{searchQuery}".</p>
+          ) : (
+            <ul className="diagrams-hub-list">
+              {filteredOptions.map(({ org, project }) => (
+                <li key={project.id} className="diagrams-hub-item entity-card">
+                  <div>
+                    <p className="diagrams-hub-org">{org.name}</p>
+                    <h3 className="diagrams-hub-project">{project.name}</h3>
+                  </div>
+                  <Link
+                    className="btn btn-primary"
+                    to={`/organizations/${org.id}/projects/${project.id}/diagrams`}
+                  >
+                    Open diagrams
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
