@@ -38,6 +38,14 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
               <Route
+                path="/organizations/:orgId/projects/:projectId/diagrams/:diagramId"
+                element={
+                  <WorkspaceProvider>
+                    <ProjectDiagramEditorPage />
+                  </WorkspaceProvider>
+                }
+              />
+              <Route
                 element={
                   <WorkspaceProvider>
                     <Layout />
@@ -123,10 +131,6 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/diagrams"
                   element={<ProjectDiagramsPage />}
-                />
-                <Route
-                  path="/organizations/:orgId/projects/:projectId/diagrams/:diagramId"
-                  element={<ProjectDiagramEditorPage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
               </Route>

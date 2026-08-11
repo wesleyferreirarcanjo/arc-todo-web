@@ -192,11 +192,7 @@ export function Layout() {
     /^\/organizations\/[^/]+\/projects\/[^/]+\/knowledge$/.test(
       location.pathname,
     );
-  const isDiagramEditorPage =
-    /^\/organizations\/[^/]+\/projects\/[^/]+\/diagrams\/[^/]+$/.test(
-      location.pathname,
-    );
-  const isWorkspacePage = isBoardPage || isKnowledgePage || isDiagramEditorPage;
+  const isWorkspacePage = isBoardPage || isKnowledgePage;
 
   useEffect(() => {
     if (location.pathname.startsWith('/settings/rag')) {
