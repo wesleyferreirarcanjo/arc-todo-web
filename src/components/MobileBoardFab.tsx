@@ -163,6 +163,16 @@ function KnowledgeIcon() {
   );
 }
 
+function DiagramsIcon() {
+  return (
+    <FabGlyph>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M7 15l3-3 2 2 5-5" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+    </FabGlyph>
+  );
+}
+
 function PeopleIcon() {
   return (
     <FabGlyph>
@@ -373,6 +383,12 @@ export function MobileBoardFab() {
         label: 'Knowledge',
         icon: <KnowledgeIcon />,
         onClick: () => go('/knowledge'),
+      },
+      {
+        id: 'nav-diagrams',
+        label: 'Diagrams',
+        icon: <DiagramsIcon />,
+        onClick: () => go('/diagrams'),
       },
       {
         id: 'nav-people',

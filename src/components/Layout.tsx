@@ -54,6 +54,16 @@ function KnowledgeIcon() {
   );
 }
 
+function DiagramsIcon() {
+  return (
+    <Icon>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M7 15l3-3 2 2 5-5" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+    </Icon>
+  );
+}
+
 function PeopleIcon() {
   return (
     <Icon>
@@ -165,6 +175,7 @@ function LogoutIcon() {
 const primaryNav = [
   { to: '/board', label: 'All tasks', icon: TasksIcon },
   { to: '/knowledge', label: 'Knowledge', icon: KnowledgeIcon },
+  { to: '/diagrams', label: 'Diagrams', icon: DiagramsIcon },
   { to: '/people', label: 'People', icon: PeopleIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: false as const },
 ] as const;
@@ -309,9 +320,17 @@ export function Layout() {
                 to={to}
                 aria-label={label}
                 data-tooltip={collapsed ? label : undefined}
-                className={({ isActive }) =>
-                  isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
-                }
+                className={({ isActive }) => {
+                  const diagramsActive =
+                    to === '/diagrams' &&
+                    (location.pathname === '/diagrams' ||
+                      /\/projects\/[^/]+\/diagrams(?:\/|$)/.test(
+                        location.pathname,
+                      ));
+                  return isActive || diagramsActive
+                    ? 'sidebar-nav-link active'
+                    : 'sidebar-nav-link';
+                }}
                 {...rest}
               >
                 <NavIcon />

@@ -9,6 +9,7 @@ import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
+import { DiagramsHubPage } from './pages/DiagramsHubPage';
 import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
@@ -55,6 +56,7 @@ export default function App() {
                 <Route path="/chat" element={<Navigate to="/board" replace />} />
                 <Route path="/board" element={<AllTasksBoardPage />} />
                 <Route path="/knowledge" element={<GeneralKnowledgePage />} />
+                <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />
                 <Route
                   path="/people/:personId/knowledge"
