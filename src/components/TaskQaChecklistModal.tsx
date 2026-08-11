@@ -720,14 +720,14 @@ export function TaskQaChecklistModal({
                         ) : (
                           <label>
                             Motivo do bug (obrigatório)
-                            <input
-                              type="text"
+                            <textarea
                               value={reportNote}
                               onChange={(event) =>
                                 setReportNote(event.target.value)
                               }
                               placeholder="Descreva o problema neste item"
                               disabled={saving || uploadingItemId === item.id}
+                              rows={3}
                               autoFocus
                             />
                           </label>

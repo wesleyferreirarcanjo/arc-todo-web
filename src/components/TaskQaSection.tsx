@@ -516,13 +516,13 @@ export function TaskQaSection({
         <div className="task-qa-bug-reason">
           <label>
             Motivo do bug (obrigatório)
-            <input
-              type="text"
+            <textarea
               value={bugReason}
               onChange={(event) => setBugReason(event.target.value)}
               placeholder="Descreva o problema encontrado"
               required
               aria-required="true"
+              rows={3}
             />
           </label>
           <label className="btn btn-secondary btn-sm task-qa-upload-btn">
