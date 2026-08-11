@@ -10,8 +10,8 @@ export type TaskCategory =
 export interface QaChecklistState {
   checkedItemIds: string[];
   buggedItemIds: string[];
-  /** Per-item bug notes keyed by checklist item id (e.g. item-0). */
-  buggedItemNotes: Record<string, string>;
+  /** Per-item bug notes keyed by checklist item id — one or more reasons each. */
+  buggedItemNotes: Record<string, string[]>;
 }
 
 export interface QaChecklistItem {

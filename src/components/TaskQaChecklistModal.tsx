@@ -9,7 +9,9 @@ import { extractClipboardImage } from '../lib/tasks/clipboardImage';
 import {
   buildChecklistTaskUpdate,
   clearChecklistItemBug,
+  clearChecklistItemBugNote,
   formatChecklistLabel,
+  getChecklistItemNotes,
   normalizeQaChecklistState,
   parseQaChecklistDocument,
   setChecklistItemBugged,
@@ -33,10 +35,10 @@ function sortIds(ids: string[]): string {
   return [...ids].sort().join(',');
 }
 
-function sortNotes(notes: Record<string, string>): string {
+function sortNotes(notes: Record<string, string[]>): string {
   return Object.keys(notes)
     .sort()
-    .map((key) => `${key}:${notes[key]}`)
+    .map((key) => `${key}:${notes[key].join('||')}`)
     .join('|');
 }
 
@@ -72,7 +74,7 @@ export function TaskQaChecklistModal({
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [reportingItemId, setReportingItemId] = useState<string | null>(null);
   const [reportNote, setReportNote] = useState('');
-  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportFiles, setReportFiles] = useState<File[]>([]);
   const [reportPasteCue, setReportPasteCue] = useState(false);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
   const reportingItemIdRef = useRef<string | null>(null);
@@ -104,7 +106,7 @@ export function TaskQaChecklistModal({
     setDraftState(normalizeQaChecklistState(task.qaChecklistState));
     setReportingItemId(null);
     setReportNote('');
-    setReportFile(null);
+    setReportFiles([]);
     setReportPasteCue(false);
   }, [open, task.id, task.qaChecklistState]);
 
@@ -205,14 +207,14 @@ export function TaskQaChecklistModal({
   function startReportItem(itemId: string) {
     setReportingItemId(itemId);
     setReportNote('');
-    setReportFile(null);
+    setReportFiles([]);
     setReportPasteCue(false);
   }
 
   function cancelReportItem() {
     setReportingItemId(null);
     setReportNote('');
-    setReportFile(null);
+    setReportFiles([]);
     setReportPasteCue(false);
   }
 
@@ -223,7 +225,7 @@ export function TaskQaChecklistModal({
   }, [reportPasteCue]);
 
   // While reporting a checklist-item bug, Ctrl+V / Cmd+V with an image in the
-  // clipboard stages it as the optional attachment (uploaded on confirm).
+  // clipboard appends it as an optional attachment (uploaded on confirm).
   useEffect(() => {
     if (!open || !reportingItemId) return;
 
@@ -232,7 +234,7 @@ export function TaskQaChecklistModal({
       const file = extractClipboardImage(event.clipboardData);
       if (!file) return;
       event.preventDefault();
-      setReportFile(file);
+      setReportFiles((current) => [...current, file]);
       setReportPasteCue(true);
     }
 
@@ -258,37 +260,43 @@ export function TaskQaChecklistModal({
       return;
     }
 
+    const filesToUpload = [...reportFiles];
     setDraftState(nextState);
     setReportingItemId(null);
     setReportNote('');
+    setReportFiles([]);
+    setReportPasteCue(false);
 
-    if (reportFile) {
-      setUploadingItemId(itemId);
-      try {
+    if (filesToUpload.length === 0) return;
+
+    setUploadingItemId(itemId);
+    try {
+      const createdRows: TaskEvidence[] = [];
+      for (const file of filesToUpload) {
         const created = await uploadTaskEvidence(
           organizationId,
           projectId,
           task.id,
-          reportFile,
+          file,
           itemId,
         );
+        createdRows.push(created);
+      }
+      if (createdRows.length > 0) {
         setEvidence((current) => {
-          const next = [created, ...current];
+          const next = [...createdRows, ...current];
           onEvidenceChange?.(next);
           return next;
         });
-      } catch (error: unknown) {
-        onError?.(
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload item evidence',
-        );
-      } finally {
-        setUploadingItemId(null);
-        setReportFile(null);
       }
-    } else {
-      setReportFile(null);
+    } catch (error: unknown) {
+      onError?.(
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload item evidence',
+      );
+    } finally {
+      setUploadingItemId(null);
     }
   }
 
@@ -298,6 +306,11 @@ export function TaskQaChecklistModal({
     if (reportingItemId === itemId) {
       cancelReportItem();
     }
+  }
+
+  function handleSolveItemNote(itemId: string, noteIndex: number) {
+    const result = clearChecklistItemBugNote(draftState, itemId, noteIndex);
+    setDraftState(result.nextState);
   }
 
   const draftStateRef = useRef(draftState);
@@ -316,7 +329,7 @@ export function TaskQaChecklistModal({
     // Incomplete inline Bug form is discarded; only confirmed draftState persists.
     setReportingItemId(null);
     setReportNote('');
-    setReportFile(null);
+    setReportFiles([]);
     setReportPasteCue(false);
 
     const current = draftStateRef.current;
@@ -404,7 +417,7 @@ export function TaskQaChecklistModal({
             {checklistItems.map((item) => {
               const isBugged = buggedIds.has(item.id);
               const isReporting = reportingItemId === item.id;
-              const note = draftState.buggedItemNotes[item.id];
+              const notes = getChecklistItemNotes(draftState, item.id);
               const itemEvidence = evidence.filter(
                 (row) => row.checklistItemId === item.id,
               );
@@ -428,10 +441,34 @@ export function TaskQaChecklistModal({
                     <p className="task-qa-checklist-label">
                       {formatChecklistLabel(item.label)}
                     </p>
-                    {isBugged && note && (
-                      <p className="task-qa-checklist-bug-note">
-                        <strong>Motivo:</strong> {note}
-                      </p>
+                    {notes.length > 0 && (
+                      <ul className="task-qa-checklist-bug-notes">
+                        {notes.map((note, noteIndex) => (
+                          <li
+                            key={`${item.id}-note-${noteIndex}`}
+                            className="task-qa-checklist-bug-note"
+                          >
+                            <p>
+                              <strong>
+                                {notes.length > 1
+                                  ? `Motivo ${noteIndex + 1}:`
+                                  : 'Motivo:'}
+                              </strong>{' '}
+                              {note}
+                            </p>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              disabled={saving}
+                              onClick={() =>
+                                handleSolveItemNote(item.id, noteIndex)
+                              }
+                            >
+                              Resolvido
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
                     )}
                     {itemEvidence.length > 0 && (
                       <ul className="task-qa-checklist-item-evidence">
@@ -476,27 +513,60 @@ export function TaskQaChecklistModal({
                         <label className="btn btn-secondary btn-sm task-qa-upload-btn">
                           {uploadingItemId === item.id
                             ? 'Enviando...'
-                            : reportFile
-                              ? reportFile.name
-                              : 'Imagem opcional'}
+                            : reportFiles.length > 0
+                              ? `${reportFiles.length} arquivo(s)`
+                              : 'Imagens opcionais'}
                           <input
                             type="file"
                             accept="image/*,video/*"
+                            multiple
                             disabled={saving || uploadingItemId === item.id}
                             onChange={(event) => {
-                              setReportFile(event.target.files?.[0] ?? null);
+                              const picked = Array.from(
+                                event.target.files ?? [],
+                              );
+                              if (picked.length > 0) {
+                                setReportFiles((current) => [
+                                  ...current,
+                                  ...picked,
+                                ]);
+                              }
                               setReportPasteCue(false);
                               event.target.value = '';
                             }}
                           />
                         </label>
+                        {reportFiles.length > 0 && (
+                          <ul className="task-qa-checklist-staged-files">
+                            {reportFiles.map((file, index) => (
+                              <li key={`${file.name}-${index}`}>
+                                <span>{file.name}</span>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  disabled={
+                                    saving || uploadingItemId === item.id
+                                  }
+                                  onClick={() =>
+                                    setReportFiles((current) =>
+                                      current.filter((_, i) => i !== index),
+                                    )
+                                  }
+                                >
+                                  Remover
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                         <p className="task-qa-evidence-paste-hint">
-                          Cole uma imagem (Ctrl+V / Cmd+V) ou escolha um
-                          arquivo. A imagem só é enviada ao confirmar.
+                          Cole imagens (Ctrl+V / Cmd+V) ou escolha arquivos. As
+                          imagens só são enviadas ao confirmar. Você pode
+                          adicionar vários motivos neste mesmo item.
                         </p>
-                        {reportPasteCue && reportFile && (
+                        {reportPasteCue && reportFiles.length > 0 && (
                           <p className="task-qa-paste-cue" role="status">
-                            Imagem colada: {reportFile.name}
+                            Imagem colada: {reportFiles[reportFiles.length - 1]?.name}
                           </p>
                         )}
                         {!canConfirmReport && (
@@ -529,25 +599,29 @@ export function TaskQaChecklistModal({
                       </div>
                     )}
                   </div>
-                  {isBugged ? (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm task-qa-checklist-bug-btn is-active"
-                      disabled={saving}
-                      onClick={() => handleSolveItem(item.id)}
-                    >
-                      Resolvido
-                    </button>
-                  ) : isReporting ? null : (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm task-qa-checklist-bug-btn"
-                      disabled={saving}
-                      onClick={() => startReportItem(item.id)}
-                    >
-                      Bug
-                    </button>
-                  )}
+                  <div className="task-qa-checklist-item-actions">
+                    {!isReporting && (
+                      <button
+                        type="button"
+                        className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
+                        disabled={saving}
+                        onClick={() => startReportItem(item.id)}
+                      >
+                        {isBugged ? 'Outro bug' : 'Bug'}
+                      </button>
+                    )}
+                    {isBugged && notes.length > 1 && !isReporting && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={saving}
+                        onClick={() => handleSolveItem(item.id)}
+                        title="Marcar todos os motivos deste item como resolvidos"
+                      >
+                        Resolver todos
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}

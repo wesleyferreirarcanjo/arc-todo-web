@@ -32,23 +32,49 @@ function normalizeIdList(value: unknown): string[] {
 function normalizeBuggedItemNotes(
   value: unknown,
   buggedItemIds: string[],
-): Record<string, string> {
-  const notes: Record<string, string> = {};
+): Record<string, string[]> {
+  const notes: Record<string, string[]> = {};
   if (!value || typeof value !== 'object') {
     return notes;
   }
 
   const buggedSet = new Set(buggedItemIds);
-  for (const [key, note] of Object.entries(value as Record<string, unknown>)) {
+  for (const [key, rawNote] of Object.entries(value as Record<string, unknown>)) {
     if (typeof key !== 'string' || !key.trim()) continue;
-    if (typeof note !== 'string') continue;
-    const trimmed = note.trim();
-    if (!trimmed) continue;
     const id = key.trim();
     if (!buggedSet.has(id)) continue;
-    notes[id] = trimmed;
+
+    const list: string[] = [];
+    if (typeof rawNote === 'string') {
+      // Legacy single-string note.
+      const trimmed = rawNote.trim();
+      if (trimmed) list.push(trimmed);
+    } else if (Array.isArray(rawNote)) {
+      for (const entry of rawNote) {
+        if (typeof entry !== 'string') continue;
+        const trimmed = entry.trim();
+        if (trimmed) list.push(trimmed);
+      }
+    }
+    if (list.length > 0) {
+      notes[id] = list;
+    }
   }
   return notes;
+}
+
+/** Flatten notes for one item (supports legacy string or string[]). */
+export function getChecklistItemNotes(
+  state: QaChecklistState,
+  itemId: string,
+): string[] {
+  const raw = state.buggedItemNotes[itemId] as string | string[] | undefined;
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  return raw.map((n) => n.trim()).filter(Boolean);
 }
 
 export function normalizeQaChecklistState(value: unknown): QaChecklistState {
@@ -221,7 +247,7 @@ export function computeQaChecklistProgress(
 
 /**
  * Derive the task-level isBug + bugReason PATCH from checklist bug state.
- * When any items are bugged, join their notes into bugReason.
+ * When any items are bugged, join all their notes into bugReason.
  * Empty buggedItemIds means solve (isBug: false) — same clear-of-open-bug path.
  * Legacy rows without notes fall back to item labels so save still satisfies
  * the mandatory bugReason server rule.
@@ -237,12 +263,12 @@ export function buildChecklistTaskUpdate(
   const labelsById = new Map(
     items.map((item) => [item.id, formatChecklistLabel(item.label)]),
   );
-  const reasons = state.buggedItemIds
-    .map(
-      (itemId) =>
-        state.buggedItemNotes[itemId]?.trim() || labelsById.get(itemId) || null,
-    )
-    .filter((note): note is string => Boolean(note));
+  const reasons = state.buggedItemIds.flatMap((itemId) => {
+    const notes = getChecklistItemNotes(state, itemId);
+    if (notes.length > 0) return notes;
+    const label = labelsById.get(itemId);
+    return label ? [label] : [];
+  });
 
   return {
     isBug: true,
@@ -250,7 +276,7 @@ export function buildChecklistTaskUpdate(
   };
 }
 
-/** Mark a checklist item as an open bug with a mandatory note (report). */
+/** Append a mandatory note on a checklist item (supports multiple bugs per item). */
 export function setChecklistItemBugged(
   state: QaChecklistState,
   itemId: string,
@@ -266,7 +292,11 @@ export function setChecklistItemBugged(
 
   const bugged = new Set(state.buggedItemIds);
   bugged.add(itemId);
-  const notes = { ...state.buggedItemNotes, [itemId]: trimmed };
+  const existing = getChecklistItemNotes(state, itemId);
+  const notes = {
+    ...state.buggedItemNotes,
+    [itemId]: [...existing, trimmed],
+  };
 
   const nextState: QaChecklistState = {
     checkedItemIds: state.checkedItemIds,
@@ -280,7 +310,7 @@ export function setChecklistItemBugged(
   };
 }
 
-/** Clear one checklist item's open bug (solve that item). Last item solve → task solve. */
+/** Clear all open bugs on one checklist item (solve that item). */
 export function clearChecklistItemBug(
   state: QaChecklistState,
   itemId: string,
@@ -297,6 +327,40 @@ export function clearChecklistItemBug(
     checkedItemIds: state.checkedItemIds,
     buggedItemIds: [...bugged],
     buggedItemNotes: notes,
+  };
+
+  return {
+    nextState,
+    taskUpdate: buildChecklistTaskUpdate(nextState),
+  };
+}
+
+/** Clear one note on a checklist item; removes the item from bugged when none remain. */
+export function clearChecklistItemBugNote(
+  state: QaChecklistState,
+  itemId: string,
+  noteIndex: number,
+): {
+  nextState: QaChecklistState;
+  taskUpdate: { isBug: boolean; bugReason: string | null };
+} {
+  const existing = getChecklistItemNotes(state, itemId);
+  if (noteIndex < 0 || noteIndex >= existing.length) {
+    return {
+      nextState: state,
+      taskUpdate: buildChecklistTaskUpdate(state),
+    };
+  }
+
+  const remaining = existing.filter((_, i) => i !== noteIndex);
+  if (remaining.length === 0) {
+    return clearChecklistItemBug(state, itemId);
+  }
+
+  const nextState: QaChecklistState = {
+    checkedItemIds: state.checkedItemIds,
+    buggedItemIds: state.buggedItemIds,
+    buggedItemNotes: { ...state.buggedItemNotes, [itemId]: remaining },
   };
 
   return {

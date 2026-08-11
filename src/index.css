@@ -7865,13 +7865,6 @@ textarea {
   min-width: 0;
 }
 
-.task-qa-checklist-bug-note {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--text-secondary, #5a6472);
-  line-height: 1.35;
-}
-
 .task-qa-checklist-item-evidence {
   list-style: none;
   margin: 0;
@@ -7924,6 +7917,56 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+}
+
+.task-qa-checklist-bug-notes {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.task-qa-checklist-bug-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, #b42318 8%, var(--bg-surface));
+  font-size: 0.82rem;
+}
+
+.task-qa-checklist-bug-note p {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+
+.task-qa-checklist-staged-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.task-qa-checklist-staged-files li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.task-qa-checklist-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
 }
 
 .task-qa-checklist-bug-btn {
