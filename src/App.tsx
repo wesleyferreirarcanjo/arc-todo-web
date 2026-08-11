@@ -24,6 +24,8 @@ import { OrganizationPersonsPage } from './pages/OrganizationPersonsPage';
 import { OrganizationProjectsPage } from './pages/OrganizationProjectsPage';
 import { OrganizationsPage } from './pages/OrganizationsPage';
 import { PersonKnowledgePage } from './pages/PersonKnowledgePage';
+import { ProjectDiagramEditorPage } from './pages/ProjectDiagramEditorPage';
+import { ProjectDiagramsPage } from './pages/ProjectDiagramsPage';
 import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
 
@@ -117,6 +119,14 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/knowledge"
                   element={<ProjectKnowledgePage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/diagrams"
+                  element={<ProjectDiagramsPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/diagrams/:diagramId"
+                  element={<ProjectDiagramEditorPage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
               </Route>
