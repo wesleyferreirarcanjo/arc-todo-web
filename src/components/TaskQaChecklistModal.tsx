@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   downloadTaskEvidence,
   fetchTaskEvidence,
   updateProjectTask,
   uploadTaskEvidence,
 } from '../lib/api/todos';
+import { extractClipboardImage } from '../lib/tasks/clipboardImage';
 import {
   buildChecklistTaskUpdate,
   clearChecklistItemBug,
@@ -72,7 +73,10 @@ export function TaskQaChecklistModal({
   const [reportingItemId, setReportingItemId] = useState<string | null>(null);
   const [reportNote, setReportNote] = useState('');
   const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportPasteCue, setReportPasteCue] = useState(false);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
+  const reportingItemIdRef = useRef<string | null>(null);
+  reportingItemIdRef.current = reportingItemId;
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -85,12 +89,23 @@ export function TaskQaChecklistModal({
     [task.qaChecklistState],
   );
 
+  const openedForTaskRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      openedForTaskRef.current = null;
+      return;
+    }
+    // Only reset when the modal actually opens (or switches task), not on
+    // every re-render caused by the board's silent background refresh —
+    // otherwise an in-progress "Bug" note/upload gets wiped mid-typing.
+    if (openedForTaskRef.current === task.id) return;
+    openedForTaskRef.current = task.id;
     setDraftState(normalizeQaChecklistState(task.qaChecklistState));
     setReportingItemId(null);
     setReportNote('');
     setReportFile(null);
+    setReportPasteCue(false);
   }, [open, task.id, task.qaChecklistState]);
 
   useEffect(() => {
@@ -192,13 +207,39 @@ export function TaskQaChecklistModal({
     setReportingItemId(itemId);
     setReportNote('');
     setReportFile(null);
+    setReportPasteCue(false);
   }
 
   function cancelReportItem() {
     setReportingItemId(null);
     setReportNote('');
     setReportFile(null);
+    setReportPasteCue(false);
   }
+
+  useEffect(() => {
+    if (!reportPasteCue) return;
+    const id = window.setTimeout(() => setReportPasteCue(false), 4500);
+    return () => window.clearTimeout(id);
+  }, [reportPasteCue]);
+
+  // While reporting a checklist-item bug, Ctrl+V / Cmd+V with an image in the
+  // clipboard stages it as the optional attachment (uploaded on confirm).
+  useEffect(() => {
+    if (!open || !reportingItemId) return;
+
+    function onDocumentPaste(event: ClipboardEvent) {
+      if (!reportingItemIdRef.current) return;
+      const file = extractClipboardImage(event.clipboardData);
+      if (!file) return;
+      event.preventDefault();
+      setReportFile(file);
+      setReportPasteCue(true);
+    }
+
+    document.addEventListener('paste', onDocumentPaste);
+    return () => document.removeEventListener('paste', onDocumentPaste);
+  }, [open, reportingItemId]);
 
   async function confirmReportItem(itemId: string) {
     const note = reportNote.trim();
@@ -419,10 +460,20 @@ export function TaskQaChecklistModal({
                               disabled={saving || uploadingItemId === item.id}
                               onChange={(event) => {
                                 setReportFile(event.target.files?.[0] ?? null);
+                                setReportPasteCue(false);
                                 event.target.value = '';
                               }}
                             />
                           </label>
+                          <p className="task-qa-evidence-paste-hint">
+                            Cole uma imagem (Ctrl+V / Cmd+V) ou escolha um
+                            arquivo. A imagem só é enviada ao confirmar.
+                          </p>
+                          {reportPasteCue && reportFile && (
+                            <p className="task-qa-paste-cue" role="status">
+                              Imagem colada: {reportFile.name}
+                            </p>
+                          )}
                           {!canConfirmReport && (
                             <p className="task-qa-bug-reason-hint" role="status">
                               Informe o motivo para marcar este item como bug.

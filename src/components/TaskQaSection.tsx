@@ -6,6 +6,7 @@ import {
   updateProjectTask,
   uploadTaskEvidence,
 } from '../lib/api/todos';
+import { extractClipboardImage } from '../lib/tasks/clipboardImage';
 import {
   computeQaChecklistProgress,
   getTaskBugBadgeLabel,
@@ -55,38 +56,6 @@ function detectPasteCueSource(el: EventTarget | null): PasteCueSource | null {
   if (el.closest('.task-comment-form')) return 'comment';
   if (el.closest('.task-qa-bug-reason')) return 'bug-reason';
   return 'other';
-}
-
-function clipboardImageFileName(mimeType: string): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  const subtype = mimeType.split('/')[1]?.split('+')[0] || 'png';
-  const ext = subtype === 'jpeg' ? 'jpg' : subtype;
-  return `clipboard-${stamp}.${ext}`;
-}
-
-function extractClipboardImage(clipboardData: DataTransfer | null): File | null {
-  if (!clipboardData) return null;
-
-  for (const item of Array.from(clipboardData.items)) {
-    if (item.kind === 'file' && item.type.startsWith('image/')) {
-      const blob = item.getAsFile();
-      if (!blob) continue;
-      if (blob instanceof File && blob.name) return blob;
-      return new File([blob], clipboardImageFileName(item.type || blob.type), {
-        type: item.type || blob.type || 'image/png',
-      });
-    }
-  }
-
-  for (const file of Array.from(clipboardData.files)) {
-    if (file.type.startsWith('image/')) {
-      return file;
-    }
-  }
-
-  return null;
 }
 
 export function TaskQaSection({
@@ -279,8 +248,9 @@ export function TaskQaSection({
   // Listen while parent Evidências is mounted — no hover/focus gate, and
   // image paste still uploads even when comentário / Motivo do bug is focused
   // (text-only clipboard is ignored so normal typing paste still works).
+  // Skip while Ver checklist is open so per-item Ctrl+V is not stolen as task evidence.
   useEffect(() => {
-    if (isSubtask) return;
+    if (isSubtask || checklistOpen) return;
 
     function onDocumentPaste(event: ClipboardEvent) {
       if (handleEvidencePaste(event.clipboardData)) {
@@ -290,7 +260,7 @@ export function TaskQaSection({
 
     document.addEventListener('paste', onDocumentPaste);
     return () => document.removeEventListener('paste', onDocumentPaste);
-  }, [isSubtask]);
+  }, [isSubtask, checklistOpen]);
 
   async function handleDeleteEvidence(evidenceId: string) {
     setQaError(null);
