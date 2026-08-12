@@ -119,7 +119,7 @@ export function TaskDetailsModal({
   onEdit,
   onTaskSynced,
 }: TaskDetailsModalProps) {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -238,9 +238,15 @@ export function TaskDetailsModal({
   }
 
   function canMutateComment(comment: TaskComment): boolean {
-    return Boolean(
-      isAdmin || (user?.id && comment.createdById === user.id),
-    );
+    // Only the comment author can edit/delete (UI).
+    return Boolean(user?.id && comment.createdById === user.id);
+  }
+
+  function commentAuthorLabel(comment: TaskComment): string {
+    if (user?.id && comment.createdById === user.id) {
+      return 'You';
+    }
+    return comment.createdByUsername?.trim() || 'Unknown';
   }
 
   function handleStartEditComment(comment: TaskComment) {
@@ -722,22 +728,30 @@ export function TaskDetailsModal({
                       <>
                         <p>{comment.body}</p>
                         <div className="task-comment-meta">
-                          <time dateTime={comment.createdAt}>
-                            {formatDisplayDate(comment.createdAt)}
-                            {isCommentEdited(comment) ? ' (edited)' : ''}
-                          </time>
+                          <div className="task-comment-meta-main">
+                            <span className="task-comment-author">
+                              {commentAuthorLabel(comment)}
+                            </span>
+                            <span className="task-comment-meta-sep" aria-hidden="true">
+                              ·
+                            </span>
+                            <time dateTime={comment.createdAt}>
+                              {formatDisplayDate(comment.createdAt)}
+                              {isCommentEdited(comment) ? ' (edited)' : ''}
+                            </time>
+                          </div>
                           {showActions && (
                             <div className="task-comment-actions">
                               <button
                                 type="button"
-                                className="btn btn-secondary btn-sm"
+                                className="task-comment-action"
                                 onClick={() => handleStartEditComment(comment)}
                               >
                                 Edit
                               </button>
                               <button
                                 type="button"
-                                className="btn btn-danger btn-sm"
+                                className="task-comment-action is-danger"
                                 onClick={() => setCommentPendingDelete(comment)}
                               >
                                 Delete

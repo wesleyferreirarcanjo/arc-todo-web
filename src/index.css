@@ -4080,6 +4080,25 @@ textarea {
   margin-top: 0.35rem;
 }
 
+.task-comment-meta-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.task-comment-author {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.task-comment-meta-sep {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .task-comment-item time,
 .task-history-item time {
   display: block;
@@ -4089,13 +4108,39 @@ textarea {
 }
 
 .task-comment-meta time {
+  display: inline;
   margin-top: 0;
 }
 
 .task-comment-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.task-comment-action {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.task-comment-action:hover,
+.task-comment-action:focus-visible {
+  color: var(--accent-secondary, var(--accent));
+}
+
+.task-comment-action.is-danger {
+  color: var(--danger-text);
 }
 
 .task-comment-edit {
@@ -4107,6 +4152,10 @@ textarea {
 .task-comment-edit textarea {
   width: 100%;
   resize: vertical;
+}
+
+.task-comment-edit .task-comment-actions {
+  gap: 0.4rem;
 }
 
 .task-comment-form {

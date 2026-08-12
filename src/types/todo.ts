@@ -150,6 +150,7 @@ export interface TaskComment {
   taskId: string;
   body: string;
   createdById: string | null;
+  createdByUsername?: string | null;
   createdAt: string;
   updatedAt: string;
 }
