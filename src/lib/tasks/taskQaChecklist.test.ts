@@ -14,6 +14,7 @@ import {
   parseQaChecklistDocument,
   parseQaChecklistItems,
   setChecklistItemBugged,
+  updateChecklistItemBugNote,
 } from './taskQaChecklist';
 
 const emptyState = (): QaChecklistState => ({
@@ -305,6 +306,26 @@ All pass.`);
       isBug: false,
       bugReason: null,
     });
+  });
+
+  it('updates one checklist bug note in place', () => {
+    const first = setChecklistItemBugged(emptyState(), 'item-0', 'Broken flow');
+    const updated = updateChecklistItemBugNote(
+      first.nextState,
+      'item-0',
+      0,
+      'Broken flow on mobile',
+    );
+    expect(updated.nextState.buggedItemNotes).toEqual({
+      'item-0': ['Broken flow on mobile'],
+    });
+    expect(updated.taskUpdate).toEqual({
+      isBug: true,
+      bugReason: 'Broken flow on mobile',
+    });
+    expect(() =>
+      updateChecklistItemBugNote(first.nextState, 'item-0', 0, '   '),
+    ).toThrow(/required/i);
   });
 
   it('rejects empty note when marking a checklist item as bug', () => {

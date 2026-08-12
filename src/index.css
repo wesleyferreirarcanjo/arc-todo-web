@@ -8115,6 +8115,34 @@ textarea {
   white-space: pre-wrap;
 }
 
+.task-qa-checklist-bug-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.task-qa-checklist-bug-note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 100%;
+}
+
+.task-qa-checklist-bug-note-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.task-qa-checklist-bug-note-edit textarea {
+  width: 100%;
+  resize: vertical;
+}
+
 .task-qa-checklist-staged-files {
   list-style: none;
   margin: 0;

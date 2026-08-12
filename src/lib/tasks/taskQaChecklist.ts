@@ -420,6 +420,54 @@ export function clearChecklistItemBugNote(
   };
 }
 
+/** Replace one note text on a checklist item; keeps the item bugged. */
+export function updateChecklistItemBugNote(
+  state: QaChecklistState,
+  itemId: string,
+  noteIndex: number,
+  note: string,
+): {
+  nextState: QaChecklistState;
+  taskUpdate: { isBug: boolean; bugReason: string | null };
+} {
+  const trimmed = note.trim();
+  if (!trimmed) {
+    throw new Error('Bug note is required');
+  }
+
+  const existing = getChecklistItemNotes(state, itemId);
+  if (noteIndex < 0 || noteIndex >= existing.length) {
+    return {
+      nextState: state,
+      taskUpdate: buildChecklistTaskUpdate(state),
+    };
+  }
+
+  if (existing[noteIndex] === trimmed) {
+    return {
+      nextState: state,
+      taskUpdate: buildChecklistTaskUpdate(state),
+    };
+  }
+
+  const nextNotes = existing.map((value, index) =>
+    index === noteIndex ? trimmed : value,
+  );
+  const nextState: QaChecklistState = {
+    ...state,
+    checkedItemIds: state.checkedItemIds,
+    buggedItemIds: state.buggedItemIds.includes(itemId)
+      ? state.buggedItemIds
+      : [...state.buggedItemIds, itemId],
+    buggedItemNotes: { ...state.buggedItemNotes, [itemId]: nextNotes },
+  };
+
+  return {
+    nextState,
+    taskUpdate: buildChecklistTaskUpdate(nextState),
+  };
+}
+
 /** Badge label for board/details/QA: open Bug, soft Bug resolvido, or none. */
 export function getTaskBugBadgeLabel(task: {
   isBug?: boolean;

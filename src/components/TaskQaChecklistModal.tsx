@@ -18,8 +18,10 @@ import {
   normalizeQaChecklistState,
   parseQaChecklistDocument,
   setChecklistItemBugged,
+  updateChecklistItemBugNote,
 } from '../lib/tasks/taskQaChecklist';
 import type { QaChecklistState, Task, TaskEvidence } from '../types/todo';
+import { ConfirmDialog } from './ConfirmDialog';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 
@@ -178,6 +180,12 @@ export function TaskQaChecklistModal({
   const [reportFiles, setReportFiles] = useState<File[]>([]);
   const [reportPasteCue, setReportPasteCue] = useState(false);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
+  const [editingNoteKey, setEditingNoteKey] = useState<string | null>(null);
+  const [editNoteDraft, setEditNoteDraft] = useState('');
+  const [notePendingDelete, setNotePendingDelete] = useState<{
+    itemId: string;
+    noteIndex: number;
+  } | null>(null);
   const reportingItemIdRef = useRef<string | null>(null);
   reportingItemIdRef.current = reportingItemId;
 
@@ -211,6 +219,9 @@ export function TaskQaChecklistModal({
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
+    setEditingNoteKey(null);
+    setEditNoteDraft('');
+    setNotePendingDelete(null);
   }, [open, task.id, task.qaChecklistState]);
 
   useEffect(() => {
@@ -482,6 +493,51 @@ export function TaskQaChecklistModal({
   function handleSolveItemNote(itemId: string, noteIndex: number) {
     const result = clearChecklistItemBugNote(draftState, itemId, noteIndex);
     setDraftState(result.nextState);
+    const key = `${itemId}:${noteIndex}`;
+    if (editingNoteKey === key) {
+      setEditingNoteKey(null);
+      setEditNoteDraft('');
+    }
+  }
+
+  function noteKey(itemId: string, noteIndex: number): string {
+    return `${itemId}:${noteIndex}`;
+  }
+
+  function handleStartEditNote(itemId: string, noteIndex: number, note: string) {
+    setEditingNoteKey(noteKey(itemId, noteIndex));
+    setEditNoteDraft(note);
+  }
+
+  function handleCancelEditNote() {
+    setEditingNoteKey(null);
+    setEditNoteDraft('');
+  }
+
+  function handleSaveEditNote(itemId: string, noteIndex: number) {
+    try {
+      const result = updateChecklistItemBugNote(
+        draftState,
+        itemId,
+        noteIndex,
+        editNoteDraft,
+      );
+      setDraftState(result.nextState);
+      handleCancelEditNote();
+    } catch (error: unknown) {
+      onError?.(
+        error instanceof Error ? error.message : 'Failed to update bug note',
+      );
+    }
+  }
+
+  function handleConfirmDeleteNote() {
+    if (!notePendingDelete) return;
+    handleSolveItemNote(
+      notePendingDelete.itemId,
+      notePendingDelete.noteIndex,
+    );
+    setNotePendingDelete(null);
   }
 
   const draftStateRef = useRef(draftState);
@@ -559,6 +615,7 @@ export function TaskQaChecklistModal({
   }
 
   return (
+    <>
     <Modal
       open={open}
       onClose={() => void persistAndClose()}
@@ -621,32 +678,104 @@ export function TaskQaChecklistModal({
                     </p>
                     {notes.length > 0 && (
                       <ul className="task-qa-checklist-bug-notes">
-                        {notes.map((note, noteIndex) => (
+                        {notes.map((note, noteIndex) => {
+                          const key = noteKey(item.id, noteIndex);
+                          const isEditingNote = editingNoteKey === key;
+                          return (
                           <li
                             key={`${item.id}-note-${noteIndex}`}
                             className="task-qa-checklist-bug-note"
                           >
-                            <p>
-                              <strong>
-                                {notes.length > 1
-                                  ? `Motivo ${noteIndex + 1}:`
-                                  : 'Motivo:'}
-                              </strong>{' '}
-                              {note}
-                            </p>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm task-qa-checklist-resolve-btn"
-                              disabled={saving}
-                              onClick={() =>
-                                handleSolveItemNote(item.id, noteIndex)
-                              }
-                            >
-                              <CheckIcon />
-                              Resolvido
-                            </button>
+                            {isEditingNote ? (
+                              <div className="task-qa-checklist-bug-note-edit">
+                                <label>
+                                  Motivo do bug
+                                  <textarea
+                                    value={editNoteDraft}
+                                    onChange={(event) =>
+                                      setEditNoteDraft(event.target.value)
+                                    }
+                                    rows={3}
+                                    disabled={saving}
+                                    autoFocus
+                                  />
+                                </label>
+                                <div className="task-qa-checklist-bug-note-actions">
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    disabled={saving || !editNoteDraft.trim()}
+                                    onClick={() =>
+                                      handleSaveEditNote(item.id, noteIndex)
+                                    }
+                                  >
+                                    Salvar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    disabled={saving}
+                                    onClick={handleCancelEditNote}
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <p>
+                                  <strong>
+                                    {notes.length > 1
+                                      ? `Motivo ${noteIndex + 1}:`
+                                      : 'Motivo:'}
+                                  </strong>{' '}
+                                  {note}
+                                </p>
+                                <div className="task-qa-checklist-bug-note-actions">
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    disabled={saving}
+                                    onClick={() =>
+                                      handleStartEditNote(
+                                        item.id,
+                                        noteIndex,
+                                        note,
+                                      )
+                                    }
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-danger btn-sm"
+                                    disabled={saving}
+                                    onClick={() =>
+                                      setNotePendingDelete({
+                                        itemId: item.id,
+                                        noteIndex,
+                                      })
+                                    }
+                                  >
+                                    Excluir
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm task-qa-checklist-resolve-btn"
+                                    disabled={saving}
+                                    onClick={() =>
+                                      handleSolveItemNote(item.id, noteIndex)
+                                    }
+                                  >
+                                    <CheckIcon />
+                                    Resolvido
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     )}
                     {itemImprovements.length > 0 && (
@@ -881,5 +1010,17 @@ export function TaskQaChecklistModal({
         </div>
       )}
     </Modal>
+
+      <ConfirmDialog
+        open={Boolean(notePendingDelete)}
+        title="Excluir motivo"
+        description="Excluir este motivo de bug? O item sai da lista de bugs abertos se não restar nenhum motivo."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDeleteNote}
+        onCancel={() => setNotePendingDelete(null)}
+      />
+    </>
   );
 }
