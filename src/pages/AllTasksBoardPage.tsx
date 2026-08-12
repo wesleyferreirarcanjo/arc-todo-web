@@ -9,8 +9,10 @@ import {
   createProjectTask,
   deleteProjectTask,
   fetchAllTasks,
+  resolveTaskByIdentifier,
   updateProjectTask,
 } from '../lib/api/todos';
+import { TaskDetailsModal } from '../components/TaskDetailsModal';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { filterTasksByCriticity, filterTasksBySearch, getTaskSearchRank, normalizeTaskSearchQuery } from '../lib/tasks/taskSearch';
 import {
@@ -107,9 +109,18 @@ export function AllTasksBoardPage() {
     }
     return 'all';
   });
+  const [deepLinkTask, setDeepLinkTask] = useState<{
+    task: Task;
+    organizationId: string;
+    projectId: string;
+    organizationName?: string;
+    projectName?: string;
+    subtasks: Task[];
+  } | null>(null);
 
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
+  const taskParam = searchParams.get('task') ?? undefined;
   const projectFocus = Boolean(organizationId && projectId);
 
   const query = useMemo<ListTasksQuery>(
@@ -209,6 +220,91 @@ export function AllTasksBoardPage() {
       }
     }
   }, [searchParams, setSearchParams, quickFilter]);
+
+  useEffect(() => {
+    if (!taskParam) {
+      setDeepLinkTask(null);
+      return;
+    }
+    if (loading) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function openDeepLinkedTask() {
+      const source = projectFocus ? cycleTasks : tasks;
+      const found = source.find((task) => task.id === taskParam);
+      if (found) {
+        const subtasks = source.filter((task) => task.parentTaskId === found.id);
+        if (!projectFocus && 'organization' in found && 'project' in found) {
+          const withContext = found as TaskWithContext;
+          if (!cancelled) {
+            setDeepLinkTask({
+              task: withContext,
+              organizationId: withContext.organization.id,
+              projectId: withContext.project.id,
+              organizationName: withContext.organization.name,
+              projectName: withContext.project.name,
+              subtasks,
+            });
+          }
+          return;
+        }
+        if (projectFocus && organizationId && projectId) {
+          if (!cancelled) {
+            setDeepLinkTask({
+              task: found,
+              organizationId,
+              projectId,
+              organizationName: organizations.find((org) => org.id === organizationId)
+                ?.name,
+              projectName: focusedProject?.name,
+              subtasks,
+            });
+          }
+          return;
+        }
+      }
+
+      try {
+        const resolved = await resolveTaskByIdentifier(taskParam!);
+        if (cancelled) return;
+        setDeepLinkTask({
+          task: resolved.task,
+          organizationId: resolved.organizationId,
+          projectId: resolved.projectId,
+          subtasks: [],
+        });
+      } catch {
+        if (!cancelled) {
+          setDeepLinkTask(null);
+        }
+      }
+    }
+
+    void openDeepLinkedTask();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    taskParam,
+    loading,
+    tasks,
+    cycleTasks,
+    projectFocus,
+    organizationId,
+    projectId,
+    organizations,
+    focusedProject?.name,
+  ]);
+
+  function closeDeepLinkedTask() {
+    setDeepLinkTask(null);
+    const params = new URLSearchParams(searchParams);
+    params.delete('task');
+    setSearchParams(params, { replace: true });
+  }
 
   function updateFilters(nextOrgId?: string, nextProjectId?: string) {
     const params = new URLSearchParams();
@@ -741,6 +837,19 @@ export function AllTasksBoardPage() {
           loading={historyLoading}
         />
       )}
+
+      {deepLinkTask ? (
+        <TaskDetailsModal
+          open
+          onClose={closeDeepLinkedTask}
+          task={deepLinkTask.task}
+          organizationId={deepLinkTask.organizationId}
+          projectId={deepLinkTask.projectId}
+          organizationName={deepLinkTask.organizationName}
+          projectName={deepLinkTask.projectName}
+          subtasks={deepLinkTask.subtasks}
+        />
+      ) : null}
     </div>
   );
 }

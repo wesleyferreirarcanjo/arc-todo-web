@@ -6,6 +6,8 @@ import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { useChat } from '../context/ChatContext';
 import { useTheme } from '../context/ThemeContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { usePwaInstall } from '../hooks/usePwaInstall';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { MobileQuickCreateSheet } from './MobileQuickCreateSheet';
 import { BoardStatusTabs } from './BoardStatusTabs';
 
@@ -154,6 +156,25 @@ function NavigateIcon() {
   );
 }
 
+function InstallIcon() {
+  return (
+    <FabGlyph>
+      <path d="M12 3v12" />
+      <path d="M8 11l4 4 4-4" />
+      <path d="M4 19h16" />
+    </FabGlyph>
+  );
+}
+
+function BellIcon() {
+  return (
+    <FabGlyph>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </FabGlyph>
+  );
+}
+
 function KnowledgeIcon() {
   return (
     <FabGlyph>
@@ -242,6 +263,8 @@ export function MobileBoardFab() {
   const { logout, isAdmin } = useAuth();
   const { setChatOpen } = useChat();
   const { theme, toggleTheme } = useTheme();
+  const { canInstall, install, isIos, isStandalone } = usePwaInstall();
+  const { optedIn, enable, disable, loading: pushLoading } = usePushNotifications();
   const { actions, statusTabs } = useBoardMobileShell();
   const reducedMotion = useReducedMotion();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -331,6 +354,35 @@ export function MobileBoardFab() {
         setMenuOpen(false);
       },
     });
+    if (canInstall || (isIos && !isStandalone)) {
+      items.push({
+        id: 'install',
+        label: 'Install app',
+        icon: <InstallIcon />,
+        onClick: () => {
+          setMenuOpen(false);
+          if (canInstall) {
+            void install();
+            return;
+          }
+          window.alert(
+            'To install Arc Todo on iOS: tap Share, then Add to Home Screen.',
+          );
+        },
+      });
+    }
+    items.push({
+      id: 'notifications',
+      label: optedIn ? 'Disable notifications' : 'Enable notifications',
+      icon: <BellIcon />,
+      onClick: () => {
+        if (pushLoading) return;
+        setMenuOpen(false);
+        void (optedIn ? disable() : enable()).catch(() => {
+          // Keep dial closed; errors stay in hook state.
+        });
+      },
+    });
     if (isAdmin) {
       items.push({
         id: 'settings',
@@ -352,9 +404,17 @@ export function MobileBoardFab() {
     return items;
   }, [
     actions,
+    canInstall,
+    disable,
+    enable,
+    install,
     isAdmin,
     isBoardPage,
+    isIos,
+    isStandalone,
     logout,
+    optedIn,
+    pushLoading,
     setChatOpen,
     theme,
     toggleTheme,

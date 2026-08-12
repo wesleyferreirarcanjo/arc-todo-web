@@ -1,9 +1,91 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: false,
+      includeAssets: [
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon.svg',
+      ],
+      manifest: {
+        name: 'Arc Todo',
+        short_name: 'Arc Todo',
+        display: 'standalone',
+        start_url: '/board',
+        theme_color: '#6b8fa8',
+        background_color: '#0c0c10',
+        icons: [
+          {
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          {
+            src: '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+        shortcuts: [
+          {
+            name: 'All tasks',
+            short_name: 'All tasks',
+            url: '/board',
+            icons: [
+              {
+                src: '/icons/icon-192.png',
+                sizes: '192x192',
+                type: 'image/png',
+              },
+            ],
+          },
+          {
+            name: 'Knowledge',
+            short_name: 'Knowledge',
+            url: '/knowledge',
+            icons: [
+              {
+                src: '/icons/icon-192.png',
+                sizes: '192x192',
+                type: 'image/png',
+              },
+            ],
+          },
+        ],
+      },
+      workbox: {
+        navigateFallback: '/index.html',
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        importScripts: ['push-handler.js'],
+        // Main Excalidraw/mermaid chunk exceeds Workbox's 2 MiB default.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
   server: {
     port: 5173,
   },

@@ -22,7 +22,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | Branch | `main` |
 | Build pack | Dockerfile |
 | Dockerfile | `/Dockerfile` |
-| Public URL | `http://ifo33mi1s8efs8myb5g441vh.72.60.59.203.sslip.io` |
+| Public URL | `https://ifo33mi1s8efs8myb5g441vh.72.60.59.203.sslip.io` |
 
 ### Build / run
 
@@ -36,10 +36,10 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 
 | Resource | UUID | Notes |
 | --- | --- | --- |
-| API `arc-todo-api` | `lmsx2avrg1k29ex12w6e3gce` | `http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io` |
-| MCP `arc-todo-mcp` | `qv9bek5he3ns8upu71rphbrc` | `http://qv9bek5he3ns8upu71rphbrc.72.60.59.203.sslip.io/mcp` |
-| Chatbot `arc-todo-chatbot` | `nyagev0aqp4qow1zri6wise5` | `http://nyagev0aqp4qow1zri6wise5.72.60.59.203.sslip.io` |
-| RAG `arc-todo-rag` | `tqfgi4rhtndy3xtgdep04xnd` | `http://tqfgi4rhtndy3xtgdep04xnd.72.60.59.203.sslip.io` |
+| API `arc-todo-api` | `lmsx2avrg1k29ex12w6e3gce` | `https://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io` |
+| MCP `arc-todo-mcp` | `qv9bek5he3ns8upu71rphbrc` | `https://qv9bek5he3ns8upu71rphbrc.72.60.59.203.sslip.io/mcp` |
+| Chatbot `arc-todo-chatbot` | `nyagev0aqp4qow1zri6wise5` | `https://nyagev0aqp4qow1zri6wise5.72.60.59.203.sslip.io` |
+| RAG `arc-todo-rag` | `tqfgi4rhtndy3xtgdep04xnd` | `https://tqfgi4rhtndy3xtgdep04xnd.72.60.59.203.sslip.io` |
 | PostgreSQL `arc-todo-postgres-pgvector` | `x420nshn1p0cjzlhomi0cbnk` | Used by API and RAG; image `pgvector/pgvector:pg16` |
 | MinIO `arc-todo-minio` | `jsx5tkzb1b8hj5oz0ydt491u` | Used by API only (knowledge attachments) |
 
@@ -47,7 +47,7 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_BASE_URL` | API URL baked at build time (`http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
+| `VITE_API_BASE_URL` | API URL baked at build time (`https://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 | `VITE_CHAT_API_BASE_URL` | Chatbot service URL baked at build time. Must be **Available at Buildtime** in Coolify. |
 | `VITE_GOOGLE_CLIENT_ID` | Google OAuth Web client ID for GIS Sign-In. Must be **Available at Buildtime** in Coolify. |
 

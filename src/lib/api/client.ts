@@ -37,11 +37,19 @@ export async function apiRequest<T>(
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers: requestHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...rest,
+      headers: requestHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      window.dispatchEvent(new CustomEvent('arc-todo:api-unreachable'));
+    }
+    throw error;
+  }
 
   // Session expiry only for authenticated calls. Login (auth: false) 401 is
   // invalid credentials — do not clearAuth/redirect or the login form freezes.

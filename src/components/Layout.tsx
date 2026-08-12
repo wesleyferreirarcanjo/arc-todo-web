@@ -5,6 +5,8 @@ import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { OrgKnowledgeNav } from './OrgKnowledgeNav';
 import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
+import { PwaControls } from './PwaControls';
+import { OfflineBanner } from './OfflineBanner';
 import { ChatProvider } from '../context/ChatContext';
 import { SmartCopyBasketProvider } from '../context/SmartCopyBasketContext';
 import { ChatWidget } from './ChatWidget';
@@ -499,6 +501,7 @@ export function Layout() {
             )}
 
             <ThemeToggle variant="sidebar" collapsed={collapsed} />
+            <PwaControls collapsed={collapsed} />
             <button
               type="button"
               className="sidebar-footer-btn sidebar-logout-btn"
@@ -516,6 +519,7 @@ export function Layout() {
           <BoardMobileShellProvider>
             <SmartCopyBasketProvider>
               <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
+                <OfflineBanner />
                 <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
                   <Outlet />
                 </main>
