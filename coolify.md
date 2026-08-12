@@ -49,8 +49,9 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | --- | --- |
 | `VITE_API_BASE_URL` | API URL baked at build time (`http://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io`). Must be **Available at Buildtime** in Coolify. |
 | `VITE_CHAT_API_BASE_URL` | Chatbot service URL baked at build time. Must be **Available at Buildtime** in Coolify. |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth Web client ID for GIS Sign-In. Must be **Available at Buildtime** in Coolify. |
 
-Redeploy the frontend whenever the API or chatbot public URL changes.
+Redeploy the frontend whenever the API or chatbot public URL changes, or when `VITE_GOOGLE_CLIENT_ID` changes.
 
 ## Deploy order
 
@@ -65,7 +66,7 @@ Redeploy the frontend whenever the API or chatbot public URL changes.
 
 ## Notes
 
-- Default login (from API seed): `admin` / `admin123` — change in Coolify before production use.
+- Human login is Google SSO only (`AUTH_SSO_ONLY` on API). Ensure Google Console authorized JavaScript origins include this app's live URL scheme+host.
 - Knowledge attachment files are stored in MinIO by the API; the web app has no MinIO env vars.
 - Git source uses the Coolify deploy key (`private_key_uuid`: `lms2y9fjpybdznft4t7uf3td`).
 - See [../arc-todo-api/coolify.md](../arc-todo-api/coolify.md) for API and Postgres Coolify IDs.

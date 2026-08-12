@@ -2184,6 +2184,13 @@ textarea:focus-visible {
   color: var(--text-primary);
 }
 
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  min-height: 44px;
+}
+
 label {
   display: flex;
   flex-direction: column;

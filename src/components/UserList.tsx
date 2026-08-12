@@ -20,6 +20,7 @@ export function UserList({
 }: UserListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [ssoAssign, setSsoAssign] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [projectIds, setProjectIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,7 @@ export function UserList({
   function startEdit(user: ManagedUser) {
     setEditingId(user.id);
     setPassword('');
+    setSsoAssign(user.ssoAssign ?? '');
     setIsAdmin(user.isAdmin);
     setProjectIds(user.projectIds);
     setError(null);
@@ -45,6 +47,7 @@ export function UserList({
   function cancelEdit() {
     setEditingId(null);
     setPassword('');
+    setSsoAssign('');
     setProjectIds([]);
     setError(null);
   }
@@ -65,6 +68,7 @@ export function UserList({
     const input: UpdateUserInput = {
       isAdmin,
       projectIds: isAdmin ? [] : projectIds,
+      ssoAssign: ssoAssign.trim() || null,
     };
     if (password.trim()) {
       input.password = password;
@@ -129,6 +133,17 @@ export function UserList({
                 onSubmit={(event) => void handleSave(event, user)}
               >
                 <h3>{user.username}</h3>
+
+                <label>
+                  SSO assign (Google email)
+                  <input
+                    type="email"
+                    value={ssoAssign}
+                    onChange={(event) => setSsoAssign(event.target.value)}
+                    placeholder="Clear to disable Google sign-in"
+                    autoComplete="off"
+                  />
+                </label>
 
                 <label>
                   New password
@@ -210,6 +225,10 @@ export function UserList({
                   </span>
                 </div>
                 <p className="entity-meta">{projectSummary(user)}</p>
+                <p className="entity-meta">
+                  SSO:{' '}
+                  {user.ssoAssign ? user.ssoAssign : 'not assigned'}
+                </p>
                 <div className="entity-actions">
                   <button
                     type="button"

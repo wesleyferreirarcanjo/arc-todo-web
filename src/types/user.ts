@@ -1,6 +1,7 @@
 export interface ManagedUser {
   id: string;
   username: string;
+  ssoAssign: string | null;
   isAdmin: boolean;
   projectIds: string[];
   createdAt: string;
@@ -9,13 +10,15 @@ export interface ManagedUser {
 
 export interface CreateUserInput {
   username: string;
-  password: string;
+  password?: string;
+  ssoAssign?: string;
   isAdmin?: boolean;
   projectIds?: string[];
 }
 
 export interface UpdateUserInput {
   password?: string;
+  ssoAssign?: string | null;
   isAdmin?: boolean;
   projectIds?: string[];
 }

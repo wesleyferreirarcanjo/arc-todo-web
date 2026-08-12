@@ -1,80 +1,126 @@
-import { FormEvent, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { PasswordInput } from '../components/PasswordInput';
 import { ApiError } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
+const GSI_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
+
 export function LoginPage() {
-  const { isAuthenticated, login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const { isAuthenticated, loginWithGoogle } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const handlingRef = useRef(false);
+
+  useEffect(() => {
+    if (isAuthenticated) return;
+    if (!GOOGLE_CLIENT_ID) {
+      setError('Google Sign-In is not configured (missing VITE_GOOGLE_CLIENT_ID).');
+      return;
+    }
+
+    let cancelled = false;
+
+    async function handleCredential(response: GoogleCredentialResponse) {
+      if (handlingRef.current) return;
+      const idToken = response.credential;
+      if (!idToken) {
+        setError('Google Sign-In was cancelled or returned no credential.');
+        return;
+      }
+
+      handlingRef.current = true;
+      setError(null);
+      setLoading(true);
+      try {
+        await loginWithGoogle(idToken);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setError(
+            err.status === 401
+              ? err.message ||
+                  'No Arc Todo user is assigned to this Google account'
+              : err.message,
+          );
+        } else {
+          setError('Google Sign-In failed. Please try again.');
+        }
+        setLoading(false);
+        handlingRef.current = false;
+      }
+    }
+
+    function renderGoogleButton() {
+      if (cancelled || !buttonRef.current || !window.google?.accounts?.id) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          void handleCredential(response);
+        },
+        cancel_on_tap_outside: true,
+      });
+      buttonRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(buttonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: 320,
+      });
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${GSI_SCRIPT_SRC}"]`,
+    );
+    if (existing) {
+      if (window.google?.accounts?.id) {
+        renderGoogleButton();
+      } else {
+        existing.addEventListener('load', renderGoogleButton);
+      }
+      return () => {
+        cancelled = true;
+        existing.removeEventListener('load', renderGoogleButton);
+      };
+    }
+
+    const script = document.createElement('script');
+    script.src = GSI_SCRIPT_SRC;
+    script.async = true;
+    script.onload = () => renderGoogleButton();
+    script.onerror = () => {
+      if (!cancelled) {
+        setError('Failed to load Google Sign-In. Please refresh and try again.');
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, loginWithGoogle]);
 
   if (isAuthenticated) {
     return <Navigate to="/board" replace />;
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      await login({ username, password });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(
-          err.status === 401
-            ? 'Invalid username or password'
-            : err.message,
-        );
-      } else {
-        setError('Login failed. Please try again.');
-      }
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="login-page">
-      <form
-        className="login-card notranslate"
-        translate="no"
-        onSubmit={handleSubmit}
-      >
+      <div className="login-card notranslate" translate="no">
         <h1>Arc Todo</h1>
-        <p className="subtitle">Sign in to manage your tasks</p>
+        <p className="subtitle">Sign in with your Google account</p>
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <label>
-          Username
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            required
-            disabled={loading}
-          />
-        </label>
-
-        <label>
-          Password
-          <PasswordInput
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-            disabled={loading}
-          />
-        </label>
-
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-      </form>
+        {loading ? (
+          <p className="status-message" aria-live="polite">
+            Signing in...
+          </p>
+        ) : (
+          <div ref={buttonRef} className="google-signin-button" />
+        )}
+      </div>
     </div>
   );
 }

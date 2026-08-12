@@ -10,6 +10,7 @@ interface UserFormProps {
 
 export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
   const [username, setUsername] = useState('');
+  const [ssoAssign, setSsoAssign] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [projectIds, setProjectIds] = useState<string[]>([]);
@@ -35,19 +36,24 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!username.trim() || !password) return;
+    if (!username.trim()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      await onSubmit({
+      const input: CreateUserInput = {
         username: username.trim(),
-        password,
         isAdmin,
         projectIds: isAdmin ? [] : projectIds,
-      });
+      };
+      const email = ssoAssign.trim();
+      if (email) input.ssoAssign = email;
+      if (password) input.password = password;
+
+      await onSubmit(input);
       setUsername('');
+      setSsoAssign('');
       setPassword('');
       setIsAdmin(false);
       setProjectIds([]);
@@ -71,7 +77,8 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
       <div className="person-form-header">
         <h2 id="users-create-heading">New user</h2>
         <p className="person-form-description">
-          Create a system login and choose which projects they can access.
+          Create a system user. Set SSO assign to their Google email so they can
+          sign in. Password is optional when SSO-only mode is enabled.
         </p>
       </div>
 
@@ -90,12 +97,22 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
       </label>
 
       <label>
-        Password
+        SSO assign (Google email)
+        <input
+          type="email"
+          value={ssoAssign}
+          onChange={(event) => setSsoAssign(event.target.value)}
+          placeholder="jane@gmail.com"
+          autoComplete="off"
+        />
+      </label>
+
+      <label>
+        Password (optional)
         <PasswordInput
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder="At least 6 characters"
-          required
+          placeholder="Leave blank under SSO-only"
           minLength={6}
           autoComplete="new-password"
         />

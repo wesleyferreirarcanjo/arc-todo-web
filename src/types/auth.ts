@@ -14,3 +14,7 @@ export interface LoginInput {
   username: string;
   password: string;
 }
+
+export interface GoogleSsoInput {
+  id_token: string;
+}

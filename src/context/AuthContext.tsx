@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { login as loginRequest } from '../lib/api/auth';
+import { loginWithGoogle as loginWithGoogleRequest } from '../lib/api/auth';
 import { fetchMe } from '../lib/api/users';
 import {
   clearAuth,
@@ -17,13 +17,13 @@ import {
   setToken,
 } from '../lib/auth/tokenStorage';
 import { clearWorkspaceSelection } from '../lib/storage/appStorage';
-import type { LoginInput, User } from '../types/auth';
+import type { User } from '../types/auth';
 
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (input: LoginInput) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
-  const login = useCallback(async (input: LoginInput) => {
-    const response = await loginRequest(input);
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    const response = await loginWithGoogleRequest({ id_token: idToken });
     setToken(response.access_token);
     setStoredUser(response.user);
     setUser(response.user);
@@ -66,10 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: !!user,
       isAdmin: user?.isAdmin ?? false,
-      login,
+      loginWithGoogle,
       logout,
     }),
-    [user, login, logout],
+    [user, loginWithGoogle, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
