@@ -48,6 +48,8 @@ export function LoginPage() {
         }
         setLoading(false);
         handlingRef.current = false;
+        // GIS may consume the iframe after a credential; repaint while the host stays mounted.
+        renderGoogleButton();
       }
     }
 
@@ -117,9 +119,16 @@ export function LoginPage() {
           <p className="status-message" aria-live="polite">
             Signing in...
           </p>
-        ) : (
-          <div ref={buttonRef} className="google-signin-button" />
-        )}
+        ) : null}
+
+        {/* Keep GIS mounted after SSO 401. Swapping this node for "Signing in..."
+            unmounts the iframe; the effect does not re-run, so the button never returns. */}
+        <div
+          ref={buttonRef}
+          className="google-signin-button"
+          aria-busy={loading}
+          style={loading ? { pointerEvents: 'none' } : undefined}
+        />
       </div>
     </div>
   );

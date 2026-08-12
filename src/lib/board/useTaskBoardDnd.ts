@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardSensor,
   PointerSensor,
+  closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -111,6 +112,7 @@ export function useTaskBoardDnd({
       activeDragIds,
       overColumnStatus,
       sensors,
+      collisionDetection: closestCorners,
       handleDragStart,
       handleDragOver,
       handleDragEnd,

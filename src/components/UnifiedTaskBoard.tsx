@@ -215,6 +215,7 @@ function UnifiedTaskBoardInner({
     activeDragIds,
     overColumnStatus,
     sensors,
+    collisionDetection,
     handleDragStart,
     handleDragOver,
     handleDragEnd,
@@ -305,6 +306,7 @@ function UnifiedTaskBoardInner({
     <LayoutGroup id="unified-task-board">
       <DndContext
         sensors={isMobileBoard ? [] : sensors}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={(event) => void handleDragEnd(event)}

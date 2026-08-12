@@ -24,8 +24,8 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-/** Board tabbed single-column breakpoint (matches CSS max-width: 900px). */
-export const BOARD_MOBILE_QUERY = '(max-width: 900px)';
-
 /** Shell / FAB / full-page chat breakpoint (matches CSS max-width: 1023px). */
 export const SHELL_MOBILE_QUERY = '(max-width: 1023px)';
+
+/** Tabbed single-column board — same as the mobile shell so 901–1023 is not multi-column + FAB. */
+export const BOARD_MOBILE_QUERY = SHELL_MOBILE_QUERY;

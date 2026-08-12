@@ -157,6 +157,7 @@ function TaskBoardInner({
     activeDragIds,
     overColumnStatus,
     sensors,
+    collisionDetection,
     handleDragStart,
     handleDragOver,
     handleDragEnd,
@@ -246,6 +247,7 @@ function TaskBoardInner({
     <LayoutGroup id="task-board">
       <DndContext
         sensors={isMobileBoard ? [] : sensors}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={(event) => void handleDragEnd(event)}

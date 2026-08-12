@@ -482,6 +482,9 @@ export function AllTasksBoardPage() {
   function handleViewModeChange(mode: 'board' | 'list') {
     setViewMode(mode);
     setBoardViewMode(mode);
+    if (isMobileShell) {
+      setFiltersOpen(false);
+    }
   }
 
   function handleHiddenColumnsChange(nextHidden: TaskStatus[]) {

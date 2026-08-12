@@ -306,7 +306,19 @@ export function MobileBoardFab() {
   }, [menuOpen, dialLevel]);
 
   const mainActions = useMemo((): DialAction[] => {
+    // Logout is first in the array so column-reverse CSS paints it last
+    // (bottom, closest to +). Do not flip `.mobile-board-fab-dial` flex-direction.
     const items: DialAction[] = [
+      {
+        id: 'logout',
+        label: 'Logout',
+        icon: <LogoutIcon />,
+        danger: true,
+        onClick: () => {
+          setMenuOpen(false);
+          logout();
+        },
+      },
       {
         id: 'navigate',
         label: 'Navigate',
@@ -391,16 +403,6 @@ export function MobileBoardFab() {
         onClick: () => setDialLevel('settings'),
       });
     }
-    items.push({
-      id: 'logout',
-      label: 'Logout',
-      icon: <LogoutIcon />,
-      danger: true,
-      onClick: () => {
-        setMenuOpen(false);
-        logout();
-      },
-    });
     return items;
   }, [
     actions,

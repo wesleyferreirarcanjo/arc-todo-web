@@ -909,7 +909,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${swipeHint ? ' has-swipe-hint' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}

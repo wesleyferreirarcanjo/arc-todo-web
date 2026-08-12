@@ -164,14 +164,18 @@ textarea:focus-visible {
 .content-area.is-board-page .app-main {
   max-width: none;
   width: 100%;
+  min-width: 0;
 }
 
 .content-area.is-board-page {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  min-width: 0;
   padding: 0.5rem 1rem 1rem;
   box-sizing: border-box;
+  /* Clip page-level X overflow; do not put overflow-x on .app-shell (#arc-190 sticky). */
+  overflow-x: clip;
 }
 
 .content-area.is-board-page .breadcrumbs {
@@ -206,6 +210,7 @@ textarea:focus-visible {
 .content-area.is-board-page .task-board-scroll {
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 .content-area.is-board-page .task-board {
@@ -721,6 +726,7 @@ textarea:focus-visible {
   grid-row: 1;
   padding: 1.5rem;
   min-height: 100dvh;
+  min-width: 0;
 }
 
 .sidebar-field,
@@ -889,6 +895,7 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .page-header h2 {
@@ -2807,9 +2814,15 @@ textarea {
   font-style: italic;
 }
 
+.task-board-shell {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .task-board-scroll {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -3111,6 +3124,10 @@ textarea {
   cursor: grab;
   box-shadow: var(--shadow-soft);
   transition: border-color var(--transition-base);
+}
+
+.task-card.is-draggable {
+  touch-action: none;
 }
 
 .task-card:not(.is-compact):not(.is-subtask) {
@@ -6437,6 +6454,7 @@ textarea {
 
 .mobile-filters-body.board-filters {
   flex-wrap: nowrap;
+  align-items: stretch;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -6448,6 +6466,32 @@ textarea {
 .mobile-filters-body .board-filter-actions,
 .mobile-filters-body .board-quick-filters {
   width: 100%;
+}
+
+.mobile-filters-body .board-quick-filters {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  overflow: visible;
+  min-height: 2.75rem;
+}
+
+.mobile-filters-body .board-filter-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.mobile-filters-body .board-column-visibility,
+.mobile-filters-body .task-import-export {
+  width: 100%;
+}
+
+.mobile-filters-body .board-column-visibility-panel,
+.mobile-filters-body .task-import-export-panel {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  margin-top: 0.5rem;
+  right: auto;
 }
 
 .mobile-quick-create-form {
@@ -6533,6 +6577,16 @@ textarea {
     padding-bottom: calc(
       2.85rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom, 0px)
     );
+  }
+
+  .content-area.is-board-page .task-list-view {
+    overflow: auto;
+    min-height: 12rem;
+  }
+
+  .content-area.is-board-page .task-list-body {
+    overflow: visible;
+    flex: none;
   }
 
   /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
@@ -6733,7 +6787,8 @@ textarea {
 }
 
 @media (max-width: 900px) {
-  /* Legacy horizontal multi-column only when JS tabbed mode is not active. */
+  /* Legacy horizontal multi-column only when JS tabbed mode is not active.
+     Tabbed board (is-mobile-tabbed) is JS-driven at ≤1023px. */
   .task-board-scroll:not(.is-mobile-tabbed) .task-board,
   .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-auto-fit,
   .task-board-scroll:not(.is-mobile-tabbed) .task-board.is-focus-mode {
