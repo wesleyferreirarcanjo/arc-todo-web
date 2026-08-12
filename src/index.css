@@ -4071,12 +4071,42 @@ textarea {
   line-height: 1.5;
 }
 
+.task-comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
 .task-comment-item time,
 .task-history-item time {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.task-comment-meta time {
+  margin-top: 0;
+}
+
+.task-comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.task-comment-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.task-comment-edit textarea {
+  width: 100%;
+  resize: vertical;
 }
 
 .task-comment-form {

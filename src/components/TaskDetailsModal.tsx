@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import type { CodingTaskMetadata } from '../lib/tasks/taskCategory';
 import { formatTaskCategoryLabel } from '../lib/tasks/taskCategory';
 import { taskDescriptionFieldsFromTask } from '../lib/tasks/taskDescriptions';
@@ -7,11 +8,14 @@ import { getTaskBugBadgeLabel } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskComment, TaskHistoryEntry } from '../types/todo';
 import {
   createTaskComment,
+  deleteTaskComment,
   fetchTaskComments,
   fetchTaskHistory,
   updateProjectTask,
+  updateTaskComment,
 } from '../lib/api/todos';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
+import { ConfirmDialog } from './ConfirmDialog';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 import { TaskQaSection } from './TaskQaSection';
@@ -88,6 +92,10 @@ function formatDisplayDate(value: string | null | undefined): string {
   return new Date(value).toLocaleString();
 }
 
+function isCommentEdited(comment: TaskComment): boolean {
+  return comment.updatedAt !== comment.createdAt;
+}
+
 function formatHistoryValue(
   field: 'title' | 'description' | 'dueDate',
   value: string | null,
@@ -111,6 +119,7 @@ export function TaskDetailsModal({
   onEdit,
   onTaskSynced,
 }: TaskDetailsModalProps) {
+  const { user, isAdmin } = useAuth();
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -118,6 +127,13 @@ export function TaskDetailsModal({
   const [commentBody, setCommentBody] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [commentPasteCue, setCommentPasteCue] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+  const [savingComment, setSavingComment] = useState(false);
+  const [commentPendingDelete, setCommentPendingDelete] = useState<TaskComment | null>(
+    null,
+  );
+  const [deletingComment, setDeletingComment] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [planCodeOpen, setPlanCodeOpen] = useState(false);
@@ -146,6 +162,9 @@ export function TaskDetailsModal({
       setEditingTitle(false);
       setTitleDraft(task.title);
       setCommentPasteCue(false);
+      setEditingCommentId(null);
+      setEditDraft('');
+      setCommentPendingDelete(null);
       return;
     }
 
@@ -157,6 +176,9 @@ export function TaskDetailsModal({
     setPlanCodeOpen(false);
     setEditingTitle(false);
     setTitleDraft(task.title);
+    setEditingCommentId(null);
+    setEditDraft('');
+    setCommentPendingDelete(null);
 
     void Promise.all([
       fetchTaskComments(organizationId, projectId, task.id),
@@ -212,6 +234,88 @@ export function TaskDetailsModal({
       setSmartCopyState('copied');
     } catch {
       setSmartCopyState('error');
+    }
+  }
+
+  function canMutateComment(comment: TaskComment): boolean {
+    return Boolean(
+      isAdmin || (user?.id && comment.createdById === user.id),
+    );
+  }
+
+  function handleStartEditComment(comment: TaskComment) {
+    setEditingCommentId(comment.id);
+    setEditDraft(comment.body);
+    setError(null);
+  }
+
+  function handleCancelEditComment() {
+    setEditingCommentId(null);
+    setEditDraft('');
+  }
+
+  async function handleSaveComment(comment: TaskComment) {
+    const body = editDraft.trim();
+    if (!body) {
+      return;
+    }
+    if (body === comment.body.trim()) {
+      handleCancelEditComment();
+      return;
+    }
+
+    setSavingComment(true);
+    try {
+      const updated = await updateTaskComment(
+        organizationId,
+        projectId,
+        task.id,
+        comment.id,
+        { body },
+      );
+      setComments((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      handleCancelEditComment();
+    } catch (saveError: unknown) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Failed to update comment',
+      );
+    } finally {
+      setSavingComment(false);
+    }
+  }
+
+  async function handleConfirmDeleteComment() {
+    if (!commentPendingDelete) {
+      return;
+    }
+
+    setDeletingComment(true);
+    try {
+      await deleteTaskComment(
+        organizationId,
+        projectId,
+        task.id,
+        commentPendingDelete.id,
+      );
+      setComments((current) =>
+        current.filter((item) => item.id !== commentPendingDelete.id),
+      );
+      if (editingCommentId === commentPendingDelete.id) {
+        handleCancelEditComment();
+      }
+      setCommentPendingDelete(null);
+    } catch (deleteError: unknown) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Failed to delete comment',
+      );
+    } finally {
+      setDeletingComment(false);
     }
   }
 
@@ -581,14 +685,71 @@ export function TaskDetailsModal({
             <p className="task-details-muted">No comments yet.</p>
           ) : (
             <ul className="task-comment-list">
-              {comments.map((comment) => (
-                <li key={comment.id} className="task-comment-item">
-                  <p>{comment.body}</p>
-                  <time dateTime={comment.createdAt}>
-                    {formatDisplayDate(comment.createdAt)}
-                  </time>
-                </li>
-              ))}
+              {comments.map((comment) => {
+                const isEditing = editingCommentId === comment.id;
+                const showActions = canMutateComment(comment);
+                return (
+                  <li key={comment.id} className="task-comment-item">
+                    {isEditing ? (
+                      <div className="task-comment-edit">
+                        <textarea
+                          value={editDraft}
+                          onChange={(event) => setEditDraft(event.target.value)}
+                          rows={3}
+                          disabled={savingComment}
+                          aria-label="Edit comment"
+                        />
+                        <div className="task-comment-actions">
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            disabled={savingComment || !editDraft.trim()}
+                            onClick={() => void handleSaveComment(comment)}
+                          >
+                            {savingComment ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={savingComment}
+                            onClick={handleCancelEditComment}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p>{comment.body}</p>
+                        <div className="task-comment-meta">
+                          <time dateTime={comment.createdAt}>
+                            {formatDisplayDate(comment.createdAt)}
+                            {isCommentEdited(comment) ? ' (edited)' : ''}
+                          </time>
+                          {showActions && (
+                            <div className="task-comment-actions">
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleStartEditComment(comment)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-danger btn-sm"
+                                onClick={() => setCommentPendingDelete(comment)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
 
@@ -667,6 +828,21 @@ export function TaskDetailsModal({
           />
         </Modal>
       )}
+
+      <ConfirmDialog
+        open={Boolean(commentPendingDelete)}
+        title="Delete comment"
+        description="Delete this comment? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deletingComment}
+        onConfirm={() => void handleConfirmDeleteComment()}
+        onCancel={() => {
+          if (!deletingComment) {
+            setCommentPendingDelete(null);
+          }
+        }}
+      />
     </Modal>
   );
 }

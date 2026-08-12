@@ -116,6 +116,36 @@ export function createTaskComment(
   );
 }
 
+export function updateTaskComment(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  commentId: string,
+  input: CreateTaskCommentInput,
+): Promise<TaskComment> {
+  return apiRequest<TaskComment>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/comments/${commentId}`,
+    {
+      method: 'PATCH',
+      body: input,
+    },
+  );
+}
+
+export function deleteTaskComment(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  commentId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/comments/${commentId}`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
 export function fetchTaskHistory(
   orgId: string,
   projectId: string,
