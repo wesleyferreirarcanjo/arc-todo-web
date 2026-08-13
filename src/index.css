@@ -6706,6 +6706,14 @@ textarea {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Open mobile chat is viewport-locked at ≤1023 (not only ≤640) — #arc-271. */
+  .chat-widget-root.is-mobile-shell.is-open {
+    inset: 0;
+    padding: 0;
+    align-items: stretch;
+    pointer-events: auto;
+  }
+
   .chat-widget-root.is-mobile-shell.is-open .chat-widget-panel,
   .chat-widget-panel.is-full-page {
     width: 100%;
@@ -7006,56 +7014,6 @@ textarea {
   .task-details-actions button {
     flex: 1 1 auto;
     min-height: 2.75rem;
-  }
-
-  .chat-widget-root {
-    right: max(0.85rem, env(safe-area-inset-right, 0px));
-    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
-  }
-
-  .chat-widget-fab.is-closed {
-    right: max(0.85rem, env(safe-area-inset-right, 0px));
-    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
-  }
-
-  .chat-widget-root.is-open {
-    inset: 0;
-    right: 0;
-    bottom: 0;
-    top: 0;
-    left: 0;
-    padding: 0;
-    align-items: stretch;
-  }
-
-  .chat-widget-panel {
-    width: 100%;
-    height: min(calc(100dvh - 5.5rem), 85dvh);
-    border-radius: var(--radius-lg);
-  }
-
-  .chat-widget-root.is-open .chat-widget-panel {
-    width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    border-radius: 0;
-    border: none;
-  }
-
-  .chat-widget-tabs {
-    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
-  }
-
-  .chat-widget-fab.is-open {
-    width: 2.75rem;
-    height: 2.75rem;
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-  }
-
-  .chat-widget-fab.is-open .chat-widget-close-icon {
-    width: 1.1rem;
-    height: 1.1rem;
   }
 
   .people-create-section,
