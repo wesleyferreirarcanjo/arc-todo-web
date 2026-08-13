@@ -27,6 +27,9 @@ import { OrganizationsPage } from './pages/OrganizationsPage';
 import { PersonKnowledgePage } from './pages/PersonKnowledgePage';
 import { ProjectDiagramEditorPage } from './pages/ProjectDiagramEditorPage';
 import { ProjectDiagramsPage } from './pages/ProjectDiagramsPage';
+import { ProjectWireframePreviewPage } from './pages/ProjectWireframePreviewPage';
+import { ProjectWireframesPage } from './pages/ProjectWireframesPage';
+import { WireframesHubPage } from './pages/WireframesHubPage';
 import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
 
@@ -47,6 +50,14 @@ export default function App() {
                 }
               />
               <Route
+                path="/organizations/:orgId/projects/:projectId/wireframes/:wireframeId"
+                element={
+                  <WorkspaceProvider>
+                    <ProjectWireframePreviewPage />
+                  </WorkspaceProvider>
+                }
+              />
+              <Route
                 element={
                   <WorkspaceProvider>
                     <Layout />
@@ -57,6 +68,7 @@ export default function App() {
                 <Route path="/board" element={<AllTasksBoardPage />} />
                 <Route path="/knowledge" element={<GeneralKnowledgePage />} />
                 <Route path="/diagrams" element={<DiagramsHubPage />} />
+                <Route path="/wireframes" element={<WireframesHubPage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />
                 <Route
                   path="/people/:personId/knowledge"
@@ -133,6 +145,10 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/diagrams"
                   element={<ProjectDiagramsPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/wireframes"
+                  element={<ProjectWireframesPage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
               </Route>

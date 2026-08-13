@@ -205,6 +205,17 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                   >
                     Diagrams
                   </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() =>
+                      navigate(
+                        `/organizations/${orgId}/projects/${project.id}/wireframes`,
+                      )
+                    }
+                  >
+                    Wireframes
+                  </button>
                   {canManage && (
                     <button
                       type="button"

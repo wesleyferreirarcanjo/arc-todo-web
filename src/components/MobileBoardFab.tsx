@@ -203,6 +203,15 @@ function DiagramsIcon() {
   );
 }
 
+function WireframesIcon() {
+  return (
+    <FabGlyph>
+      <rect x="4" y="6" width="14" height="14" rx="1" />
+      <path d="M8 6V4h12v14h-2" />
+    </FabGlyph>
+  );
+}
+
 function PeopleIcon() {
   return (
     <FabGlyph>
@@ -469,6 +478,12 @@ export function MobileBoardFab() {
         label: 'Diagrams',
         icon: <DiagramsIcon />,
         onClick: () => go('/diagrams'),
+      },
+      {
+        id: 'nav-wireframes',
+        label: 'Wireframes',
+        icon: <WireframesIcon />,
+        onClick: () => go('/wireframes'),
       },
       {
         id: 'nav-people',

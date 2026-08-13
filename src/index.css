@@ -8572,6 +8572,20 @@ textarea {
   color: var(--accent);
 }
 
+.wireframe-preview-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.wireframe-preview-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+  background: #e8e8e8;
+}
+
 .diagram-editor-canvas {
   flex: 1;
   min-height: 0;

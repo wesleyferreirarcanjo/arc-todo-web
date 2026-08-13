@@ -25,6 +25,7 @@ export function ProjectNavList() {
         {projects.map((project) => {
           const boardPath = `/organizations/${orgId}/projects/${project.id}`;
           const diagramsPath = `${boardPath}/diagrams`;
+          const wireframesPath = `${boardPath}/wireframes`;
           const accentStyle = {
             '--entity-accent': getProjectColor(project),
           } as React.CSSProperties;
@@ -52,6 +53,16 @@ export function ProjectNavList() {
                 }
               >
                 Diagrams
+              </NavLink>
+              <NavLink
+                to={wireframesPath}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'project-nav-sublink active'
+                    : 'project-nav-sublink'
+                }
+              >
+                Wireframes
               </NavLink>
             </li>
           );

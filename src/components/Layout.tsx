@@ -66,6 +66,15 @@ function DiagramsIcon() {
   );
 }
 
+function WireframesIcon() {
+  return (
+    <Icon>
+      <rect x="4" y="6" width="14" height="14" rx="1" />
+      <path d="M8 6V4h12v14h-2" />
+    </Icon>
+  );
+}
+
 function PeopleIcon() {
   return (
     <Icon>
@@ -178,6 +187,7 @@ const primaryNav = [
   { to: '/board', label: 'All tasks', icon: TasksIcon },
   { to: '/knowledge', label: 'Knowledge', icon: KnowledgeIcon },
   { to: '/diagrams', label: 'Diagrams', icon: DiagramsIcon },
+  { to: '/wireframes', label: 'Wireframes', icon: WireframesIcon },
   { to: '/people', label: 'People', icon: PeopleIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: false as const },
 ] as const;
@@ -329,7 +339,13 @@ export function Layout() {
                       /\/projects\/[^/]+\/diagrams(?:\/|$)/.test(
                         location.pathname,
                       ));
-                  return isActive || diagramsActive
+                  const wireframesActive =
+                    to === '/wireframes' &&
+                    (location.pathname === '/wireframes' ||
+                      /\/projects\/[^/]+\/wireframes(?:\/|$)/.test(
+                        location.pathname,
+                      ));
+                  return isActive || diagramsActive || wireframesActive
                     ? 'sidebar-nav-link active'
                     : 'sidebar-nav-link';
                 }}
