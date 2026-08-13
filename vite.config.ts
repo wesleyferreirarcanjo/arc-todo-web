@@ -80,6 +80,11 @@ export default defineConfig({
         importScripts: ['push-handler.js'],
         // Main Excalidraw/mermaid chunk exceeds Workbox's 2 MiB default.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // injectRegister is false (registerSW lives in main.tsx), so the plugin
+        // does not auto-set these. Without them the new SW waits forever and
+        // the old precache keeps the previous sidebar (missing Wireframes).
+        skipWaiting: true,
+        clientsClaim: true,
       },
       devOptions: {
         enabled: false,
