@@ -1,8 +1,10 @@
 export const CAPTURE_REQUEST_TYPE = 'arc-todo:wireframe-capture';
 export const CAPTURE_RESULT_TYPE = 'arc-todo:wireframe-capture-result';
+export const CAPTURE_READY_TYPE = 'arc-todo:wireframe-capture-ready';
 export const CAPTURE_BOOTSTRAP_MARKER = 'data-arc-todo-capture="1"';
 
 const CAPTURE_TIMEOUT_MS = 20_000;
+const PAGE_RASTER_TIMEOUT_MS = 8_000;
 const MAX_WIDTH_PX = 1600;
 const JPEG_QUALITY = 0.85;
 
@@ -17,10 +19,31 @@ export interface CapturedWireframePage {
 
 interface CaptureResultMessage {
   type: string;
-  requestId: string;
-  ok: boolean;
+  requestId?: string;
+  ok?: boolean;
   error?: string;
   pages?: CapturedWireframePage[];
+}
+
+/**
+ * Drop external stylesheet/preconnect tags from the capture copy only.
+ * Google Fonts (and similar) block iframe `load` under sandbox without
+ * allow-same-origin; prints use the CSS fallback stack instead.
+ */
+export function stripCaptureExternalResources(html: string): string {
+  return html.replace(/<link\b[^>]*>/gi, (tag) => {
+    const rel = /rel\s*=\s*["']([^"']*)["']/i.exec(tag)?.[1]?.toLowerCase() ?? '';
+    const href = /href\s*=\s*["']([^"']*)["']/i.exec(tag)?.[1] ?? '';
+    const externalHref = /^https?:\/\//i.test(href);
+    if (
+      rel.includes('preconnect') ||
+      rel.includes('dns-prefetch') ||
+      (rel.includes('stylesheet') && externalHref)
+    ) {
+      return '';
+    }
+    return tag;
+  });
 }
 
 /**
@@ -30,8 +53,10 @@ interface CaptureResultMessage {
 const CAPTURE_BOOTSTRAP_SOURCE = `(function () {
   var REQUEST = '${CAPTURE_REQUEST_TYPE}';
   var RESULT = '${CAPTURE_RESULT_TYPE}';
+  var READY = '${CAPTURE_READY_TYPE}';
   var MAX_W = ${MAX_WIDTH_PX};
   var QUALITY = ${JPEG_QUALITY};
+  var PAGE_TIMEOUT = ${PAGE_RASTER_TIMEOUT_MS};
 
   function humanizePageId(id) {
     var trimmed = String(id || '').trim() || 'Page';
@@ -67,9 +92,7 @@ const CAPTURE_BOOTSTRAP_SOURCE = `(function () {
 
   function waitFrames() {
     return new Promise(function (resolve) {
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () { resolve(); });
-      });
+      setTimeout(resolve, 32);
     });
   }
 
@@ -80,20 +103,28 @@ const CAPTURE_BOOTSTRAP_SOURCE = `(function () {
     var bg = window.getComputedStyle(document.body).backgroundColor || '#e8e8e8';
     var wrap = document.createElement('div');
     wrap.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    var theme = document.documentElement.getAttribute('data-theme');
+    if (theme) wrap.setAttribute('data-theme', theme);
     wrap.style.cssText = 'width:' + size.width + 'px;height:' + size.height + 'px;margin:0;background:' + bg + ';';
     var styleEl = document.createElement('style');
     styleEl.textContent = collectStyles();
     wrap.appendChild(styleEl);
     wrap.appendChild(clone);
+    var xhtml = new XMLSerializer().serializeToString(wrap);
     var svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="' + size.width + '" height="' + size.height + '">' +
-      '<foreignObject width="100%" height="100%">' + wrap.outerHTML + '</foreignObject></svg>';
-    var blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
+      '<foreignObject width="100%" height="100%">' + xhtml + '</foreignObject></svg>';
+    var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 
     return new Promise(function (resolve, reject) {
       var img = new Image();
+      var timer = setTimeout(function () {
+        img.onload = img.onerror = null;
+        img.src = '';
+        reject(new Error('Timed out rasterizing a wireframe page.'));
+      }, PAGE_TIMEOUT);
       img.onload = function () {
+        clearTimeout(timer);
         try {
           var scale = Math.min(1, MAX_W / size.width);
           var canvas = document.createElement('canvas');
@@ -101,27 +132,23 @@ const CAPTURE_BOOTSTRAP_SOURCE = `(function () {
           canvas.height = Math.max(1, Math.round(size.height * scale));
           var ctx = canvas.getContext('2d');
           if (!ctx) {
-            URL.revokeObjectURL(url);
             reject(new Error('Canvas is unavailable.'));
             return;
           }
           ctx.fillStyle = bg;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          var dataURL = canvas.toDataURL('image/jpeg', QUALITY);
-          URL.revokeObjectURL(url);
           resolve({
-            dataURL: dataURL,
+            dataURL: canvas.toDataURL('image/jpeg', QUALITY),
             width: canvas.width,
             height: canvas.height
           });
         } catch (err) {
-          URL.revokeObjectURL(url);
           reject(err);
         }
       };
       img.onerror = function () {
-        URL.revokeObjectURL(url);
+        clearTimeout(timer);
         reject(new Error('Could not rasterize the wireframe page.'));
       };
       img.src = url;
@@ -202,16 +229,21 @@ const CAPTURE_BOOTSTRAP_SOURCE = `(function () {
       });
     });
   });
+
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: READY }, '*');
+  }
 })();`;
 
 export function withCaptureBootstrap(html: string): string {
-  if (html.includes(CAPTURE_BOOTSTRAP_MARKER)) return html;
+  const stripped = stripCaptureExternalResources(html);
+  if (stripped.includes(CAPTURE_BOOTSTRAP_MARKER)) return stripped;
   const script = `<script ${CAPTURE_BOOTSTRAP_MARKER}>\n${CAPTURE_BOOTSTRAP_SOURCE}\n</script>`;
-  const closeBody = html.lastIndexOf('</body>');
+  const closeBody = stripped.lastIndexOf('</body>');
   if (closeBody !== -1) {
-    return `${html.slice(0, closeBody)}${script}${html.slice(closeBody)}`;
+    return `${stripped.slice(0, closeBody)}${script}${stripped.slice(closeBody)}`;
   }
-  return `${html}${script}`;
+  return `${stripped}${script}`;
 }
 
 export function captureWireframePages(html: string): Promise<CapturedWireframePage[]> {
@@ -225,6 +257,7 @@ export function captureWireframePages(html: string): Promise<CapturedWireframePa
       'position:fixed;left:-10000px;top:0;width:1200px;height:800px;opacity:0;pointer-events:none;border:0;';
 
     let settled = false;
+    let requested = false;
     const timeout = window.setTimeout(() => {
       finish();
       reject(new Error('Timed out capturing the wireframe.'));
@@ -238,10 +271,24 @@ export function captureWireframePages(html: string): Promise<CapturedWireframePa
       iframe.remove();
     }
 
+    function requestCapture() {
+      if (requested || settled) return;
+      requested = true;
+      iframe.contentWindow?.postMessage(
+        { type: CAPTURE_REQUEST_TYPE, requestId },
+        '*',
+      );
+    }
+
     function onMessage(event: MessageEvent) {
       if (event.source !== iframe.contentWindow) return;
       const data = event.data as CaptureResultMessage | null;
-      if (!data || data.type !== CAPTURE_RESULT_TYPE || data.requestId !== requestId) {
+      if (!data) return;
+      if (data.type === CAPTURE_READY_TYPE) {
+        requestCapture();
+        return;
+      }
+      if (data.type !== CAPTURE_RESULT_TYPE || data.requestId !== requestId) {
         return;
       }
       finish();
@@ -253,13 +300,10 @@ export function captureWireframePages(html: string): Promise<CapturedWireframePa
     }
 
     window.addEventListener('message', onMessage);
-    iframe.addEventListener('load', () => {
-      iframe.contentWindow?.postMessage(
-        { type: CAPTURE_REQUEST_TYPE, requestId },
-        '*',
-      );
-    });
-    document.body.appendChild(iframe);
+    // Set srcdoc before insert so the first load is the capture document, not
+    // about:blank. Start capture on READY only — a blank-frame load would
+    // consume `requested` and never send the real postMessage (#arc-283).
     iframe.srcdoc = withCaptureBootstrap(html);
+    document.body.appendChild(iframe);
   });
 }

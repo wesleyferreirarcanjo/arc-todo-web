@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { humanizePageId } from './pageLabel';
 import {
   CAPTURE_BOOTSTRAP_MARKER,
+  CAPTURE_READY_TYPE,
+  stripCaptureExternalResources,
   withCaptureBootstrap,
 } from './capturePreview';
 import { buildMarkupScene } from './markupScene';
@@ -16,6 +18,23 @@ describe('humanizePageId', () => {
   });
 });
 
+describe('stripCaptureExternalResources', () => {
+  it('removes Google Fonts stylesheet and preconnect tags', () => {
+    const html = `<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>body{color:red}</style>
+</head><body><section id="page-home">Hi</section></body></html>`;
+    const stripped = stripCaptureExternalResources(html);
+    expect(stripped).not.toContain('fonts.googleapis.com');
+    expect(stripped).not.toContain('fonts.gstatic.com');
+    expect(stripped).toContain('body{color:red}');
+    expect(stripped).toContain('id="page-home"');
+    expect(html).toContain('fonts.googleapis.com');
+  });
+});
+
 describe('withCaptureBootstrap', () => {
   it('appends the capture script without duplicating it', () => {
     const html = '<!DOCTYPE html><html><body><p>Hi</p></body></html>';
@@ -26,6 +45,20 @@ describe('withCaptureBootstrap', () => {
     );
     expect(withCaptureBootstrap(once)).toBe(once);
     expect(html).not.toContain(CAPTURE_BOOTSTRAP_MARKER);
+  });
+
+  it('strips font links, uses a data-URL SVG rasterizer, and announces ready', () => {
+    const html = `<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces" rel="stylesheet">
+</head><body></body></html>`;
+    const prepared = withCaptureBootstrap(html);
+    expect(prepared).not.toContain('fonts.googleapis.com');
+    expect(prepared).toContain('XMLSerializer');
+    expect(prepared).toContain('data:image/svg+xml');
+    expect(prepared).not.toContain('createObjectURL');
+    expect(prepared).not.toContain('requestAnimationFrame');
+    expect(prepared).toContain(CAPTURE_READY_TYPE);
+    expect(html).toContain('fonts.googleapis.com');
   });
 });
 
