@@ -6658,6 +6658,26 @@ textarea {
     overflow: hidden;
   }
 
+  /* Collapsed by default; when open, cap height so history cannot steal the tabbed column. */
+  .content-area.is-board-page .board-cycle-history {
+    flex: 0 0 auto;
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .content-area.is-board-page .board-cycle-history[open] {
+    display: flex;
+    flex-direction: column;
+    max-height: 40vh;
+  }
+
+  .content-area.is-board-page .board-cycle-history[open] .board-cycle-history-list {
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .chat-widget-root.is-mobile-shell.is-open .chat-widget-panel,
   .chat-widget-panel.is-full-page {
     width: 100%;
@@ -7683,10 +7703,22 @@ textarea {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+  flex: 0 0 auto;
+  min-height: 0;
 }
 
 .board-cycle-history h3 {
   margin: 0 0 0.35rem;
+}
+
+.board-cycle-history-summary {
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .board-cycle-history-list {

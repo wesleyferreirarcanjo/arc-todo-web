@@ -1,3 +1,4 @@
+import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import type { BoardCycleHistoryResponse } from '../types/boardCycle';
 
 interface BoardCycleHistoryProps {
@@ -14,26 +15,9 @@ function formatDate(date: string): string {
   }).format(new Date(`${date}T00:00:00.000Z`));
 }
 
-export function BoardCycleHistoryPanel({
-  history,
-  loading,
-}: BoardCycleHistoryProps) {
-  if (loading) {
-    return <p className="status-message">Loading sprint history…</p>;
-  }
-
-  if (history.cycles.length === 0) {
-    return (
-      <p className="status-message">
-        No closed cycles yet. Completed work appears here after you close a
-        weekly cycle.
-      </p>
-    );
-  }
-
+function HistoryEntries({ history }: { history: BoardCycleHistoryResponse }) {
   return (
-    <section className="board-cycle-history">
-      <h3>Sprint history</h3>
+    <>
       <p className="board-cycle-note">
         Archived completed work from closed cycles. This is separate from per-task
         edit history in task details.
@@ -71,6 +55,44 @@ export function BoardCycleHistoryPanel({
           </li>
         ))}
       </ul>
+    </>
+  );
+}
+
+export function BoardCycleHistoryPanel({
+  history,
+  loading,
+}: BoardCycleHistoryProps) {
+  const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
+
+  if (loading) {
+    return <p className="status-message">Loading sprint history…</p>;
+  }
+
+  if (history.cycles.length === 0) {
+    return (
+      <p className="status-message">
+        No closed cycles yet. Completed work appears here after you close a
+        weekly cycle.
+      </p>
+    );
+  }
+
+  const body = <HistoryEntries history={history} />;
+
+  if (isMobileBoard) {
+    return (
+      <details className="board-cycle-history">
+        <summary className="board-cycle-history-summary">Sprint history</summary>
+        {body}
+      </details>
+    );
+  }
+
+  return (
+    <section className="board-cycle-history">
+      <h3>Sprint history</h3>
+      {body}
     </section>
   );
 }
