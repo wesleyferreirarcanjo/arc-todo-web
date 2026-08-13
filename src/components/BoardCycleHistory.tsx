@@ -59,40 +59,46 @@ function HistoryEntries({ history }: { history: BoardCycleHistoryResponse }) {
   );
 }
 
+function HistoryStatus({ loading }: { loading: boolean }) {
+  return (
+    <p className="status-message">
+      {loading
+        ? 'Loading sprint history…'
+        : 'No closed cycles yet. Completed work appears here after you close a weekly cycle.'}
+    </p>
+  );
+}
+
 export function BoardCycleHistoryPanel({
   history,
   loading,
 }: BoardCycleHistoryProps) {
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
-
-  if (loading) {
-    return <p className="status-message">Loading sprint history…</p>;
-  }
-
-  if (history.cycles.length === 0) {
-    return (
-      <p className="status-message">
-        No closed cycles yet. Completed work appears here after you close a
-        weekly cycle.
-      </p>
-    );
-  }
-
-  const body = <HistoryEntries history={history} />;
+  const showStatus = loading || history.cycles.length === 0;
 
   if (isMobileBoard) {
     return (
       <details className="board-cycle-history">
         <summary className="board-cycle-history-summary">Sprint history</summary>
-        {body}
+        {showStatus ? (
+          <p className="status-message">
+            {loading ? 'Loading sprint history…' : 'No closed cycles yet.'}
+          </p>
+        ) : (
+          <HistoryEntries history={history} />
+        )}
       </details>
     );
+  }
+
+  if (showStatus) {
+    return <HistoryStatus loading={loading} />;
   }
 
   return (
     <section className="board-cycle-history">
       <h3>Sprint history</h3>
-      {body}
+      <HistoryEntries history={history} />
     </section>
   );
 }

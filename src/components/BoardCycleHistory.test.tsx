@@ -77,4 +77,29 @@ describe('BoardCycleHistoryPanel', () => {
     expect(screen.getByText('#arc-220')).toBeInTheDocument();
     expect(document.querySelector('details.board-cycle-history')).not.toBeInTheDocument();
   });
+
+  it('keeps empty sprint history behind a closed summary on the tabbed board', () => {
+    mediaState.mobile = true;
+    const { container } = render(
+      <BoardCycleHistoryPanel history={{ cycles: [] }} loading={false} />,
+    );
+
+    const disclosure = container.querySelector('details.board-cycle-history');
+    expect(disclosure).toBeInTheDocument();
+    expect(disclosure).not.toHaveAttribute('open');
+    expect(screen.getByText('Sprint history')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Sprint history' })).not.toBeInTheDocument();
+  });
+
+  it('keeps loading sprint history behind a closed summary on the tabbed board', () => {
+    mediaState.mobile = true;
+    const { container } = render(
+      <BoardCycleHistoryPanel history={{ cycles: [] }} loading />,
+    );
+
+    const disclosure = container.querySelector('details.board-cycle-history');
+    expect(disclosure).toBeInTheDocument();
+    expect(disclosure).not.toHaveAttribute('open');
+    expect(screen.getByText('Sprint history')).toBeInTheDocument();
+  });
 });

@@ -6658,19 +6658,32 @@ textarea {
     overflow: hidden;
   }
 
-  /* Collapsed by default; when open, cap height so history cannot steal the tabbed column. */
+  /* Collapsed by default; when open, cap height so cycle chrome cannot steal the tabbed column. */
+  .content-area.is-board-page .board-cycle-header,
   .content-area.is-board-page .board-cycle-history {
     flex: 0 0 auto;
+  }
+
+  /* Native <details> hides the body when closed; display:flex would leak it. */
+  .content-area.is-board-page .board-cycle-header {
+    display: block;
+    margin: 0.5rem 0 0;
+    padding: 0 0.85rem;
+  }
+
+  .content-area.is-board-page .board-cycle-history {
     margin-top: 0.75rem;
     padding-top: 0.5rem;
   }
 
+  .content-area.is-board-page .board-cycle-header[open],
   .content-area.is-board-page .board-cycle-history[open] {
     display: flex;
     flex-direction: column;
     max-height: 40vh;
   }
 
+  .content-area.is-board-page .board-cycle-header[open] .board-cycle-header-body,
   .content-area.is-board-page .board-cycle-history[open] .board-cycle-history-list {
     overflow-y: auto;
     min-height: 0;
@@ -7670,10 +7683,6 @@ textarea {
 }
 
 .board-cycle-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
   margin: 1rem 0;
   padding: 1rem 1.1rem;
   border: 1px solid var(--border);
@@ -7681,9 +7690,45 @@ textarea {
   background: var(--bg-surface);
 }
 
+section.board-cycle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .board-cycle-header h2 {
   margin: 0 0 0.35rem;
   font-size: 1.1rem;
+}
+
+.board-cycle-header-summary {
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.65rem;
+}
+
+.board-cycle-header-summary-dates {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.board-cycle-header-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding-bottom: 0.85rem;
+}
+
+.board-cycle-header-body .btn {
+  margin-top: 0.5rem;
 }
 
 .board-cycle-dates {
