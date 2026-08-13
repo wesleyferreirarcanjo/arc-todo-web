@@ -189,7 +189,7 @@ const primaryNav = [
   { to: '/diagrams', label: 'Diagrams', icon: DiagramsIcon },
   { to: '/wireframes', label: 'Wireframes', icon: WireframesIcon },
   { to: '/people', label: 'People', icon: PeopleIcon },
-  { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: false as const },
+  { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
 ] as const;
 
 export function Layout() {
@@ -208,13 +208,15 @@ export function Layout() {
   const isAdminUsersPage = location.pathname.startsWith('/admin/users');
   const isRagSettingsPage = location.pathname.startsWith('/settings/rag');
   const isBoardPage = location.pathname === '/board';
+  const isProjectBoardPage =
+    /^\/organizations\/[^/]+\/projects\/[^/]+$/.test(location.pathname);
   const isKnowledgePage =
     location.pathname === '/knowledge' ||
     /^\/organizations\/[^/]+\/knowledge$/.test(location.pathname) ||
     /^\/organizations\/[^/]+\/projects\/[^/]+\/knowledge$/.test(
       location.pathname,
     );
-  const isWorkspacePage = isBoardPage || isKnowledgePage;
+  const isWorkspacePage = isBoardPage || isProjectBoardPage || isKnowledgePage;
 
   useEffect(() => {
     if (location.pathname.startsWith('/settings/rag')) {

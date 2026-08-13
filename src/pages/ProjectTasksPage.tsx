@@ -141,6 +141,9 @@ export function ProjectTasksPage() {
         <h2>{currentProject?.name ?? 'Project tasks'}</h2>
         <p className="page-subtitle">Manage tasks for this project.</p>
         <div className="page-links">
+          <Link to="/organizations" className="text-link">
+            Back to organizations
+          </Link>
           {hasKnowledgeAccess && (
             <Link
               to={`/organizations/${orgId}/projects/${projectId}/knowledge`}

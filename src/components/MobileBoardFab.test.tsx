@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../hooks/useMediaQuery', () => ({
   SHELL_MOBILE_QUERY: '(max-width: 1023px)',
@@ -52,6 +52,10 @@ vi.mock('../hooks/usePushNotifications', () => ({
 
 import { MobileBoardFab } from './MobileBoardFab';
 
+afterEach(() => {
+  cleanup();
+});
+
 describe('MobileBoardFab logout order', () => {
   it('puts Logout first in the dial DOM so column-reverse paints it last', async () => {
     const user = userEvent.setup();
@@ -97,5 +101,41 @@ describe('MobileBoardFab Navigate labels', () => {
     expect(
       screen.queryByRole('menuitem', { name: 'Users' }),
     ).not.toBeInTheDocument();
+  });
+});
+
+function FabWithNavigateButton() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => navigate('/organizations')}>
+        go organizations
+      </button>
+      <MobileBoardFab />
+    </>
+  );
+}
+
+describe('MobileBoardFab route change', () => {
+  it('closes the open dial when the path changes', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <MemoryRouter initialEntries={['/organizations/org-1/projects/proj-1']}>
+        <FabWithNavigateButton />
+      </MemoryRouter>,
+    );
+    const ui = within(container);
+
+    await user.click(ui.getByRole('button', { name: 'Open actions' }));
+    expect(
+      ui.getByRole('button', { name: 'Close actions' }),
+    ).toBeInTheDocument();
+
+    await user.click(ui.getByRole('button', { name: 'go organizations' }));
+
+    expect(
+      ui.getByRole('button', { name: 'Open actions' }),
+    ).toBeInTheDocument();
+    expect(ui.queryByRole('menuitem')).not.toBeInTheDocument();
   });
 });

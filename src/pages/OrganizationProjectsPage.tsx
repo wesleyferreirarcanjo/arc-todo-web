@@ -76,6 +76,9 @@ export function OrganizationProjectsPage() {
           Manage projects for this organization. Open tasks or edit project details.
         </p>
         <div className="page-links">
+          <Link to="/organizations" className="text-link">
+            Back to organizations
+          </Link>
           <Link to={`/organizations/${orgId}/activity`} className="text-link">
             Activity log
           </Link>

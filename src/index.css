@@ -8502,6 +8502,10 @@ section.board-cycle-header {
   gap: 1.25rem;
 }
 
+.diagrams-grid--wireframe {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 640px), 1fr));
+}
+
 .diagram-card {
   display: flex;
   flex-direction: column;
@@ -8541,7 +8545,7 @@ section.board-cycle-header {
 }
 
 .diagram-card--wireframe .diagram-card-preview-link {
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 4 / 3;
 }
 
 .diagram-card--wireframe .diagram-card-thumbnail {

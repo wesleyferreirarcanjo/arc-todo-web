@@ -418,7 +418,7 @@ export function WireframesHubPage() {
           {visibleItems.length === 0 ? (
             <p className="status-message">No wireframes match these filters.</p>
           ) : (
-            <ul className="diagrams-grid">
+            <ul className="diagrams-grid diagrams-grid--wireframe">
               {visibleItems.map((item) => {
                 const { wireframe, org, project, diagrams } = item;
                 const previewPath = `/organizations/${org.id}/projects/${project.id}/wireframes/${wireframe.id}`;

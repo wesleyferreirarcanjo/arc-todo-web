@@ -306,6 +306,11 @@ export function MobileBoardFab() {
   }, [menuOpen]);
 
   useEffect(() => {
+    setMenuOpen(false);
+    setCreateOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!menuOpen) return;
 
     function handlePointerDown(event: PointerEvent) {

@@ -317,7 +317,7 @@ export function ProjectWireframesPage() {
       )}
 
       {!loading && !error && visibleWireframes.length > 0 && (
-        <ul className="diagrams-grid">
+        <ul className="diagrams-grid diagrams-grid--wireframe">
           {visibleWireframes.map((wireframe) => {
             const previewThumb = (
               diagramsByWireframe.get(wireframe.id) ?? []
