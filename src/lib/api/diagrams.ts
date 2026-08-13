@@ -13,9 +13,13 @@ function diagramsBasePath(orgId: string, projectId: string): string {
 export function fetchProjectDiagrams(
   orgId: string,
   projectId: string,
+  options?: { wireframeId?: string },
 ): Promise<ProjectDiagramSummary[]> {
+  const query = options?.wireframeId
+    ? `?wireframeId=${encodeURIComponent(options.wireframeId)}`
+    : '';
   return apiRequest<ProjectDiagramSummary[]>(
-    diagramsBasePath(orgId, projectId),
+    `${diagramsBasePath(orgId, projectId)}${query}`,
   );
 }
 

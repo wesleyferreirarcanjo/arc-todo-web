@@ -3,14 +3,17 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
+import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
   createProjectWireframe,
   deleteProjectWireframe,
   fetchProjectWireframes,
   updateProjectWireframe,
 } from '../lib/api/wireframes';
+import type { ProjectDiagramSummary } from '../types/diagram';
 import type { ProjectWireframeSummary } from '../types/wireframe';
 
 function formatUpdatedAt(value: string): string {
@@ -60,6 +63,7 @@ export function ProjectWireframesPage() {
   const navigate = useNavigate();
   const { currentProject } = useWorkspace();
   const [wireframes, setWireframes] = useState<ProjectWireframeSummary[]>([]);
+  const [diagrams, setDiagrams] = useState<ProjectDiagramSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -84,8 +88,12 @@ export function ProjectWireframesPage() {
     setError(null);
     setForbidden(false);
     try {
-      const data = await fetchProjectWireframes(orgId, projectId);
+      const [data, projectDiagrams] = await Promise.all([
+        fetchProjectWireframes(orgId, projectId),
+        fetchProjectDiagrams(orgId, projectId),
+      ]);
       setWireframes(data);
+      setDiagrams(projectDiagrams);
     } catch (err) {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
@@ -110,6 +118,17 @@ export function ProjectWireframesPage() {
       : wireframes;
     return sortWireframes(filtered, sort);
   }, [wireframes, searchQuery, sort]);
+
+  const diagramsByWireframe = useMemo(() => {
+    const grouped = new Map<string, ProjectDiagramSummary[]>();
+    for (const diagram of diagrams) {
+      if (!diagram.wireframeId) continue;
+      const list = grouped.get(diagram.wireframeId) ?? [];
+      list.push(diagram);
+      grouped.set(diagram.wireframeId, list);
+    }
+    return grouped;
+  }, [diagrams]);
 
   async function handleCreate() {
     if (!orgId || !projectId) return;
@@ -318,6 +337,16 @@ export function ProjectWireframesPage() {
                 <p className="diagram-card-meta">
                   Updated {formatUpdatedAt(wireframe.updatedAt)}
                 </p>
+                <WireframeMarkupBlock
+                  orgId={orgId}
+                  projectId={projectId}
+                  wireframeId={wireframe.id}
+                  wireframeTitle={wireframe.title}
+                  diagrams={diagramsByWireframe.get(wireframe.id) ?? []}
+                  onDiagramsChange={() => {
+                    void fetchProjectDiagrams(orgId, projectId).then(setDiagrams);
+                  }}
+                />
                 <div className="diagram-card-actions">
                   <button
                     type="button"

@@ -2,12 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { ApiError } from '../lib/api/client';
+import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
   deleteProjectWireframe,
   fetchProjectWireframe,
   updateProjectWireframe,
 } from '../lib/api/wireframes';
+import type { ProjectDiagramSummary } from '../types/diagram';
 import type { ProjectWireframe } from '../types/wireframe';
 
 export function ProjectWireframePreviewPage() {
@@ -23,6 +26,9 @@ export function ProjectWireframePreviewPage() {
   const [renaming, setRenaming] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [markupDiagrams, setMarkupDiagrams] = useState<ProjectDiagramSummary[]>(
+    [],
+  );
 
   const listPath =
     orgId && projectId
@@ -35,8 +41,12 @@ export function ProjectWireframePreviewPage() {
     setError(null);
     setForbidden(false);
     try {
-      const data = await fetchProjectWireframe(orgId, projectId, wireframeId);
+      const [data, markup] = await Promise.all([
+        fetchProjectWireframe(orgId, projectId, wireframeId),
+        fetchProjectDiagrams(orgId, projectId, { wireframeId }),
+      ]);
       setWireframe(data);
+      setMarkupDiagrams(markup);
     } catch (err) {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
@@ -125,6 +135,22 @@ export function ProjectWireframePreviewPage() {
           </h2>
         </div>
         <div className="diagram-editor-header-actions">
+          <WireframeMarkupBlock
+            orgId={orgId}
+            projectId={projectId}
+            wireframeId={wireframeId}
+            wireframeTitle={wireframe?.title ?? 'Wireframe'}
+            html={wireframe?.html}
+            diagrams={markupDiagrams}
+            disabled={!wireframe || loading}
+            markUpClassName="btn btn-secondary"
+            showList={false}
+            onDiagramsChange={() => {
+              void fetchProjectDiagrams(orgId, projectId, { wireframeId }).then(
+                setMarkupDiagrams,
+              );
+            }}
+          />
           <button
             type="button"
             className="btn btn-secondary"
@@ -147,6 +173,26 @@ export function ProjectWireframePreviewPage() {
           </button>
         </div>
       </header>
+
+      {markupDiagrams.length > 0 && (
+        <div className="wireframe-markup-bar">
+          <WireframeMarkupBlock
+            orgId={orgId}
+            projectId={projectId}
+            wireframeId={wireframeId}
+            wireframeTitle={wireframe?.title ?? 'Wireframe'}
+            html={wireframe?.html}
+            diagrams={markupDiagrams}
+            disabled={!wireframe || loading}
+            showButton={false}
+            onDiagramsChange={() => {
+              void fetchProjectDiagrams(orgId, projectId, { wireframeId }).then(
+                setMarkupDiagrams,
+              );
+            }}
+          />
+        </div>
+      )}
 
       {loading && <p className="status-message">Loading wireframe...</p>}
       {error && <div className="alert alert-error">{error}</div>}

@@ -2,6 +2,7 @@ export interface ProjectDiagramSummary {
   id: string;
   title: string;
   thumbnail: string | null;
+  wireframeId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,6 +24,7 @@ export interface CreateProjectDiagramInput {
   title: string;
   sceneJson?: ExcalidrawSceneJson;
   thumbnail?: string | null;
+  wireframeId?: string;
 }
 
 export interface UpdateProjectDiagramInput {

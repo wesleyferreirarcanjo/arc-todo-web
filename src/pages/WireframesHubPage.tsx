@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Select } from '../components/Select';
+import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { getProjectColor } from '../lib/color/entityColor';
+import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import { fetchProjectWireframes } from '../lib/api/wireframes';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
+import type { ProjectDiagramSummary } from '../types/diagram';
 import type { ProjectWireframeSummary } from '../types/wireframe';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
@@ -13,6 +16,7 @@ interface HubWireframe {
   wireframe: ProjectWireframeSummary;
   org: Organization;
   project: Project;
+  diagrams: ProjectDiagramSummary[];
 }
 
 type WireframeSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
@@ -93,8 +97,18 @@ export function WireframesHubPage() {
         const projectEntries = projectsByOrg.flat();
         const wireframesByProject = await Promise.all(
           projectEntries.map(async ({ org, project }) => {
-            const wireframes = await fetchProjectWireframes(org.id, project.id);
-            return wireframes.map((wireframe) => ({ wireframe, org, project }));
+            const [wireframes, diagrams] = await Promise.all([
+              fetchProjectWireframes(org.id, project.id),
+              fetchProjectDiagrams(org.id, project.id),
+            ]);
+            return wireframes.map((wireframe) => ({
+              wireframe,
+              org,
+              project,
+              diagrams: diagrams.filter(
+                (diagram) => diagram.wireframeId === wireframe.id,
+              ),
+            }));
           }),
         );
         if (!cancelled) {
@@ -226,7 +240,7 @@ export function WireframesHubPage() {
             <p className="status-message">No wireframes match these filters.</p>
           ) : (
             <ul className="diagrams-grid">
-              {visibleItems.map(({ wireframe, org, project }) => {
+              {visibleItems.map(({ wireframe, org, project, diagrams }) => {
                 const previewPath = `/organizations/${org.id}/projects/${project.id}/wireframes/${wireframe.id}`;
                 const accentColor = getProjectColor(project);
                 return (
@@ -258,6 +272,33 @@ export function WireframesHubPage() {
                       <p className="diagram-card-meta">
                         Updated {formatUpdatedAt(wireframe.updatedAt)}
                       </p>
+                      <WireframeMarkupBlock
+                        orgId={org.id}
+                        projectId={project.id}
+                        wireframeId={wireframe.id}
+                        wireframeTitle={wireframe.title}
+                        diagrams={diagrams}
+                        onDiagramsChange={() => {
+                          void fetchProjectDiagrams(org.id, project.id).then(
+                            (projectDiagrams) => {
+                              setItems((prev) =>
+                                prev.map((item) =>
+                                  item.project.id === project.id
+                                    ? {
+                                        ...item,
+                                        diagrams: projectDiagrams.filter(
+                                          (diagram) =>
+                                            diagram.wireframeId ===
+                                            item.wireframe.id,
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              );
+                            },
+                          );
+                        }}
+                      />
                     </div>
                   </li>
                 );
