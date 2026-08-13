@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
@@ -319,25 +320,14 @@ export function ProjectWireframesPage() {
       {!loading && !error && visibleWireframes.length > 0 && (
         <ul className="diagrams-grid diagrams-grid--wireframe">
           {visibleWireframes.map((wireframe) => {
-            const previewThumb = (
-              diagramsByWireframe.get(wireframe.id) ?? []
-            ).find((diagram) => diagram.thumbnail)?.thumbnail;
             return (
               <li key={wireframe.id} className="diagram-card diagram-card--wireframe entity-card">
-              <Link
-                to={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
-                className="diagram-card-preview-link"
-              >
-                {previewThumb ? (
-                  <img
-                    src={previewThumb}
-                    alt=""
-                    className="diagram-card-thumbnail"
-                  />
-                ) : (
-                  <div className="diagram-card-placeholder">Wireframe</div>
-                )}
-              </Link>
+              <WireframeCardPreview
+                orgId={orgId}
+                projectId={projectId}
+                previewPath={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
+                diagrams={diagramsByWireframe.get(wireframe.id) ?? []}
+              />
               <div className="diagram-card-body">
                 <h3 className="diagram-card-title">
                   <Link

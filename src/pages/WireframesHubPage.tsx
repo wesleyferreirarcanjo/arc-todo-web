@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { getProjectColor } from '../lib/color/entityColor';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
@@ -423,25 +424,17 @@ export function WireframesHubPage() {
                 const { wireframe, org, project, diagrams } = item;
                 const previewPath = `/organizations/${org.id}/projects/${project.id}/wireframes/${wireframe.id}`;
                 const accentColor = getProjectColor(project);
-                const previewThumb = diagrams.find(
-                  (diagram) => diagram.thumbnail,
-                )?.thumbnail;
                 return (
                   <li
                     key={wireframe.id}
                     className="diagram-card diagram-card--wireframe entity-card"
                   >
-                    <Link to={previewPath} className="diagram-card-preview-link">
-                      {previewThumb ? (
-                        <img
-                          src={previewThumb}
-                          alt=""
-                          className="diagram-card-thumbnail"
-                        />
-                      ) : (
-                        <div className="diagram-card-placeholder">Wireframe</div>
-                      )}
-                    </Link>
+                    <WireframeCardPreview
+                      orgId={org.id}
+                      projectId={project.id}
+                      previewPath={previewPath}
+                      diagrams={diagrams}
+                    />
                     <div className="diagram-card-body">
                       <div className="diagram-card-badges">
                         <span

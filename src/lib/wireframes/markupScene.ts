@@ -147,6 +147,60 @@ export function buildMarkupScene(
   };
 }
 
+export interface MarkupPagePreview {
+  name: string;
+  dataURL: string;
+}
+
+function labelForImage(
+  elements: Array<Record<string, unknown>>,
+  image: Record<string, unknown>,
+): string {
+  const imgY = Number(image.y ?? 0);
+  const imgX = Number(image.x ?? 0);
+  const imgW = Number(image.width ?? 0);
+  let best: { y: number; text: string } | null = null;
+  for (const el of elements) {
+    if (el.type !== 'text') continue;
+    const y = Number(el.y ?? 0);
+    if (y > imgY) continue;
+    const x = Number(el.x ?? 0);
+    const w = Number(el.width ?? 0);
+    const overlapsX = x < imgX + imgW && x + w > imgX;
+    if (!overlapsX && Math.abs(x - imgX) > 40) continue;
+    const text = String(el.text ?? el.originalText ?? '').trim();
+    if (!text) continue;
+    if (!best || y > best.y) best = { y, text };
+  }
+  return best?.text ?? 'Page';
+}
+
+/** HTML page prints stored on a markup scene — not the Excalidraw canvas thumbnail. */
+export function extractMarkupPageImages(
+  scene: ExcalidrawSceneJson | null | undefined,
+): MarkupPagePreview[] {
+  if (!scene) return [];
+  const files = (scene.files ?? {}) as Record<string, { dataURL?: string }>;
+  const elements = Array.isArray(scene.elements)
+    ? (scene.elements as Array<Record<string, unknown>>)
+    : [];
+  const live = elements.filter((el) => el.isDeleted !== true);
+  const images = live
+    .filter((el) => el.type === 'image' && typeof el.fileId === 'string')
+    .sort(
+      (a, b) =>
+        Number(a.y ?? 0) - Number(b.y ?? 0) ||
+        Number(a.x ?? 0) - Number(b.x ?? 0),
+    );
+
+  return images.flatMap((el) => {
+    const file = files[String(el.fileId)];
+    const dataURL = file?.dataURL;
+    if (!dataURL) return [];
+    return [{ name: labelForImage(live, el), dataURL }];
+  });
+}
+
 export async function buildMarkupThumbnail(
   dataURL: string,
   maxSide = 320,

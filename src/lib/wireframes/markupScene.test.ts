@@ -6,7 +6,11 @@ import {
   stripCaptureExternalResources,
   withCaptureBootstrap,
 } from './capturePreview';
-import { buildMarkupScene, isDarkCssColor } from './markupScene';
+import {
+  buildMarkupScene,
+  extractMarkupPageImages,
+  isDarkCssColor,
+} from './markupScene';
 
 const TINY_JPEG =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI/8AAEQgAAQABAwEiAAIRAQMRAf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGf/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPwB//9k=';
@@ -140,5 +144,57 @@ describe('buildMarkupScene', () => {
       (el) => el.type === 'text',
     );
     expect(labels[0]?.strokeColor).toBe('#ececf0');
+  });
+});
+
+describe('extractMarkupPageImages', () => {
+  it('returns HTML page prints in scene order, not a canvas composite', () => {
+    const home =
+      'data:image/jpeg;base64,home';
+    const next = 'data:image/jpeg;base64,next';
+    const scene = buildMarkupScene([
+      {
+        id: 'page-home',
+        name: 'Home',
+        dataURL: home,
+        mimeType: 'image/jpeg',
+        width: 800,
+        height: 400,
+        backgroundColor: '#ffffff',
+      },
+      {
+        id: 'page-next',
+        name: 'Next',
+        dataURL: next,
+        mimeType: 'image/jpeg',
+        width: 800,
+        height: 400,
+        backgroundColor: '#ffffff',
+      },
+    ]);
+
+    expect(extractMarkupPageImages(scene)).toEqual([
+      { name: 'Home', dataURL: home },
+      { name: 'Next', dataURL: next },
+    ]);
+  });
+
+  it('skips deleted images and empty scenes', () => {
+    expect(extractMarkupPageImages(undefined)).toEqual([]);
+    expect(extractMarkupPageImages({ elements: [], files: {} })).toEqual([]);
+    expect(
+      extractMarkupPageImages({
+        elements: [
+          {
+            type: 'image',
+            fileId: 'gone',
+            isDeleted: true,
+            y: 0,
+            x: 0,
+          },
+        ],
+        files: { gone: { dataURL: TINY_JPEG } },
+      }),
+    ).toEqual([]);
   });
 });

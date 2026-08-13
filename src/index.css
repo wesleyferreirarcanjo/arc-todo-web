@@ -8553,6 +8553,85 @@ section.board-cycle-header {
   object-position: top center;
 }
 
+.wireframe-card-preview {
+  position: relative;
+}
+
+.wireframe-preview-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.wireframe-preview-nav:hover,
+.wireframe-preview-nav:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--bg-surface);
+}
+
+.wireframe-preview-nav:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wireframe-preview-nav--prev {
+  left: 0.65rem;
+}
+
+.wireframe-preview-nav--next {
+  right: 0.65rem;
+}
+
+.wireframe-preview-caption {
+  position: absolute;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: 0.65rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-page) 78%, transparent);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.wireframe-preview-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  pointer-events: auto;
+}
+
+.wireframe-preview-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-primary) 35%, transparent);
+  cursor: pointer;
+}
+
+.wireframe-preview-dot.is-active {
+  background: var(--text-primary);
+}
+
 .diagram-card-placeholder {
   width: 100%;
   height: 100%;
