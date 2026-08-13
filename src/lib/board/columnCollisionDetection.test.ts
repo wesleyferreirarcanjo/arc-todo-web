@@ -1,5 +1,4 @@
 import {
-  closestCorners,
   type CollisionDetection,
   type DroppableContainer,
 } from '@dnd-kit/core';
@@ -55,10 +54,12 @@ const cardInDevTest = rect(580, 120, 240, 80);
 
 function args(overrides: {
   pointer: { x: number; y: number } | null;
+  collisionRect?: ReturnType<typeof rect>;
   extraContainers?: DroppableContainer[];
   extraRects?: Map<string, ReturnType<typeof rect>>;
 }): Parameters<CollisionDetection>[0] {
   const extraContainers = overrides.extraContainers ?? [];
+  const collisionRect = overrides.collisionRect ?? cardInDevTest;
   const rects = new Map(droppableRects);
   for (const [id, box] of overrides.extraRects ?? []) {
     rects.set(id, box);
@@ -68,9 +69,9 @@ function args(overrides: {
     active: {
       id: 'task-1',
       data: { current: undefined },
-      rect: { current: { initial: cardInDevTest, translated: cardInDevTest } },
+      rect: { current: { initial: cardInDevTest, translated: collisionRect } },
     },
-    collisionRect: cardInDevTest,
+    collisionRect,
     droppableRects: rects,
     droppableContainers: [...columnContainers, ...extraContainers],
     pointerCoordinates: overrides.pointer,
@@ -82,36 +83,55 @@ function firstId(collisions: { id: string | number }[]) {
 }
 
 describe('columnCollisionDetection', () => {
-  it('picks the column under the pointer, not a tall source (Dev Test)', () => {
-    const pointerOnQa = args({ pointer: { x: 1000, y: 200 } });
+  it('picks QA Test when the overlay sits there even if the pointer is still in Dev Test', () => {
+    // Screenshot: ghost mostly on QA Test (centerX 900), cursor still in Dev Test.
+    const overlayOnQa = args({
+      pointer: { x: 700, y: 160 },
+      collisionRect: rect(780, 100, 240, 80),
+    });
 
-    expect(firstId(closestCorners(pointerOnQa))).not.toBe(columns.qaTest.id);
-    expect(firstId(columnCollisionDetection(pointerOnQa))).toBe(
+    expect(firstId(columnCollisionDetection(overlayOnQa))).toBe(
       columns.qaTest.id,
     );
   });
 
-  it('picks Done when the pointer is inside the tall Done column', () => {
-    const pointerOnDone = args({ pointer: { x: 1280, y: 200 } });
-    expect(firstId(columnCollisionDetection(pointerOnDone))).toBe(
-      columns.done.id,
-    );
-  });
-
-  it('picks To Do and In Progress the same way', () => {
+  it('picks Done when the overlay center is in the tall Done column', () => {
     expect(
       firstId(
-        columnCollisionDetection(args({ pointer: { x: 140, y: 200 } })),
+        columnCollisionDetection(
+          args({
+            pointer: { x: 700, y: 200 },
+            collisionRect: rect(1160, 80, 240, 80),
+          }),
+        ),
+      ),
+    ).toBe(columns.done.id);
+  });
+
+  it('picks To Do and In Progress from overlay center X', () => {
+    expect(
+      firstId(
+        columnCollisionDetection(
+          args({
+            pointer: { x: 700, y: 200 },
+            collisionRect: rect(20, 80, 240, 80),
+          }),
+        ),
       ),
     ).toBe(columns.todo.id);
     expect(
       firstId(
-        columnCollisionDetection(args({ pointer: { x: 420, y: 200 } })),
+        columnCollisionDetection(
+          args({
+            pointer: { x: 700, y: 200 },
+            collisionRect: rect(300, 80, 240, 80),
+          }),
+        ),
       ),
     ).toBe(columns.inProgress.id);
   });
 
-  it('keeps the source column when the pointer stays in Dev Test', () => {
+  it('keeps the source column when the overlay stays in Dev Test', () => {
     expect(
       firstId(
         columnCollisionDetection(args({ pointer: { x: 700, y: 200 } })),
@@ -119,12 +139,13 @@ describe('columnCollisionDetection', () => {
     ).toBe(columns.devTest.id);
   });
 
-  it('resolves a pointer over a nested card rect to that column, not the card', () => {
+  it('resolves an overlay over a nested card rect to that column, not the card', () => {
     const cardId = 'task-other';
     const cardRect = rect(900, 80, 200, 60);
     const collisions = columnCollisionDetection(
       args({
-        pointer: { x: 980, y: 110 },
+        pointer: { x: 700, y: 110 },
+        collisionRect: rect(880, 70, 240, 80),
         extraContainers: [container(cardId)],
         extraRects: new Map([[cardId, cardRect]]),
       }),
@@ -134,10 +155,15 @@ describe('columnCollisionDetection', () => {
     expect(collisions.some((hit) => hit.id === cardId)).toBe(false);
   });
 
-  it('falls back to the closest column when the pointer is in a gap', () => {
+  it('falls back to the closest column when the overlay sits in a gap', () => {
     expect(
       firstId(
-        columnCollisionDetection(args({ pointer: { x: 850, y: 200 } })),
+        columnCollisionDetection(
+          args({
+            pointer: { x: 855, y: 200 },
+            collisionRect: rect(842, 160, 16, 80),
+          }),
+        ),
       ),
     ).toBe(columns.qaTest.id);
   });
