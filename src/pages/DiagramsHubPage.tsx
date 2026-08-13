@@ -120,6 +120,7 @@ export function DiagramsHubPage() {
   const visibleItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filtered = items.filter(({ diagram, org, project }) => {
+      if (diagram.wireframeId) return false;
       if (orgFilter && org.id !== orgFilter) return false;
       if (projectFilter && project.id !== projectFilter) return false;
       if (query && !diagram.title.toLowerCase().includes(query)) return false;
@@ -127,6 +128,11 @@ export function DiagramsHubPage() {
     });
     return sortHubDiagrams(filtered, sort);
   }, [items, orgFilter, projectFilter, searchQuery, sort]);
+
+  const canvasCount = useMemo(
+    () => items.filter(({ diagram }) => !diagram.wireframeId).length,
+    [items],
+  );
 
   function handleOrgFilterChange(value: string) {
     setOrgFilter(value);
@@ -139,10 +145,10 @@ export function DiagramsHubPage() {
         <h2>Diagrams</h2>
         <p className="page-subtitle">
           Browse every Excalidraw board across your projects.
-          {!loading && !error && items.length > 0 && (
+          {!loading && !error && canvasCount > 0 && (
             <>
               {' '}
-              {items.length} diagram{items.length === 1 ? '' : 's'}.
+              {canvasCount} diagram{canvasCount === 1 ? '' : 's'}.
             </>
           )}
         </p>
@@ -151,7 +157,7 @@ export function DiagramsHubPage() {
       {loading && <p className="status-message">Loading diagrams...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && items.length === 0 && (
+      {!loading && !error && canvasCount === 0 && (
         <p className="status-message">
           No diagrams yet.{' '}
           <Link to="/organizations" className="text-link">
@@ -161,7 +167,7 @@ export function DiagramsHubPage() {
         </p>
       )}
 
-      {!loading && !error && items.length > 0 && (
+      {!loading && !error && canvasCount > 0 && (
         <>
           <div className="board-filters diagrams-hub-filters">
             <label className="board-filter-field board-filter-search">

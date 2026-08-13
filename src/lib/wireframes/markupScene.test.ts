@@ -6,10 +6,19 @@ import {
   stripCaptureExternalResources,
   withCaptureBootstrap,
 } from './capturePreview';
-import { buildMarkupScene } from './markupScene';
+import { buildMarkupScene, isDarkCssColor } from './markupScene';
 
 const TINY_JPEG =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI/8AAEQgAAQABAwEiAAIRAQMRAf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGf/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPwB//9k=';
+
+describe('isDarkCssColor', () => {
+  it('treats near-black page backgrounds as dark', () => {
+    expect(isDarkCssColor('rgb(12, 12, 16)')).toBe(true);
+    expect(isDarkCssColor('#0c0c10')).toBe(true);
+    expect(isDarkCssColor('#ffffff')).toBe(false);
+    expect(isDarkCssColor('rgb(232, 232, 232)')).toBe(false);
+  });
+});
 
 describe('humanizePageId', () => {
   it('turns starter section ids into page names', () => {
@@ -57,6 +66,9 @@ describe('withCaptureBootstrap', () => {
     expect(prepared).toContain('data:image/svg+xml');
     expect(prepared).not.toContain('createObjectURL');
     expect(prepared).not.toContain('requestAnimationFrame');
+    expect(prepared).toContain('getComputedStyle');
+    expect(prepared).toContain('inlinePaint');
+    expect(prepared).toContain('QUALITY = 0.92');
     expect(prepared).toContain(CAPTURE_READY_TYPE);
     expect(html).toContain('fonts.googleapis.com');
   });
@@ -72,6 +84,7 @@ describe('buildMarkupScene', () => {
         mimeType: 'image/jpeg',
         width: 800,
         height: 400,
+        backgroundColor: '#ffffff',
       },
       {
         id: 'page-next',
@@ -80,6 +93,7 @@ describe('buildMarkupScene', () => {
         mimeType: 'image/jpeg',
         width: 800,
         height: 400,
+        backgroundColor: '#ffffff',
       },
     ]);
 
@@ -100,5 +114,31 @@ describe('buildMarkupScene', () => {
     expect(labels.map((el) => el.text)).toEqual(['Home', 'Next']);
     expect(images.every((el) => el.locked)).toBe(true);
     expect(images.map((el) => el.fileId).sort()).toEqual([...fileIds].sort());
+    expect(scene.appState).toMatchObject({
+      viewBackgroundColor: '#ffffff',
+      theme: 'light',
+    });
+  });
+
+  it('uses the captured page background on a dark canvas', () => {
+    const scene = buildMarkupScene([
+      {
+        id: 'page-home',
+        name: 'Ideas',
+        dataURL: TINY_JPEG,
+        mimeType: 'image/jpeg',
+        width: 800,
+        height: 400,
+        backgroundColor: 'rgb(12, 12, 16)',
+      },
+    ]);
+    expect(scene.appState).toMatchObject({
+      viewBackgroundColor: 'rgb(12, 12, 16)',
+      theme: 'dark',
+    });
+    const labels = (scene.elements as Array<{ type: string; strokeColor?: string }>).filter(
+      (el) => el.type === 'text',
+    );
+    expect(labels[0]?.strokeColor).toBe('#ececf0');
   });
 });

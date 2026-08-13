@@ -99,13 +99,20 @@ export function ProjectDiagramsPage() {
     void loadDiagrams();
   }, [loadDiagrams]);
 
+  const canvasDiagrams = useMemo(
+    () => diagrams.filter((diagram) => !diagram.wireframeId),
+    [diagrams],
+  );
+
   const visibleDiagrams = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filtered = query
-      ? diagrams.filter((diagram) => diagram.title.toLowerCase().includes(query))
-      : diagrams;
+      ? canvasDiagrams.filter((diagram) =>
+          diagram.title.toLowerCase().includes(query),
+        )
+      : canvasDiagrams;
     return sortDiagrams(filtered, sort);
-  }, [diagrams, searchQuery, sort]);
+  }, [canvasDiagrams, searchQuery, sort]);
 
   async function handleCreate() {
     if (!orgId || !projectId) return;
@@ -215,10 +222,11 @@ export function ProjectDiagramsPage() {
           <p className="page-subtitle">
             Draw architecture, flows, and board visuals on Excalidraw canvases
             for this project.
-            {!loading && !error && diagrams.length > 0 && (
+            {!loading && !error && canvasDiagrams.length > 0 && (
               <>
                 {' '}
-                {diagrams.length} diagram{diagrams.length === 1 ? '' : 's'}.
+                {canvasDiagrams.length} diagram
+                {canvasDiagrams.length === 1 ? '' : 's'}.
               </>
             )}
           </p>
@@ -247,7 +255,7 @@ export function ProjectDiagramsPage() {
       {loading && <p className="status-message">Loading diagrams...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {!loading && !error && diagrams.length === 0 && (
+      {!loading && !error && canvasDiagrams.length === 0 && (
         <div className="diagrams-empty">
           <p className="status-message">
             No diagrams yet. Create the first whiteboard for this project.
@@ -266,7 +274,7 @@ export function ProjectDiagramsPage() {
         </div>
       )}
 
-      {!loading && !error && diagrams.length > 0 && (
+      {!loading && !error && canvasDiagrams.length > 0 && (
         <div className="board-filters diagrams-filters">
           <label className="board-filter-field board-filter-search">
             Search
@@ -289,7 +297,7 @@ export function ProjectDiagramsPage() {
         </div>
       )}
 
-      {!loading && !error && diagrams.length > 0 && visibleDiagrams.length === 0 && (
+      {!loading && !error && canvasDiagrams.length > 0 && visibleDiagrams.length === 0 && (
         <p className="status-message">No diagrams match "{searchQuery}".</p>
       )}
 

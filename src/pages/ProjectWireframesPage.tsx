@@ -318,13 +318,25 @@ export function ProjectWireframesPage() {
 
       {!loading && !error && visibleWireframes.length > 0 && (
         <ul className="diagrams-grid">
-          {visibleWireframes.map((wireframe) => (
-            <li key={wireframe.id} className="diagram-card entity-card">
+          {visibleWireframes.map((wireframe) => {
+            const previewThumb = (
+              diagramsByWireframe.get(wireframe.id) ?? []
+            ).find((diagram) => diagram.thumbnail)?.thumbnail;
+            return (
+              <li key={wireframe.id} className="diagram-card entity-card">
               <Link
                 to={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
                 className="diagram-card-preview-link"
               >
-                <div className="diagram-card-placeholder">Wireframe</div>
+                {previewThumb ? (
+                  <img
+                    src={previewThumb}
+                    alt=""
+                    className="diagram-card-thumbnail"
+                  />
+                ) : (
+                  <div className="diagram-card-placeholder">Wireframe</div>
+                )}
               </Link>
               <div className="diagram-card-body">
                 <h3 className="diagram-card-title">
@@ -369,7 +381,8 @@ export function ProjectWireframesPage() {
                 </div>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 

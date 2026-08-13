@@ -52,12 +52,38 @@ function textWidth(text: string, fontSize: number): number {
   return Math.max(24, Math.ceil(text.length * fontSize * 0.62));
 }
 
+export function isDarkCssColor(color: string): boolean {
+  const rgb = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(color);
+  if (rgb) {
+    const r = Number(rgb[1]) / 255;
+    const g = Number(rgb[2]) / 255;
+    const b = Number(rgb[3]) / 255;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.45;
+  }
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
+  if (!hex) return false;
+  const raw = hex[1];
+  const full =
+    raw.length === 3
+      ? raw
+          .split('')
+          .map((ch) => `${ch}${ch}`)
+          .join('')
+      : raw;
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.45;
+}
+
 export function buildMarkupScene(
   pages: CapturedWireframePage[],
 ): ExcalidrawSceneJson {
   const files: Record<string, unknown> = {};
   const elements: Record<string, unknown>[] = [];
   let y = 0;
+  const canvasBg = pages[0]?.backgroundColor?.trim() || '#ffffff';
+  const darkCanvas = isDarkCssColor(canvasBg);
 
   for (const page of pages) {
     const id = fileId();
@@ -78,6 +104,7 @@ export function buildMarkupScene(
         y,
         width: textWidth(label, LABEL_FONT_SIZE),
         height: labelHeight,
+        strokeColor: darkCanvas ? '#ececf0' : '#1e1e1e',
         text: label,
         originalText: label,
         fontSize: LABEL_FONT_SIZE,
@@ -112,9 +139,9 @@ export function buildMarkupScene(
   return {
     elements,
     appState: {
-      viewBackgroundColor: '#ffffff',
+      viewBackgroundColor: canvasBg,
       gridSize: null,
-      theme: 'light',
+      theme: darkCanvas ? 'dark' : 'light',
     },
     files,
   };
@@ -123,6 +150,7 @@ export function buildMarkupScene(
 export async function buildMarkupThumbnail(
   dataURL: string,
   maxSide = 320,
+  backgroundColor = '#ffffff',
 ): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -137,10 +165,10 @@ export async function buildMarkupThumbnail(
           resolve(null);
           return;
         }
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
       } catch {
         resolve(null);
       }

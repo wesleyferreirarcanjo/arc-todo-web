@@ -243,10 +243,21 @@ export function WireframesHubPage() {
               {visibleItems.map(({ wireframe, org, project, diagrams }) => {
                 const previewPath = `/organizations/${org.id}/projects/${project.id}/wireframes/${wireframe.id}`;
                 const accentColor = getProjectColor(project);
+                const previewThumb = diagrams.find(
+                  (diagram) => diagram.thumbnail,
+                )?.thumbnail;
                 return (
                   <li key={wireframe.id} className="diagram-card entity-card">
                     <Link to={previewPath} className="diagram-card-preview-link">
-                      <div className="diagram-card-placeholder">Wireframe</div>
+                      {previewThumb ? (
+                        <img
+                          src={previewThumb}
+                          alt=""
+                          className="diagram-card-thumbnail"
+                        />
+                      ) : (
+                        <div className="diagram-card-placeholder">Wireframe</div>
+                      )}
                     </Link>
                     <div className="diagram-card-body">
                       <div className="diagram-card-badges">

@@ -11,7 +11,11 @@ export async function createWireframeMarkupDiagram(
   const pages = await captureWireframePages(wireframe.html);
   const sceneJson = buildMarkupScene(pages);
   const thumbnail = pages[0]
-    ? await buildMarkupThumbnail(pages[0].dataURL)
+    ? await buildMarkupThumbnail(
+        pages[0].dataURL,
+        320,
+        pages[0].backgroundColor,
+      )
     : null;
 
   return createProjectDiagram(orgId, projectId, {
