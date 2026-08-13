@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from './ConfirmDialog';
+import { Modal } from './Modal';
 import { ApiError } from '../lib/api/client';
-import { deleteProjectDiagram } from '../lib/api/diagrams';
+import {
+  deleteProjectDiagram,
+  updateProjectDiagram,
+} from '../lib/api/diagrams';
 import { fetchProjectWireframe } from '../lib/api/wireframes';
 import { createWireframeMarkupDiagram } from '../lib/wireframes/createMarkup';
 import type { ProjectDiagramSummary } from '../types/diagram';
@@ -20,6 +24,8 @@ interface WireframeMarkupBlockProps {
   showButton?: boolean;
   showList?: boolean;
 }
+
+type NameMode = 'markup' | 'rename';
 
 export function WireframeMarkupBlock({
   orgId,
@@ -41,22 +47,57 @@ export function WireframeMarkupBlock({
     null,
   );
   const [deleting, setDeleting] = useState(false);
+  const [nameMode, setNameMode] = useState<NameMode | null>(null);
+  const [nameTarget, setNameTarget] = useState<ProjectDiagramSummary | null>(
+    null,
+  );
+  const [nameValue, setNameValue] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   const editorPath = (diagramId: string) =>
     `/organizations/${orgId}/projects/${projectId}/diagrams/${diagramId}`;
 
-  async function handleMarkUp() {
+  function openMarkupName() {
+    setNameMode('markup');
+    setNameTarget(null);
+    setNameValue(`${wireframeTitle} — markup`);
+    setNameError(null);
+    setError(null);
+  }
+
+  function openRename(diagram: ProjectDiagramSummary) {
+    setNameMode('rename');
+    setNameTarget(diagram);
+    setNameValue(diagram.title);
+    setNameError(null);
+    setError(null);
+  }
+
+  function closeNameModal() {
+    if (savingName || capturing) return;
+    setNameMode(null);
+    setNameTarget(null);
+    setNameError(null);
+  }
+
+  async function handleMarkUp(title: string) {
     setCapturing(true);
     setError(null);
     try {
       const sourceHtml =
         html ??
         (await fetchProjectWireframe(orgId, projectId, wireframeId)).html;
-      const created = await createWireframeMarkupDiagram(orgId, projectId, {
-        id: wireframeId,
-        title: wireframeTitle,
-        html: sourceHtml,
-      });
+      const created = await createWireframeMarkupDiagram(
+        orgId,
+        projectId,
+        {
+          id: wireframeId,
+          title: wireframeTitle,
+          html: sourceHtml,
+        },
+        { title },
+      );
       navigate(editorPath(created.id));
     } catch (err) {
       const message =
@@ -68,6 +109,34 @@ export function WireframeMarkupBlock({
       setError(message);
     } finally {
       setCapturing(false);
+    }
+  }
+
+  async function handleConfirmName() {
+    const title = nameValue.trim();
+    if (!title) {
+      setNameError('Enter a name.');
+      return;
+    }
+
+    if (nameMode === 'markup') {
+      setNameMode(null);
+      await handleMarkUp(title);
+      return;
+    }
+
+    if (!nameTarget) return;
+    setSavingName(true);
+    setNameError(null);
+    try {
+      await updateProjectDiagram(orgId, projectId, nameTarget.id, { title });
+      setNameMode(null);
+      setNameTarget(null);
+      onDiagramsChange();
+    } catch {
+      setNameError('Failed to rename markup.');
+    } finally {
+      setSavingName(false);
     }
   }
 
@@ -86,6 +155,8 @@ export function WireframeMarkupBlock({
     }
   }
 
+  const nameBusy = savingName || capturing;
+
   return (
     <div className="wireframe-markup">
       {showButton && (
@@ -94,7 +165,7 @@ export function WireframeMarkupBlock({
             type="button"
             className={markUpClassName}
             disabled={disabled || capturing}
-            onClick={() => void handleMarkUp()}
+            onClick={openMarkupName}
           >
             {capturing ? 'Capturing...' : 'Mark up'}
           </button>
@@ -119,6 +190,13 @@ export function WireframeMarkupBlock({
               </Link>
               <button
                 type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => openRename(diagram)}
+              >
+                Rename
+              </button>
+              <button
+                type="button"
                 className="btn btn-danger btn-sm"
                 onClick={() => setDeleteTarget(diagram)}
               >
@@ -128,6 +206,54 @@ export function WireframeMarkupBlock({
           ))}
         </ul>
       )}
+      <Modal
+        open={Boolean(nameMode)}
+        onClose={closeNameModal}
+        title={nameMode === 'rename' ? 'Rename markup' : 'New markup'}
+        titleId="markup-name-title"
+      >
+        <label className="form-field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={nameValue}
+            onChange={(event) => setNameValue(event.target.value)}
+            placeholder="e.g. Checkout markup"
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void handleConfirmName();
+              }
+            }}
+          />
+        </label>
+        {nameError && <div className="alert alert-error">{nameError}</div>}
+        <div className="knowledge-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={nameBusy}
+            onClick={() => void handleConfirmName()}
+          >
+            {nameMode === 'rename'
+              ? savingName
+                ? 'Saving...'
+                : 'Save'
+              : capturing
+                ? 'Capturing...'
+                : 'Create'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={nameBusy}
+            onClick={closeNameModal}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete markup"

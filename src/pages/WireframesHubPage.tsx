@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { getProjectColor } from '../lib/color/entityColor';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
-import { fetchProjectWireframes } from '../lib/api/wireframes';
+import {
+  createProjectWireframe,
+  deleteProjectWireframe,
+  fetchProjectWireframes,
+  updateProjectWireframe,
+} from '../lib/api/wireframes';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import type { ProjectDiagramSummary } from '../types/diagram';
@@ -70,6 +77,7 @@ function formatBadgeLabel(label: string): string {
 }
 
 export function WireframesHubPage() {
+  const navigate = useNavigate();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [items, setItems] = useState<HubWireframe[]>([]);
@@ -79,6 +87,18 @@ export function WireframesHubPage() {
   const [projectFilter, setProjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<WireframeSort>('updated_desc');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createOrgId, setCreateOrgId] = useState('');
+  const [createProjectId, setCreateProjectId] = useState('');
+  const [newTitle, setNewTitle] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<HubWireframe | null>(null);
+  const [renameTitle, setRenameTitle] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<HubWireframe | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +161,14 @@ export function WireframesHubPage() {
     [projects, orgFilter],
   );
 
+  const createProjectOptions = useMemo(
+    () =>
+      createOrgId
+        ? projects.filter((project) => project.organizationId === createOrgId)
+        : [],
+    [projects, createOrgId],
+  );
+
   const visibleItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filtered = items.filter(({ wireframe, org, project }) => {
@@ -152,37 +180,188 @@ export function WireframesHubPage() {
     return sortHubWireframes(filtered, sort);
   }, [items, orgFilter, projectFilter, searchQuery, sort]);
 
+  const canCreate = organizations.length > 0 && projects.length > 0;
+
   function handleOrgFilterChange(value: string) {
     setOrgFilter(value);
     setProjectFilter('');
   }
 
+  function openCreate() {
+    const defaultOrg =
+      orgFilter || (organizations.length === 1 ? organizations[0].id : '');
+    const projectsForOrg = defaultOrg
+      ? projects.filter((project) => project.organizationId === defaultOrg)
+      : [];
+    const defaultProject =
+      projectFilter &&
+      projectsForOrg.some((project) => project.id === projectFilter)
+        ? projectFilter
+        : projectsForOrg.length === 1
+          ? projectsForOrg[0].id
+          : '';
+    setCreateOrgId(defaultOrg);
+    setCreateProjectId(defaultProject);
+    setNewTitle('');
+    setCreateError(null);
+    setCreateOpen(true);
+  }
+
+  function handleCreateOrgChange(value: string) {
+    setCreateOrgId(value);
+    setCreateProjectId('');
+  }
+
+  async function handleCreate() {
+    const title = newTitle.trim();
+    if (!createOrgId) {
+      setCreateError('Select an organization.');
+      return;
+    }
+    if (!createProjectId) {
+      setCreateError('Select a project.');
+      return;
+    }
+    if (!title) {
+      setCreateError('Enter a wireframe name.');
+      return;
+    }
+
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const created = await createProjectWireframe(
+        createOrgId,
+        createProjectId,
+        { title },
+      );
+      setCreateOpen(false);
+      setNewTitle('');
+      navigate(
+        `/organizations/${createOrgId}/projects/${createProjectId}/wireframes/${created.id}`,
+      );
+    } catch {
+      setCreateError('Failed to create wireframe.');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleRename() {
+    if (!renameTarget) return;
+    const title = renameTitle.trim();
+    if (!title) {
+      setRenameError('Enter a wireframe name.');
+      return;
+    }
+
+    setRenaming(true);
+    setRenameError(null);
+    try {
+      const updated = await updateProjectWireframe(
+        renameTarget.org.id,
+        renameTarget.project.id,
+        renameTarget.wireframe.id,
+        { title },
+      );
+      setItems((prev) =>
+        prev.map((item) =>
+          item.wireframe.id === updated.id
+            ? {
+                ...item,
+                wireframe: {
+                  ...item.wireframe,
+                  title: updated.title,
+                  updatedAt: updated.updatedAt,
+                },
+              }
+            : item,
+        ),
+      );
+      setRenameTarget(null);
+      setRenameTitle('');
+    } catch {
+      setRenameError('Failed to rename wireframe.');
+    } finally {
+      setRenaming(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteProjectWireframe(
+        deleteTarget.org.id,
+        deleteTarget.project.id,
+        deleteTarget.wireframe.id,
+      );
+      setItems((prev) =>
+        prev.filter((item) => item.wireframe.id !== deleteTarget.wireframe.id),
+      );
+      setDeleteTarget(null);
+    } catch {
+      setError('Failed to delete wireframe.');
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="page-shell diagrams-hub-page">
-      <header className="page-header">
-        <h2>Wireframes</h2>
-        <p className="page-subtitle">
-          Browse HTML prototypes across your projects.
-          {!loading && !error && items.length > 0 && (
-            <>
-              {' '}
-              {items.length} wireframe{items.length === 1 ? '' : 's'}.
-            </>
-          )}
-        </p>
+      <header className="page-header page-header-with-actions">
+        <div>
+          <h2>Wireframes</h2>
+          <p className="page-subtitle">
+            Browse HTML prototypes across your projects.
+            {!loading && !error && items.length > 0 && (
+              <>
+                {' '}
+                {items.length} wireframe{items.length === 1 ? '' : 's'}.
+              </>
+            )}
+          </p>
+        </div>
+        {!loading && !error && canCreate && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={openCreate}
+          >
+            New wireframe
+          </button>
+        )}
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
       {!loading && !error && items.length === 0 && (
-        <p className="status-message">
-          No wireframes yet.{' '}
-          <Link to="/organizations" className="text-link">
-            Open a project
-          </Link>{' '}
-          and create the first prototype.
-        </p>
+        <div className="diagrams-empty">
+          <p className="status-message">
+            No wireframes yet.{' '}
+            {canCreate ? (
+              'Create the first prototype.'
+            ) : (
+              <>
+                <Link to="/organizations" className="text-link">
+                  Open a project
+                </Link>{' '}
+                and create the first prototype.
+              </>
+            )}
+          </p>
+          {canCreate && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={openCreate}
+            >
+              New wireframe
+            </button>
+          )}
+        </div>
       )}
 
       {!loading && !error && items.length > 0 && (
@@ -240,14 +419,18 @@ export function WireframesHubPage() {
             <p className="status-message">No wireframes match these filters.</p>
           ) : (
             <ul className="diagrams-grid">
-              {visibleItems.map(({ wireframe, org, project, diagrams }) => {
+              {visibleItems.map((item) => {
+                const { wireframe, org, project, diagrams } = item;
                 const previewPath = `/organizations/${org.id}/projects/${project.id}/wireframes/${wireframe.id}`;
                 const accentColor = getProjectColor(project);
                 const previewThumb = diagrams.find(
                   (diagram) => diagram.thumbnail,
                 )?.thumbnail;
                 return (
-                  <li key={wireframe.id} className="diagram-card entity-card">
+                  <li
+                    key={wireframe.id}
+                    className="diagram-card diagram-card--wireframe entity-card"
+                  >
                     <Link to={previewPath} className="diagram-card-preview-link">
                       {previewThumb ? (
                         <img
@@ -293,23 +476,43 @@ export function WireframesHubPage() {
                           void fetchProjectDiagrams(org.id, project.id).then(
                             (projectDiagrams) => {
                               setItems((prev) =>
-                                prev.map((item) =>
-                                  item.project.id === project.id
+                                prev.map((entry) =>
+                                  entry.project.id === project.id
                                     ? {
-                                        ...item,
+                                        ...entry,
                                         diagrams: projectDiagrams.filter(
                                           (diagram) =>
                                             diagram.wireframeId ===
-                                            item.wireframe.id,
+                                            entry.wireframe.id,
                                         ),
                                       }
-                                    : item,
+                                    : entry,
                                 ),
                               );
                             },
                           );
                         }}
                       />
+                      <div className="diagram-card-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setRenameTarget(item);
+                            setRenameTitle(wireframe.title);
+                            setRenameError(null);
+                          }}
+                        >
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => setDeleteTarget(item)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </li>
                 );
@@ -318,6 +521,131 @@ export function WireframesHubPage() {
           )}
         </>
       )}
+
+      <Modal
+        open={createOpen}
+        onClose={() => (creating ? undefined : setCreateOpen(false))}
+        title="New wireframe"
+        titleId="new-wireframe-title"
+      >
+        <div className="form-field">
+          <span>Organization</span>
+          <Select
+            value={createOrgId}
+            onChange={handleCreateOrgChange}
+            options={[
+              { value: '', label: 'Select organization' },
+              ...organizations.map((org) => ({
+                value: org.id,
+                label: org.name,
+              })),
+            ]}
+          />
+        </div>
+        <div className="form-field">
+          <span>Project</span>
+          <Select
+            value={createProjectId}
+            onChange={setCreateProjectId}
+            disabled={!createOrgId}
+            options={[
+              { value: '', label: 'Select project' },
+              ...createProjectOptions.map((project) => ({
+                value: project.id,
+                label: project.name,
+              })),
+            ]}
+          />
+        </div>
+        <label className="form-field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(event) => setNewTitle(event.target.value)}
+            placeholder="e.g. Checkout flow"
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void handleCreate();
+              }
+            }}
+          />
+        </label>
+        {createError && <div className="alert alert-error">{createError}</div>}
+        <div className="knowledge-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={creating}
+            onClick={() => void handleCreate()}
+          >
+            {creating ? 'Creating...' : 'Create'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={creating}
+            onClick={() => setCreateOpen(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(renameTarget)}
+        onClose={() => (renaming ? undefined : setRenameTarget(null))}
+        title="Rename wireframe"
+        titleId="rename-wireframe-title"
+      >
+        <label className="form-field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={renameTitle}
+            onChange={(event) => setRenameTitle(event.target.value)}
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void handleRename();
+              }
+            }}
+          />
+        </label>
+        {renameError && <div className="alert alert-error">{renameError}</div>}
+        <div className="knowledge-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={renaming}
+            onClick={() => void handleRename()}
+          >
+            {renaming ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={renaming}
+            onClick={() => setRenameTarget(null)}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete wireframe"
+        description={`Delete "${deleteTarget?.wireframe.title ?? 'this wireframe'}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

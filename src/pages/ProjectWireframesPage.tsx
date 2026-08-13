@@ -323,7 +323,7 @@ export function ProjectWireframesPage() {
               diagramsByWireframe.get(wireframe.id) ?? []
             ).find((diagram) => diagram.thumbnail)?.thumbnail;
             return (
-              <li key={wireframe.id} className="diagram-card entity-card">
+              <li key={wireframe.id} className="diagram-card diagram-card--wireframe entity-card">
               <Link
                 to={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
                 className="diagram-card-preview-link"

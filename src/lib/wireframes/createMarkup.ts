@@ -7,19 +7,21 @@ export async function createWireframeMarkupDiagram(
   orgId: string,
   projectId: string,
   wireframe: { id: string; title: string; html: string },
+  options?: { title?: string },
 ): Promise<ProjectDiagram> {
   const pages = await captureWireframePages(wireframe.html);
   const sceneJson = buildMarkupScene(pages);
   const thumbnail = pages[0]
     ? await buildMarkupThumbnail(
         pages[0].dataURL,
-        320,
+        640,
         pages[0].backgroundColor,
       )
     : null;
+  const title = options?.title?.trim() || `${wireframe.title} — markup`;
 
   return createProjectDiagram(orgId, projectId, {
-    title: `${wireframe.title} — markup`,
+    title,
     sceneJson,
     ...(thumbnail ? { thumbnail } : {}),
     wireframeId: wireframe.id,

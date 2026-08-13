@@ -8498,8 +8498,8 @@ section.board-cycle-header {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 1.25rem;
 }
 
 .diagram-card {
@@ -8538,6 +8538,15 @@ section.board-cycle-header {
   object-fit: contain;
   display: block;
   background: var(--bg-surface);
+}
+
+.diagram-card--wireframe .diagram-card-preview-link {
+  aspect-ratio: 4 / 5;
+}
+
+.diagram-card--wireframe .diagram-card-thumbnail {
+  object-fit: cover;
+  object-position: top center;
 }
 
 .diagram-card-placeholder {
@@ -8705,6 +8714,7 @@ section.board-cycle-header {
 .wireframe-markup-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   min-width: 0;
 }
@@ -8739,6 +8749,19 @@ section.board-cycle-header {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.8rem;
+}
+
+.diagram-card--wireframe .wireframe-markup-thumb,
+.diagram-card--wireframe .wireframe-markup-thumb-fallback {
+  width: 56px;
+  height: 40px;
+}
+
+.diagram-card--wireframe .wireframe-markup-title {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .diagram-editor-canvas {
