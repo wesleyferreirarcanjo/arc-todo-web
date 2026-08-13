@@ -140,6 +140,9 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
   grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 100dvh;
   background: var(--bg-page);
   isolation: isolate;
@@ -232,6 +235,16 @@ textarea:focus-visible {
 
 .app-body {
   display: contents;
+}
+
+/* Fixed chrome is still a grid item via display:contents. Keep it in existing
+   tracks so it cannot create an implicit column (document X-scroll). */
+.chat-widget-root,
+.mobile-board-fab,
+.mobile-bottom-app-bar,
+.smart-copy-basket-tray {
+  grid-column: 1 / -1;
+  grid-row: 1;
 }
 
 .sidebar {
@@ -727,6 +740,10 @@ textarea:focus-visible {
   padding: 1.5rem;
   min-height: 100dvh;
   min-width: 0;
+  max-width: 100%;
+  /* Contain page X-overflow on every member route, not only the board.
+     Do not put overflow-x on .app-shell (#arc-190 sticky). */
+  overflow-x: hidden;
 }
 
 .sidebar-field,
@@ -896,6 +913,7 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 1.5rem;
   min-width: 0;
+  max-width: 100%;
 }
 
 .page-header h2 {
@@ -1037,11 +1055,12 @@ textarea:focus-visible {
 
 .board-filter-actions {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
   margin-left: auto;
+  min-width: 0;
 }
 
 .board-column-visibility {
@@ -6306,6 +6325,27 @@ textarea {
   width: 3rem;
 }
 
+.mobile-board-fab-dial.is-nav-list {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  width: min(16.5rem, calc(100vw - 2rem));
+  max-height: calc(
+    100dvh - env(safe-area-inset-bottom, 0px) - var(--mobile-bottom-bar-h) -
+      var(--mobile-fab-gap) - var(--mobile-fab-size) - 1.25rem
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--bg-elevated, var(--bg-surface));
+  box-shadow: var(--shadow-lift, 0 8px 24px rgba(0, 0, 0, 0.18));
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .mobile-board-fab-dial-slot {
   pointer-events: auto;
   transform-origin: bottom center;
@@ -6382,6 +6422,28 @@ textarea {
 
 .mobile-board-fab-dial-item.is-danger {
   color: var(--danger, #dc2626);
+}
+
+.mobile-board-fab-dial-item.is-labeled {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 0.65rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: 0 0.7rem;
+  border-radius: var(--radius-sm, 0.5rem);
+  box-shadow: none;
+}
+
+.mobile-board-fab-dial-label {
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

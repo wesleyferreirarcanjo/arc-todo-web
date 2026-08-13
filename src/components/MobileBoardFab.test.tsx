@@ -68,3 +68,33 @@ describe('MobileBoardFab logout order', () => {
     expect(items[items.length - 1]).not.toHaveAttribute('aria-label', 'Logout');
   });
 });
+
+describe('MobileBoardFab Navigate labels', () => {
+  it('shows All tasks as visible text in the Navigate list', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/board']}>
+        <MobileBoardFab />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Open actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      'Back',
+      'All tasks',
+      'Knowledge',
+      'Diagrams',
+      'People',
+      'Organizations',
+    ]);
+    expect(screen.getByRole('menuitem', { name: 'All tasks' })).toHaveTextContent(
+      'All tasks',
+    );
+    expect(
+      screen.queryByRole('menuitem', { name: 'Users' }),
+    ).not.toBeInTheDocument();
+  });
+});

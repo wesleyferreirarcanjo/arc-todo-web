@@ -148,6 +148,15 @@ function FlaskIcon() {
 function NavigateIcon() {
   return (
     <FabGlyph>
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </FabGlyph>
+  );
+}
+
+function TasksIcon() {
+  return (
+    <FabGlyph>
       <rect x="3" y="3" width="7" height="7" rx="1" />
       <rect x="14" y="3" width="7" height="7" rx="1" />
       <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -236,20 +245,29 @@ type DialAction = {
   onClick: () => void;
 };
 
-function DialActionButton({ action }: { action: DialAction }) {
+function DialActionButton({
+  action,
+  labeled = false,
+}: {
+  action: DialAction;
+  labeled?: boolean;
+}) {
   return (
     <div className="mobile-board-fab-dial-slot">
       <button
         type="button"
         role="menuitem"
-        aria-label={action.label}
+        aria-label={labeled ? undefined : action.label}
         title={action.label}
         className={`mobile-board-fab-dial-item${
           action.danger ? ' is-danger' : ''
-        }`}
+        }${labeled ? ' is-labeled' : ''}`}
         onClick={action.onClick}
       >
         {action.icon}
+        {labeled ? (
+          <span className="mobile-board-fab-dial-label">{action.label}</span>
+        ) : null}
       </button>
     </div>
   );
@@ -437,7 +455,7 @@ export function MobileBoardFab() {
       {
         id: 'nav-board',
         label: 'All tasks',
-        icon: <NavigateIcon />,
+        icon: <TasksIcon />,
         onClick: () => go('/board'),
       },
       {
@@ -575,12 +593,19 @@ export function MobileBoardFab() {
           statusTabs ? ' has-status-tabs' : ''
         }`}
       >
-        <div className="mobile-board-fab-dial" role="menu" aria-label={dialAriaLabel}>
+        <div
+          className={`mobile-board-fab-dial${
+            dialLevel === 'nav' ? ' is-nav-list' : ''
+          }`}
+          role="menu"
+          aria-label={dialAriaLabel}
+        >
           {menuOpen
             ? dialActions.map((action) => (
                 <DialActionButton
                   key={`${dialKey}-${action.id}`}
                   action={action}
+                  labeled={dialLevel === 'nav'}
                 />
               ))
             : null}
