@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -11,8 +10,12 @@ import {
 import type { TaskStatus } from '../../types/todo';
 import { TASK_STATUS_ORDER } from '../tasks/taskStatus';
 import { vibrateSafe } from '../ui/haptics';
+import {
+  COLUMN_DROPPABLE_PREFIX,
+  columnCollisionDetection,
+} from './columnCollisionDetection';
 
-export const COLUMN_DROPPABLE_PREFIX = 'column:';
+export { COLUMN_DROPPABLE_PREFIX };
 
 export function getColumnDroppableId(status: TaskStatus): string {
   return `${COLUMN_DROPPABLE_PREFIX}${status}`;
@@ -112,7 +115,7 @@ export function useTaskBoardDnd({
       activeDragIds,
       overColumnStatus,
       sensors,
-      collisionDetection: closestCorners,
+      collisionDetection: columnCollisionDetection,
       handleDragStart,
       handleDragOver,
       handleDragEnd,
