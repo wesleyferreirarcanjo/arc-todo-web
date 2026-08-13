@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { getProjectColor } from '../lib/color/entityColor';
-import { fetchProjectDiagrams } from '../lib/api/diagrams';
+import {
+  createProjectDiagram,
+  fetchProjectDiagrams,
+} from '../lib/api/diagrams';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import type { ProjectDiagramSummary } from '../types/diagram';
@@ -59,6 +63,7 @@ function formatBadgeLabel(label: string): string {
 }
 
 export function DiagramsHubPage() {
+  const navigate = useNavigate();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [items, setItems] = useState<HubDiagram[]>([]);
@@ -68,6 +73,12 @@ export function DiagramsHubPage() {
   const [projectFilter, setProjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<DiagramSort>('updated_desc');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createOrgId, setCreateOrgId] = useState('');
+  const [createProjectId, setCreateProjectId] = useState('');
+  const [newTitle, setNewTitle] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,37 +145,133 @@ export function DiagramsHubPage() {
     [items],
   );
 
+  const createProjectOptions = useMemo(
+    () =>
+      createOrgId
+        ? projects.filter((project) => project.organizationId === createOrgId)
+        : [],
+    [projects, createOrgId],
+  );
+
+  const canCreate = organizations.length > 0 && projects.length > 0;
+
   function handleOrgFilterChange(value: string) {
     setOrgFilter(value);
     setProjectFilter('');
   }
 
+  function openCreate() {
+    const defaultOrg =
+      orgFilter || (organizations.length === 1 ? organizations[0].id : '');
+    const projectsForOrg = defaultOrg
+      ? projects.filter((project) => project.organizationId === defaultOrg)
+      : [];
+    const defaultProject =
+      projectFilter &&
+      projectsForOrg.some((project) => project.id === projectFilter)
+        ? projectFilter
+        : projectsForOrg.length === 1
+          ? projectsForOrg[0].id
+          : '';
+    setCreateOrgId(defaultOrg);
+    setCreateProjectId(defaultProject);
+    setNewTitle('');
+    setCreateError(null);
+    setCreateOpen(true);
+  }
+
+  function handleCreateOrgChange(value: string) {
+    setCreateOrgId(value);
+    setCreateProjectId('');
+  }
+
+  async function handleCreate() {
+    const title = newTitle.trim();
+    if (!createOrgId) {
+      setCreateError('Select an organization.');
+      return;
+    }
+    if (!createProjectId) {
+      setCreateError('Select a project.');
+      return;
+    }
+    if (!title) {
+      setCreateError('Enter a diagram name.');
+      return;
+    }
+
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const created = await createProjectDiagram(createOrgId, createProjectId, {
+        title,
+      });
+      setCreateOpen(false);
+      setNewTitle('');
+      navigate(
+        `/organizations/${createOrgId}/projects/${createProjectId}/diagrams/${created.id}`,
+      );
+    } catch {
+      setCreateError('Failed to create diagram.');
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div className="page-shell diagrams-hub-page">
-      <header className="page-header">
-        <h2>Diagrams</h2>
-        <p className="page-subtitle">
-          Browse every Excalidraw board across your projects.
-          {!loading && !error && canvasCount > 0 && (
-            <>
-              {' '}
-              {canvasCount} diagram{canvasCount === 1 ? '' : 's'}.
-            </>
-          )}
-        </p>
+      <header className="page-header page-header-with-actions">
+        <div>
+          <h2>Diagrams</h2>
+          <p className="page-subtitle">
+            Browse every Excalidraw board across your projects.
+            {!loading && !error && canvasCount > 0 && (
+              <>
+                {' '}
+                {canvasCount} diagram{canvasCount === 1 ? '' : 's'}.
+              </>
+            )}
+          </p>
+        </div>
+        {!loading && !error && canCreate && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={openCreate}
+          >
+            New diagram
+          </button>
+        )}
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
       {error && <div className="alert alert-error">{error}</div>}
 
       {!loading && !error && canvasCount === 0 && (
-        <p className="status-message">
-          No diagrams yet.{' '}
-          <Link to="/organizations" className="text-link">
-            Open a project
-          </Link>{' '}
-          and create the first whiteboard.
-        </p>
+        <div className="diagrams-empty">
+          <p className="status-message">
+            No diagrams yet.{' '}
+            {canCreate ? (
+              'Create the first whiteboard.'
+            ) : (
+              <>
+                <Link to="/organizations" className="text-link">
+                  Open a project
+                </Link>{' '}
+                and create the first whiteboard.
+              </>
+            )}
+          </p>
+          {canCreate && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={openCreate}
+            >
+              New diagram
+            </button>
+          )}
+        </div>
       )}
 
       {!loading && !error && canvasCount > 0 && (
@@ -264,6 +371,78 @@ export function DiagramsHubPage() {
           )}
         </>
       )}
+
+      <Modal
+        open={createOpen}
+        onClose={() => (creating ? undefined : setCreateOpen(false))}
+        title="New diagram"
+        titleId="new-diagram-hub-title"
+      >
+        <div className="form-field">
+          <span>Organization</span>
+          <Select
+            value={createOrgId}
+            onChange={handleCreateOrgChange}
+            options={[
+              { value: '', label: 'Select organization' },
+              ...organizations.map((org) => ({
+                value: org.id,
+                label: org.name,
+              })),
+            ]}
+          />
+        </div>
+        <div className="form-field">
+          <span>Project</span>
+          <Select
+            value={createProjectId}
+            onChange={setCreateProjectId}
+            disabled={!createOrgId}
+            options={[
+              { value: '', label: 'Select project' },
+              ...createProjectOptions.map((project) => ({
+                value: project.id,
+                label: project.name,
+              })),
+            ]}
+          />
+        </div>
+        <label className="form-field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(event) => setNewTitle(event.target.value)}
+            placeholder="e.g. Architecture"
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void handleCreate();
+              }
+            }}
+          />
+        </label>
+        {createError && <div className="alert alert-error">{createError}</div>}
+        <div className="knowledge-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={creating}
+            onClick={() => void handleCreate()}
+          >
+            {creating ? 'Creating...' : 'Create'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={creating}
+            onClick={() => setCreateOpen(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

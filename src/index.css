@@ -937,6 +937,12 @@ textarea:focus-visible {
   gap: 1rem;
 }
 
+/* Global .btn-primary margin-top is for stacked forms (#arc-266). Header actions must not inherit it. */
+.page-header-with-actions > .btn-primary {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
 .quick-create-trigger {
   margin-top: 0;
   flex-shrink: 0;
@@ -8486,6 +8492,10 @@ section.board-cycle-header {
   align-items: flex-start;
   gap: 1rem;
   padding: 1.5rem 0;
+}
+
+.diagrams-empty .btn-primary {
+  margin-top: 0;
 }
 
 .diagrams-filters,
