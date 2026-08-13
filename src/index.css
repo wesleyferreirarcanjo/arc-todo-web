@@ -4383,7 +4383,7 @@ textarea {
 }
 
 .knowledge-card.is-compact {
-  padding: 0.65rem 0.75rem;
+  padding: 0.65rem 0.75rem 1.75rem;
   gap: 0.45rem;
   min-height: 9.5rem;
 }
@@ -4645,6 +4645,10 @@ textarea {
 
 .knowledge-card.is-compact .knowledge-meta {
   font-size: 0.68rem;
+}
+
+.knowledge-card.is-compact .knowledge-actions {
+  flex-shrink: 0;
   margin-top: auto;
 }
 
@@ -4652,6 +4656,8 @@ textarea {
   width: 100%;
   padding: 0.35rem 0.5rem;
   font-size: 0.75rem;
+  /* .btn-primary form margin must not shove Open into overflow:hidden */
+  margin-top: 0;
 }
 
 .knowledge-card-index-stats {
@@ -4659,7 +4665,6 @@ textarea {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.35rem;
-  margin-top: auto;
 }
 
 .knowledge-card-index-stats-loading {
@@ -4802,7 +4807,6 @@ textarea {
   flex-direction: column;
   gap: 0.75rem;
   flex: 1;
-  min-height: 0;
 }
 
 .knowledge-scope-badge {
@@ -6639,6 +6643,11 @@ textarea {
     padding-bottom: calc(
       2.85rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom, 0px)
     );
+  }
+
+  .knowledge-workspace {
+    /* Last Open buttons can scroll clear of the floating + (bar already cleared on .content-area). */
+    padding-bottom: calc(3.5rem + 0.75rem);
   }
 
   .content-area.is-board-page .task-list-view {
