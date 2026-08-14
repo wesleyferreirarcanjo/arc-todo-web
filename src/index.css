@@ -3249,17 +3249,18 @@ textarea {
   border-color: var(--accent);
 }
 
-.task-card.has-accent {
-  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
-  background: color-mix(
-    in srgb,
-    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),
-    var(--bg-elevated)
-  );
-}
-
 .task-card.has-accent::before {
-  display: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 8rem 7rem at 100% 0%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 70%
+  );
+  opacity: var(--entity-corner-opacity);
 }
 
 .task-card.is-compact {
