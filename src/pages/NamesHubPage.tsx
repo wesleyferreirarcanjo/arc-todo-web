@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
-import { getProjectColor } from '../lib/color/entityColor';
+import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../lib/api/client';
 import {
   createProjectNameSession,
   deleteProjectNameSession,
@@ -11,7 +12,8 @@ import {
   updateProjectNameSession,
 } from '../lib/api/names';
 import { fetchOrganizations } from '../lib/api/organizations';
-import { fetchProjects } from '../lib/api/projects';
+import { createProject, fetchProjects } from '../lib/api/projects';
+import { DEFAULT_PROJECT_COLOR, getProjectColor } from '../lib/color/entityColor';
 import type { ProjectNameSessionSummary } from '../types/name-session';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
@@ -45,6 +47,7 @@ function formatBadgeLabel(label: string): string {
 
 export function NamesHubPage() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [items, setItems] = useState<HubSession[]>([]);
@@ -147,7 +150,9 @@ export function NamesHubPage() {
     return sorted;
   }, [items, orgFilter, projectFilter, searchQuery, sort]);
 
-  const canCreate = organizations.length > 0 && projects.length > 0;
+  const canCreate = isAdmin
+    ? organizations.length > 0
+    : organizations.length > 0 && projects.length > 0;
 
   function openCreate() {
     const defaultOrg =
@@ -163,7 +168,7 @@ export function NamesHubPage() {
           ? projectsForOrg[0].id
           : '';
     setCreateOrgId(defaultOrg);
-    setCreateProjectId(defaultProject);
+    setCreateProjectId(isAdmin ? '' : defaultProject);
     setNewTitle('');
     setCreateError(null);
     setCreateOpen(true);
@@ -175,26 +180,41 @@ export function NamesHubPage() {
       setCreateError('Select an organization.');
       return;
     }
-    if (!createProjectId) {
-      setCreateError('Select a project.');
+    if (!title) {
+      setCreateError('Enter a working name.');
       return;
     }
-    if (!title) {
-      setCreateError('Enter a session name.');
+    if (!isAdmin && !createProjectId) {
+      setCreateError('Select a project.');
       return;
     }
     setCreating(true);
     setCreateError(null);
     try {
-      const created = await createProjectNameSession(createOrgId, createProjectId, {
+      let projectId = createProjectId;
+      if (isAdmin) {
+        const project = await createProject(createOrgId, {
+          name: title,
+          color: DEFAULT_PROJECT_COLOR,
+        });
+        projectId = project.id;
+      }
+      const created = await createProjectNameSession(createOrgId, projectId, {
         title,
+        brief: title,
       });
       setCreateOpen(false);
       navigate(
-        `/organizations/${createOrgId}/projects/${createProjectId}/names/${created.id}`,
+        `/organizations/${createOrgId}/projects/${projectId}/names/${created.id}`,
       );
-    } catch {
-      setCreateError('Failed to create name session.');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setCreateError(
+          'Creating a new product workspace is admin-only. Open a project you already belong to to start a session there.',
+        );
+      } else {
+        setCreateError('Failed to create naming workspace.');
+      }
     } finally {
       setCreating(false);
     }
@@ -265,7 +285,7 @@ export function NamesHubPage() {
         <div>
           <h2>Names</h2>
           <p className="page-subtitle">
-            Test product names with DNS, Google, and team evidence.
+            Start with a temporary working name, then test DNS, Google, and team evidence.
             {!loading && !error && items.length > 0 && (
               <>
                 {' '}
@@ -288,14 +308,15 @@ export function NamesHubPage() {
         <div className="diagrams-empty">
           <p className="status-message">
             {canCreate ? (
-              'No name sessions yet. Create the first one for a project you can access.'
+              'No name sessions yet. Start with a temporary working name like project-g.'
             ) : (
               <>
-                Join a project, then{' '}
+                Join an organization, then start with a working name like project-g
+                — or{' '}
                 <Link to="/organizations" className="text-link">
-                  Open a project
+                  open a project
                 </Link>{' '}
-                to start naming.
+                you already belong to.
               </>
             )}
           </p>
@@ -441,28 +462,30 @@ export function NamesHubPage() {
             ]}
           />
         </div>
-        <div className="form-field">
-          <span>Project</span>
-          <Select
-            value={createProjectId}
-            onChange={setCreateProjectId}
-            disabled={!createOrgId}
-            options={[
-              { value: '', label: 'Select project' },
-              ...createProjectOptions.map((project) => ({
-                value: project.id,
-                label: project.name,
-              })),
-            ]}
-          />
-        </div>
+        {!isAdmin && (
+          <div className="form-field">
+            <span>Project</span>
+            <Select
+              value={createProjectId}
+              onChange={setCreateProjectId}
+              disabled={!createOrgId}
+              options={[
+                { value: '', label: 'Select project' },
+                ...createProjectOptions.map((project) => ({
+                  value: project.id,
+                  label: project.name,
+                })),
+              ]}
+            />
+          </div>
+        )}
         <label className="form-field">
-          <span>Name</span>
+          <span>Working name</span>
           <input
             type="text"
             value={newTitle}
             onChange={(event) => setNewTitle(event.target.value)}
-            placeholder="e.g. Teste de nomes"
+            placeholder="e.g. project-g"
             autoFocus
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
@@ -472,6 +495,11 @@ export function NamesHubPage() {
             }}
           />
         </label>
+        <p className="page-subtitle">
+          {isAdmin
+            ? 'A throwaway name until you pick a real one. This also creates a project with the same name.'
+            : 'A throwaway name until you pick a real one. Stored on the selected project.'}
+        </p>
         {createError && <div className="alert alert-error">{createError}</div>}
         <div className="knowledge-actions">
           <button

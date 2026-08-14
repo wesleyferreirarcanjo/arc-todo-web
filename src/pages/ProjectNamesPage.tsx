@@ -267,6 +267,7 @@ export function ProjectNamesPage() {
             type="text"
             value={newTitle}
             onChange={(event) => setNewTitle(event.target.value)}
+            placeholder="e.g. project-g"
             autoFocus
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
