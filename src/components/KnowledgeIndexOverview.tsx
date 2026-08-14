@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useAuth } from '../context/AuthContext';
 import {
   fetchRagChunkAggregate,
   fetchRagIndexStatus,
@@ -49,6 +50,7 @@ export function KnowledgeIndexOverview({
   projectId,
   mimeType,
 }: KnowledgeIndexOverviewProps) {
+  const { isAdmin } = useAuth();
   const [aggregate, setAggregate] = useState<RagChunkAggregate | null>(null);
   const [indexStatus, setIndexStatus] = useState<RagIndexStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,6 +68,7 @@ export function KnowledgeIndexOverview({
 
   const loadOverview = useCallback(
     async (options: { silent?: boolean } = {}) => {
+      if (!isAdmin) return;
       if (options.silent) {
         setRefreshing(true);
       } else {
@@ -87,7 +90,7 @@ export function KnowledgeIndexOverview({
         setRefreshing(false);
       }
     },
-    [organizationId, mimeType, projectId, scope],
+    [isAdmin, organizationId, mimeType, projectId, scope],
   );
 
   useEffect(() => {
@@ -124,6 +127,10 @@ export function KnowledgeIndexOverview({
   const status = overallStatusLabel(aggregate, indexStatus);
   const totalChunks = aggregate?.totalChunks ?? indexStatus?.totalChunks ?? 0;
   const totalTokens = aggregate?.totalTokens ?? 0;
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <section className="notice-card knowledge-index-overview">
