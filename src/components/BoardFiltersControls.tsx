@@ -174,19 +174,23 @@ export function BoardFiltersControls({
       ) : null}
 
       <div className="board-filter-actions">
-        <BoardColumnVisibilityMenu
-          hiddenColumns={hiddenColumns}
-          onChange={onHiddenColumnsChange}
-        />
-        <BoardViewToggle viewMode={viewMode} onChange={onViewModeChange} />
-        <TaskImportExportMenu
-          tasks={tasks}
-          query={query}
-          onImported={onImported}
-        />
-        {showQuickCreate ? (
-          <QuickTaskCreate onCreated={onCreated} />
-        ) : null}
+        <div className="board-filter-viz">
+          <BoardViewToggle viewMode={viewMode} onChange={onViewModeChange} />
+        </div>
+        <div className="board-filter-cta">
+          <BoardColumnVisibilityMenu
+            hiddenColumns={hiddenColumns}
+            onChange={onHiddenColumnsChange}
+          />
+          <TaskImportExportMenu
+            tasks={tasks}
+            query={query}
+            onImported={onImported}
+          />
+          {showQuickCreate ? (
+            <QuickTaskCreate onCreated={onCreated} />
+          ) : null}
+        </div>
       </div>
     </>
   );

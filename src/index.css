@@ -68,6 +68,8 @@
   --radius-xl: 28px;
   --radius-blob: 28px 8px 28px 8px;
   --radius-blob-alt: 8px 28px 8px 28px;
+  --radius-control: 16px 6px 16px 6px;
+  --radius-control-alt: 6px 16px 6px 16px;
   --radius-pill: 999px;
   --button-height: 2.65rem;
   --button-height-sm: 2.15rem;
@@ -297,7 +299,6 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 0.75rem;
   overflow: hidden;
-  backdrop-filter: blur(12px);
   transition: width var(--transition-base), padding var(--transition-base);
 }
 
@@ -805,7 +806,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 0.65rem;
   padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-blob-alt);
+  border-radius: var(--radius-md);
   color: var(--text-primary);
   text-decoration: none;
   font-size: var(--type-body);
@@ -1021,7 +1022,7 @@ textarea:focus-visible {
   flex-direction: column;
   background: var(--bg-surface);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lift);
   overflow: hidden;
 }
@@ -1112,7 +1113,7 @@ textarea:focus-visible {
   padding: 1rem 1.25rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
 }
 
@@ -1120,10 +1121,18 @@ textarea:focus-visible {
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1.25rem;
   align-items: center;
   margin-left: auto;
   min-width: 0;
+}
+
+.board-filter-viz,
+.board-filter-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .board-column-visibility {
@@ -1330,7 +1339,6 @@ textarea:focus-visible {
   z-index: 2;
   border-bottom: 1px solid var(--border-strong);
   background: color-mix(in srgb, var(--bg-elevated) 92%, var(--bg-surface));
-  backdrop-filter: blur(8px);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.07em;
@@ -1731,19 +1739,9 @@ textarea:focus-visible {
   border-radius: var(--radius-blob);
   padding: 1.15rem 1.35rem;
   cursor: pointer;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base),
-    transform var(--transition-base);
-}
-
-.entity-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent);
-  pointer-events: none;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .entity-card.project-card {
@@ -1795,7 +1793,7 @@ textarea:focus-visible {
 
 .entity-card.management-card.has-accent {
   overflow: visible;
-  box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
+  box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .entity-card.management-card.has-accent:hover,
@@ -1806,10 +1804,15 @@ textarea:focus-visible {
 }
 
 .entity-card.management-card.has-accent:hover {
-  box-shadow: var(--shadow-lift), var(--entity-corner-glow), var(--entity-rail-glow);
+  box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .entity-card.management-card.has-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
   background: radial-gradient(
     ellipse 13rem 11rem at 100% 0%,
     var(--entity-accent, var(--accent-secondary)),
@@ -1820,8 +1823,7 @@ textarea:focus-visible {
 
 .entity-card:hover {
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-lift);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .project-color-edit {
@@ -2020,8 +2022,8 @@ textarea:focus-visible {
 .people-state-card {
   padding: 1.25rem 1.35rem;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-blob);
-  background: color-mix(in srgb, var(--bg-surface) 85%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -2080,7 +2082,7 @@ textarea:focus-visible {
   width: 2.6rem;
   height: 2.6rem;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-  border-radius: var(--radius-blob-alt);
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
   color: var(--text-primary);
   font-size: 1.15rem;
@@ -2180,8 +2182,8 @@ textarea:focus-visible {
 .organizations-state-card {
   padding: 1.25rem 1.35rem;
   border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-blob);
-  background: color-mix(in srgb, var(--bg-surface) 85%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -2344,10 +2346,9 @@ textarea:focus-visible {
   max-width: 560px;
   background: var(--bg-surface);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   padding: 1.75rem;
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lift);
 }
 
 .login-card h1 {
@@ -2385,7 +2386,7 @@ select,
 textarea {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   padding: 0.7rem 1rem;
   background: var(--bg-elevated);
   color: var(--text-primary);
@@ -2443,7 +2444,8 @@ textarea:focus {
 
 textarea {
   resize: vertical;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-control);
+}
 }
 
 .checkbox-field {
@@ -2591,7 +2593,7 @@ textarea {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   padding: 0.35rem;
   background: var(--bg-elevated);
   cursor: pointer;
@@ -2611,7 +2613,7 @@ textarea {
 .file-input-button {
   flex-shrink: 0;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   min-height: var(--button-height-sm);
   padding: 0.45rem 0.85rem;
   background: color-mix(in srgb, var(--bg-surface) 86%, var(--accent) 14%);
@@ -2667,7 +2669,7 @@ textarea {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   padding: 0.65rem 0.9rem 0.65rem 1rem;
   background: var(--bg-elevated);
   color: var(--text-primary);
@@ -2730,9 +2732,8 @@ textarea {
   list-style: none;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   box-shadow: var(--shadow-lift);
-  backdrop-filter: blur(16px);
   overflow-y: auto;
 }
 
@@ -2769,7 +2770,7 @@ textarea {
   gap: 0.45rem;
   min-height: var(--button-height);
   border: 1px solid transparent;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   padding: 0.68rem 1.18rem;
   color: var(--text-primary);
   cursor: pointer;
@@ -2786,7 +2787,8 @@ textarea {
 }
 
 .btn:focus-visible {
-  border-color: var(--accent);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .btn:disabled {
@@ -2796,22 +2798,30 @@ textarea {
   box-shadow: none;
 }
 
+.btn[aria-busy='true']:disabled {
+  opacity: 0.78;
+  cursor: wait;
+}
+
 .btn-primary {
   background: var(--gradient-accent);
   color: var(--accent-contrast);
   border-color: color-mix(in srgb, var(--accent) 54%, transparent);
   margin-top: 1.25rem;
-  box-shadow: var(--shadow-soft), inset 0 1px 0 color-mix(in srgb, white 16%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 
 .btn-primary:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--accent-secondary) 72%, transparent);
-  box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
-  transform: translateY(-1px);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 88%, white) 0%,
+    color-mix(in srgb, var(--accent-secondary) 88%, white) 100%
+  );
+  box-shadow: var(--shadow-card);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0);
   box-shadow: var(--shadow-soft);
 }
 
@@ -2819,36 +2829,31 @@ textarea {
   background: color-mix(in srgb, var(--bg-elevated) 88%, var(--accent) 12%);
   color: var(--text-primary);
   border: 1px solid var(--border-strong);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
 }
 
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
   box-shadow: var(--shadow-soft);
-  transform: translateY(-1px);
 }
 
 .btn-secondary:active:not(:disabled) {
-  transform: translateY(0);
   box-shadow: none;
 }
 
 .btn-danger {
   background: var(--danger-bg);
   color: var(--danger-text);
-  border-color: color-mix(in srgb, var(--danger-text) 42%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--danger-text) 42%, var(--border));
 }
 
 .btn-danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger-bg) 72%, var(--danger-text) 28%);
   border-color: color-mix(in srgb, var(--danger-text) 64%, var(--border));
   box-shadow: var(--shadow-soft);
-  transform: translateY(-1px);
 }
 
 .btn-danger:active:not(:disabled) {
-  transform: translateY(0);
   box-shadow: none;
 }
 
@@ -2916,24 +2921,6 @@ textarea {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-.btn-danger {
-  background: var(--danger-bg);
-  color: var(--danger-text);
-  border: 1px solid color-mix(in srgb, var(--danger-text) 35%, transparent);
-}
-
-.btn-danger:hover:not(:disabled) {
-  border-color: var(--danger-text);
-  background: color-mix(in srgb, var(--danger-bg) 82%, var(--danger-text) 18%);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-text) 18%, transparent);
-  transform: translateY(-1px);
-}
-
-.btn-danger:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: none;
 }
 
 .alert {
@@ -3294,16 +3281,6 @@ textarea {
   flex-direction: column;
 }
 
-.task-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid transparent;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent) border-box;
-  pointer-events: none;
-}
-
 .task-card:hover,
 .task-card.has-menu-open,
 .task-card:focus-within {
@@ -3312,6 +3289,7 @@ textarea {
 
 .task-card:hover {
   border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
 }
 
 .task-card:active {
@@ -3331,6 +3309,12 @@ textarea {
 
 .task-card.has-accent {
   box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
+.task-card.has-accent:hover,
+.task-card.has-accent.has-menu-open,
+.task-card.has-accent:focus-within {
+  box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .task-card-overlay.has-accent {
@@ -5393,7 +5377,6 @@ textarea {
   border-radius: var(--radius-lg);
   background: var(--bg-surface);
   box-shadow: var(--shadow-lift);
-  backdrop-filter: blur(16px);
   overflow: hidden;
 }
 
@@ -5637,8 +5620,7 @@ textarea {
   padding: 0.75rem 0.9rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--bg-elevated);
   box-shadow: var(--shadow-soft);
 }
 
@@ -6009,10 +5991,9 @@ textarea {
   max-width: 36rem;
   padding: 1.25rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(16px);
 }
 
 .settings-form-card-wide {
@@ -6041,7 +6022,7 @@ textarea {
   gap: 1.25rem;
   padding: 1.25rem 1.25rem 1.45rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   background: var(--bg-elevated);
 }
 
@@ -6085,7 +6066,7 @@ textarea {
   min-height: 100%;
   padding: 1rem 1rem 1.15rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-blob-alt);
+  border-radius: var(--radius-md);
   background: var(--surface);
   white-space: normal;
 }
@@ -6202,7 +6183,7 @@ textarea {
   position: relative;
   margin-bottom: 0;
   border-color: var(--border);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -6210,12 +6191,7 @@ textarea {
 
 .rag-chunks-page .notice-card::before,
 .rag-chunks-page .settings-form-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 48%);
-  pointer-events: none;
+  display: none;
 }
 
 .rag-chunks-page .settings-form-card {
@@ -6247,7 +6223,7 @@ textarea {
 }
 
 .rag-chunks-page .notice-card:not(.rag-index-status-card) {
-  border-radius: var(--radius-blob-alt);
+  border-radius: var(--radius-lg);
 }
 
 @media (max-width: 1023px) {
@@ -7427,18 +7403,16 @@ textarea {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
-  border-radius: var(--radius-blob-alt);
+  border-radius: var(--radius-lg);
   padding: 1.15rem 1.25rem 1.1rem;
   background: var(--bg-elevated);
   box-shadow: var(--shadow-soft);
-  transition: border-color var(--transition-base), box-shadow var(--transition-base),
-    transform var(--transition-base);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .rag-chunk-card:hover {
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-lift);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
 }
 
 .rag-chunk-display-id {
@@ -7597,7 +7571,7 @@ textarea {
   position: relative;
   margin-bottom: 0;
   border-color: var(--border);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -7605,12 +7579,7 @@ textarea {
 
 .rag-testing-page .notice-card::before,
 .rag-testing-page .settings-form-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 48%);
-  pointer-events: none;
+  display: none;
 }
 
 .rag-testing-page .notice-card > *,
@@ -7712,7 +7681,7 @@ textarea {
   position: relative;
   margin-bottom: 0;
   border-color: var(--border);
-  border-radius: var(--radius-blob);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -7720,12 +7689,7 @@ textarea {
 
 .chatbot-testing-page .notice-card::before,
 .chatbot-testing-page .settings-form-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 48%);
-  pointer-events: none;
+  display: none;
 }
 
 .chatbot-testing-page .notice-card > *,
@@ -8374,8 +8338,7 @@ section.board-cycle-header {
   z-index: 1;
   padding: 0.55rem 0.75rem;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--bg-surface);
   color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 700;
@@ -8750,8 +8713,7 @@ section.board-cycle-header {
   overflow: hidden;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .diagram-card.has-accent {
@@ -8765,8 +8727,7 @@ section.board-cycle-header {
 
 .diagram-card:hover {
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-lift);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .diagram-card-preview-link {

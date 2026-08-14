@@ -37,6 +37,7 @@ export function ConfirmDialog({
           type="button"
           className={`btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
           disabled={loading}
+          aria-busy={loading}
           onClick={onConfirm}
         >
           {loading ? 'Working...' : confirmLabel}
