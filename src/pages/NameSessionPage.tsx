@@ -33,6 +33,8 @@ import {
   buildDescriptionPrompt,
   canvasHasProduct,
   generateFamiliesPrompt,
+  hasAdditionalCanvasContext,
+  hasGeneratedCanvasCopy,
   languagePrompt,
   messagingPrompt,
   parseJsonBlock,
@@ -62,6 +64,34 @@ const SECTIONS = [
   'feedback',
 ] as const;
 
+const DESCRIPTION_CONTEXT_GROUPS = [
+  {
+    title: 'Audience and value',
+    fields: [
+      ['problem', 'Problem it solves'],
+      ['audience', 'Primary audience'],
+      ['benefits', 'Core benefits'],
+      ['personality', 'Brand personality'],
+    ],
+  },
+  {
+    title: 'Practical constraints',
+    fields: [
+      ['platform', 'Main platform or channel'],
+      ['countries', 'Target countries'],
+      ['languages', 'Languages'],
+      ['competitors', 'Competitors or names to avoid'],
+      ['includeWords', 'Words to include'],
+      ['excludeWords', 'Words to exclude'],
+      ['preferredTlds', 'Preferred domain endings'],
+      ['preferredLength', 'Preferred name length'],
+    ],
+  },
+] as const satisfies readonly {
+  title: string;
+  fields: readonly (readonly [keyof ProductDescription, string])[];
+}[];
+
 function availabilityLabel(value: string | undefined): string {
   if (value === 'available') return 'Available';
   if (value === 'taken') return 'Taken';
@@ -88,6 +118,8 @@ export function NameSessionPage() {
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [section, setSection] = useState<(typeof SECTIONS)[number]>('description');
+  const [moreContextOpen, setMoreContextOpen] = useState(false);
+  const [generatedCopyOpen, setGeneratedCopyOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [typedName, setTypedName] = useState('');
@@ -124,6 +156,8 @@ export function NameSessionPage() {
     try {
       const data = await fetchProjectNameSession(orgId, projectId, sessionId);
       setSession(data);
+      setMoreContextOpen(hasAdditionalCanvasContext(data.productDescription));
+      setGeneratedCopyOpen(hasGeneratedCanvasCopy(data.productDescription));
     } catch (err) {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
@@ -208,6 +242,7 @@ export function NameSessionPage() {
         full: parsed?.full ?? desc.full,
       };
       await patch({ productDescription: next });
+      setGeneratedCopyOpen(true);
     } catch (err) {
       setNotice(err instanceof ChatApiError ? err.message : 'Build description failed.');
     } finally {
@@ -471,43 +506,45 @@ export function NameSessionPage() {
           </nav>
 
           {section === 'description' && (
-            <section className="names-panel">
-              <h3>Product description</h3>
-              <label className="form-field">
-                <span>Product to name</span>
-                <input
-                  value={session.brief}
-                  onChange={(event) =>
-                    setSession({ ...session, brief: event.target.value })
-                  }
-                />
-              </label>
-              {(
-                [
-                  ['whatItIs', 'What the product is'],
-                  ['problem', 'Problem it solves'],
-                  ['audience', 'Primary audience'],
-                  ['platform', 'Main platform/channel'],
-                  ['benefits', 'Core benefits'],
-                  ['personality', 'Brand personality'],
-                  ['countries', 'Target countries'],
-                  ['languages', 'Languages'],
-                  ['competitors', 'Competitors or names to avoid'],
-                  ['includeWords', 'Words to include'],
-                  ['excludeWords', 'Words to exclude'],
-                  ['preferredTlds', 'Preferred domain endings'],
-                  ['preferredLength', 'Preferred name length'],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} className="form-field">
-                  <span>{label}</span>
-                  <textarea
-                    rows={key === 'whatItIs' || key === 'benefits' ? 3 : 2}
-                    value={desc[key] ?? ''}
-                    onChange={(event) => setDesc(key, event.target.value)}
+            <section className="names-panel names-description-panel">
+              <div className="names-description-intro">
+                <div>
+                  <p className="names-description-kicker">Start here</p>
+                  <h3>Tell us what you’re naming</h3>
+                  <p>
+                    Two quick answers are enough. You can add detail only when it helps.
+                  </p>
+                </div>
+                <span className="names-description-time">About 1 minute</span>
+              </div>
+              <div className="names-description-essentials">
+                <label className="form-field">
+                  <span>What are you naming?</span>
+                  <input
+                    value={session.brief}
+                    placeholder="A product, company, feature, or codename"
+                    onChange={(event) =>
+                      setSession({ ...session, brief: event.target.value })
+                    }
                   />
                 </label>
-              ))}
+                <label className="form-field">
+                  <span>
+                    Describe it in one sentence
+                    <small>Needed for suggestions</small>
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={desc.whatItIs ?? ''}
+                    placeholder="What does it help people do?"
+                    onChange={(event) => setDesc('whatItIs', event.target.value)}
+                  />
+                </label>
+                <p className="names-description-helper">
+                  That’s enough to begin. Save a draft now, or add context for more focused
+                  name ideas.
+                </p>
+              </div>
               <div className="knowledge-actions">
                 <button
                   type="button"
@@ -526,29 +563,78 @@ export function NameSessionPage() {
                   Build description
                 </button>
               </div>
-              <label className="form-field">
-                <span>One-line</span>
-                <input
-                  value={desc.oneLine ?? ''}
-                  onChange={(event) => setDesc('oneLine', event.target.value)}
-                />
-              </label>
-              <label className="form-field">
-                <span>Short</span>
-                <textarea
-                  rows={2}
-                  value={desc.short ?? ''}
-                  onChange={(event) => setDesc('short', event.target.value)}
-                />
-              </label>
-              <label className="form-field">
-                <span>Full</span>
-                <textarea
-                  rows={4}
-                  value={desc.full ?? ''}
-                  onChange={(event) => setDesc('full', event.target.value)}
-                />
-              </label>
+              <details
+                className="names-description-details"
+                open={moreContextOpen}
+                onToggle={(event) => setMoreContextOpen(event.currentTarget.open)}
+              >
+                <summary>
+                  <span>
+                    <strong>Add helpful context</strong>
+                    <small>Audience, benefits, language, and naming constraints</small>
+                  </span>
+                  <span className="names-description-summary-meta">Optional</span>
+                </summary>
+                <div className="names-description-details-body">
+                  {DESCRIPTION_CONTEXT_GROUPS.map((group) => (
+                    <div key={group.title} className="names-description-context-group">
+                      <h4>{group.title}</h4>
+                      <div className="names-description-context-grid">
+                        {group.fields.map(([key, label]) => (
+                          <label key={key} className="form-field">
+                            <span>{label}</span>
+                            <textarea
+                              rows={key === 'benefits' ? 3 : 2}
+                              value={desc[key] ?? ''}
+                              onChange={(event) => setDesc(key, event.target.value)}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+              <details
+                className="names-description-details"
+                open={generatedCopyOpen}
+                onToggle={(event) => setGeneratedCopyOpen(event.currentTarget.open)}
+              >
+                <summary>
+                  <span>
+                    <strong>Review generated description</strong>
+                    <small>Editable one-line, short, and full versions</small>
+                  </span>
+                  <span className="names-description-summary-meta">
+                    {hasGeneratedCanvasCopy(desc) ? 'Ready' : 'Optional'}
+                  </span>
+                </summary>
+                <div className="names-description-details-body">
+                  <label className="form-field">
+                    <span>One-line</span>
+                    <input
+                      value={desc.oneLine ?? ''}
+                      onChange={(event) => setDesc('oneLine', event.target.value)}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>Short</span>
+                    <textarea
+                      rows={2}
+                      value={desc.short ?? ''}
+                      onChange={(event) => setDesc('short', event.target.value)}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>Full</span>
+                    <textarea
+                      rows={4}
+                      value={desc.full ?? ''}
+                      onChange={(event) => setDesc('full', event.target.value)}
+                    />
+                  </label>
+                </div>
+              </details>
             </section>
           )}
 

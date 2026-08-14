@@ -1,7 +1,40 @@
 import type { ProductDescription } from '../../types/name-session';
 
+const ADDITIONAL_CONTEXT_FIELDS = [
+  'problem',
+  'audience',
+  'platform',
+  'benefits',
+  'personality',
+  'countries',
+  'languages',
+  'competitors',
+  'includeWords',
+  'excludeWords',
+  'preferredTlds',
+  'preferredLength',
+] as const satisfies readonly (keyof ProductDescription)[];
+
+const GENERATED_DESCRIPTION_FIELDS = [
+  'oneLine',
+  'short',
+  'full',
+] as const satisfies readonly (keyof ProductDescription)[];
+
 export function canvasHasProduct(desc: ProductDescription | undefined): boolean {
   return Boolean(desc?.whatItIs?.trim());
+}
+
+export function hasAdditionalCanvasContext(
+  desc: ProductDescription | undefined,
+): boolean {
+  return ADDITIONAL_CONTEXT_FIELDS.some((field) => Boolean(desc?.[field]?.trim()));
+}
+
+export function hasGeneratedCanvasCopy(
+  desc: ProductDescription | undefined,
+): boolean {
+  return GENERATED_DESCRIPTION_FIELDS.some((field) => Boolean(desc?.[field]?.trim()));
 }
 
 export function formatCanvas(desc: ProductDescription | undefined): string {
