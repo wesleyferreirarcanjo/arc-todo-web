@@ -7,33 +7,41 @@
   line-height: 1.55;
   font-weight: 400;
 
-  --bg-page: #0c0c10;
-  --bg-shell: rgba(16, 16, 22, 0.94);
-  --bg-surface: rgba(22, 22, 30, 0.82);
-  --bg-elevated: rgba(32, 32, 42, 0.9);
-  --text-primary: #ececf0;
-  --text-muted: #9494a8;
-  --border: rgba(120, 120, 140, 0.18);
-  --border-strong: rgba(150, 150, 170, 0.32);
-  --accent: #6b8fa8;
-  --accent-secondary: #8778a3;
-  --accent-tertiary: #a07d8c;
-  --accent-contrast: #f5f5f7;
-  --danger-bg: rgba(160, 90, 105, 0.14);
-  --danger-text: #d4a0ab;
-  --link: #8baec4;
-  --shadow: rgba(0, 0, 0, 0.35);
-  --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.28);
-  --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(120, 120, 140, 0.1);
+  --bg-page: #100e0c;
+  --bg-shell: #1b1714;
+  --bg-surface: #27221e;
+  --bg-elevated: #342e29;
+  --text-primary: #f3eee6;
+  --text-muted: #b3a89c;
+  --text: var(--text-primary);
+  --text-secondary: var(--text-muted);
+  --border: rgba(180, 160, 140, 0.16);
+  --border-strong: rgba(190, 170, 150, 0.32);
+  --border-subtle: var(--border);
+  --accent: #c4965c;
+  --accent-secondary: #a67c58;
+  --accent-tertiary: #8f6550;
+  --accent-contrast: #1a140e;
+  --danger-bg: rgba(176, 82, 78, 0.16);
+  --danger-text: #e0a098;
+  --danger: var(--danger-text);
+  --link: #d4b896;
+  --surface-muted: color-mix(in srgb, var(--bg-elevated) 78%, var(--bg-page));
+  --entity-rail-width: 6px;
+  --entity-mix-fill: 14%;
+  --entity-mix-badge: 26%;
+  --entity-mix-header: 22%;
+  --shadow: rgba(12, 8, 6, 0.42);
+  --shadow-soft: 0 4px 18px rgba(12, 8, 6, 0.32);
+  --shadow-card: 0 8px 28px rgba(12, 8, 6, 0.36), 0 0 0 1px rgba(180, 160, 140, 0.1);
   --shadow-neon: var(--shadow-card);
-  --shadow-lift: 0 12px 32px rgba(0, 0, 0, 0.35);
-  --ring: rgba(107, 143, 168, 0.38);
-  --ring-strong: rgba(135, 120, 163, 0.32);
-  --drop-glow: 0 0 0 2px rgba(107, 143, 168, 0.2);
-  --gradient-page: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(135, 120, 163, 0.05), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(107, 143, 168, 0.04), transparent 50%);
-  --gradient-accent: linear-gradient(135deg, #6b8fa8 0%, #8778a3 100%);
-  --gradient-header: linear-gradient(90deg, rgba(107, 143, 168, 0.28), rgba(135, 120, 163, 0.22));
+  --shadow-lift: 0 12px 32px rgba(12, 8, 6, 0.4);
+  --ring: rgba(196, 150, 92, 0.4);
+  --ring-strong: rgba(166, 124, 88, 0.34);
+  --drop-glow: 0 0 0 2px rgba(196, 150, 92, 0.22);
+  --gradient-page: radial-gradient(ellipse 70% 42% at 12% -8%, rgba(196, 150, 92, 0.03), transparent 55%);
+  --gradient-accent: linear-gradient(135deg, #c4965c 0%, #b88955 100%);
+  --gradient-header: linear-gradient(90deg, rgba(196, 150, 92, 0.22), rgba(166, 124, 88, 0.12));
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 22px;
@@ -49,55 +57,58 @@
   --board-column-min-width: 280px;
   --transition-fast: 0.15s ease;
   --transition-base: 0.22s ease;
-  --criticity-low-bg: rgba(107, 143, 168, 0.14);
-  --criticity-low-text: #a8c4d4;
-  --criticity-medium-bg: rgba(163, 139, 106, 0.16);
+  --criticity-low-bg: rgba(166, 148, 110, 0.16);
+  --criticity-low-text: #c4b896;
+  --criticity-medium-bg: rgba(176, 132, 72, 0.16);
   --criticity-medium-text: #d4b896;
-  --criticity-high-bg: rgba(154, 146, 104, 0.16);
+  --criticity-high-bg: rgba(176, 158, 88, 0.16);
   --criticity-high-text: #d4cfa0;
-  --criticity-critical-bg: rgba(160, 90, 105, 0.18);
-  --criticity-critical-text: #d4a0ab;
+  --criticity-critical-bg: rgba(176, 82, 78, 0.18);
+  --criticity-critical-text: #e0a098;
 
   color: var(--text-primary);
   background: var(--bg-page);
 }
 
 [data-theme='light'] {
-  --bg-page: #f3f3f6;
-  --bg-shell: rgba(255, 255, 255, 0.94);
-  --bg-surface: rgba(255, 255, 255, 0.9);
-  --bg-elevated: rgba(244, 244, 248, 0.96);
-  --text-primary: #18181f;
-  --text-muted: #646472;
-  --border: rgba(100, 100, 120, 0.16);
-  --border-strong: rgba(90, 90, 110, 0.28);
-  --accent: #5a7f96;
-  --accent-secondary: #756a8f;
-  --accent-tertiary: #8f6f7c;
-  --accent-contrast: #ffffff;
-  --danger-bg: rgba(160, 90, 105, 0.1);
-  --danger-text: #8f4f5d;
-  --link: #5a7f96;
-  --shadow: rgba(60, 60, 80, 0.1);
-  --shadow-soft: 0 4px 16px rgba(60, 60, 80, 0.08);
-  --shadow-card: 0 8px 24px rgba(60, 60, 80, 0.1), 0 0 0 1px rgba(100, 100, 120, 0.08);
+  --bg-page: #f3eee6;
+  --bg-shell: #faf6f0;
+  --bg-surface: #fffdf9;
+  --bg-elevated: #efe8df;
+  --text-primary: #2a241e;
+  --text-muted: #6d645a;
+  --text: var(--text-primary);
+  --border: rgba(90, 72, 56, 0.16);
+  --border-strong: rgba(80, 62, 48, 0.28);
+  --border-subtle: var(--border);
+  --accent: #8f6230;
+  --accent-secondary: #8a6248;
+  --accent-tertiary: #7a5848;
+  --accent-contrast: #fffaf4;
+  --danger-bg: rgba(154, 69, 69, 0.1);
+  --danger-text: #9a4545;
+  --danger: var(--danger-text);
+  --link: #8a5a2e;
+  --surface-muted: color-mix(in srgb, var(--bg-elevated) 70%, var(--bg-page));
+  --shadow: rgba(60, 48, 36, 0.12);
+  --shadow-soft: 0 4px 16px rgba(60, 48, 36, 0.08);
+  --shadow-card: 0 8px 24px rgba(60, 48, 36, 0.1), 0 0 0 1px rgba(90, 72, 56, 0.1);
   --shadow-neon: var(--shadow-card);
-  --shadow-lift: 0 12px 28px rgba(60, 60, 80, 0.12);
-  --ring: rgba(90, 127, 150, 0.32);
-  --ring-strong: rgba(117, 106, 143, 0.28);
-  --drop-glow: 0 0 0 2px rgba(90, 127, 150, 0.18);
-  --gradient-page: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(117, 106, 143, 0.04), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(90, 127, 150, 0.03), transparent 50%);
-  --gradient-accent: linear-gradient(135deg, #5a7f96 0%, #756a8f 100%);
-  --gradient-header: linear-gradient(90deg, rgba(90, 127, 150, 0.22), rgba(117, 106, 143, 0.18));
-  --criticity-low-bg: rgba(107, 143, 168, 0.16);
-  --criticity-low-text: #4a6678;
-  --criticity-medium-bg: rgba(163, 139, 106, 0.16);
+  --shadow-lift: 0 12px 28px rgba(60, 48, 36, 0.12);
+  --ring: rgba(143, 98, 48, 0.34);
+  --ring-strong: rgba(138, 98, 72, 0.3);
+  --drop-glow: 0 0 0 2px rgba(143, 98, 48, 0.2);
+  --gradient-page: radial-gradient(ellipse 70% 42% at 12% -8%, rgba(143, 98, 48, 0.04), transparent 55%);
+  --gradient-accent: linear-gradient(135deg, #8f6230 0%, #8a6248 100%);
+  --gradient-header: linear-gradient(90deg, rgba(143, 98, 48, 0.18), rgba(138, 98, 72, 0.1));
+  --criticity-low-bg: rgba(166, 148, 110, 0.18);
+  --criticity-low-text: #6b5e40;
+  --criticity-medium-bg: rgba(176, 132, 72, 0.16);
   --criticity-medium-text: #7a5f3a;
   --criticity-high-bg: rgba(154, 146, 104, 0.18);
   --criticity-high-text: #6b6340;
-  --criticity-critical-bg: rgba(160, 90, 105, 0.14);
-  --criticity-critical-text: #8f4f5d;
+  --criticity-critical-bg: rgba(154, 69, 69, 0.14);
+  --criticity-critical-text: #9a4545;
 }
 
 * {
@@ -248,7 +259,7 @@ textarea:focus-visible {
   width: var(--sidebar-width);
   height: 100dvh;
   max-height: 100dvh;
-  background: var(--bg-surface);
+  background: var(--bg-shell);
   border-right: 1px solid var(--border);
   padding: 0.85rem;
   display: flex;
@@ -835,6 +846,7 @@ textarea:focus-visible {
 }
 
 .project-nav-link.has-accent {
+  border-left-width: 4px;
   border-left-color: var(--entity-accent, var(--border-strong));
 }
 
@@ -912,6 +924,17 @@ textarea:focus-visible {
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+.page-header.has-accent {
+  padding: 0.35rem 0.75rem 0.45rem 0.9rem;
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) var(--entity-mix-header), transparent),
+    transparent 62%
+  );
 }
 
 .page-subtitle {
@@ -1700,7 +1723,12 @@ textarea:focus-visible {
 }
 
 .entity-card.has-accent {
-  border-left: 4px solid var(--entity-accent, var(--border-strong));
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),
+    var(--bg-surface)
+  );
 }
 
 .entity-card:hover {
@@ -1766,9 +1794,13 @@ textarea:focus-visible {
 
 .entity-scope-badge-project,
 .entity-scope-badge-org {
-  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 55%, var(--border));
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--entity-accent, #8778a3) 8%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-surface)
+  );
 }
 
 .entity-card-header {
@@ -1780,17 +1812,17 @@ textarea:focus-visible {
 
 .entity-color-swatch {
   flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: var(--radius-pill);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-soft);
 }
 
 .entity-color-swatch-lg {
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-sm);
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
 }
 
 .entity-meta-muted {
@@ -2153,8 +2185,12 @@ textarea:focus-visible {
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--entity-accent, var(--accent)) 10%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--entity-accent, var(--border)) 25%, var(--border));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-elevated)
+  );
+  border: 1px solid color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
   border-radius: var(--radius-sm);
   padding: 0.15rem 0.45rem;
 }
@@ -2202,7 +2238,7 @@ textarea:focus-visible {
   height: 420px;
   top: -120px;
   left: -80px;
-  background: rgba(135, 120, 163, 0.18);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .login-page::after {
@@ -2210,7 +2246,7 @@ textarea:focus-visible {
   height: 360px;
   bottom: -100px;
   right: -60px;
-  background: rgba(107, 143, 168, 0.14);
+  background: color-mix(in srgb, var(--accent-secondary) 12%, transparent);
 }
 
 .login-card,
@@ -3061,11 +3097,11 @@ textarea {
   font-size: 1rem;
   font-weight: 700;
   padding: 0.35rem 0.65rem;
-  border-left: 4px solid var(--entity-accent, var(--border-strong));
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--entity-accent, #8778a3) 8%, transparent),
+    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) var(--entity-mix-header), transparent),
     transparent
   );
 }
@@ -3084,7 +3120,7 @@ textarea {
   text-transform: uppercase;
   color: var(--text-muted);
   padding: 0.25rem 0.55rem;
-  border-left: 3px solid var(--entity-accent, var(--border));
+  border-left: 4px solid var(--entity-accent, var(--border));
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
@@ -3200,7 +3236,12 @@ textarea {
 }
 
 .task-card.has-accent {
-  border-left: 4px solid var(--entity-accent, var(--border-strong));
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),
+    var(--bg-elevated)
+  );
 }
 
 .task-card.has-accent::before {
@@ -3317,19 +3358,27 @@ textarea {
 }
 
 .task-badge-project {
-  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 55%, var(--border));
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--entity-accent, #8778a3) 8%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-surface)
+  );
 }
 
-/* Light: stronger entity-accent tint so org/project ID badges stay readable */
+/* Light: keep badge text readable on the stronger entity fill */
 [data-theme='light'] .task-badge-project,
 [data-theme='light'] .entity-scope-badge-project,
 [data-theme='light'] .entity-scope-badge-org,
 [data-theme='light'] .knowledge-scope-badge.has-accent {
-  background: color-mix(in srgb, var(--entity-accent, #8778a3) 20%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-surface)
+  );
   border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 65%, var(--border));
-  color: color-mix(in srgb, var(--entity-accent, var(--text-primary)) 70%, #0a0a12);
+  color: color-mix(in srgb, var(--entity-accent, var(--text-primary)) 55%, var(--text-primary));
 }
 
 .task-card-header {
@@ -3845,18 +3894,18 @@ textarea {
 }
 
 .category-badge.category-meeting {
-  background: color-mix(in srgb, #6366f1 12%, var(--surface-muted));
-  color: #6366f1;
+  background: color-mix(in srgb, var(--accent-secondary) 12%, var(--surface-muted));
+  color: var(--accent-secondary);
 }
 
 .category-badge.category-design {
-  background: color-mix(in srgb, #ec4899 12%, var(--surface-muted));
-  color: #ec4899;
+  background: color-mix(in srgb, var(--accent-tertiary) 12%, var(--surface-muted));
+  color: var(--accent-tertiary);
 }
 
 .category-badge.category-marketing {
-  background: color-mix(in srgb, #f59e0b 12%, var(--surface-muted));
-  color: #f59e0b;
+  background: color-mix(in srgb, var(--criticity-medium-text) 12%, var(--surface-muted));
+  color: var(--criticity-medium-text);
 }
 
 .task-coding-metadata-fields {
@@ -4696,7 +4745,7 @@ textarea {
 }
 
 .knowledge-detail-modal.has-accent {
-  border-left: 4px solid var(--entity-accent, var(--border-strong));
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
 }
 
 .knowledge-detail-modal-body {
@@ -4721,7 +4770,12 @@ textarea {
 }
 
 .knowledge-card.has-accent {
-  border-left: 4px solid var(--entity-accent, var(--border-strong));
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),
+    var(--bg-surface)
+  );
 }
 
 .knowledge-card.has-accent::before {
@@ -4729,9 +4783,13 @@ textarea {
 }
 
 .knowledge-scope-badge.has-accent {
-  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 55%, var(--border));
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--entity-accent, #8778a3) 8%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-surface)
+  );
 }
 
 .knowledge-create-modal .knowledge-form {
@@ -6155,7 +6213,7 @@ textarea {
   inset: 0;
   border-top: 1px solid var(--border-subtle);
   background:
-    linear-gradient(var(--bg-surface), var(--bg-surface)),
+    linear-gradient(var(--bg-shell), var(--bg-shell)),
     var(--bg-page);
   pointer-events: none;
   display: flex;
@@ -6434,7 +6492,7 @@ textarea {
 }
 
 .mobile-board-fab-dial-item.is-danger {
-  color: var(--danger, #dc2626);
+  color: var(--danger);
 }
 
 .mobile-board-fab-dial-item.is-labeled {
@@ -6763,7 +6821,7 @@ textarea {
 .board-quick-filter-chip.is-active {
   color: var(--text-primary);
   border-color: var(--accent, var(--border-strong));
-  background: color-mix(in srgb, var(--accent, #3b82f6) 12%, var(--bg-surface));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
 }
 
 .board-status-tabs {
@@ -6829,7 +6887,7 @@ textarea {
   background: var(--bg-elevated, var(--bg-surface));
   color: var(--text-primary);
   border-color: var(--accent, var(--border-strong));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, #3b82f6) 35%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .board-status-tab-count {
@@ -6843,7 +6901,7 @@ textarea {
 }
 
 .board-status-tab.is-active .board-status-tab-count {
-  background: color-mix(in srgb, var(--accent, #3b82f6) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 /* Tabs + column list share remaining viewport height (prevents blank board). */
@@ -8486,6 +8544,15 @@ section.board-cycle-header {
   border: 1px solid var(--border);
   border-radius: 12px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.diagram-card.has-accent {
+  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),
+    var(--bg-surface)
+  );
 }
 
 .diagram-card:hover {

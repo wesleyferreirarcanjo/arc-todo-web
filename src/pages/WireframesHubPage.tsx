@@ -427,7 +427,8 @@ export function WireframesHubPage() {
                 return (
                   <li
                     key={wireframe.id}
-                    className="diagram-card diagram-card--wireframe entity-card"
+                    className="diagram-card diagram-card--wireframe entity-card has-accent"
+                    style={{ '--entity-accent': accentColor } as CSSProperties}
                   >
                     <WireframeCardPreview
                       orgId={org.id}

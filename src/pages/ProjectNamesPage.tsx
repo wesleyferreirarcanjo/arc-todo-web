@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
@@ -13,6 +13,7 @@ import {
   updateProjectNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
+import { getProjectColor } from '../lib/color/entityColor';
 import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-session';
 
 type NameSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
@@ -137,8 +138,15 @@ export function ProjectNamesPage() {
   }
 
   return (
-    <div className="page-shell diagrams-page">
-      <header className="page-header page-header-with-actions">
+    <div
+      className="page-shell diagrams-page"
+      style={
+        currentProject
+          ? ({ '--entity-accent': getProjectColor(currentProject) } as CSSProperties)
+          : undefined
+      }
+    >
+      <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
         <div>
           <h2>{currentProject?.name ?? 'Project'} names</h2>
           <p className="page-subtitle">

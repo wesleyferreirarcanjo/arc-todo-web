@@ -332,7 +332,11 @@ export function DiagramsHubPage() {
                 const editorPath = `/organizations/${org.id}/projects/${project.id}/diagrams/${diagram.id}`;
                 const accentColor = getProjectColor(project);
                 return (
-                  <li key={diagram.id} className="diagram-card entity-card">
+                  <li
+                    key={diagram.id}
+                    className="diagram-card entity-card has-accent"
+                    style={{ '--entity-accent': accentColor } as CSSProperties}
+                  >
                     <Link to={editorPath} className="diagram-card-preview-link">
                       {diagram.thumbnail ? (
                         <img

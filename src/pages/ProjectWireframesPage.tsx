@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
@@ -7,6 +7,7 @@ import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
+import { getProjectColor } from '../lib/color/entityColor';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
   createProjectWireframe,
@@ -232,8 +233,15 @@ export function ProjectWireframesPage() {
   }
 
   return (
-    <div className="page-shell diagrams-page">
-      <header className="page-header page-header-with-actions">
+    <div
+      className="page-shell diagrams-page"
+      style={
+        currentProject
+          ? ({ '--entity-accent': getProjectColor(currentProject) } as CSSProperties)
+          : undefined
+      }
+    >
+      <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
         <div>
           <h2>{currentProject?.name ?? 'Project'} wireframes</h2>
           <p className="page-subtitle">

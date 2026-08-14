@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   createProjectTask,
@@ -136,8 +136,15 @@ export function ProjectTasksPage() {
   const topLevelCount = tasks.filter((task) => !task.parentTaskId).length;
 
   return (
-    <div className="tasks-page">
-      <header className="page-header">
+    <div
+      className="tasks-page"
+      style={
+        projectAccent
+          ? ({ '--entity-accent': projectAccent } as CSSProperties)
+          : undefined
+      }
+    >
+      <header className={`page-header${projectAccent ? ' has-accent' : ''}`}>
         <h2>{currentProject?.name ?? 'Project tasks'}</h2>
         <p className="page-subtitle">Manage tasks for this project.</p>
         <div className="page-links">

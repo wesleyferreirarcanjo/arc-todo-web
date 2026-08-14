@@ -168,7 +168,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                 <div className="entity-card-header">
                   <h3>{project.name}</h3>
                   <span
-                    className="entity-color-swatch"
+                    className="entity-color-swatch entity-color-swatch-lg"
                     style={{ backgroundColor: accent }}
                     title={`Color: ${accent}`}
                   />

@@ -396,7 +396,11 @@ export function NamesHubPage() {
                 const path = `/organizations/${item.org.id}/projects/${item.project.id}/names/${item.session.id}`;
                 const accent = getProjectColor(item.project);
                 return (
-                  <li key={item.session.id} className="diagram-card entity-card">
+                  <li
+                    key={item.session.id}
+                    className="diagram-card entity-card has-accent"
+                    style={{ '--entity-accent': accent } as CSSProperties}
+                  >
                     <div className="diagram-card-body">
                       <div className="diagram-card-badges">
                         <span className="task-badge task-badge-org" title={item.org.name}>
