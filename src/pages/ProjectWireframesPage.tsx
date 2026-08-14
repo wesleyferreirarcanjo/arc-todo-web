@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
+import { WireframesIcon } from '../components/icons';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -281,6 +282,9 @@ export function ProjectWireframesPage() {
 
       {!loading && !error && wireframes.length === 0 && (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <WireframesIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">
             No wireframes yet. Create the first prototype for this project.
           </p>

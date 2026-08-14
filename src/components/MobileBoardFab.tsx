@@ -11,248 +11,31 @@ import { usePwaInstall } from '../hooks/usePwaInstall';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { MobileQuickCreateSheet } from './MobileQuickCreateSheet';
 import { BoardStatusTabs } from './BoardStatusTabs';
-
-function FabGlyph({ children }: { children: ReactNode }) {
-  return (
-    <svg
-      className="mobile-board-fab-glyph"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <FabGlyph>
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-    </FabGlyph>
-  );
-}
-
-function NewTaskIcon() {
-  return (
-    <FabGlyph>
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </FabGlyph>
-  );
-}
-
-function ChatIcon() {
-  return (
-    <FabGlyph>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </FabGlyph>
-  );
-}
-
-function SunIcon() {
-  return (
-    <FabGlyph>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2" />
-      <path d="M12 20v2" />
-      <path d="M4.93 4.93l1.41 1.41" />
-      <path d="M17.66 17.66l1.41 1.41" />
-      <path d="M2 12h2" />
-      <path d="M20 12h2" />
-      <path d="M4.93 19.07l1.41-1.41" />
-      <path d="M17.66 6.34l1.41-1.41" />
-    </FabGlyph>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <FabGlyph>
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </FabGlyph>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <FabGlyph>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </FabGlyph>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <FabGlyph>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </FabGlyph>
-  );
-}
-
-function BackIcon() {
-  return (
-    <FabGlyph>
-      <path d="M19 12H5" />
-      <path d="M12 19l-7-7 7-7" />
-    </FabGlyph>
-  );
-}
-
-function McpIcon() {
-  return (
-    <FabGlyph>
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </FabGlyph>
-  );
-}
-
-function RagIcon() {
-  return (
-    <FabGlyph>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </FabGlyph>
-  );
-}
-
-function StorageIcon() {
-  return (
-    <FabGlyph>
-      <ellipse cx="12" cy="5" rx="9" ry="3" />
-      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-    </FabGlyph>
-  );
-}
-
-function FlaskIcon() {
-  return (
-    <FabGlyph>
-      <path d="M10 2v7.31" />
-      <path d="M14 9.3V2" />
-      <path d="M8.5 2h7" />
-      <path d="M7 16.5A5 5 0 0 0 12 22a5 5 0 0 0 5-5.5V9.3H7z" />
-    </FabGlyph>
-  );
-}
-
-function NavigateIcon() {
-  return (
-    <FabGlyph>
-      <circle cx="12" cy="12" r="10" />
-      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-    </FabGlyph>
-  );
-}
-
-function TasksIcon() {
-  return (
-    <FabGlyph>
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </FabGlyph>
-  );
-}
-
-function InstallIcon() {
-  return (
-    <FabGlyph>
-      <path d="M12 3v12" />
-      <path d="M8 11l4 4 4-4" />
-      <path d="M4 19h16" />
-    </FabGlyph>
-  );
-}
-
-function BellIcon() {
-  return (
-    <FabGlyph>
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-    </FabGlyph>
-  );
-}
-
-function KnowledgeIcon() {
-  return (
-    <FabGlyph>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </FabGlyph>
-  );
-}
-
-function DiagramsIcon() {
-  return (
-    <FabGlyph>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M7 15l3-3 2 2 5-5" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-    </FabGlyph>
-  );
-}
-
-function WireframesIcon() {
-  return (
-    <FabGlyph>
-      <rect x="4" y="6" width="14" height="14" rx="1" />
-      <path d="M8 6V4h12v14h-2" />
-    </FabGlyph>
-  );
-}
-
-function NamesIcon() {
-  return (
-    <FabGlyph>
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </FabGlyph>
-  );
-}
-
-function PeopleIcon() {
-  return (
-    <FabGlyph>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </FabGlyph>
-  );
-}
-
-function OrganizationsIcon() {
-  return (
-    <FabGlyph>
-      <path d="M3 21h18" />
-      <path d="M5 21V7l8-4v18" />
-      <path d="M19 21V11l-6-4" />
-    </FabGlyph>
-  );
-}
-
-function UsersIcon() {
-  return (
-    <FabGlyph>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </FabGlyph>
-  );
-}
+import {
+  BackIcon,
+  BellIcon,
+  ChatIcon,
+  DiagramsIcon,
+  FilterIcon,
+  FlaskIcon,
+  InstallIcon,
+  KnowledgeIcon,
+  LogoutIcon,
+  McpIcon,
+  MoonIcon,
+  NamesIcon,
+  NavigateIcon,
+  NewTaskIcon,
+  OrganizationsIcon,
+  PeopleIcon,
+  RagIcon,
+  SettingsIcon,
+  StorageIcon,
+  SunIcon,
+  TasksIcon,
+  UsersIcon,
+  WireframesIcon,
+} from './icons';
 
 type DialLevel = 'main' | 'nav' | 'settings';
 
@@ -355,7 +138,7 @@ export function MobileBoardFab() {
       {
         id: 'logout',
         label: 'Logout',
-        icon: <LogoutIcon />,
+        icon: <LogoutIcon className="mobile-board-fab-glyph" />,
         danger: true,
         onClick: () => {
           setMenuOpen(false);
@@ -660,7 +443,7 @@ export function MobileBoardFab() {
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
         >
           <span className="mobile-board-fab-icon" aria-hidden="true">
-            <NewTaskIcon />
+            <NewTaskIcon className="mobile-board-fab-glyph" />
           </span>
         </motion.button>
       </div>

@@ -47,6 +47,14 @@ import { TaskForm } from './TaskForm';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 import { MarkdownContent } from './MarkdownContent';
 import { UndoToast } from './UndoToast';
+import {
+  CopyIcon,
+  EyeIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  QaBoardIcon,
+  TrashIcon,
+} from './icons';
 
 function clampContextMenuPosition(clientX: number, clientY: number) {
   const pad = 8;
@@ -114,114 +122,6 @@ function SubtaskProgressRing({
   );
 }
 
-function MoreVerticalIcon() {
-  return (
-    <svg
-      className="task-menu-icon"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="5" r="1.75" />
-      <circle cx="12" cy="12" r="1.75" />
-      <circle cx="12" cy="19" r="1.75" />
-    </svg>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg
-      className="task-menu-item-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg
-      className="task-menu-item-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="M19 6l-1 14H6L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-    </svg>
-  );
-}
-
-function CopyIcon({ className = 'task-menu-item-icon' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
-function EyeIcon({ className = 'task-menu-item-icon' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function QaBoardIcon({ className = 'task-menu-item-icon' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 11l2 2 4-4" />
-      <path d="M9 17h6" />
-      <path d="M8 3h8l2 2v16H6V5l2-2Z" />
-    </svg>
-  );
-}
 
 interface TaskCardProps {
   task: Task;
@@ -805,7 +705,7 @@ export function TaskCard({
             handleOpenDetails();
           }}
         >
-          <EyeIcon />
+          <EyeIcon className="task-menu-item-icon" />
           View details
         </button>
       )}
@@ -816,7 +716,7 @@ export function TaskCard({
         className="task-action-menu-item"
         onClick={handleStartEdit}
       >
-        <PencilIcon />
+        <PencilIcon className="task-menu-item-icon" />
         Edit
       </button>
 
@@ -829,7 +729,7 @@ export function TaskCard({
           void handleCopyTask();
         }}
       >
-        <CopyIcon />
+        <CopyIcon className="task-menu-item-icon" />
         {copyTooltip}
       </button>
 
@@ -840,7 +740,7 @@ export function TaskCard({
           className="task-action-menu-item"
           onClick={handleToggleSmartCopyBasket}
         >
-          <CopyIcon />
+          <CopyIcon className="task-menu-item-icon" />
           {inSmartCopyBasket ? 'Remove from Smart Copy' : 'Add to Smart Copy'}
         </button>
       )}
@@ -895,7 +795,7 @@ export function TaskCard({
         disabled={deleting}
         onClick={() => void handleDelete()}
       >
-        <TrashIcon />
+        <TrashIcon className="task-menu-item-icon" />
         {deleting ? 'Deleting...' : 'Delete'}
       </button>
     </>
@@ -1050,7 +950,7 @@ export function TaskCard({
                 setActionMenuOpen((open) => !open);
               }}
             >
-              <MoreVerticalIcon />
+              <MoreVerticalIcon className="task-menu-icon" />
             </button>
 
             {actionMenuOpen && (

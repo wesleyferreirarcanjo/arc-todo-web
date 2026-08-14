@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { DiagramsIcon } from '../components/icons';
 import { getProjectColor } from '../lib/color/entityColor';
 import {
   createProjectDiagram,
@@ -249,6 +250,9 @@ export function DiagramsHubPage() {
 
       {!loading && !error && canvasCount === 0 && (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <DiagramsIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">
             No diagrams yet.{' '}
             {canCreate ? (

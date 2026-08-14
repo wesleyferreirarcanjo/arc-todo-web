@@ -77,6 +77,8 @@
   --board-column-min-width: 280px;
   --transition-fast: 0.15s ease;
   --transition-base: 0.22s ease;
+  --icon-nav: 1.25rem;
+  --icon-duotone-fill: 0.22;
   --criticity-low-bg: rgba(154, 166, 188, 0.16);
   --criticity-low-text: #9aa6bc;
   --criticity-medium-bg: rgba(213, 170, 99, 0.16);
@@ -358,8 +360,9 @@ textarea:focus-visible {
 }
 
 .sidebar-toggle-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
 }
 
 .sidebar.is-collapsed {
@@ -537,8 +540,9 @@ textarea:focus-visible {
 }
 
 .sidebar-logout-icon {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
   flex-shrink: 0;
   color: var(--danger-text);
 }
@@ -727,8 +731,9 @@ textarea:focus-visible {
 }
 
 .sidebar-menu-item-icon {
-  width: 1rem;
-  height: 1rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
   flex-shrink: 0;
 }
 
@@ -760,8 +765,9 @@ textarea:focus-visible {
 }
 
 .sidebar-settings-icon {
-  width: 1rem;
-  height: 1rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
   flex-shrink: 0;
 }
 
@@ -810,9 +816,11 @@ textarea:focus-visible {
 }
 
 .sidebar-nav-icon {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
   flex-shrink: 0;
+  display: block;
 }
 
 .sidebar-nav-label {
@@ -2862,8 +2870,9 @@ textarea {
 }
 
 .theme-icon {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
 }
 
 .color-field {
@@ -3805,8 +3814,9 @@ textarea {
 }
 
 .task-card-action-icon {
-  width: 1rem;
-  height: 1rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
 }
 
 .task-card-action-tooltip {
@@ -3868,8 +3878,9 @@ textarea {
 }
 
 .task-menu-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
 }
 
 .task-action-menu-panel {
@@ -3936,8 +3947,9 @@ textarea {
 }
 
 .task-menu-item-icon {
-  width: 1rem;
-  height: 1rem;
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
   flex-shrink: 0;
 }
 
@@ -6530,15 +6542,19 @@ textarea {
   line-height: 1;
 }
 
-.mobile-board-fab-glyph {
-  width: 1.35rem;
-  height: 1.35rem;
+.mobile-board-fab-glyph,
+.mobile-board-fab-dial .arc-icon {
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
   display: block;
 }
 
-.mobile-board-fab-button .mobile-board-fab-glyph {
+.mobile-board-fab-button .mobile-board-fab-glyph,
+.mobile-board-fab-button .arc-icon {
   width: 1.55rem;
   height: 1.55rem;
+  font-size: 1.55rem;
 }
 
 .mobile-board-fab-dial {
@@ -8676,6 +8692,32 @@ section.board-cycle-header {
   align-items: flex-start;
   gap: 1rem;
   padding: 1.5rem 0;
+}
+
+.arc-icon {
+  width: var(--icon-nav);
+  height: var(--icon-nav);
+  font-size: var(--icon-nav);
+  flex-shrink: 0;
+  display: block;
+  overflow: visible;
+}
+
+.arc-icon-mass,
+.arc-icon [opacity='0.2'] {
+  opacity: var(--icon-duotone-fill);
+}
+
+.arc-icon-empty {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 2.25rem;
+  color: var(--text-muted);
+}
+
+.hub-empty-glyph {
+  display: flex;
+  color: var(--text-muted);
 }
 
 .diagrams-empty .btn-primary {

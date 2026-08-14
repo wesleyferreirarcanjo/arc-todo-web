@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
@@ -19,179 +19,23 @@ import {
 import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { isBoardShellPath } from '../lib/board/boardShellPath';
-
-function Icon({ children, className = 'sidebar-nav-icon' }: { children: ReactNode; className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
-}
-
-function TasksIcon() {
-  return (
-    <Icon>
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </Icon>
-  );
-}
-
-function KnowledgeIcon() {
-  return (
-    <Icon>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </Icon>
-  );
-}
-
-function DiagramsIcon() {
-  return (
-    <Icon>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <path d="M7 15l3-3 2 2 5-5" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-    </Icon>
-  );
-}
-
-function WireframesIcon() {
-  return (
-    <Icon>
-      <rect x="4" y="6" width="14" height="14" rx="1" />
-      <path d="M8 6V4h12v14h-2" />
-    </Icon>
-  );
-}
-
-function NamesIcon() {
-  return (
-    <Icon>
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </Icon>
-  );
-}
-
-function PeopleIcon() {
-  return (
-    <Icon>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </Icon>
-  );
-}
-
-function OrganizationsIcon() {
-  return (
-    <Icon>
-      <path d="M3 21h18" />
-      <path d="M5 21V7l8-4v18" />
-      <path d="M19 21V11l-6-4" />
-    </Icon>
-  );
-}
-
-function UsersIcon() {
-  return (
-    <Icon>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </Icon>
-  );
-}
-
-function ConfigIcon() {
-  return (
-    <Icon className="sidebar-settings-icon">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </Icon>
-  );
-}
-
-function ChatbotIcon() {
-  return (
-    <Icon className="sidebar-menu-item-icon">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </Icon>
-  );
-}
-
-function RagIcon() {
-  return (
-    <Icon className="sidebar-menu-item-icon">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      <line x1="8" y1="7" x2="16" y2="7" />
-      <line x1="8" y1="11" x2="16" y2="11" />
-    </Icon>
-  );
-}
-
-function McpIcon() {
-  return (
-    <Icon className="sidebar-menu-item-icon">
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </Icon>
-  );
-}
-
-function StorageIcon() {
-  return (
-    <Icon className="sidebar-menu-item-icon">
-      <ellipse cx="12" cy="5" rx="9" ry="3" />
-      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-    </Icon>
-  );
-}
-
-function ChevronIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <Icon className="sidebar-toggle-icon">
-      {expanded ? (
-        <>
-          <path d="M15 18l-6-6 6-6" />
-          <path d="M3 6v12" />
-        </>
-      ) : (
-        <>
-          <path d="M9 18l6-6-6-6" />
-          <path d="M21 6v12" />
-        </>
-      )}
-    </Icon>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <Icon className="sidebar-logout-icon">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </Icon>
-  );
-}
+import {
+  ChatbotIcon,
+  ChevronIcon,
+  ConfigIcon,
+  DiagramsIcon,
+  KnowledgeIcon,
+  LogoutIcon,
+  McpIcon,
+  NamesIcon,
+  OrganizationsIcon,
+  PeopleIcon,
+  RagIcon,
+  StorageIcon,
+  TasksIcon,
+  UsersIcon,
+  WireframesIcon,
+} from './icons';
 
 const primaryNav = [
   { to: '/board', label: 'All tasks', icon: TasksIcon },
@@ -325,7 +169,7 @@ export function Layout() {
               data-tooltip={collapsed ? 'Expand sidebar' : undefined}
               onClick={toggleSidebar}
             >
-              <ChevronIcon expanded={!collapsed} />
+              <ChevronIcon className="sidebar-toggle-icon" expanded={!collapsed} />
             </button>
           </div>
 
@@ -361,7 +205,7 @@ export function Layout() {
                 }}
                 {...rest}
               >
-                <NavIcon />
+                <NavIcon className="sidebar-nav-icon" />
                 <span className="sidebar-nav-label">{label}</span>
               </NavLink>
             ))}
@@ -376,7 +220,7 @@ export function Layout() {
                     : 'sidebar-nav-link'
                 }
               >
-                <UsersIcon />
+                <UsersIcon className="sidebar-nav-icon" />
                 <span className="sidebar-nav-label">Users</span>
               </NavLink>
             )}
@@ -405,7 +249,7 @@ export function Layout() {
                 data-tooltip={collapsed ? 'Settings' : undefined}
                 onClick={() => setSettingsOpen((open) => !open)}
               >
-                <ConfigIcon />
+                <ConfigIcon className="sidebar-settings-icon" />
                 {!collapsed && <span className="sidebar-nav-label">Settings</span>}
               </button>
 
@@ -423,7 +267,7 @@ export function Layout() {
                     }
                     onClick={closeSettingsMenu}
                   >
-                    <ChatbotIcon />
+                    <ChatbotIcon className="sidebar-menu-item-icon" />
                     Chatbot
                   </NavLink>
                   <NavLink
@@ -448,7 +292,7 @@ export function Layout() {
                     }
                     onClick={closeSettingsMenu}
                   >
-                    <McpIcon />
+                    <McpIcon className="sidebar-menu-item-icon" />
                     MCP Tools
                   </NavLink>
                   <p className="sidebar-settings-category">System</p>
@@ -462,7 +306,7 @@ export function Layout() {
                     }
                     onClick={closeSettingsMenu}
                   >
-                    <StorageIcon />
+                    <StorageIcon className="sidebar-menu-item-icon" />
                     Storage
                   </NavLink>
                   <p className="sidebar-settings-category">RAG</p>
@@ -475,7 +319,7 @@ export function Layout() {
                     aria-expanded={ragMenuOpen}
                     onClick={() => setRagMenuOpen((open) => !open)}
                   >
-                    <RagIcon />
+                    <RagIcon className="sidebar-menu-item-icon" />
                     RAG
                     <span className="sidebar-settings-submenu-chevron" aria-hidden="true">
                       {ragMenuOpen ? '▾' : '▸'}
@@ -535,7 +379,7 @@ export function Layout() {
               data-tooltip={collapsed ? 'Logout' : undefined}
               onClick={logout}
             >
-              <LogoutIcon />
+              <LogoutIcon className="sidebar-logout-icon" />
               {!collapsed && <span className="sidebar-nav-label">Logout</span>}
             </button>
           </div>

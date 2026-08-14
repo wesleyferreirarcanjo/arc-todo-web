@@ -18,6 +18,7 @@ import { KnowledgeIndexOverview } from '../components/KnowledgeIndexOverview';
 import { KnowledgeList } from '../components/KnowledgeList';
 import { QuickKnowledgeCreate } from '../components/QuickKnowledgeCreate';
 import type { KnowledgeSaveTarget } from '../components/QuickKnowledgeCreate';
+import { KnowledgeIcon } from '../components/icons';
 import { Select } from '../components/Select';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -394,11 +395,16 @@ export function KnowledgeWorkspacePage({
       {error && <div className="alert alert-error">{error}</div>}
 
       {!loading && !error && entries.length === 0 && (
-        <p className="status-message">
-          {hasFilters
-            ? 'No knowledge matches these filters.'
-            : 'No knowledge yet. Use New knowledge to create your first entry.'}
-        </p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <KnowledgeIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            {hasFilters
+              ? 'No knowledge matches these filters.'
+              : 'No knowledge yet. Use New knowledge to create your first entry.'}
+          </p>
+        </div>
       )}
 
       {!loading && !error && entries.length > 0 && (

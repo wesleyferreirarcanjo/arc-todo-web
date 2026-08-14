@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { NamesIcon } from '../components/icons';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api/client';
 import {
@@ -313,6 +314,9 @@ export function NamesHubPage() {
 
       {!loading && !error && items.length === 0 && (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <NamesIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">
             {canCreate ? (
               'No name sessions yet. A working name and one sentence are enough to start.'

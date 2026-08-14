@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { NamesIcon } from '../components/icons';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import {
@@ -187,6 +188,9 @@ export function ProjectNamesPage() {
 
       {!loading && !error && sessions.length === 0 && (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <NamesIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">No name sessions yet.</p>
           <button
             type="button"

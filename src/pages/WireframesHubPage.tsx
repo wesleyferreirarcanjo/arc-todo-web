@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
+import { WireframesIcon } from '../components/icons';
 import { getProjectColor } from '../lib/color/entityColor';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
@@ -340,6 +341,9 @@ export function WireframesHubPage() {
 
       {!loading && !error && items.length === 0 && (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <WireframesIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">
             No wireframes yet.{' '}
             {canCreate ? (

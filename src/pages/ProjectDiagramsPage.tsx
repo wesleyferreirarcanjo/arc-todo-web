@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { DiagramsIcon } from '../components/icons';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -265,6 +266,9 @@ export function ProjectDiagramsPage() {
 
       {!loading && !error && canvasDiagrams.length === 0 && (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <DiagramsIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">
             No diagrams yet. Create the first whiteboard for this project.
           </p>
