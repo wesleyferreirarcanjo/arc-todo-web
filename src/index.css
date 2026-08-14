@@ -1,10 +1,15 @@
 :root,
 [data-theme='dark'] {
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Space Grotesk', Inter, system-ui, sans-serif;
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-body: 'Figtree', system-ui, sans-serif;
+  --type-page: 1.75rem;
+  --type-section: 1.05rem;
+  --type-card: 1rem;
+  --type-body: 0.875rem;
+  --type-meta: 0.75rem;
 
   font-family: var(--font-body);
-  line-height: 1.55;
+  line-height: 1.5;
   font-weight: 400;
 
   --bg-page: #0d1119;
@@ -434,7 +439,7 @@ textarea:focus-visible {
   background: color-mix(in srgb, var(--accent) 18%, var(--bg-page));
   border-bottom: 1px solid var(--border);
   color: var(--text);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   line-height: 1.4;
 }
 
@@ -476,7 +481,7 @@ textarea:focus-visible {
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   font-weight: 500;
   border: 1px solid transparent;
   background: transparent;
@@ -506,7 +511,7 @@ textarea:focus-visible {
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   font-weight: 500;
   border: 1px solid transparent;
   background: transparent;
@@ -671,7 +676,7 @@ textarea:focus-visible {
   background: transparent;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   font-weight: 600;
   letter-spacing: 0.01em;
   transition: background var(--transition-base), color var(--transition-base),
@@ -777,7 +782,7 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -786,7 +791,7 @@ textarea:focus-visible {
 
 .sidebar-note {
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
 }
 
 .sidebar-nav-link {
@@ -797,7 +802,7 @@ textarea:focus-visible {
   border-radius: var(--radius-blob-alt);
   color: var(--text-primary);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   font-weight: 600;
   border: 1px solid var(--border);
   transition: background var(--transition-fast), border-color var(--transition-fast),
@@ -945,8 +950,11 @@ textarea:focus-visible {
 
 .page-header h2 {
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: var(--type-page);
   font-weight: 700;
+  font-style: italic;
+  font-optical-sizing: auto;
+  line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
@@ -964,7 +972,8 @@ textarea:focus-visible {
 .page-subtitle {
   color: var(--text-muted);
   margin-top: 0.4rem;
-  font-size: 0.95rem;
+  font-size: var(--type-body);
+  line-height: 1.5;
 }
 
 .page-header-with-actions {
@@ -1021,8 +1030,10 @@ textarea:focus-visible {
 
 .modal-header h2 {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: var(--type-section);
   font-weight: 700;
+  font-optical-sizing: auto;
+  line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
@@ -1814,7 +1825,7 @@ textarea:focus-visible {
 
 .entity-card h3 {
   position: relative;
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -1825,7 +1836,8 @@ textarea:focus-visible {
   position: relative;
   margin-top: 0.5rem;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
+  line-height: 1.5;
 }
 
 .entity-card.management-card {
@@ -1991,8 +2003,9 @@ textarea:focus-visible {
 
 .people-list-header h3,
 .person-form-header h2 {
-  font-size: 1.15rem;
+  font-size: var(--type-section);
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
@@ -2143,8 +2156,9 @@ textarea:focus-visible {
 }
 
 .organizations-list-header h3 {
-  font-size: 1.15rem;
+  font-size: var(--type-section);
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
@@ -2177,8 +2191,9 @@ textarea:focus-visible {
 }
 
 .organization-form-header h2 {
-  font-size: 1.25rem;
+  font-size: var(--type-section);
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -2330,7 +2345,10 @@ textarea:focus-visible {
 .login-card h1 {
   font-family: var(--font-display);
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 700;
+  font-style: italic;
+  font-optical-sizing: auto;
+  line-height: 1.15;
   letter-spacing: -0.03em;
   color: var(--text-primary);
 }
@@ -2346,7 +2364,7 @@ label {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -2747,6 +2765,7 @@ textarea {
   padding: 0.68rem 1.18rem;
   color: var(--text-primary);
   cursor: pointer;
+  font-size: var(--type-body);
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -2929,6 +2948,7 @@ textarea {
 
 .status-message {
   color: var(--text-muted);
+  font-size: var(--type-body);
   font-style: italic;
 }
 
@@ -3124,8 +3144,9 @@ textarea {
 }
 
 .board-column-header h2 {
-  font-size: 1.1rem;
+  font-size: var(--type-section);
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
@@ -3157,8 +3178,9 @@ textarea {
 }
 
 .board-org-header {
-  font-size: 1rem;
+  font-size: var(--type-section);
   font-weight: 700;
+  line-height: 1.2;
   padding: 0.35rem 0.65rem;
   border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -3195,7 +3217,7 @@ textarea {
 
 .empty-column {
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   font-style: italic;
   padding: 1rem;
   text-align: center;
@@ -3394,7 +3416,7 @@ textarea {
 }
 
 .task-card.is-compact .task-card-header h3 {
-  font-size: 0.98rem;
+  font-size: calc(var(--type-card) - 0.02rem);
   line-height: 1.35;
   -webkit-line-clamp: 2;
 }
@@ -3407,7 +3429,7 @@ textarea {
 .task-display-id {
   display: inline-flex;
   align-items: center;
-  font-size: 0.62rem;
+  font-size: var(--type-meta);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-muted);
@@ -3558,7 +3580,7 @@ textarea {
 }
 
 .task-card.is-subtask .task-card-header h3 {
-  font-size: 0.88rem;
+  font-size: calc(var(--type-card) - 0.12rem);
   line-height: 1.3;
 }
 
@@ -3600,7 +3622,7 @@ textarea {
 }
 
 .task-card.is-subtask.is-detached-subtask .task-card-header h3 {
-  font-size: 0.98rem;
+  font-size: calc(var(--type-card) - 0.02rem);
   line-height: 1.35;
 }
 
@@ -3702,8 +3724,8 @@ textarea {
 
 .task-card-action-btn.task-card-smart-copy-btn .task-card-action-icon,
 .task-details-smart-copy-btn .task-copy-icon {
-  color: #c4926a;
-  stroke: #c4926a;
+  color: var(--accent);
+  stroke: var(--accent);
 }
 
 .task-card-action-btn.task-card-smart-copy-btn:hover,
@@ -3719,8 +3741,8 @@ textarea {
 .task-card-action-btn.task-card-smart-copy-btn:focus-visible .task-card-action-icon,
 .task-details-smart-copy-btn:hover .task-copy-icon,
 .task-details-smart-copy-btn:focus-visible .task-copy-icon {
-  color: #d4a57a;
-  stroke: #d4a57a;
+  color: var(--accent-secondary);
+  stroke: var(--accent-secondary);
 }
 
 .task-card-action-btn.task-card-qa-board-btn .task-card-action-icon {
@@ -3952,7 +3974,7 @@ textarea {
 .task-card-header h3 {
   min-width: 0;
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.3;
@@ -4064,7 +4086,7 @@ textarea {
 .task-description {
   margin-top: 0.55rem;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -4081,11 +4103,12 @@ textarea {
 
 .task-meta {
   margin-top: 0.55rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--type-meta);
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  line-height: 1.35;
 }
 
 .task-actions {
@@ -4195,8 +4218,9 @@ textarea {
 
 .task-details-title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: var(--type-page);
   font-weight: 700;
+  font-optical-sizing: auto;
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
@@ -4219,8 +4243,9 @@ textarea {
 
 .task-details-title-edit input {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: var(--type-page);
   font-weight: 700;
+  font-optical-sizing: auto;
   line-height: 1.25;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -4234,7 +4259,7 @@ textarea {
 
 .task-details-section h4 {
   margin-bottom: 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4243,7 +4268,9 @@ textarea {
 
 .task-details-description {
   color: var(--text-primary);
-  line-height: 1.6;
+  font-size: var(--type-body);
+  line-height: 1.5;
+  max-width: 60ch;
 }
 
 .task-details-description.is-empty {
@@ -4480,7 +4507,9 @@ textarea {
 
 .knowledge-index-overview-header h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-card);
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .knowledge-index-overview-subtitle {
@@ -4581,7 +4610,7 @@ textarea {
 
 .knowledge-card.is-compact .knowledge-card-title,
 .knowledge-card.is-compact h3 {
-  font-size: 0.98rem;
+  font-size: calc(var(--type-card) - 0.02rem);
   line-height: 1.3;
   margin: 0;
   display: -webkit-box;
@@ -4622,15 +4651,15 @@ textarea {
 }
 
 .markdown-content h1 {
-  font-size: 1.35rem;
+  font-size: var(--type-section);
 }
 
 .markdown-content h2 {
-  font-size: 1.15rem;
+  font-size: var(--type-card);
 }
 
 .markdown-content h3 {
-  font-size: 1.02rem;
+  font-size: var(--type-body);
 }
 
 .markdown-content p {
@@ -5022,7 +5051,9 @@ textarea {
 
 .knowledge-meta {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
+  font-weight: 500;
+  line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
 
@@ -5149,7 +5180,9 @@ textarea {
 .token-summary-value {
   display: block;
   margin-top: 0.25rem;
-  font-size: 1.15rem;
+  font-size: var(--type-section);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
 }
 
@@ -5183,13 +5216,13 @@ textarea {
 }
 
 .token-badge-startup {
-  border-color: rgba(107, 143, 168, 0.35);
+  border-color: color-mix(in srgb, var(--info-text) 35%, var(--border));
   color: var(--criticity-low-text);
 }
 
 .token-badge-execution {
-  border-color: rgba(135, 120, 163, 0.35);
-  color: #c4b8d8;
+  border-color: color-mix(in srgb, var(--accent-secondary) 35%, var(--border));
+  color: var(--criticity-high-text);
 }
 
 .token-badge-disabled {
@@ -5721,14 +5754,16 @@ textarea {
 }
 
 .chat-widget-title {
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
+  line-height: 1.3;
   letter-spacing: -0.01em;
 }
 
 .chat-widget-context {
   margin-top: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--type-meta);
+  line-height: 1.35;
   color: var(--text-muted);
 }
 
@@ -5820,7 +5855,7 @@ textarea {
 .chat-widget-message p,
 .chat-widget-message-body {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   line-height: 1.5;
   white-space: pre-wrap;
 }
@@ -6686,8 +6721,9 @@ textarea {
 }
 
 .mobile-filters-title {
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
+  line-height: 1.3;
   color: var(--text-primary);
 }
 
@@ -6787,8 +6823,9 @@ textarea {
 }
 
 .chat-widget-mobile-title {
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
+  line-height: 1.3;
   color: var(--text-primary);
 }
 
@@ -6977,7 +7014,7 @@ textarea {
   background: var(--bg-surface);
   color: var(--text-secondary);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--type-body);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -7288,19 +7325,19 @@ textarea {
 }
 
 .rag-index-status-badge.status-queued {
-  color: #d4a72c;
+  color: var(--warning-text);
 }
 
 .rag-index-status-badge.status-processing {
-  color: #4f8cff;
+  color: var(--info-text);
 }
 
 .rag-index-status-badge.status-completed {
-  color: #3fbf7f;
+  color: var(--success-text);
 }
 
 .rag-index-status-badge.status-failed {
-  color: #ff6b6b;
+  color: var(--danger-text);
 }
 
 .rag-index-pipeline {
@@ -7332,15 +7369,15 @@ textarea {
 }
 
 .rag-index-pipeline-step.complete {
-  color: #3fbf7f;
+  color: var(--success-text);
 }
 
 .rag-index-pipeline-step.active {
-  color: #4f8cff;
+  color: var(--info-text);
 }
 
 .rag-index-pipeline-step.failed {
-  color: #ff6b6b;
+  color: var(--danger-text);
 }
 
 .rag-index-pipeline-step.active .rag-index-pipeline-dot {
@@ -7389,11 +7426,12 @@ textarea {
 .rag-chunk-display-id {
   display: inline-flex;
   align-items: center;
-  font-size: 0.62rem;
+  font-size: var(--type-meta);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
   margin-bottom: 0.45rem;
 }
 
@@ -7444,7 +7482,7 @@ textarea {
 
 .rag-chunk-card-header h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -7453,7 +7491,7 @@ textarea {
 .rag-chunk-preview {
   margin: 0.55rem 0 0;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-body);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -7464,9 +7502,10 @@ textarea {
 
 .rag-chunk-meta {
   margin: 0.55rem 0 0;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--type-meta);
+  font-weight: 500;
   letter-spacing: 0.02em;
+  line-height: 1.35;
   color: var(--text-muted);
 }
 
@@ -7855,13 +7894,16 @@ section.board-cycle-header {
 
 .board-cycle-header h2 {
   margin: 0 0 0.35rem;
-  font-size: 1.1rem;
+  font-size: var(--type-section);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .board-cycle-header-summary {
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: var(--type-section);
   font-weight: 600;
+  line-height: 1.2;
   min-height: 2.75rem;
   display: flex;
   align-items: center;
@@ -7914,8 +7956,9 @@ section.board-cycle-header {
 
 .board-cycle-history-summary {
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: var(--type-section);
   font-weight: 600;
+  line-height: 1.2;
   min-height: 2.75rem;
   display: flex;
   align-items: center;
@@ -8817,7 +8860,7 @@ section.board-cycle-header {
 
 .diagram-card-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-card);
   font-weight: 600;
   line-height: 1.3;
   display: -webkit-box;
@@ -8837,7 +8880,9 @@ section.board-cycle-header {
 
 .diagram-card-meta {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
+  font-weight: 500;
+  line-height: 1.35;
   color: var(--text-muted, var(--text-secondary));
   font-variant-numeric: tabular-nums;
 }
@@ -8882,8 +8927,9 @@ section.board-cycle-header {
 .diagram-editor-title {
   width: min(100%, 32rem);
   font: inherit;
-  font-size: 1.25rem;
+  font-size: var(--type-section);
   font-weight: 600;
+  line-height: 1.2;
   color: var(--text-primary);
   background: transparent;
   border: 1px solid transparent;
@@ -8918,8 +8964,9 @@ section.board-cycle-header {
 
 .wireframe-preview-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--type-section);
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .wireframe-preview-frame {
@@ -9044,7 +9091,7 @@ section.board-cycle-header {
 
 .names-session-page .form-field > span {
   color: var(--text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--type-meta);
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -9052,7 +9099,7 @@ section.board-cycle-header {
 
 .names-session-page .form-field small {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   font-weight: 500;
 }
 
