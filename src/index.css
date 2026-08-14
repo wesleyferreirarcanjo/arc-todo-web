@@ -39,6 +39,7 @@
   --entity-mix-fill: 14%;
   --entity-mix-badge: 26%;
   --entity-mix-header: 22%;
+  --entity-mix-corner: 18%;
   --shadow: rgba(6, 10, 18, 0.48);
   --shadow-soft: 0 4px 18px rgba(6, 10, 18, 0.36);
   --shadow-card: 0 8px 28px rgba(6, 10, 18, 0.4), 0 0 0 1px rgba(142, 160, 188, 0.1);
@@ -1740,13 +1741,18 @@ textarea:focus-visible {
   color: inherit;
 }
 
-.entity-card.has-accent {
-  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
-  background: color-mix(
-    in srgb,
-    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),
-    var(--bg-surface)
-  );
+.entity-card.management-card.has-accent::before {
+  background:
+    radial-gradient(
+      ellipse 9rem 7.5rem at 100% 0%,
+      color-mix(
+        in srgb,
+        var(--entity-accent, var(--accent-secondary)) var(--entity-mix-corner),
+        transparent
+      ),
+      transparent 72%
+    ),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.02), transparent);
 }
 
 .entity-card:hover {
