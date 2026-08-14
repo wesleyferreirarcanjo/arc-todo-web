@@ -19,8 +19,8 @@ export default defineConfig({
         short_name: 'Arc Todo',
         display: 'standalone',
         start_url: '/board',
-        theme_color: '#c4965c',
-        background_color: '#100e0c',
+        theme_color: '#4862ce',
+        background_color: '#0d1119',
         icons: [
           {
             src: '/icons/icon-192.png',
