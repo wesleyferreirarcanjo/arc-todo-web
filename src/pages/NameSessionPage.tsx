@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -18,6 +18,7 @@ import {
 import { BRAND_SOURCES } from '../lib/names/brandSources';
 import {
   CODENAME_THEMES,
+  DEFAULT_NAMING_GOAL,
   NAMING_GOAL_OPTIONS,
   NAME_FAMILIES,
   VISUAL_FLAGS,
@@ -55,21 +56,21 @@ import type {
 } from '../types/name-session';
 
 const SECTIONS = [
-  'brief',
   'names',
   'preview',
   'messaging',
   'compare',
   'feedback',
+  'details',
 ] as const;
 
 const SECTION_LABELS: Record<(typeof SECTIONS)[number], string> = {
-  brief: 'Brief',
   names: 'Names',
   preview: 'Preview',
   messaging: 'Messaging',
   compare: 'Compare',
   feedback: 'Feedback',
+  details: 'Details',
 };
 
 const CONTEXT_LONG_FIELDS = new Set<keyof ProductDescription>([
@@ -131,7 +132,8 @@ export function NameSessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
-  const [section, setSection] = useState<(typeof SECTIONS)[number]>('brief');
+  const [section, setSection] = useState<(typeof SECTIONS)[number]>('names');
+  const productFieldRef = useRef<HTMLTextAreaElement>(null);
   const [moreContextOpen, setMoreContextOpen] = useState(false);
   const [generatedCopyOpen, setGeneratedCopyOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -236,7 +238,7 @@ export function NameSessionPage() {
   async function handleBuildDescription() {
     if (!orgId || !projectId || !session) return;
     if (!canvasHasProduct(desc)) {
-      setNotice('Add What the product is before using Build description.');
+      setNotice('Add one sentence about what it does before using Build description.');
       return;
     }
     if ((desc.oneLine || desc.short || desc.full) &&
@@ -334,7 +336,8 @@ export function NameSessionPage() {
 
   async function requireProductThen(action: () => Promise<void>) {
     if (!canvasHasProduct(desc)) {
-      setNotice('Describe What the product is before suggesting names. You can still save this draft.');
+      setNotice('Add one sentence about what it does, then Suggest names. You can still check a name.');
+      productFieldRef.current?.focus();
       return;
     }
     await action();
@@ -503,95 +506,322 @@ export function NameSessionPage() {
       {notice && <div className="alert">{notice}</div>}
       {session && (
         <>
-          <nav className="names-stepper" aria-label="Session sections">
-            {SECTIONS.map((id, index) => (
-              <button
-                key={id}
-                type="button"
-                className={section === id ? 'is-current' : undefined}
-                aria-current={section === id ? 'step' : undefined}
-                onClick={() => setSection(id)}
-              >
-                <span className="names-stepper-index">{index + 1}</span>
-                {SECTION_LABELS[id]}
-              </button>
-            ))}
-          </nav>
-
-          {section === 'brief' && (
-            <section className="names-panel names-brief-panel">
-              <header className="names-brief-intro">
-                <h3>Brief</h3>
-                <p>One sentence and a naming goal are enough to start. Extra context stays optional.</p>
-              </header>
+          <section className="names-quick-brief">
+            <div className="names-quick-brief-row">
               <label className="form-field">
                 <span>What does it do?</span>
                 <textarea
-                  rows={3}
+                  ref={productFieldRef}
+                  rows={2}
                   value={desc.whatItIs ?? ''}
                   placeholder="A private task board for a small team."
                   onChange={(event) => setDesc('whatItIs', event.target.value)}
                   onBlur={() => void saveBrief()}
                 />
-                <small>Needed before Suggest names or Generate possibilities.</small>
               </label>
-              <div className="names-brief-goal">
-                <p className="names-brief-label">What kind of name?</p>
-                <div className="names-goal-grid">
+              <label className="form-field">
+                <span>Kind of name</span>
+                <select
+                  value={
+                    (session.namingGoal as NamingGoal) || DEFAULT_NAMING_GOAL
+                  }
+                  onChange={(event) =>
+                    void patch({ namingGoal: event.target.value })
+                  }
+                >
                   {NAMING_GOAL_OPTIONS.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      className={
-                        session.namingGoal === option.id
-                          ? 'names-goal-card is-selected'
-                          : 'names-goal-card'
-                      }
-                      onClick={() => void patch({ namingGoal: option.id })}
-                    >
-                      <strong>{option.label}</strong>
-                      <span>{option.hint}</span>
-                    </button>
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
                   ))}
-                </div>
+                </select>
+              </label>
+            </div>
+            {session.namingGoal === 'internal_codename' && (
+              <div className="names-brief-codename">
+                <label className="form-field">
+                  <span>Codename theme</span>
+                  <select
+                    value={codenameTheme}
+                    onChange={(event) => setCodenameTheme(event.target.value)}
+                  >
+                    {CODENAME_THEMES.map((theme) => (
+                      <option key={theme} value={theme}>
+                        {theme}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="form-field">
+                  <span>Forbidden themes/words</span>
+                  <input
+                    value={forbiddenWords}
+                    onChange={(event) => setForbiddenWords(event.target.value)}
+                  />
+                </label>
               </div>
-              {session.namingGoal === 'internal_codename' && (
-                <div className="names-brief-codename">
-                  <label className="form-field">
-                    <span>Codename theme</span>
-                    <select
-                      value={codenameTheme}
-                      onChange={(event) => setCodenameTheme(event.target.value)}
-                    >
-                      {CODENAME_THEMES.map((theme) => (
-                        <option key={theme} value={theme}>
-                          {theme}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="form-field">
-                    <span>Forbidden themes/words</span>
-                    <input
-                      value={forbiddenWords}
-                      onChange={(event) => setForbiddenWords(event.target.value)}
-                    />
-                  </label>
-                </div>
+            )}
+            <div className="names-quick-brief-actions">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSection('details')}
+              >
+                Add more details
+              </button>
+              {!canvasHasProduct(desc) && (
+                <small>Needed for Suggest names. Checking a name does not require it.</small>
               )}
-              <div className="names-brief-actions">
+            </div>
+          </section>
+
+          <nav className="names-stepper" aria-label="Session sections">
+            {SECTIONS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                className={section === id ? 'is-current' : undefined}
+                aria-current={section === id ? 'true' : undefined}
+                onClick={() => setSection(id)}
+              >
+                {SECTION_LABELS[id]}
+              </button>
+            ))}
+          </nav>
+
+          {section === 'names' && (
+            <section className="names-panel">
+              <h3>Names</h3>
+              <div className="names-composer">
+                <input
+                  value={typedName}
+                  placeholder="Type a name"
+                  aria-label="Name"
+                  onChange={(event) => setTypedName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void handleCheckName();
+                    }
+                  }}
+                />
                 <button
                   type="button"
                   className="btn btn-primary"
-                  disabled={busy === 'canvas'}
-                  onClick={() =>
-                    void saveBrief().then((ok) => {
-                      if (ok) setSection('names');
-                    })
-                  }
+                  disabled={busy === 'check'}
+                  onClick={() => void handleCheckName()}
                 >
-                  Save and continue
+                  Check name
                 </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={busy === 'suggest'}
+                  onClick={() => void handleSuggestNames()}
+                >
+                  Suggest names
+                </button>
+              </div>
+              <details className="names-description-details">
+                <summary>
+                  <span>
+                    <strong>Generate more</strong>
+                    <small>Families, filters, and AI possibilities</small>
+                  </span>
+                </summary>
+                <div className="names-description-details-body">
+                  <fieldset className="names-families">
+                    <legend>Name families</legend>
+                    {NAME_FAMILIES.map((family) => (
+                      <label key={family.id} className="names-chip">
+                        <input
+                          type="checkbox"
+                          checked={families.includes(family.id)}
+                          onChange={(event) =>
+                            setFamilies((prev) =>
+                              event.target.checked
+                                ? [...prev, family.id]
+                                : prev.filter((id) => id !== family.id),
+                            )
+                          }
+                        />
+                        {family.label}
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      disabled={busy === 'families'}
+                      onClick={() => void handleGenerateFamilies()}
+                    >
+                      Generate possibilities
+                    </button>
+                  </fieldset>
+                  {(session.candidates.length > 3 || (session.lanes ?? []).length > 0) && (
+                    <div className="names-filters">
+                      {(session.lanes ?? []).length > 0 && (
+                        <select value={filterLane} onChange={(event) => setFilterLane(event.target.value)}>
+                          <option value="">All lanes</option>
+                          {(session.lanes ?? []).map((lane) => (
+                            <option key={lane.id} value={lane.id}>
+                              {lane.title}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <select
+                        value={filterFamily}
+                        onChange={(event) => setFilterFamily(event.target.value)}
+                      >
+                        <option value="">All families</option>
+                        {NAME_FAMILIES.map((family) => (
+                          <option key={family.id} value={family.id}>
+                            {family.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={filterSource}
+                        onChange={(event) => setFilterSource(event.target.value)}
+                      >
+                        <option value="">All sources</option>
+                        <option value="human">human</option>
+                        <option value="chatbot">chatbot</option>
+                        <option value="mcp">mcp</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </details>
+              {visibleCandidates.length === 0 ? (
+                <p className="names-empty">
+                  Type a name and press Enter, or Suggest names from the sentence above.
+                </p>
+              ) : (
+              <ul className="names-candidate-list">
+                {visibleCandidates.map((candidate) => (
+                  <CandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    session={session}
+                    orgId={orgId}
+                    projectId={projectId}
+                    sessionId={sessionId}
+                    isBlind={Boolean(isBlind && openRound?.candidateIds.includes(candidate.id))}
+                    busy={busy}
+                    onBusy={setBusy}
+                    onSession={setSession}
+                    onCheck={() => void handleCheckName(candidate.name)}
+                    onPreview={() => {
+                      setPreviewCandidateId(candidate.id);
+                      setSection('preview');
+                    }}
+                    onUpdate={(next) => void updateCandidate(candidate.id, () => next)}
+                    onExplore={async () => {
+                      const variants = exploreVariations(candidate.name);
+                      if (!variants.length) return;
+                      const accepted = window.confirm(
+                        `Add variation "${variants[0]}" from ${candidate.name}? Checks start empty.`,
+                      );
+                      if (!accepted) return;
+                      await addNameCandidates(
+                        orgId,
+                        projectId,
+                        sessionId,
+                        [
+                          {
+                            name: variants[0],
+                            family: candidate.family ?? undefined,
+                            laneId: candidate.laneId ?? undefined,
+                            rationale: `Variation of ${candidate.name}`,
+                          },
+                        ],
+                        'human',
+                      );
+                      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+                      const next = latest.candidates.map((item) =>
+                        normalizeNameKey(item.name) === normalizeNameKey(variants[0])
+                          ? {
+                              ...item,
+                              derivedFromCandidateId: candidate.id,
+                              domainChecks: [],
+                              brandChecks: [],
+                              domainHistory: [],
+                              googleQueryUrl: googleQueryUrl(item.name),
+                            }
+                          : item,
+                      );
+                      await updateProjectNameSession(orgId, projectId, sessionId, {
+                        candidates: next,
+                      }).then(setSession);
+                    }}
+                  />
+                ))}
+              </ul>
+              )}
+            </section>
+          )}
+
+          {section === 'preview' && previewCandidate && (
+            <PreviewSection
+              candidate={previewCandidate}
+              wide={previewWide}
+              dark={previewDark}
+              customExtension={customExtension}
+              onWide={setPreviewWide}
+              onDark={setPreviewDark}
+              onCustom={setCustomExtension}
+              onSave={(next) => void updateCandidate(previewCandidate.id, () => next)}
+            />
+          )}
+          {section === 'preview' && !previewCandidate && (
+            <p className="names-empty">Check a name first, then preview it here.</p>
+          )}
+
+          {section === 'messaging' && (
+            <MessagingSection
+              session={session}
+              orgId={orgId}
+              projectId={projectId}
+              onSave={(next) => void replaceCandidates(next)}
+              onNotice={setNotice}
+            />
+          )}
+
+          {section === 'compare' && (
+            <CompareSection
+              session={session}
+              orgId={orgId}
+              projectId={projectId}
+              sessionId={sessionId}
+              onSession={setSession}
+              onNotice={setNotice}
+            />
+          )}
+
+          {section === 'feedback' && (
+            <FeedbackSection
+              session={session}
+              orgId={orgId}
+              projectId={projectId}
+              sessionId={sessionId}
+              userId={user?.id}
+              pick={feedbackPick}
+              setPick={setFeedbackPick}
+              draft={draft}
+              setDraft={setDraft}
+              onSession={setSession}
+              onNotice={setNotice}
+            />
+          )}
+
+          {section === 'details' && (
+            <section className="names-panel names-brief-panel">
+              <header className="names-brief-intro">
+                <h3>Details</h3>
+                <p>Optional. Fill these when you want a richer brief or generated copy.</p>
+              </header>
+              <div className="names-brief-actions">
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -720,215 +950,6 @@ export function NameSessionPage() {
               </details>
             </section>
           )}
-
-          {section === 'names' && (
-            <section className="names-panel">
-              <h3>Names</h3>
-              <div className="names-composer">
-                <input
-                  value={typedName}
-                  placeholder="Type a name"
-                  aria-label="Name"
-                  onChange={(event) => setTypedName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void handleCheckName();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={busy === 'check'}
-                  onClick={() => void handleCheckName()}
-                >
-                  Check name
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={busy === 'suggest'}
-                  onClick={() => void handleSuggestNames()}
-                >
-                  Suggest names
-                </button>
-              </div>
-              <fieldset className="names-families">
-                <legend>Name families</legend>
-                {NAME_FAMILIES.map((family) => (
-                  <label key={family.id} className="names-chip">
-                    <input
-                      type="checkbox"
-                      checked={families.includes(family.id)}
-                      onChange={(event) =>
-                        setFamilies((prev) =>
-                          event.target.checked
-                            ? [...prev, family.id]
-                            : prev.filter((id) => id !== family.id),
-                        )
-                      }
-                    />
-                    {family.label}
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  disabled={busy === 'families'}
-                  onClick={() => void handleGenerateFamilies()}
-                >
-                  Generate possibilities
-                </button>
-              </fieldset>
-              <div className="names-filters">
-                <select value={filterLane} onChange={(event) => setFilterLane(event.target.value)}>
-                  <option value="">All lanes</option>
-                  {(session.lanes ?? []).map((lane) => (
-                    <option key={lane.id} value={lane.id}>
-                      {lane.title}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={filterFamily}
-                  onChange={(event) => setFilterFamily(event.target.value)}
-                >
-                  <option value="">All families</option>
-                  {NAME_FAMILIES.map((family) => (
-                    <option key={family.id} value={family.id}>
-                      {family.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={filterSource}
-                  onChange={(event) => setFilterSource(event.target.value)}
-                >
-                  <option value="">All sources</option>
-                  <option value="human">human</option>
-                  <option value="chatbot">chatbot</option>
-                  <option value="mcp">mcp</option>
-                </select>
-              </div>
-              {visibleCandidates.length === 0 ? (
-                <p className="names-empty">
-                  Check a name or suggest a few from the brief.
-                </p>
-              ) : (
-              <ul className="names-candidate-list">
-                {visibleCandidates.map((candidate) => (
-                  <CandidateCard
-                    key={candidate.id}
-                    candidate={candidate}
-                    session={session}
-                    orgId={orgId}
-                    projectId={projectId}
-                    sessionId={sessionId}
-                    isBlind={Boolean(isBlind && openRound?.candidateIds.includes(candidate.id))}
-                    busy={busy}
-                    onBusy={setBusy}
-                    onSession={setSession}
-                    onCheck={() => void handleCheckName(candidate.name)}
-                    onPreview={() => {
-                      setPreviewCandidateId(candidate.id);
-                      setSection('preview');
-                    }}
-                    onUpdate={(next) => void updateCandidate(candidate.id, () => next)}
-                    onExplore={async () => {
-                      const variants = exploreVariations(candidate.name);
-                      if (!variants.length) return;
-                      const accepted = window.confirm(
-                        `Add variation "${variants[0]}" from ${candidate.name}? Checks start empty.`,
-                      );
-                      if (!accepted) return;
-                      await addNameCandidates(
-                        orgId,
-                        projectId,
-                        sessionId,
-                        [
-                          {
-                            name: variants[0],
-                            family: candidate.family ?? undefined,
-                            laneId: candidate.laneId ?? undefined,
-                            rationale: `Variation of ${candidate.name}`,
-                          },
-                        ],
-                        'human',
-                      );
-                      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-                      const next = latest.candidates.map((item) =>
-                        normalizeNameKey(item.name) === normalizeNameKey(variants[0])
-                          ? {
-                              ...item,
-                              derivedFromCandidateId: candidate.id,
-                              domainChecks: [],
-                              brandChecks: [],
-                              domainHistory: [],
-                              googleQueryUrl: googleQueryUrl(item.name),
-                            }
-                          : item,
-                      );
-                      await updateProjectNameSession(orgId, projectId, sessionId, {
-                        candidates: next,
-                      }).then(setSession);
-                    }}
-                  />
-                ))}
-              </ul>
-              )}
-            </section>
-          )}
-
-          {section === 'preview' && previewCandidate && (
-            <PreviewSection
-              candidate={previewCandidate}
-              wide={previewWide}
-              dark={previewDark}
-              customExtension={customExtension}
-              onWide={setPreviewWide}
-              onDark={setPreviewDark}
-              onCustom={setCustomExtension}
-              onSave={(next) => void updateCandidate(previewCandidate.id, () => next)}
-            />
-          )}
-
-          {section === 'messaging' && (
-            <MessagingSection
-              session={session}
-              orgId={orgId}
-              projectId={projectId}
-              onSave={(next) => void replaceCandidates(next)}
-              onNotice={setNotice}
-            />
-          )}
-
-          {section === 'compare' && (
-            <CompareSection
-              session={session}
-              orgId={orgId}
-              projectId={projectId}
-              sessionId={sessionId}
-              onSession={setSession}
-              onNotice={setNotice}
-            />
-          )}
-
-          {section === 'feedback' && (
-            <FeedbackSection
-              session={session}
-              orgId={orgId}
-              projectId={projectId}
-              sessionId={sessionId}
-              userId={user?.id}
-              pick={feedbackPick}
-              setPick={setFeedbackPick}
-              draft={draft}
-              setDraft={setDraft}
-              onSession={setSession}
-              onNotice={setNotice}
-            />
-          )}
         </>
       )}
     </div>
@@ -980,11 +1001,6 @@ function CandidateCard(props: {
             {sourceLabel(candidate.sources)} · {candidate.family || 'untagged'}
             {candidate.derivedFromCandidateId && ' · variation'}
             {candidate.status !== 'active' && ` · ${candidate.status}`}
-            {' · '}
-            {quality.charCount} chars · ~{quality.syllablesApprox} syllables
-            {quality.hyphen ? ' · hyphen' : ''}
-            {quality.digit ? ' · digit' : ''}
-            {quality.ambiguous ? ' · ambiguous letters' : ''}
           </p>
         </div>
         <button type="button" className="btn btn-secondary btn-sm" onClick={props.onCheck}>
@@ -1013,17 +1029,25 @@ function CandidateCard(props: {
         <a href={googleImagesQueryUrl(candidate.name)} target="_blank" rel="noreferrer">
           Images
         </a>
-        <button type="button" onClick={props.onExplore}>
-          Explore variations
-        </button>
         <button type="button" onClick={props.onPreview}>
           Preview in context
         </button>
       </div>
-      <details>
-        <summary>Brand footprint / Open checks</summary>
+      <details className="names-card-more">
+        <summary>More checks</summary>
+        <p className="diagram-card-meta">
+          {quality.charCount} chars · ~{quality.syllablesApprox} syllables
+          {quality.hyphen ? ' · hyphen' : ''}
+          {quality.digit ? ' · digit' : ''}
+          {quality.ambiguous ? ' · ambiguous letters' : ''}
+        </p>
+        <div className="names-card-links">
+          <button type="button" onClick={props.onExplore}>
+            Explore variations
+          </button>
+        </div>
         <p className="page-subtitle">
-          Preliminary check only — legal review may still be needed.
+          Brand footprint — preliminary check only, not legal clearance.
         </p>
         <div className="names-brand-grid">
           {BRAND_SOURCES.map((source) => {
@@ -1064,9 +1088,7 @@ function CandidateCard(props: {
         {(candidate.brandChecks ?? []).some((item) => item.result === 'collision') && (
           <div className="alert">Exact collision recorded. This is not legal clearance.</div>
         )}
-      </details>
-      <details>
-        <summary>Domain history</summary>
+        <p className="names-brief-label">Domain history</p>
         {(candidate.domainHistory ?? []).map((item) => (
           <p key={item.host}>
             {item.host}: {historyLabel(item.status)} · {item.checkedAt}
@@ -1099,55 +1121,52 @@ function CandidateCard(props: {
             }
           }}
         >
-          Recheck
+          Recheck history
         </button>
-      </details>
-      <div className="names-inline">
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={() => {
-            if (!speechOk) {
+        <div className="names-inline">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              if (!speechOk) {
+                props.onUpdate({
+                  ...candidate,
+                  pronunciation: { ...candidate.pronunciation, speechUnsupported: true },
+                });
+                return;
+              }
+              const utter = new SpeechSynthesisUtterance(candidate.name);
+              window.speechSynthesis.speak(utter);
+            }}
+          >
+            Hear name
+          </button>
+          {candidate.pronunciation?.speechUnsupported && (
+            <span>Speech is unavailable in this browser.</span>
+          )}
+          <input
+            placeholder="How you heard the spelling"
+            value={heard}
+            onChange={(event) => setHeard(event.target.value)}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() =>
               props.onUpdate({
                 ...candidate,
-                pronunciation: { ...candidate.pronunciation, speechUnsupported: true },
-              });
-              return;
+                pronunciation: {
+                  heardSpelling: heard,
+                  mismatch: normalizeNameKey(heard) !== normalizeNameKey(candidate.name),
+                  note: heard,
+                },
+              })
             }
-            const utter = new SpeechSynthesisUtterance(candidate.name);
-            window.speechSynthesis.speak(utter);
-          }}
-        >
-          Hear name
-        </button>
-        {candidate.pronunciation?.speechUnsupported && (
-          <span>Speech is unavailable in this browser.</span>
-        )}
-        <input
-          placeholder="How you heard the spelling"
-          value={heard}
-          onChange={(event) => setHeard(event.target.value)}
-        />
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={() =>
-            props.onUpdate({
-              ...candidate,
-              pronunciation: {
-                heardSpelling: heard,
-                mismatch: normalizeNameKey(heard) !== normalizeNameKey(candidate.name),
-                note: heard,
-              },
-            })
-          }
-        >
-          Save heard spelling
-        </button>
-      </div>
-      <details>
-        <summary>Check language</summary>
-        <p className="page-subtitle">AI-assisted — verify with a native speaker</p>
+          >
+            Save heard spelling
+          </button>
+        </div>
+        <p className="page-subtitle">Check language — AI-assisted, verify with a native speaker</p>
         <div className="names-inline">
           {['Português', 'Inglês'].map((language) => {
             const manual = (candidate.languageChecks?.manual ?? []).find(
@@ -1255,31 +1274,31 @@ function CandidateCard(props: {
             }}
           />
         </label>
-      </details>
-      <label className="form-field">
-        <span>Notes</span>
-        <textarea
-          rows={2}
-          value={notes}
-          onChange={(event) => setNotes(event.target.value)}
-          onBlur={() => {
-            if (notes !== (candidate.notes ?? '')) {
-              props.onUpdate({ ...candidate, notes });
+        <label className="form-field">
+          <span>Notes</span>
+          <textarea
+            rows={2}
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            onBlur={() => {
+              if (notes !== (candidate.notes ?? '')) {
+                props.onUpdate({ ...candidate, notes });
+              }
+            }}
+          />
+        </label>
+        <div className="names-inline">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() =>
+              props.onUpdate({ ...candidate, status: 'rejected', notes })
             }
-          }}
-        />
-      </label>
-      <div className="names-inline">
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={() =>
-            props.onUpdate({ ...candidate, status: 'rejected', notes })
-          }
-        >
-          Reject
-        </button>
-      </div>
+          >
+            Reject
+          </button>
+        </div>
+      </details>
     </li>
   );
 }

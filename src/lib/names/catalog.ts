@@ -9,6 +9,8 @@ export const NAME_FAMILIES = [
   { id: 'codename', label: 'Short codename/theme' },
 ] as const;
 
+export const DEFAULT_NAMING_GOAL: NamingGoal = 'public_product';
+
 export const NAMING_GOAL_OPTIONS: Array<{
   id: NamingGoal;
   label: string;

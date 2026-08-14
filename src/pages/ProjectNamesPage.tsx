@@ -6,12 +6,14 @@ import { Select } from '../components/Select';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import {
+  createNameSessionBasics,
   createProjectNameSession,
   deleteProjectNameSession,
   fetchProjectNameSessions,
   updateProjectNameSession,
 } from '../lib/api/names';
-import type { ProjectNameSessionSummary } from '../types/name-session';
+import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
+import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-session';
 
 type NameSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
 
@@ -33,6 +35,8 @@ export function ProjectNamesPage() {
   const [forbidden, setForbidden] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [whatItIs, setWhatItIs] = useState('');
+  const [createGoal, setCreateGoal] = useState<NamingGoal>(DEFAULT_NAMING_GOAL);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [renameTarget, setRenameTarget] =
@@ -97,7 +101,11 @@ export function ProjectNamesPage() {
     setCreating(true);
     setCreateError(null);
     try {
-      const created = await createProjectNameSession(orgId, projectId, { title });
+      const created = await createProjectNameSession(
+        orgId,
+        projectId,
+        createNameSessionBasics(title, whatItIs, createGoal),
+      );
       navigate(`/organizations/${orgId}/projects/${projectId}/names/${created.id}`);
     } catch {
       setCreateError('Failed to create name session.');
@@ -134,7 +142,7 @@ export function ProjectNamesPage() {
         <div>
           <h2>{currentProject?.name ?? 'Project'} names</h2>
           <p className="page-subtitle">
-            Naming sessions for this project.
+            Naming sessions for this project. Start with a working name and one sentence.
             {!loading && !error && sessions.length > 0 && (
               <>
                 {' '}
@@ -157,6 +165,8 @@ export function ProjectNamesPage() {
           onClick={() => {
             setCreateOpen(true);
             setNewTitle('');
+            setWhatItIs('');
+            setCreateGoal(DEFAULT_NAMING_GOAL);
             setCreateError(null);
           }}
         >
@@ -176,6 +186,8 @@ export function ProjectNamesPage() {
             onClick={() => {
               setCreateOpen(true);
               setNewTitle('');
+              setWhatItIs('');
+              setCreateGoal(DEFAULT_NAMING_GOAL);
               setCreateError(null);
             }}
           >
@@ -277,6 +289,29 @@ export function ProjectNamesPage() {
             }}
           />
         </label>
+        <label className="form-field">
+          <span>What does it do?</span>
+          <textarea
+            rows={2}
+            value={whatItIs}
+            onChange={(event) => setWhatItIs(event.target.value)}
+            placeholder="A private task board for a small team."
+          />
+        </label>
+        <div className="form-field">
+          <span>Kind of name</span>
+          <Select
+            value={createGoal}
+            onChange={(value) => setCreateGoal(value as NamingGoal)}
+            options={NAMING_GOAL_OPTIONS.map((option) => ({
+              value: option.id,
+              label: option.label,
+            }))}
+          />
+        </div>
+        <p className="page-subtitle">
+          Enough to start checking names. Extra context can wait.
+        </p>
         {createError && <div className="alert alert-error">{createError}</div>}
         <div className="knowledge-actions">
           <button

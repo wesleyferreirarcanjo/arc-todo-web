@@ -6,15 +6,17 @@ import { Select } from '../components/Select';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api/client';
 import {
+  createNameSessionBasics,
   createProjectNameSession,
   deleteProjectNameSession,
   fetchProjectNameSessions,
   updateProjectNameSession,
 } from '../lib/api/names';
+import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { createProject, fetchProjects } from '../lib/api/projects';
 import { DEFAULT_PROJECT_COLOR, getProjectColor } from '../lib/color/entityColor';
-import type { ProjectNameSessionSummary } from '../types/name-session';
+import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-session';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
@@ -61,6 +63,8 @@ export function NamesHubPage() {
   const [createOrgId, setCreateOrgId] = useState('');
   const [createProjectId, setCreateProjectId] = useState('');
   const [newTitle, setNewTitle] = useState('');
+  const [whatItIs, setWhatItIs] = useState('');
+  const [createGoal, setCreateGoal] = useState<NamingGoal>(DEFAULT_NAMING_GOAL);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [renameTarget, setRenameTarget] = useState<HubSession | null>(null);
@@ -170,6 +174,8 @@ export function NamesHubPage() {
     setCreateOrgId(defaultOrg);
     setCreateProjectId(isAdmin ? '' : defaultProject);
     setNewTitle('');
+    setWhatItIs('');
+    setCreateGoal(DEFAULT_NAMING_GOAL);
     setCreateError(null);
     setCreateOpen(true);
   }
@@ -199,10 +205,11 @@ export function NamesHubPage() {
         });
         projectId = project.id;
       }
-      const created = await createProjectNameSession(createOrgId, projectId, {
-        title,
-        brief: title,
-      });
+      const created = await createProjectNameSession(
+        createOrgId,
+        projectId,
+        createNameSessionBasics(title, whatItIs, createGoal),
+      );
       setCreateOpen(false);
       navigate(
         `/organizations/${createOrgId}/projects/${projectId}/names/${created.id}`,
@@ -285,7 +292,7 @@ export function NamesHubPage() {
         <div>
           <h2>Names</h2>
           <p className="page-subtitle">
-            Start with a temporary working name, then test DNS, Google, and team evidence.
+            Start with a working name and one sentence. You can add more later.
             {!loading && !error && items.length > 0 && (
               <>
                 {' '}
@@ -308,7 +315,7 @@ export function NamesHubPage() {
         <div className="diagrams-empty">
           <p className="status-message">
             {canCreate ? (
-              'No name sessions yet. Start with a temporary working name like project-g.'
+              'No name sessions yet. A working name and one sentence are enough to start.'
             ) : (
               <>
                 Join an organization, then start with a working name like project-g
@@ -495,10 +502,30 @@ export function NamesHubPage() {
             }}
           />
         </label>
+        <label className="form-field">
+          <span>What does it do?</span>
+          <textarea
+            rows={2}
+            value={whatItIs}
+            onChange={(event) => setWhatItIs(event.target.value)}
+            placeholder="A private task board for a small team."
+          />
+        </label>
+        <div className="form-field">
+          <span>Kind of name</span>
+          <Select
+            value={createGoal}
+            onChange={(value) => setCreateGoal(value as NamingGoal)}
+            options={NAMING_GOAL_OPTIONS.map((option) => ({
+              value: option.id,
+              label: option.label,
+            }))}
+          />
+        </div>
         <p className="page-subtitle">
           {isAdmin
-            ? 'A throwaway name until you pick a real one. This also creates a project with the same name.'
-            : 'A throwaway name until you pick a real one. Stored on the selected project.'}
+            ? 'Enough to start checking names. Extra context can wait. This also creates a project with the working name.'
+            : 'Enough to start checking names. Extra context can wait. Stored on the selected project.'}
         </p>
         {createError && <div className="alert alert-error">{createError}</div>}
         <div className="knowledge-actions">

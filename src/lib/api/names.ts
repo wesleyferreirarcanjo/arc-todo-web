@@ -6,6 +6,7 @@ import type {
   ProjectNameSessionSummary,
   UpdateNameSessionInput,
 } from '../../types/name-session';
+import { DEFAULT_NAMING_GOAL } from '../names/catalog';
 
 function namesBasePath(orgId: string, projectId: string): string {
   return `/organizations/${orgId}/projects/${projectId}/name-sessions`;
@@ -26,6 +27,20 @@ export function fetchProjectNameSession(
   return apiRequest<ProjectNameSession>(
     `${namesBasePath(orgId, projectId)}/${sessionId}`,
   );
+}
+
+export function createNameSessionBasics(
+  title: string,
+  whatItIs = '',
+  namingGoal = DEFAULT_NAMING_GOAL,
+): CreateNameSessionInput {
+  const product = whatItIs.trim();
+  return {
+    title,
+    brief: title,
+    namingGoal,
+    productDescription: product ? { whatItIs: product } : {},
+  };
 }
 
 export function createProjectNameSession(
