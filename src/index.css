@@ -39,9 +39,10 @@
   --entity-mix-fill: 14%;
   --entity-mix-badge: 26%;
   --entity-mix-header: 22%;
-  --entity-corner-opacity: 0.32;
+  --entity-corner-opacity: 0.28;
   --entity-rail-card-width: 3px;
   --entity-rail-card-mix: 80%;
+  --entity-corner-glow-mix: 50%;
   --shadow: rgba(6, 10, 18, 0.48);
   --shadow-soft: 0 4px 18px rgba(6, 10, 18, 0.36);
   --shadow-card: 0 8px 28px rgba(6, 10, 18, 0.4), 0 0 0 1px rgba(142, 160, 188, 0.1);
@@ -1750,7 +1751,18 @@ textarea:focus-visible {
     var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),
     var(--border-strong)
   );
+  --entity-corner-glow: 10px -8px 22px -2px
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) var(--entity-corner-glow-mix),
+      transparent
+    );
   border-left: var(--entity-rail-card-width) solid var(--entity-rail-card-color);
+}
+
+.entity-card.management-card.has-accent {
+  overflow: visible;
+  box-shadow: var(--shadow-card), var(--entity-corner-glow);
 }
 
 .entity-card.management-card.has-accent:hover,
@@ -1758,6 +1770,10 @@ textarea:focus-visible {
 .task-card.has-accent.has-menu-open,
 .task-card.has-accent:focus-within {
   border-left-color: var(--entity-rail-card-color);
+}
+
+.entity-card.management-card.has-accent:hover {
+  box-shadow: var(--shadow-lift), var(--entity-corner-glow);
 }
 
 .entity-card.management-card.has-accent::before {
@@ -3210,7 +3226,7 @@ textarea {
   background: var(--bg-elevated);
   cursor: grab;
   box-shadow: var(--shadow-soft);
-  transition: border-color var(--transition-base);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .task-card.is-draggable {
@@ -3268,6 +3284,14 @@ textarea {
   border-color: var(--accent);
 }
 
+.task-card.has-accent {
+  box-shadow: var(--shadow-soft), var(--entity-corner-glow);
+}
+
+.task-card-overlay.has-accent {
+  box-shadow: var(--shadow-lift), var(--entity-corner-glow);
+}
+
 .task-card.has-accent::before {
   content: '';
   position: absolute;
@@ -3280,6 +3304,84 @@ textarea {
     transparent 70%
   );
   opacity: var(--entity-corner-opacity);
+}
+
+.task-card.has-accent.has-subtasks:not(.is-subtask)::before {
+  background: radial-gradient(
+    ellipse 8.5rem 13rem at 100% 0%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 74%
+  );
+}
+
+.task-card.is-subtask.has-accent {
+  --entity-light-x: 0%;
+  --entity-light-y: 0%;
+  --entity-corner-glow: -7px -9px 16px -4px
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) 22%,
+      transparent
+    );
+}
+
+.task-card.is-subtask.has-accent::before {
+  background: radial-gradient(
+    ellipse 8rem 4.4rem at var(--entity-light-x) var(--entity-light-y),
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 76%
+  );
+  opacity: var(--subtask-light-opacity, 0.18);
+}
+
+.task-subtasks > .task-card.is-subtask.has-accent:nth-child(1) {
+  --entity-light-x: -10%;
+  --entity-light-y: -28%;
+  --subtask-light-opacity: 0.22;
+}
+
+.task-subtasks > .task-card.is-subtask.has-accent:nth-child(2) {
+  --entity-light-x: 4%;
+  --entity-light-y: 18%;
+  --subtask-light-opacity: 0.14;
+  --entity-corner-glow: -4px -4px 12px -6px
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) 14%,
+      transparent
+    );
+}
+
+.task-subtasks > .task-card.is-subtask.has-accent:nth-child(3) {
+  --entity-light-x: 10%;
+  --entity-light-y: 42%;
+  --subtask-light-opacity: 0.08;
+  --entity-corner-glow: none;
+}
+
+.task-subtasks > .task-card.is-subtask.has-accent:nth-child(n + 4) {
+  --entity-light-x: 14%;
+  --entity-light-y: 58%;
+  --subtask-light-opacity: 0.04;
+  --entity-corner-glow: none;
+}
+
+.task-card.is-subtask.is-detached-subtask.has-accent {
+  --entity-corner-glow: 8px -6px 16px -4px
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) 28%,
+      transparent
+    );
+}
+
+.task-card.is-subtask.is-detached-subtask.has-accent::before {
+  background: radial-gradient(
+    ellipse 6rem 5rem at 100% 0%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 70%
+  );
+  opacity: 0.16;
 }
 
 .task-card.is-compact {
