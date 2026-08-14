@@ -2668,7 +2668,7 @@ textarea {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-pill);
   padding: 0.65rem 0.9rem 0.65rem 1rem;
   background: var(--bg-elevated);
   color: var(--text-primary);
