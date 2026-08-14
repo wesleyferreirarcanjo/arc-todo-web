@@ -42,7 +42,9 @@
   --entity-corner-opacity: 0.28;
   --entity-rail-card-width: 3px;
   --entity-rail-card-mix: 80%;
-  --entity-corner-glow-mix: 26%;
+  --entity-corner-glow-mix: 40%;
+  --entity-rail-glow-out-mix: 34%;
+  --entity-rail-glow-in-mix: 14%;
   --shadow: rgba(6, 10, 18, 0.48);
   --shadow-soft: 0 4px 18px rgba(6, 10, 18, 0.36);
   --shadow-card: 0 8px 28px rgba(6, 10, 18, 0.4), 0 0 0 1px rgba(142, 160, 188, 0.1);
@@ -1751,18 +1753,30 @@ textarea:focus-visible {
     var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),
     var(--border-strong)
   );
-  --entity-corner-glow: 8px -7px 16px -14px
+  --entity-corner-glow: 9px -7px 16px -10px
     color-mix(
       in srgb,
       var(--entity-accent, var(--accent-secondary)) var(--entity-corner-glow-mix),
       transparent
     );
+  --entity-rail-glow: -3px 0 8px -1px
+      color-mix(
+        in srgb,
+        var(--entity-accent, var(--accent-secondary)) var(--entity-rail-glow-out-mix),
+        transparent
+      ),
+    inset 4px 0 8px -3px
+      color-mix(
+        in srgb,
+        var(--entity-accent, var(--accent-secondary)) var(--entity-rail-glow-in-mix),
+        transparent
+      );
   border-left: var(--entity-rail-card-width) solid var(--entity-rail-card-color);
 }
 
 .entity-card.management-card.has-accent {
   overflow: visible;
-  box-shadow: var(--shadow-card), var(--entity-corner-glow);
+  box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .entity-card.management-card.has-accent:hover,
@@ -1773,7 +1787,7 @@ textarea:focus-visible {
 }
 
 .entity-card.management-card.has-accent:hover {
-  box-shadow: var(--shadow-lift), var(--entity-corner-glow);
+  box-shadow: var(--shadow-lift), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .entity-card.management-card.has-accent::before {
@@ -3285,11 +3299,11 @@ textarea {
 }
 
 .task-card.has-accent {
-  box-shadow: var(--shadow-soft), var(--entity-corner-glow);
+  box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .task-card-overlay.has-accent {
-  box-shadow: var(--shadow-lift), var(--entity-corner-glow);
+  box-shadow: var(--shadow-lift), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
 .task-card.has-accent::before {
@@ -3309,7 +3323,10 @@ textarea {
 .task-card.is-subtask.has-accent {
   --entity-light-x: 2%;
   --entity-light-y: -6%;
-  --entity-corner-glow: none;
+}
+
+.task-subtasks > .task-card.is-subtask.has-accent {
+  --entity-corner-glow: 0 0 0 transparent;
 }
 
 .task-card.is-subtask.has-accent::before {
@@ -3343,15 +3360,6 @@ textarea {
   --entity-light-x: 18%;
   --entity-light-y: 62%;
   --subtask-light-opacity: 0.03;
-}
-
-.task-card.is-subtask.is-detached-subtask.has-accent {
-  --entity-corner-glow: 8px -7px 16px -14px
-    color-mix(
-      in srgb,
-      var(--entity-accent, var(--accent-secondary)) 22%,
-      transparent
-    );
 }
 
 .task-card.is-subtask.is-detached-subtask.has-accent::before {
