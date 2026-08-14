@@ -39,7 +39,9 @@
   --entity-mix-fill: 14%;
   --entity-mix-badge: 26%;
   --entity-mix-header: 22%;
-  --entity-corner-opacity: 0.2;
+  --entity-corner-opacity: 0.32;
+  --entity-rail-card-width: 3px;
+  --entity-rail-card-mix: 80%;
   --shadow: rgba(6, 10, 18, 0.48);
   --shadow-soft: 0 4px 18px rgba(6, 10, 18, 0.36);
   --shadow-card: 0 8px 28px rgba(6, 10, 18, 0.4), 0 0 0 1px rgba(142, 160, 188, 0.1);
@@ -1739,6 +1741,23 @@ textarea:focus-visible {
   padding: 1.15rem 0 1.15rem 1.35rem;
   cursor: pointer;
   color: inherit;
+}
+
+.entity-card.management-card.has-accent,
+.task-card.has-accent {
+  --entity-rail-card-color: color-mix(
+    in srgb,
+    var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),
+    var(--border-strong)
+  );
+  border-left: var(--entity-rail-card-width) solid var(--entity-rail-card-color);
+}
+
+.entity-card.management-card.has-accent:hover,
+.task-card.has-accent:hover,
+.task-card.has-accent.has-menu-open,
+.task-card.has-accent:focus-within {
+  border-left-color: var(--entity-rail-card-color);
 }
 
 .entity-card.management-card.has-accent::before {
