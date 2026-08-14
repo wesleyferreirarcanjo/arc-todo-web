@@ -55,14 +55,28 @@ import type {
 } from '../types/name-session';
 
 const SECTIONS = [
-  'description',
-  'goal',
+  'brief',
   'names',
   'preview',
   'messaging',
   'compare',
   'feedback',
 ] as const;
+
+const SECTION_LABELS: Record<(typeof SECTIONS)[number], string> = {
+  brief: 'Brief',
+  names: 'Names',
+  preview: 'Preview',
+  messaging: 'Messaging',
+  compare: 'Compare',
+  feedback: 'Feedback',
+};
+
+const CONTEXT_LONG_FIELDS = new Set<keyof ProductDescription>([
+  'problem',
+  'benefits',
+  'competitors',
+]);
 
 const DESCRIPTION_CONTEXT_GROUPS = [
   {
@@ -117,7 +131,7 @@ export function NameSessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
-  const [section, setSection] = useState<(typeof SECTIONS)[number]>('description');
+  const [section, setSection] = useState<(typeof SECTIONS)[number]>('brief');
   const [moreContextOpen, setMoreContextOpen] = useState(false);
   const [generatedCopyOpen, setGeneratedCopyOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -196,13 +210,16 @@ export function NameSessionPage() {
     return updated;
   }
 
-  async function saveCanvas(next: ProductDescription) {
+  async function saveBrief(): Promise<boolean> {
+    if (!session) return false;
     setBusy('canvas');
     setNotice(null);
     try {
-      await patch({ productDescription: next });
+      await patch({ productDescription: desc, brief: session.brief });
+      return true;
     } catch {
       setError('Failed to save description.');
+      return false;
     } finally {
       setBusy(null);
     }
@@ -486,180 +503,60 @@ export function NameSessionPage() {
       {notice && <div className="alert">{notice}</div>}
       {session && (
         <>
-          <nav className="names-section-nav" aria-label="Session sections">
-            {SECTIONS.map((id) => (
+          <nav className="names-stepper" aria-label="Session sections">
+            {SECTIONS.map((id, index) => (
               <button
                 key={id}
                 type="button"
-                className={section === id ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                className={section === id ? 'is-current' : undefined}
+                aria-current={section === id ? 'step' : undefined}
                 onClick={() => setSection(id)}
               >
-                {id === 'description' && 'Product description'}
-                {id === 'goal' && 'Naming goal'}
-                {id === 'names' && 'Names'}
-                {id === 'preview' && 'Preview in context'}
-                {id === 'messaging' && 'Messaging test'}
-                {id === 'compare' && 'Compare shortlist'}
-                {id === 'feedback' && 'Feedback round'}
+                <span className="names-stepper-index">{index + 1}</span>
+                {SECTION_LABELS[id]}
               </button>
             ))}
           </nav>
 
-          {section === 'description' && (
-            <section className="names-panel names-description-panel">
-              <div className="names-description-intro">
-                <div>
-                  <p className="names-description-kicker">Start here</p>
-                  <h3>Tell us what you’re naming</h3>
-                  <p>
-                    Two quick answers are enough. You can add detail only when it helps.
-                  </p>
-                </div>
-                <span className="names-description-time">About 1 minute</span>
-              </div>
-              <div className="names-description-essentials">
-                <label className="form-field">
-                  <span>What are you naming?</span>
-                  <input
-                    value={session.brief}
-                    placeholder="A product, company, feature, or codename"
-                    onChange={(event) =>
-                      setSession({ ...session, brief: event.target.value })
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>
-                    Describe it in one sentence
-                    <small>Needed for suggestions</small>
-                  </span>
-                  <textarea
-                    rows={3}
-                    value={desc.whatItIs ?? ''}
-                    placeholder="What does it help people do?"
-                    onChange={(event) => setDesc('whatItIs', event.target.value)}
-                  />
-                </label>
-                <p className="names-description-helper">
-                  That’s enough to begin. Save a draft now, or add context for more focused
-                  name ideas.
-                </p>
-              </div>
-              <div className="knowledge-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={busy === 'canvas'}
-                  onClick={() => void saveCanvas(desc).then(() => patch({ brief: session.brief }))}
-                >
-                  Save description
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={busy === 'build'}
-                  onClick={() => void handleBuildDescription()}
-                >
-                  Build description
-                </button>
-              </div>
-              <details
-                className="names-description-details"
-                open={moreContextOpen}
-                onToggle={(event) => setMoreContextOpen(event.currentTarget.open)}
-              >
-                <summary>
-                  <span>
-                    <strong>Add helpful context</strong>
-                    <small>Audience, benefits, language, and naming constraints</small>
-                  </span>
-                  <span className="names-description-summary-meta">Optional</span>
-                </summary>
-                <div className="names-description-details-body">
-                  {DESCRIPTION_CONTEXT_GROUPS.map((group) => (
-                    <div key={group.title} className="names-description-context-group">
-                      <h4>{group.title}</h4>
-                      <div className="names-description-context-grid">
-                        {group.fields.map(([key, label]) => (
-                          <label key={key} className="form-field">
-                            <span>{label}</span>
-                            <textarea
-                              rows={key === 'benefits' ? 3 : 2}
-                              value={desc[key] ?? ''}
-                              onChange={(event) => setDesc(key, event.target.value)}
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+          {section === 'brief' && (
+            <section className="names-panel names-brief-panel">
+              <header className="names-brief-intro">
+                <h3>Brief</h3>
+                <p>One sentence and a naming goal are enough to start. Extra context stays optional.</p>
+              </header>
+              <label className="form-field">
+                <span>What does it do?</span>
+                <textarea
+                  rows={3}
+                  value={desc.whatItIs ?? ''}
+                  placeholder="A private task board for a small team."
+                  onChange={(event) => setDesc('whatItIs', event.target.value)}
+                  onBlur={() => void saveBrief()}
+                />
+                <small>Needed before Suggest names or Generate possibilities.</small>
+              </label>
+              <div className="names-brief-goal">
+                <p className="names-brief-label">What kind of name?</p>
+                <div className="names-goal-grid">
+                  {NAMING_GOAL_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={
+                        session.namingGoal === option.id
+                          ? 'names-goal-card is-selected'
+                          : 'names-goal-card'
+                      }
+                      onClick={() => void patch({ namingGoal: option.id })}
+                    >
+                      <strong>{option.label}</strong>
+                      <span>{option.hint}</span>
+                    </button>
                   ))}
                 </div>
-              </details>
-              <details
-                className="names-description-details"
-                open={generatedCopyOpen}
-                onToggle={(event) => setGeneratedCopyOpen(event.currentTarget.open)}
-              >
-                <summary>
-                  <span>
-                    <strong>Review generated description</strong>
-                    <small>Editable one-line, short, and full versions</small>
-                  </span>
-                  <span className="names-description-summary-meta">
-                    {hasGeneratedCanvasCopy(desc) ? 'Ready' : 'Optional'}
-                  </span>
-                </summary>
-                <div className="names-description-details-body">
-                  <label className="form-field">
-                    <span>One-line</span>
-                    <input
-                      value={desc.oneLine ?? ''}
-                      onChange={(event) => setDesc('oneLine', event.target.value)}
-                    />
-                  </label>
-                  <label className="form-field">
-                    <span>Short</span>
-                    <textarea
-                      rows={2}
-                      value={desc.short ?? ''}
-                      onChange={(event) => setDesc('short', event.target.value)}
-                    />
-                  </label>
-                  <label className="form-field">
-                    <span>Full</span>
-                    <textarea
-                      rows={4}
-                      value={desc.full ?? ''}
-                      onChange={(event) => setDesc('full', event.target.value)}
-                    />
-                  </label>
-                </div>
-              </details>
-            </section>
-          )}
-
-          {section === 'goal' && (
-            <section className="names-panel">
-              <h3>Naming goal</h3>
-              <div className="names-choice-grid">
-                {NAMING_GOAL_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={
-                      session.namingGoal === option.id
-                        ? 'btn btn-primary'
-                        : 'btn btn-secondary'
-                    }
-                    onClick={() => void patch({ namingGoal: option.id })}
-                  >
-                    {option.label}
-                  </button>
-                ))}
               </div>
-              <p className="page-subtitle">{profile.hint}</p>
               {session.namingGoal === 'internal_codename' && (
-                <>
+                <div className="names-brief-codename">
                   <label className="form-field">
                     <span>Codename theme</span>
                     <select
@@ -680,42 +577,166 @@ export function NameSessionPage() {
                       onChange={(event) => setForbiddenWords(event.target.value)}
                     />
                   </label>
-                </>
+                </div>
               )}
-              <p>
-                Public product/app requires domain and brand checks. Internal
-                codename does not require a free address.
-              </p>
-              <button type="button" className="btn btn-secondary" onClick={() => void startLane()}>
-                Start a new lane
-              </button>
-              <ul>
-                {(session.lanes ?? []).map((lane) => (
-                  <li key={lane.id}>
-                    {lane.title} · {goalProfile(lane.namingGoal).label}
-                  </li>
-                ))}
-              </ul>
+              <div className="names-brief-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={busy === 'canvas'}
+                  onClick={() =>
+                    void saveBrief().then((ok) => {
+                      if (ok) setSection('names');
+                    })
+                  }
+                >
+                  Save and continue
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={busy === 'build'}
+                  onClick={() => void handleBuildDescription()}
+                >
+                  Build description
+                </button>
+              </div>
+              <details
+                className="names-description-details"
+                open={moreContextOpen}
+                onToggle={(event) => setMoreContextOpen(event.currentTarget.open)}
+              >
+                <summary>
+                  <span>
+                    <strong>More context</strong>
+                    <small>Audience, constraints, and words to include or avoid</small>
+                  </span>
+                  <span className="names-description-summary-meta">Optional</span>
+                </summary>
+                <div className="names-description-details-body">
+                  <label className="form-field">
+                    <span>Working name</span>
+                    <input
+                      value={session.brief}
+                      placeholder={session.title || 'e.g. project-g'}
+                      onChange={(event) =>
+                        setSession({ ...session, brief: event.target.value })
+                      }
+                      onBlur={() => void saveBrief()}
+                    />
+                  </label>
+                  {DESCRIPTION_CONTEXT_GROUPS.map((group) => (
+                    <div key={group.title} className="names-description-context-group">
+                      <h4>{group.title}</h4>
+                      <div className="names-description-context-grid">
+                        {group.fields.map(([key, label]) => (
+                          <label key={key} className="form-field">
+                            <span>{label}</span>
+                            {CONTEXT_LONG_FIELDS.has(key) ? (
+                              <textarea
+                                rows={3}
+                                value={desc[key] ?? ''}
+                                onChange={(event) => setDesc(key, event.target.value)}
+                                onBlur={() => void saveBrief()}
+                              />
+                            ) : (
+                              <input
+                                value={desc[key] ?? ''}
+                                onChange={(event) => setDesc(key, event.target.value)}
+                                onBlur={() => void saveBrief()}
+                              />
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+              <details
+                className="names-description-details"
+                open={generatedCopyOpen}
+                onToggle={(event) => setGeneratedCopyOpen(event.currentTarget.open)}
+              >
+                <summary>
+                  <span>
+                    <strong>Generated description</strong>
+                    <small>One-line, short, and full copy you can edit</small>
+                  </span>
+                  <span className="names-description-summary-meta">
+                    {hasGeneratedCanvasCopy(desc) ? 'Ready' : 'Optional'}
+                  </span>
+                </summary>
+                <div className="names-description-details-body">
+                  <label className="form-field">
+                    <span>One-line</span>
+                    <input
+                      value={desc.oneLine ?? ''}
+                      onChange={(event) => setDesc('oneLine', event.target.value)}
+                      onBlur={() => void saveBrief()}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>Short</span>
+                    <textarea
+                      rows={2}
+                      value={desc.short ?? ''}
+                      onChange={(event) => setDesc('short', event.target.value)}
+                      onBlur={() => void saveBrief()}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>Full</span>
+                    <textarea
+                      rows={4}
+                      value={desc.full ?? ''}
+                      onChange={(event) => setDesc('full', event.target.value)}
+                      onBlur={() => void saveBrief()}
+                    />
+                  </label>
+                </div>
+              </details>
+              <details className="names-description-details">
+                <summary>
+                  <span>
+                    <strong>Lanes</strong>
+                    <small>Optional parallel naming directions</small>
+                  </span>
+                </summary>
+                <div className="names-description-details-body">
+                  <button type="button" className="btn btn-secondary" onClick={() => void startLane()}>
+                    Start a new lane
+                  </button>
+                  {(session.lanes ?? []).length > 0 && (
+                    <ul className="names-lane-list">
+                      {(session.lanes ?? []).map((lane) => (
+                        <li key={lane.id}>
+                          {lane.title} · {goalProfile(lane.namingGoal).label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </details>
             </section>
           )}
 
           {section === 'names' && (
             <section className="names-panel">
               <h3>Names</h3>
-              <div className="names-inline">
-                <label className="form-field">
-                  <span>Name</span>
-                  <input
-                    value={typedName}
-                    onChange={(event) => setTypedName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void handleCheckName();
-                      }
-                    }}
-                  />
-                </label>
+              <div className="names-composer">
+                <input
+                  value={typedName}
+                  placeholder="Type a name"
+                  aria-label="Name"
+                  onChange={(event) => setTypedName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void handleCheckName();
+                    }
+                  }}
+                />
                 <button
                   type="button"
                   className="btn btn-primary"
@@ -736,7 +757,7 @@ export function NameSessionPage() {
               <fieldset className="names-families">
                 <legend>Name families</legend>
                 {NAME_FAMILIES.map((family) => (
-                  <label key={family.id}>
+                  <label key={family.id} className="names-chip">
                     <input
                       type="checkbox"
                       checked={families.includes(family.id)}
@@ -747,20 +768,20 @@ export function NameSessionPage() {
                             : prev.filter((id) => id !== family.id),
                         )
                       }
-                    />{' '}
+                    />
                     {family.label}
                   </label>
                 ))}
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary btn-sm"
                   disabled={busy === 'families'}
                   onClick={() => void handleGenerateFamilies()}
                 >
                   Generate possibilities
                 </button>
               </fieldset>
-              <div className="names-inline">
+              <div className="names-filters">
                 <select value={filterLane} onChange={(event) => setFilterLane(event.target.value)}>
                   <option value="">All lanes</option>
                   {(session.lanes ?? []).map((lane) => (
@@ -790,6 +811,11 @@ export function NameSessionPage() {
                   <option value="mcp">mcp</option>
                 </select>
               </div>
+              {visibleCandidates.length === 0 ? (
+                <p className="names-empty">
+                  Check a name or suggest a few from the brief.
+                </p>
+              ) : (
               <ul className="names-candidate-list">
                 {visibleCandidates.map((candidate) => (
                   <CandidateCard
@@ -850,6 +876,7 @@ export function NameSessionPage() {
                   />
                 ))}
               </ul>
+              )}
             </section>
           )}
 
@@ -927,7 +954,13 @@ function CandidateCard(props: {
   const quality = nameQuality(candidate.name);
   const [brandNote, setBrandNote] = useState('');
   const [heard, setHeard] = useState(candidate.pronunciation?.heardSpelling ?? '');
+  const [notes, setNotes] = useState(candidate.notes ?? '');
   const speechOk = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  useEffect(() => {
+    setHeard(candidate.pronunciation?.heardSpelling ?? '');
+    setNotes(candidate.notes ?? '');
+  }, [candidate.id, candidate.notes, candidate.pronunciation?.heardSpelling]);
 
   if (isBlind) {
     return (
@@ -947,50 +980,17 @@ function CandidateCard(props: {
             {sourceLabel(candidate.sources)} · {candidate.family || 'untagged'}
             {candidate.derivedFromCandidateId && ' · variation'}
             {candidate.status !== 'active' && ` · ${candidate.status}`}
+            {' · '}
+            {quality.charCount} chars · ~{quality.syllablesApprox} syllables
+            {quality.hyphen ? ' · hyphen' : ''}
+            {quality.digit ? ' · digit' : ''}
+            {quality.ambiguous ? ' · ambiguous letters' : ''}
           </p>
         </div>
-        <div className="names-inline">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={props.onCheck}>
-            Check name
-          </button>
-          <a
-            className="btn btn-secondary btn-sm"
-            href={candidate.googleQueryUrl || googleQueryUrl(candidate.name)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View all on Google
-          </a>
-          <a
-            className="btn btn-secondary btn-sm"
-            href={googleAppQueryUrl(candidate.name)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {candidate.name} app
-          </a>
-          <a
-            className="btn btn-secondary btn-sm"
-            href={googleImagesQueryUrl(candidate.name)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Images
-          </a>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={props.onExplore}>
-            Explore variations
-          </button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={props.onPreview}>
-            Preview in context
-          </button>
-        </div>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={props.onCheck}>
+          Check name
+        </button>
       </header>
-      <p className="diagram-card-meta">
-        {quality.charCount} chars · ~{quality.syllablesApprox} syllables
-        {quality.hyphen ? ' · hyphen' : ''}
-        {quality.digit ? ' · digit' : ''}
-        {quality.ambiguous ? ' · ambiguous letters' : ''}
-      </p>
       <div className="names-tlds">
         {(candidate.domainChecks ?? []).map((check) => (
           <span key={check.host} className={`names-pill names-pill-${check.availability}`}>
@@ -998,6 +998,27 @@ function CandidateCard(props: {
           </span>
         ))}
         {!candidate.domainChecks?.length && <span className="names-pill">Unchecked</span>}
+      </div>
+      <div className="names-card-links">
+        <a
+          href={candidate.googleQueryUrl || googleQueryUrl(candidate.name)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          View all on Google
+        </a>
+        <a href={googleAppQueryUrl(candidate.name)} target="_blank" rel="noreferrer">
+          {candidate.name} app
+        </a>
+        <a href={googleImagesQueryUrl(candidate.name)} target="_blank" rel="noreferrer">
+          Images
+        </a>
+        <button type="button" onClick={props.onExplore}>
+          Explore variations
+        </button>
+        <button type="button" onClick={props.onPreview}>
+          Preview in context
+        </button>
       </div>
       <details>
         <summary>Brand footprint / Open checks</summary>
@@ -1239,8 +1260,13 @@ function CandidateCard(props: {
         <span>Notes</span>
         <textarea
           rows={2}
-          value={candidate.notes ?? ''}
-          onChange={(event) => props.onUpdate({ ...candidate, notes: event.target.value })}
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          onBlur={() => {
+            if (notes !== (candidate.notes ?? '')) {
+              props.onUpdate({ ...candidate, notes });
+            }
+          }}
         />
       </label>
       <div className="names-inline">
@@ -1248,7 +1274,7 @@ function CandidateCard(props: {
           type="button"
           className="btn btn-secondary btn-sm"
           onClick={() =>
-            props.onUpdate({ ...candidate, status: 'rejected', notes: candidate.notes })
+            props.onUpdate({ ...candidate, status: 'rejected', notes })
           }
         >
           Reject
@@ -1271,8 +1297,12 @@ function PreviewSection(props: {
   const { candidate } = props;
   const slug = slugifyName(candidate.name) || 'name';
   const flags = candidate.visualConcerns?.flags ?? [];
-  const note = candidate.visualConcerns?.note ?? '';
+  const [note, setNote] = useState(candidate.visualConcerns?.note ?? '');
   const themeClass = `names-preview ${props.dark ? 'is-dark' : 'is-light'} ${props.wide ? 'is-wide' : 'is-compact'}`;
+
+  useEffect(() => {
+    setNote(candidate.visualConcerns?.note ?? '');
+  }, [candidate.id, candidate.visualConcerns?.note]);
   return (
     <section className="names-panel">
       <h3>Preview in context</h3>
@@ -1353,10 +1383,11 @@ function PreviewSection(props: {
         <span>Visual note</span>
         <input
           value={note}
-          onChange={(event) =>
+          onChange={(event) => setNote(event.target.value)}
+          onBlur={() =>
             props.onSave({
               ...candidate,
-              visualConcerns: { flags, note: event.target.value },
+              visualConcerns: { flags, note },
             })
           }
         />
@@ -1380,19 +1411,28 @@ function MessagingSection(props: {
   );
   const [activeId, setActiveId] = useState(finalists[0]?.id ?? '');
   const candidate = props.session.candidates.find((item) => item.id === activeId) ?? finalists[0];
+  const [msg, setMsg] = useState<NonNullable<NameCandidate['messaging']>>(
+    candidate?.messaging ?? {},
+  );
+
+  useEffect(() => {
+    setMsg(candidate?.messaging ?? {});
+  }, [candidate?.id]);
+
   if (!candidate) {
     return <p>Add candidates first.</p>;
   }
-  const msg = candidate.messaging ?? {};
   const titleLen = (msg.searchTitle ?? '').length;
   const descLen = (msg.searchDescription ?? '').length;
 
   function write(partial: Partial<NonNullable<NameCandidate['messaging']>>) {
+    setMsg((prev) => ({ ...prev, ...partial }));
+  }
+
+  function persist(next = msg) {
     props.onSave(
       props.session.candidates.map((item) =>
-        item.id === candidate.id
-          ? { ...item, messaging: { ...item.messaging, ...partial } }
-          : item,
+        item.id === candidate.id ? { ...item, messaging: { ...item.messaging, ...next } } : item,
       ),
     );
   }
@@ -1493,7 +1533,7 @@ function MessagingSection(props: {
               });
               const parsed = parseJsonBlock(reply.message) as Record<string, unknown> | null;
               if (parsed) {
-                write({
+                const next = {
                   categoryDescriptor: String(parsed.categoryDescriptor ?? ''),
                   positioning: String(parsed.positioning ?? ''),
                   taglines: Array.isArray(parsed.taglines)
@@ -1503,7 +1543,9 @@ function MessagingSection(props: {
                   searchTitle: String(parsed.searchTitle ?? ''),
                   searchDescription: String(parsed.searchDescription ?? ''),
                   whatIs: String(parsed.whatIs ?? ''),
-                });
+                };
+                write(next);
+                persist(next);
               }
             } catch (err) {
               props.onNotice(err instanceof ChatApiError ? err.message : 'Suggest messaging failed.');
@@ -1515,7 +1557,7 @@ function MessagingSection(props: {
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => props.onSave(props.session.candidates)}
+          onClick={() => persist()}
         >
           Save messaging
         </button>
