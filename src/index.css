@@ -2446,7 +2446,6 @@ textarea {
   resize: vertical;
   border-radius: var(--radius-control);
 }
-}
 
 .checkbox-field {
   flex-direction: row;
