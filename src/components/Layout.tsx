@@ -18,6 +18,7 @@ import {
 } from '../lib/storage/appStorage';
 import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { isBoardShellPath } from '../lib/board/boardShellPath';
 
 function Icon({ children, className = 'sidebar-nav-icon' }: { children: ReactNode; className?: string }) {
   return (
@@ -207,16 +208,7 @@ export function Layout() {
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isAdminUsersPage = location.pathname.startsWith('/admin/users');
   const isRagSettingsPage = location.pathname.startsWith('/settings/rag');
-  const isBoardPage = location.pathname === '/board';
-  const isProjectBoardPage =
-    /^\/organizations\/[^/]+\/projects\/[^/]+$/.test(location.pathname);
-  const isKnowledgePage =
-    location.pathname === '/knowledge' ||
-    /^\/organizations\/[^/]+\/knowledge$/.test(location.pathname) ||
-    /^\/organizations\/[^/]+\/projects\/[^/]+\/knowledge$/.test(
-      location.pathname,
-    );
-  const isWorkspacePage = isBoardPage || isProjectBoardPage || isKnowledgePage;
+  const isBoardShell = isBoardShellPath(location.pathname);
 
   useEffect(() => {
     if (location.pathname.startsWith('/settings/rag')) {
@@ -536,9 +528,12 @@ export function Layout() {
         <ChatProvider>
           <BoardMobileShellProvider>
             <SmartCopyBasketProvider>
-              <div className={`content-area${isWorkspacePage ? ' is-board-page' : ''}`}>
+              <div
+                className={`content-area${isBoardShell ? ' is-board-page' : ''}`}
+                key={isBoardShell ? 'board-shell' : 'page-shell'}
+              >
                 <OfflineBanner />
-                <main className={`app-main${isWorkspacePage ? ' is-board-page' : ''}`}>
+                <main className={`app-main${isBoardShell ? ' is-board-page' : ''}`}>
                   <Outlet />
                 </main>
               </div>

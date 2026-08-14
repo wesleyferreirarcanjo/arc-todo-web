@@ -1,7 +1,20 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getVisibleStatusColumns } from '../lib/tasks/taskStatus';
+import type { BoardMobileStatusTabs } from '../context/BoardMobileShellContext';
+
+const leftoverStatusTabs: BoardMobileStatusTabs = {
+  columns: getVisibleStatusColumns([]),
+  activeStatus: 'todo',
+  counts: { todo: 2 },
+  onChange: () => {},
+};
+
+const shellState = vi.hoisted(() => ({
+  statusTabs: null as BoardMobileStatusTabs | null,
+}));
 
 vi.mock('../hooks/useMediaQuery', () => ({
   SHELL_MOBILE_QUERY: '(max-width: 1023px)',
@@ -28,7 +41,7 @@ vi.mock('../context/ThemeContext', () => ({
 vi.mock('../context/BoardMobileShellContext', () => ({
   useBoardMobileShell: () => ({
     actions: null,
-    statusTabs: null,
+    statusTabs: shellState.statusTabs,
   }),
 }));
 
@@ -53,6 +66,7 @@ vi.mock('../hooks/usePushNotifications', () => ({
 import { MobileBoardFab } from './MobileBoardFab';
 
 afterEach(() => {
+  shellState.statusTabs = null;
   cleanup();
 });
 
@@ -137,5 +151,54 @@ describe('MobileBoardFab route change', () => {
       ui.getByRole('button', { name: 'Open actions' }),
     ).toBeInTheDocument();
     expect(ui.queryByRole('menuitem')).not.toBeInTheDocument();
+  });
+});
+
+describe('MobileBoardFab Navigate from All tasks', () => {
+  it('shows Knowledge and hides leftover status tabs on the same click', async () => {
+    shellState.statusTabs = leftoverStatusTabs;
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/board']}>
+        <Routes>
+          <Route path="/board" element={<div>All tasks page</div>} />
+          <Route path="/knowledge" element={<div>Knowledge page</div>} />
+        </Routes>
+        <MobileBoardFab />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('All tasks page')).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'Task status' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Knowledge' }));
+
+    expect(screen.getByText('Knowledge page')).toBeInTheDocument();
+    expect(screen.queryByText('All tasks page')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('tablist', { name: 'Task status' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps All tasks visible when All tasks is chosen again', async () => {
+    shellState.statusTabs = leftoverStatusTabs;
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/board']}>
+        <Routes>
+          <Route path="/board" element={<div>All tasks page</div>} />
+        </Routes>
+        <MobileBoardFab />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Open actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+    await user.click(screen.getByRole('menuitem', { name: 'All tasks' }));
+
+    expect(screen.getByText('All tasks page')).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'Task status' })).toBeInTheDocument();
   });
 });

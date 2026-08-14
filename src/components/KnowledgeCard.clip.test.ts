@@ -21,4 +21,15 @@ describe('knowledge card Open clip (#arc-266)', () => {
     );
     expect(css).toContain('padding-bottom: calc(3.5rem + 0.75rem)');
   });
+
+  it('scrolls Knowledge without the board viewport lock (#arc-296)', () => {
+    expect(css).not.toContain(
+      '.content-area.is-board-page .knowledge-workspace',
+    );
+    const start = css.indexOf(
+      'Last Open buttons can scroll clear of the floating +',
+    );
+    expect(start).toBeGreaterThan(-1);
+    expect(css.slice(start, start + 280)).toContain('overflow: auto');
+  });
 });

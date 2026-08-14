@@ -6,6 +6,7 @@ import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { useChat } from '../context/ChatContext';
 import { useTheme } from '../context/ThemeContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { isBoardShellPath } from '../lib/board/boardShellPath';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { MobileQuickCreateSheet } from './MobileQuickCreateSheet';
@@ -287,6 +288,7 @@ export function MobileBoardFab() {
   const location = useLocation();
   const navigate = useNavigate();
   const isBoardPage = location.pathname === '/board';
+  const isBoardShell = isBoardShellPath(location.pathname);
   const { logout, isAdmin } = useAuth();
   const { setChatOpen } = useChat();
   const { theme, toggleTheme } = useTheme();
@@ -369,7 +371,7 @@ export function MobileBoardFab() {
         },
       });
     }
-    if (actions) {
+    if (isBoardShell && actions) {
       items.push({
         id: 'new-task',
         label: 'New task',
@@ -444,6 +446,7 @@ export function MobileBoardFab() {
     install,
     isAdmin,
     isBoardPage,
+    isBoardShell,
     isIos,
     isStandalone,
     logout,
@@ -574,6 +577,7 @@ export function MobileBoardFab() {
     return null;
   }
 
+  const visibleStatusTabs = isBoardShell ? statusTabs : null;
   const dialActions =
     dialLevel === 'nav'
       ? navActions
@@ -591,16 +595,16 @@ export function MobileBoardFab() {
   return (
     <>
       <div
-        className={`mobile-bottom-app-bar${statusTabs ? ' has-status-tabs' : ''}`}
+        className={`mobile-bottom-app-bar${visibleStatusTabs ? ' has-status-tabs' : ''}`}
         aria-hidden="false"
       >
         <div className="mobile-bottom-app-bar-surface">
-          {statusTabs ? (
+          {visibleStatusTabs ? (
             <BoardStatusTabs
-              columns={statusTabs.columns}
-              activeStatus={statusTabs.activeStatus}
-              counts={statusTabs.counts}
-              onChange={statusTabs.onChange}
+              columns={visibleStatusTabs.columns}
+              activeStatus={visibleStatusTabs.activeStatus}
+              counts={visibleStatusTabs.counts}
+              onChange={visibleStatusTabs.onChange}
             />
           ) : null}
         </div>
@@ -610,7 +614,7 @@ export function MobileBoardFab() {
       <div
         ref={rootRef}
         className={`mobile-board-fab${menuOpen ? ' is-open' : ''}${
-          statusTabs ? ' has-status-tabs' : ''
+          visibleStatusTabs ? ' has-status-tabs' : ''
         }`}
       >
         <div
@@ -646,7 +650,7 @@ export function MobileBoardFab() {
         </motion.button>
       </div>
 
-      {actions ? (
+      {isBoardShell && actions ? (
         <MobileQuickCreateSheet
           open={createOpen}
           onClose={() => setCreateOpen(false)}

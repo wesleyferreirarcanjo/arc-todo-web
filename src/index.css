@@ -193,21 +193,12 @@ textarea:focus-visible {
   padding: 0;
 }
 
-.content-area.is-board-page .tasks-page,
-.content-area.is-board-page .knowledge-workspace {
+.content-area.is-board-page .tasks-page {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   gap: 1rem;
-}
-
-.content-area.is-board-page .knowledge-workspace {
-  overflow: auto;
-}
-
-.content-area.is-board-page .knowledge-list {
-  margin-top: 0;
 }
 
 .content-area.is-board-page .task-board-scroll {
@@ -4283,6 +4274,16 @@ textarea {
   text-decoration-color: currentColor;
 }
 
+.knowledge-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.knowledge-workspace .knowledge-list {
+  margin-top: 0;
+}
+
 .knowledge-list {
   margin-top: 1.5rem;
   display: grid;
@@ -6654,6 +6655,7 @@ textarea {
   .knowledge-workspace {
     /* Last Open buttons can scroll clear of the floating + (bar already cleared on .content-area). */
     padding-bottom: calc(3.5rem + 0.75rem);
+    overflow: auto;
   }
 
   .content-area.is-board-page .task-list-view {
