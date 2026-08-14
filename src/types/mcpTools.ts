@@ -1,4 +1,12 @@
-export type McpToolGroup = 'system' | 'context' | 'tasks' | 'knowledge' | 'rag';
+export type McpToolGroup =
+  | 'system'
+  | 'context'
+  | 'tasks'
+  | 'knowledge'
+  | 'rag'
+  | 'diagrams'
+  | 'wireframes'
+  | 'names';
 
 export interface McpToolSetting {
   key: string;
@@ -53,4 +61,7 @@ export const MCP_TOOL_GROUP_LABELS: Record<McpToolGroup, string> = {
   tasks: 'Tasks',
   knowledge: 'Knowledge',
   rag: 'RAG',
+  diagrams: 'Diagrams',
+  wireframes: 'Wireframes',
+  names: 'Names',
 };

@@ -106,6 +106,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'Knowledge',
       'Diagrams',
       'Wireframes',
+      'Names',
       'People',
       'Organizations',
     ]);

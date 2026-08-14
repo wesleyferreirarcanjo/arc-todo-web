@@ -30,6 +30,9 @@ import { ProjectDiagramsPage } from './pages/ProjectDiagramsPage';
 import { ProjectWireframePreviewPage } from './pages/ProjectWireframePreviewPage';
 import { ProjectWireframesPage } from './pages/ProjectWireframesPage';
 import { WireframesHubPage } from './pages/WireframesHubPage';
+import { NamesHubPage } from './pages/NamesHubPage';
+import { ProjectNamesPage } from './pages/ProjectNamesPage';
+import { NameSessionPage } from './pages/NameSessionPage';
 import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
 
@@ -69,6 +72,7 @@ export default function App() {
                 <Route path="/knowledge" element={<GeneralKnowledgePage />} />
                 <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/wireframes" element={<WireframesHubPage />} />
+                <Route path="/names" element={<NamesHubPage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />
                 <Route
                   path="/people/:personId/knowledge"
@@ -149,6 +153,14 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/wireframes"
                   element={<ProjectWireframesPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/names"
+                  element={<ProjectNamesPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/names/:sessionId"
+                  element={<NameSessionPage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
               </Route>
