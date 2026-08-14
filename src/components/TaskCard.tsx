@@ -731,7 +731,7 @@ export function TaskCard({
       onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
         handleCardPointerDown(event);
 
-        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
           return;
         }
 
