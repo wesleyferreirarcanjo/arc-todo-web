@@ -11,6 +11,11 @@ import {
 import { fetchPerson } from '../lib/api/persons';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
+import {
+  entityAccentStyle,
+  useWorkspaceAccent,
+  WorkspaceEyebrow,
+} from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import type {
   CreateKnowledgeInput,
@@ -22,6 +27,7 @@ import type { Person } from '../types/person';
 export function PersonKnowledgePage() {
   const { orgId, personId } = useParams();
   const { isAdmin } = useAuth();
+  const { color } = useWorkspaceAccent();
   const [person, setPerson] = useState<Person | null>(null);
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,8 +118,9 @@ export function PersonKnowledgePage() {
   }
 
   return (
-    <div className="page-shell">
-      <header className="page-header">
+    <div className="page-shell" style={entityAccentStyle(color)}>
+      <header className={`page-header${color ? ' has-accent' : ''}`}>
+        <WorkspaceEyebrow requireProject={false} />
         <h2>{person?.name ?? 'Person'} knowledge</h2>
         <p className="page-subtitle">
           Knowledge linked to this person in the organization.

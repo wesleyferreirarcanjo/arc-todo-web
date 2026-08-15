@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { DiagramsIcon } from '../components/icons';
+import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -227,6 +228,7 @@ export function ProjectDiagramsPage() {
     >
       <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
         <div>
+          <WorkspaceEyebrow />
           <h2>{currentProject?.name ?? 'Project'} diagrams</h2>
           <p className="page-subtitle">
             Draw architecture, flows, and board visuals on Excalidraw canvases

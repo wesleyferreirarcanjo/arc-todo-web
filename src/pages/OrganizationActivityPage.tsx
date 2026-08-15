@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { fetchOrganizationActivity } from '../lib/api/activity';
 import { Select } from '../components/Select';
+import {
+  entityAccentStyle,
+  useWorkspaceAccent,
+} from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { UserActivityEntry } from '../types/activity';
 
@@ -12,6 +16,7 @@ function formatTimestamp(value: string): string {
 export function OrganizationActivityPage() {
   const { orgId } = useParams();
   const { currentOrganization } = useWorkspace();
+  const { color } = useWorkspaceAccent();
   const [activity, setActivity] = useState<UserActivityEntry[]>([]);
   const [filterUserId, setFilterUserId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -58,8 +63,8 @@ export function OrganizationActivityPage() {
   }
 
   return (
-    <div className="page-shell">
-      <header className="page-header">
+    <div className="page-shell" style={entityAccentStyle(color)}>
+      <header className={`page-header${color ? ' has-accent' : ''}`}>
         <h2>{currentOrganization?.name ?? 'Organization'} activity</h2>
         <p className="page-subtitle">
           Recent actions by users across tasks, knowledge, and project work.

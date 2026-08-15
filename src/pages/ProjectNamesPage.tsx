@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { NamesIcon } from '../components/icons';
+import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import {
@@ -149,6 +150,7 @@ export function ProjectNamesPage() {
     >
       <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
         <div>
+          <WorkspaceEyebrow />
           <h2>{currentProject?.name ?? 'Project'} names</h2>
           <p className="page-subtitle">
             Naming sessions for this project. Start with a working name and one sentence.

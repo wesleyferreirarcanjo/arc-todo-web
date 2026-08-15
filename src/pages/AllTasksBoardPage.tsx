@@ -653,6 +653,9 @@ export function AllTasksBoardPage() {
 
   return (
     <div className="tasks-page">
+      <header className="page-header">
+        <h2>All tasks</h2>
+      </header>
       <div className="board-filters board-filters-inline">
         <BoardFiltersControls
           searchQuery={searchQuery}

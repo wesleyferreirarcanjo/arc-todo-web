@@ -2,9 +2,8 @@ import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
-import { OrgKnowledgeNav } from './OrgKnowledgeNav';
-import { ProjectNavList } from './ProjectNavList';
 import { ThemeToggle } from './ThemeToggle';
+import { WorkspaceIdentity } from './WorkspaceIdentity';
 import { PwaControls } from './PwaControls';
 import { OfflineBanner } from './OfflineBanner';
 import { ChatProvider } from '../context/ChatContext';
@@ -160,7 +159,6 @@ export function Layout() {
           className={`sidebar${collapsed ? ' is-collapsed' : ''}`}
         >
           <div className="sidebar-header">
-            {!collapsed && <span className="sidebar-header-label">Navigation</span>}
             <button
               type="button"
               className={`sidebar-toggle${collapsed ? ' is-collapsed' : ' is-expanded'}`}
@@ -172,6 +170,8 @@ export function Layout() {
               <ChevronIcon className="sidebar-toggle-icon" expanded={!collapsed} />
             </button>
           </div>
+
+          <WorkspaceIdentity collapsed={collapsed} />
 
           <nav className="sidebar-primary-nav" aria-label="Main navigation">
             {primaryNav.map(({ to, label, icon: NavIcon, ...rest }) => (
@@ -225,13 +225,6 @@ export function Layout() {
               </NavLink>
             )}
           </nav>
-
-          {!collapsed && (
-            <div className="sidebar-context">
-              <ProjectNavList />
-              <OrgKnowledgeNav />
-            </div>
-          )}
 
           <div className="sidebar-footer">
             {isAdmin && (

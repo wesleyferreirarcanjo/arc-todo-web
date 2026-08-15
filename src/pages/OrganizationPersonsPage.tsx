@@ -3,12 +3,17 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { createPerson, fetchPersons } from '../lib/api/persons';
 import { PersonForm } from '../components/PersonForm';
 import { PersonList } from '../components/PersonList';
+import {
+  entityAccentStyle,
+  useWorkspaceAccent,
+} from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreatePersonInput, Person } from '../types/person';
 
 export function OrganizationPersonsPage() {
   const { orgId } = useParams();
   const { currentOrganization } = useWorkspace();
+  const { color } = useWorkspaceAccent();
   const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +50,8 @@ export function OrganizationPersonsPage() {
   }
 
   return (
-    <div className="page-shell">
-      <header className="page-header">
+    <div className="page-shell" style={entityAccentStyle(color)}>
+      <header className={`page-header${color ? ' has-accent' : ''}`}>
         <h2>{currentOrganization?.name ?? 'Organization'} people</h2>
         <p className="page-subtitle">
           Manage people and open their knowledge profiles.

@@ -330,17 +330,78 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-.sidebar-header-label {
-  font-size: 0.7rem;
+.sidebar.is-collapsed .sidebar-header {
+  justify-content: center;
+  padding-bottom: 0.55rem;
+}
+
+.sidebar-workspace {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.sidebar-workspace:hover,
+.sidebar-workspace:focus-visible {
+  background: var(--bg-elevated);
+}
+
+.sidebar-workspace.is-collapsed {
+  justify-content: center;
+  padding: 0.45rem 0;
+}
+
+.sidebar-workspace-pip {
+  width: var(--entity-rail-width);
+  height: 1.35rem;
+  border-radius: 1px;
+  background: var(--entity-accent, var(--border-strong));
+  box-shadow: 0 0 8px -2px color-mix(
+    in srgb,
+    var(--entity-accent, var(--border-strong)) 42%,
+    transparent
+  );
+  flex-shrink: 0;
+}
+
+.sidebar-workspace-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.05rem;
+}
+
+.sidebar-workspace-org,
+.sidebar-workspace-project {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-workspace-org {
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sidebar-workspace-copy:has(.sidebar-workspace-project) .sidebar-workspace-org {
+  font-size: var(--type-meta);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.sidebar.is-collapsed .sidebar-header {
-  justify-content: center;
-  padding-bottom: 0.55rem;
+.sidebar-workspace-project {
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .sidebar-toggle.is-expanded {
@@ -861,66 +922,6 @@ textarea:focus-visible {
   box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
 }
 
-.project-nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.project-nav-link {
-  display: block;
-  padding: 0.55rem 0.85rem;
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-left: 3px solid transparent;
-  transition: background var(--transition-fast), border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.project-nav-link.has-accent {
-  border-left-width: 4px;
-  border-left-color: var(--entity-accent, var(--border-strong));
-}
-
-.project-nav-link:hover,
-.project-nav-link.active {
-  background: var(--bg-elevated);
-}
-
-.project-nav-link.active {
-  border-left-width: 4px;
-}
-
-.project-nav-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.project-nav-sublink {
-  display: block;
-  margin-left: 0.85rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted, var(--text-secondary));
-  text-decoration: none;
-  font-size: 0.8rem;
-  font-weight: 500;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.project-nav-sublink:hover,
-.project-nav-sublink.active {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-
 .breadcrumbs {
   display: flex;
   flex-wrap: wrap;
@@ -957,6 +958,10 @@ textarea:focus-visible {
   max-width: 100%;
 }
 
+.tasks-page > .page-header {
+  flex-shrink: 0;
+}
+
 .page-header h2 {
   font-family: var(--font-display);
   font-size: var(--type-page);
@@ -965,6 +970,24 @@ textarea:focus-visible {
   font-optical-sizing: auto;
   line-height: 1.15;
   letter-spacing: -0.02em;
+}
+
+.workspace-eyebrow {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-body);
+  font-size: var(--type-meta);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.workspace-eyebrow .text-link {
+  color: var(--text-muted);
+}
+
+.workspace-eyebrow .text-link:hover,
+.workspace-eyebrow .text-link:focus-visible {
+  color: var(--text-primary);
 }
 
 .page-header.has-accent {
@@ -5173,10 +5196,6 @@ textarea {
   margin-top: 0.5rem;
   color: var(--text-muted);
   font-size: 0.875rem;
-}
-
-.org-knowledge-nav {
-  margin-top: 1rem;
 }
 
 .notice-card {

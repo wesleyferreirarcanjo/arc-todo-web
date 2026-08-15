@@ -6,6 +6,7 @@ import { Select } from '../components/Select';
 import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { WireframesIcon } from '../components/icons';
+import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -244,6 +245,7 @@ export function ProjectWireframesPage() {
     >
       <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
         <div>
+          <WorkspaceEyebrow />
           <h2>{currentProject?.name ?? 'Project'} wireframes</h2>
           <p className="page-subtitle">
             HTML prototypes for this project. Linked screens live in one file.

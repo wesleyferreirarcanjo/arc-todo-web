@@ -4,6 +4,10 @@ import { createProject } from '../lib/api/projects';
 import { fetchOrganizationKnowledgeAccess } from '../lib/api/knowledge';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
+import {
+  entityAccentStyle,
+  useWorkspaceAccent,
+} from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreateProjectInput } from '../types/project';
@@ -17,6 +21,7 @@ export function OrganizationProjectsPage() {
     loadingProjects,
     refreshProjects,
   } = useWorkspace();
+  const { color } = useWorkspaceAccent();
   const [error, setError] = useState<string | null>(null);
   const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(isAdmin);
 
@@ -69,8 +74,8 @@ export function OrganizationProjectsPage() {
   }
 
   return (
-    <div className="page-shell">
-      <header className="page-header">
+    <div className="page-shell" style={entityAccentStyle(color)}>
+      <header className={`page-header${color ? ' has-accent' : ''}`}>
         <h2>{currentOrganization?.name ?? 'Projects'}</h2>
         <p className="page-subtitle">
           Manage projects for this organization. Open tasks or edit project details.

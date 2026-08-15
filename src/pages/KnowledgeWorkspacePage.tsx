@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   fetchAllKnowledge,
   fetchOrganizationKnowledgeAccess,
@@ -12,7 +12,11 @@ import {
   entryScopeLabel,
   updateKnowledgeEntry,
 } from '../lib/knowledge/scope';
-import { getKnowledgeAccentColor } from '../lib/color/entityColor';
+import {
+  getKnowledgeAccentColor,
+  getOrganizationColor,
+  getProjectColor,
+} from '../lib/color/entityColor';
 import { KnowledgeAccessManager } from '../components/KnowledgeAccessManager';
 import { KnowledgeIndexOverview } from '../components/KnowledgeIndexOverview';
 import { KnowledgeList } from '../components/KnowledgeList';
@@ -20,6 +24,10 @@ import { QuickKnowledgeCreate } from '../components/QuickKnowledgeCreate';
 import type { KnowledgeSaveTarget } from '../components/QuickKnowledgeCreate';
 import { KnowledgeIcon } from '../components/icons';
 import { Select } from '../components/Select';
+import {
+  entityAccentStyle,
+  WorkspaceEyebrow,
+} from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type {
@@ -263,6 +271,9 @@ export function KnowledgeWorkspacePage({
   if (accessDenied) {
     return (
       <div className="knowledge-workspace">
+        <header className="page-header">
+          <h2>Knowledge</h2>
+        </header>
         <div className="alert alert-error">
           You do not have access to this knowledge base. Ask an administrator
           to grant knowledge access.
@@ -271,8 +282,43 @@ export function KnowledgeWorkspacePage({
     );
   }
 
+  const knowledgeColor =
+    lockedProjectId && selectedProject
+      ? getProjectColor(selectedProject)
+      : lockedOrganizationId && selectedOrganization
+        ? getOrganizationColor(selectedOrganization)
+        : undefined;
+  const knowledgeTitle = lockedProjectId
+    ? `${selectedProject?.name ?? 'Project'} knowledge`
+    : lockedOrganizationId
+      ? `${selectedOrganization?.name ?? 'Organization'} knowledge`
+      : 'Knowledge';
+
   return (
-    <div className="knowledge-workspace">
+    <div className="knowledge-workspace" style={entityAccentStyle(knowledgeColor)}>
+      <header className={`page-header${knowledgeColor ? ' has-accent' : ''}`}>
+        {lockedProjectId ? <WorkspaceEyebrow /> : null}
+        <h2>{knowledgeTitle}</h2>
+        {lockedOrganizationId ? (
+          <div className="page-links">
+            {lockedProjectId ? (
+              <Link
+                to={`/organizations/${lockedOrganizationId}/projects/${lockedProjectId}`}
+                className="text-link"
+              >
+                Back to board
+              </Link>
+            ) : (
+              <Link
+                to={`/organizations/${lockedOrganizationId}`}
+                className="text-link"
+              >
+                Back to projects
+              </Link>
+            )}
+          </div>
+        ) : null}
+      </header>
       {isAdmin && lockedOrganizationId && (
         <KnowledgeAccessManager
           orgId={lockedOrganizationId}

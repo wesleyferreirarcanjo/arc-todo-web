@@ -11,6 +11,7 @@ import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
+import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -145,6 +146,7 @@ export function ProjectTasksPage() {
       }
     >
       <header className={`page-header${projectAccent ? ' has-accent' : ''}`}>
+        <WorkspaceEyebrow />
         <h2>{currentProject?.name ?? 'Project tasks'}</h2>
         <p className="page-subtitle">Manage tasks for this project.</p>
         <div className="page-links">
