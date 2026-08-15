@@ -238,22 +238,23 @@ textarea:focus-visible {
 .content-area.is-board-page .app-main {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
+  min-height: auto;
   padding: 0;
 }
 
 .content-area.is-board-page .tasks-page {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
+  min-height: auto;
   gap: 1rem;
 }
 
 .content-area.is-board-page .task-board-scroll {
-  flex: 1;
-  min-height: 0;
+  /* UXP-ARC-14: desktop Y pan is the page. Do not flex-lock a nested port. */
+  flex: none;
+  min-height: auto;
   min-width: 0;
 }
 
@@ -3021,22 +3022,11 @@ textarea {
 }
 
 .task-board-scroll {
-  flex: 1;
-  min-height: 0;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scroll-behavior: smooth;
+  overflow-y: clip;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.task-board-scroll::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
 }
 
 .task-board {
@@ -7419,6 +7409,24 @@ textarea {
   .mobile-filters-overlay {
     display: none;
   }
+
+  /* Grow with cards so the window is the only vertical scroller (UXP-ARC-14). */
+  .app-shell {
+    align-items: start;
+    grid-template-rows: minmax(100dvh, auto);
+  }
+
+  .content-area.is-board-page .task-list-view {
+    flex: 1 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .content-area.is-board-page .task-list-body {
+    overflow: visible;
+    flex: none;
+    min-height: auto;
+  }
 }
 
 @media (max-width: 1023px) {
@@ -7437,6 +7445,12 @@ textarea {
     height: 100%;
     max-height: 100%;
     overflow: hidden;
+  }
+
+  .content-area.is-board-page .app-main,
+  .content-area.is-board-page .tasks-page {
+    flex: 1;
+    min-height: 0;
   }
 
   .task-board-scroll.is-mobile-tabbed,
@@ -7653,7 +7667,16 @@ textarea {
   min-height: 12rem;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.task-board-scroll.is-mobile-tabbed::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .task-board.is-mobile-tabbed {

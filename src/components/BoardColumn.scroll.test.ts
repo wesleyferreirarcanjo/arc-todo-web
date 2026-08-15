@@ -25,17 +25,33 @@ describe('board columns never paint a scrollbar', () => {
     expect(rule).toContain('height: auto');
   });
 
-  it('lets the board grow with cards and hides board chrome scrollbars', () => {
+  it('lets the desktop board use page scroll instead of a nested Y port', () => {
     const board = ruleBlock('.content-area.is-board-page .task-board');
     expect(board).toContain('height: auto');
     expect(board).toContain('min-height: 100%');
 
     const scroller = ruleBlock('.task-board-scroll');
-    expect(scroller).toContain('overflow-y: auto');
-    expect(scroller).not.toContain('overflow-y: hidden');
-    expect(scroller).toContain('scrollbar-width: none');
-    expect(scroller).not.toContain('scrollbar-gutter: stable');
-    expect(css).toContain('.task-board-scroll::-webkit-scrollbar');
+    expect(scroller).toContain('overflow-x: auto');
+    expect(scroller).toContain('overflow-y: clip');
+    expect(scroller).not.toContain('overflow-y: auto');
+    expect(scroller).not.toContain('overscroll-behavior: contain');
+    expect(scroller).not.toContain('scrollbar-width: none');
+    expect(scroller).not.toContain('scroll-behavior: smooth');
+
+    const boardPageScroll = ruleBlock('.content-area.is-board-page .task-board-scroll');
+    expect(boardPageScroll).toContain('flex: none');
+    expect(boardPageScroll).toContain('min-height: auto');
+
+    const tasksPage = ruleBlock('.content-area.is-board-page .tasks-page');
+    expect(tasksPage).toContain('min-height: auto');
+    expect(tasksPage).not.toContain('min-height: 0');
+  });
+
+  it('keeps the viewport-locked mobile tabbed board as the only nested Y port', () => {
+    const mobile = ruleBlock('.task-board-scroll.is-mobile-tabbed');
+    expect(mobile).toContain('overflow-y: auto');
+    expect(mobile).toContain('scrollbar-width: none');
+    expect(css).toContain('.task-board-scroll.is-mobile-tabbed::-webkit-scrollbar');
   });
 
   it('does not let scatter-light overlay become a wheel scrollport', () => {
