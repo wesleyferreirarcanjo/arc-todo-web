@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useState } from 'react';
 import type { CreatePersonInput } from '../types/person';
 
@@ -31,8 +33,8 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
       setEmail('');
       setTitle('');
       setNotes('');
-    } catch {
-      setError('Failed to create person.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this person' }));
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ export function PersonForm({ onSubmit }: PersonFormProps) {
         </p>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
         Name

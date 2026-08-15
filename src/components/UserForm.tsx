@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useState } from 'react';
 import { PasswordInput } from './PasswordInput';
 import { ApiError } from '../lib/api/client';
@@ -61,7 +63,7 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError('Failed to create user.');
+        setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this user' }));
       }
     } finally {
       setLoading(false);
@@ -82,7 +84,7 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
         </p>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
         Username

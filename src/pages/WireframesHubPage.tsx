@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -138,9 +140,9 @@ export function WireframesHubPage() {
           setProjects(projectEntries.map((entry) => entry.project));
           setItems(wireframesByProject.flat());
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setError('Failed to load wireframes.');
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'wireframes' }));
         }
       } finally {
         if (!cancelled) {
@@ -217,15 +219,15 @@ export function WireframesHubPage() {
   async function handleCreate() {
     const title = newTitle.trim();
     if (!createOrgId) {
-      setCreateError('Select an organization.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
       return;
     }
     if (!createProjectId) {
-      setCreateError('Select a project.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
       return;
     }
     if (!title) {
-      setCreateError('Enter a wireframe name.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
       return;
     }
 
@@ -242,8 +244,8 @@ export function WireframesHubPage() {
       navigate(
         `/organizations/${createOrgId}/projects/${createProjectId}/wireframes/${created.id}`,
       );
-    } catch {
-      setCreateError('Failed to create wireframe.');
+    } catch (err) {
+      setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this wireframe' }));
     } finally {
       setCreating(false);
     }
@@ -253,7 +255,7 @@ export function WireframesHubPage() {
     if (!renameTarget) return;
     const title = renameTitle.trim();
     if (!title) {
-      setRenameError('Enter a wireframe name.');
+      setRenameError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
       return;
     }
 
@@ -282,8 +284,8 @@ export function WireframesHubPage() {
       );
       setRenameTarget(null);
       setRenameTitle('');
-    } catch {
-      setRenameError('Failed to rename wireframe.');
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this wireframe' }));
     } finally {
       setRenaming(false);
     }
@@ -302,8 +304,8 @@ export function WireframesHubPage() {
         prev.filter((item) => item.wireframe.id !== deleteTarget.wireframe.id),
       );
       setDeleteTarget(null);
-    } catch {
-      setError('Failed to delete wireframe.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -337,7 +339,7 @@ export function WireframesHubPage() {
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && items.length === 0 && (
         <div className="diagrams-empty">
@@ -571,7 +573,7 @@ export function WireframesHubPage() {
             }}
           />
         </label>
-        {createError && <div className="alert alert-error">{createError}</div>}
+        {createError && <ErrorAlert>{createError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"
@@ -613,7 +615,7 @@ export function WireframesHubPage() {
             }}
           />
         </label>
-        {renameError && <div className="alert alert-error">{renameError}</div>}
+        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

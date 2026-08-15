@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -482,7 +483,7 @@ export function ChatbotTestingPage() {
       setSettings(chatbotSettings);
       setConversations(conversationList);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load chatbot testing data');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'chatbot testing data' }));
     } finally {
       setLoading(false);
     }
@@ -520,7 +521,7 @@ export function ChatbotTestingPage() {
         if (!cancelled) {
           setLoadedConversation(null);
           setError(
-            err instanceof Error ? err.message : 'Failed to load conversation',
+            userMessage(err, WEB_ERROR.LOAD, { thing: 'this conversation' }),
           );
         }
       })

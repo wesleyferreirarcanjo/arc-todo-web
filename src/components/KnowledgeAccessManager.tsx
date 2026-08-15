@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../lib/api/client';
 import {
@@ -64,7 +66,7 @@ export function KnowledgeAccessManager({
         if (err instanceof ApiError) {
           setError(err.message);
         } else {
-          setError('Failed to load knowledge access grants.');
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'knowledge access' }));
         }
       } finally {
         if (!cancelled) {
@@ -103,7 +105,7 @@ export function KnowledgeAccessManager({
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError('Failed to save knowledge access.');
+        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'knowledge access' }));
       }
     } finally {
       setSaving(false);
@@ -123,7 +125,7 @@ export function KnowledgeAccessManager({
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError('Failed to grant all project members.');
+        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'project-wide knowledge access' }));
       }
     } finally {
       setSaving(false);
@@ -140,7 +142,7 @@ export function KnowledgeAccessManager({
         </p>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       {message && <p className="status-message">{message}</p>}
 
       {loading ? (

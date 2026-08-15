@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { fetchOrganizationActivity } from '../lib/api/activity';
@@ -47,8 +49,8 @@ export function OrganizationActivityPage() {
         limit: 100,
       });
       setActivity(entries);
-    } catch {
-      setError('Failed to load activity or access denied.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'activity' }));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ export function OrganizationActivityPage() {
       </label>
 
       {loading && <p className="status-message">Loading activity...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && activity.length === 0 && (
         <p className="status-message">No activity recorded yet.</p>

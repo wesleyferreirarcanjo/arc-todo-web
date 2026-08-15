@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { deleteOrganization, updateOrganization } from '../lib/api/organizations';
@@ -75,8 +77,8 @@ export function OrganizationList({
     try {
       await deleteOrganization(organization.id);
       await onUpdated?.();
-    } catch {
-      setDeleteError('Failed to delete organization.');
+    } catch (err) {
+      setDeleteError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this organization' }));
     } finally {
       setDeletingId(null);
     }
@@ -84,7 +86,7 @@ export function OrganizationList({
 
   return (
     <div className="entity-list organizations-list">
-      {deleteError && <div className="alert alert-error">{deleteError}</div>}
+      {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
       {organizations.map((organization) => {
         const accent = getOrganizationColor(organization);
         const isEditing = editingId === organization.id;

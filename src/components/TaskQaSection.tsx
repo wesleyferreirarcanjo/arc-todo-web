@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createProjectTask,
@@ -129,7 +130,7 @@ export function TaskQaSection({
       .catch((error: unknown) => {
         if (!cancelled) {
           setQaError(
-            error instanceof Error ? error.message : 'Failed to load evidence',
+            userMessage(error, WEB_ERROR.LOAD, { thing: 'evidence' }),
           );
         }
       })
@@ -212,7 +213,7 @@ export function TaskQaSection({
       }
     } catch (error: unknown) {
       setQaError(
-        error instanceof Error ? error.message : 'Failed to upload evidence',
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'evidence' }),
       );
     } finally {
       setUploading(false);
@@ -279,7 +280,7 @@ export function TaskQaSection({
       }
     } catch (error: unknown) {
       setQaError(
-        error instanceof Error ? error.message : 'Failed to delete evidence',
+        userMessage(error, WEB_ERROR.DELETE, { thing: 'this evidence' }),
       );
     }
   }
@@ -303,7 +304,7 @@ export function TaskQaSection({
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (error: unknown) {
       setQaError(
-        error instanceof Error ? error.message : 'Failed to open evidence',
+        userMessage(error, WEB_ERROR.LOAD, { thing: 'this evidence' }),
       );
     }
   }
@@ -324,7 +325,7 @@ export function TaskQaSection({
       onTaskChange?.(updated);
     } catch (error: unknown) {
       setQaError(
-        error instanceof Error ? error.message : 'Failed to mark task as bug',
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'this bug flag' }),
       );
     } finally {
       setFlaggingBug(false);
@@ -347,7 +348,7 @@ export function TaskQaSection({
       onTaskChange?.(updated);
     } catch (error: unknown) {
       setQaError(
-        error instanceof Error ? error.message : 'Failed to mark bug as solved',
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'the bug status' }),
       );
     } finally {
       setFlaggingBug(false);
@@ -410,11 +411,7 @@ export function TaskQaSection({
       setImprovementFile(null);
       onTaskChange?.(updated);
     } catch (error: unknown) {
-      setQaError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to create improvement task',
-      );
+      setQaError(userMessage(error, WEB_ERROR.CREATE, { thing: 'the improvement task' }));
     } finally {
       setCreatingImprovement(false);
     }

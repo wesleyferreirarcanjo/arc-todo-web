@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { FileInput } from './FileInput';
@@ -84,9 +86,9 @@ export function KnowledgeAttachments({
           Object.keys(query).length > 0 ? query : undefined,
         );
         setAttachments(data);
-      } catch {
+      } catch (err) {
         if (!silent) {
-          setError('Failed to load attachments.');
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'attachments' }));
         }
       } finally {
         if (!silent) {
@@ -148,8 +150,8 @@ export function KnowledgeAttachments({
       setTags('');
       form.reset();
       setFileInputKey((current) => current + 1);
-    } catch {
-      setError('Failed to upload one or more files.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'attachments' }));
       setPendingUploads((prev) =>
         prev.map((item) => ({ ...item, status: 'failed' })),
       );
@@ -164,8 +166,8 @@ export function KnowledgeAttachments({
     setError(null);
     try {
       await downloadKnowledgeAttachment(scope, knowledgeId, attachmentId);
-    } catch {
-      setError('Failed to download attachment.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this attachment' }));
     } finally {
       setActiveActionId(null);
     }
@@ -183,8 +185,8 @@ export function KnowledgeAttachments({
         prev.filter((attachment) => attachment.id !== attachmentId),
       );
       setPendingDelete(null);
-    } catch {
-      setError('Failed to delete attachment.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this attachment' }));
     } finally {
       setActiveActionId(null);
     }
@@ -209,8 +211,8 @@ export function KnowledgeAttachments({
       );
       setActionMessage(`Resync queued for ${pendingResync.originalFilename}.`);
       setPendingResync(null);
-    } catch {
-      setError('Failed to resync attachment.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this attachment' }));
     } finally {
       setActiveActionId(null);
     }
@@ -276,7 +278,7 @@ export function KnowledgeAttachments({
       </div>
 
       {loading && <p className="status-message">Loading attachments...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       {actionMessage && <p className="status-message">{actionMessage}</p>}
 
       {pendingUploads.length > 0 && (

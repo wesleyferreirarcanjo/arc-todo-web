@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState, type InputHTMLAttributes } from 'react';
 import { RagSettingsNav } from '../components/RagSettingsNav';
 import { fetchRagSettings, updateRagSettings } from '../lib/api/ragSettings';
@@ -69,7 +70,7 @@ export function RagSettingsPage() {
       setEnabledMimeTypes(data.enabledMimeTypes.join(', '));
       setDeepseekApiKey('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load RAG settings');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'RAG settings' }));
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,7 @@ export function RagSettingsPage() {
       setDeepseekApiKey('');
       setSuccess('RAG settings saved.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save RAG settings');
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'RAG settings' }));
     } finally {
       setSaving(false);
     }

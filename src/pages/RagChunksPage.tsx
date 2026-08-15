@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
@@ -351,7 +352,7 @@ export function RagChunksPage() {
         });
         setResult(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load chunks');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'chunks' }));
       } finally {
         setChunksLoading(false);
         setChunksRefreshing(false);
@@ -371,7 +372,7 @@ export function RagChunksPage() {
       setIndexStatus(data);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load index status');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'index status' }));
       return null;
     } finally {
       setStatusLoading(false);
@@ -450,7 +451,7 @@ export function RagChunksPage() {
       setConfirmSyncOpen(false);
       await refreshAll();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to queue sync');
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the index sync' }));
     } finally {
       setSyncing(false);
     }
@@ -467,7 +468,7 @@ export function RagChunksPage() {
       await loadChunks(offset, { silent: true });
       await loadIndexStatus({ silent: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete chunk');
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this chunk' }));
     } finally {
       setDeletingChunk(false);
     }

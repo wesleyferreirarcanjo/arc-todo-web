@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, updateProject } from '../lib/api/projects';
@@ -78,8 +80,8 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
     try {
       await deleteProject(orgId!, project.id);
       await onUpdated?.();
-    } catch {
-      setDeleteError('Failed to delete project.');
+    } catch (err) {
+      setDeleteError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this project' }));
     } finally {
       setDeletingId(null);
     }
@@ -87,7 +89,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
 
   return (
     <div className="entity-list">
-      {deleteError && <div className="alert alert-error">{deleteError}</div>}
+      {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
       {projects.map((project) => {
         const accent = getProjectColor(project);
         const isEditing = editingId === project.id;

@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Modal } from '../components/Modal';
@@ -107,9 +109,9 @@ export function DiagramsHubPage() {
           setProjects(projectEntries.map((entry) => entry.project));
           setItems(diagramsByProject.flat());
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setError('Failed to load diagrams.');
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'diagrams' }));
         }
       } finally {
         if (!cancelled) {
@@ -189,15 +191,15 @@ export function DiagramsHubPage() {
   async function handleCreate() {
     const title = newTitle.trim();
     if (!createOrgId) {
-      setCreateError('Select an organization.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
       return;
     }
     if (!createProjectId) {
-      setCreateError('Select a project.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
       return;
     }
     if (!title) {
-      setCreateError('Enter a diagram name.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_DIAGRAM));
       return;
     }
 
@@ -212,8 +214,8 @@ export function DiagramsHubPage() {
       navigate(
         `/organizations/${createOrgId}/projects/${createProjectId}/diagrams/${created.id}`,
       );
-    } catch {
-      setCreateError('Failed to create diagram.');
+    } catch (err) {
+      setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this diagram' }));
     } finally {
       setCreating(false);
     }
@@ -246,7 +248,7 @@ export function DiagramsHubPage() {
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && canvasCount === 0 && (
         <div className="diagrams-empty">
@@ -431,7 +433,7 @@ export function DiagramsHubPage() {
             }}
           />
         </label>
-        {createError && <div className="alert alert-error">{createError}</div>}
+        {createError && <ErrorAlert>{createError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

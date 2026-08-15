@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createGeneralPerson, fetchGeneralPersons } from '../lib/api/persons';
@@ -16,8 +17,8 @@ export function GeneralPersonsPage() {
     try {
       const data = await fetchGeneralPersons();
       setPersons(data);
-    } catch {
-      setError('Failed to load people.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'people' }));
     } finally {
       setLoading(false);
     }

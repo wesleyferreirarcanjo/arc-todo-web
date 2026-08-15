@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import {
   getPushPreferences,
@@ -40,7 +41,7 @@ export function usePushNotifications() {
       setOptedIn(prefs.optedIn);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Failed to enable notifications.';
+        userMessage(err, WEB_ERROR.SAVE, { thing: 'notifications' });
       setError(message);
       throw err;
     } finally {
@@ -57,7 +58,7 @@ export function usePushNotifications() {
       setOptedIn(prefs.optedIn);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Failed to disable notifications.';
+        userMessage(err, WEB_ERROR.SAVE, { thing: 'notifications' });
       setError(message);
       throw err;
     } finally {

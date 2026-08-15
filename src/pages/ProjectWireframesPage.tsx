@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -102,7 +104,7 @@ export function ProjectWireframesPage() {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
       } else {
-        setError('Failed to load wireframes.');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'wireframes' }));
       }
     } finally {
       setLoading(false);
@@ -138,7 +140,7 @@ export function ProjectWireframesPage() {
     if (!orgId || !projectId) return;
     const title = newTitle.trim();
     if (!title) {
-      setCreateError('Enter a wireframe name.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
       return;
     }
 
@@ -151,8 +153,8 @@ export function ProjectWireframesPage() {
       navigate(
         `/organizations/${orgId}/projects/${projectId}/wireframes/${created.id}`,
       );
-    } catch {
-      setCreateError('Failed to create wireframe.');
+    } catch (err) {
+      setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this wireframe' }));
     } finally {
       setCreating(false);
     }
@@ -162,7 +164,7 @@ export function ProjectWireframesPage() {
     if (!orgId || !projectId || !renameTarget) return;
     const title = renameTitle.trim();
     if (!title) {
-      setRenameError('Enter a wireframe name.');
+      setRenameError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
       return;
     }
 
@@ -188,8 +190,8 @@ export function ProjectWireframesPage() {
       );
       setRenameTarget(null);
       setRenameTitle('');
-    } catch {
-      setRenameError('Failed to rename wireframe.');
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this wireframe' }));
     } finally {
       setRenaming(false);
     }
@@ -204,8 +206,8 @@ export function ProjectWireframesPage() {
         prev.filter((wireframe) => wireframe.id !== deleteTarget.id),
       );
       setDeleteTarget(null);
-    } catch {
-      setError('Failed to delete wireframe.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -280,7 +282,7 @@ export function ProjectWireframesPage() {
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && wireframes.length === 0 && (
         <div className="diagrams-empty">
@@ -412,7 +414,7 @@ export function ProjectWireframesPage() {
             }}
           />
         </label>
-        {createError && <div className="alert alert-error">{createError}</div>}
+        {createError && <ErrorAlert>{createError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"
@@ -454,7 +456,7 @@ export function ProjectWireframesPage() {
             }}
           />
         </label>
-        {renameError && <div className="alert alert-error">{renameError}</div>}
+        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

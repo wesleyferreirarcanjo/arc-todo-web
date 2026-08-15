@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -144,8 +146,8 @@ export function AllTasksBoardPage() {
       const data = await fetchAllTasks(query);
       setTasks(data);
       if (silent) setError(null);
-    } catch {
-      if (!silent) setError('Failed to load tasks.');
+    } catch (err) {
+      if (!silent) setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'tasks' }));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -174,8 +176,8 @@ export function AllTasksBoardPage() {
         setCycleTasks(current.tasks);
         setCycleHistory(history);
         if (silent) setError(null);
-      } catch {
-        if (!silent) setError('Failed to load weekly cycle.');
+      } catch (err) {
+        if (!silent) setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'the weekly cycle' }));
       } finally {
         if (!silent) {
           setLoading(false);
@@ -368,8 +370,8 @@ export function AllTasksBoardPage() {
     try {
       await advanceBoardCycle(organizationId, projectId);
       await loadProjectCycle({ silent: true });
-    } catch {
-      setError('Failed to close the weekly cycle.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the weekly cycle' }));
     } finally {
       setAdvancing(false);
     }
@@ -401,13 +403,13 @@ export function AllTasksBoardPage() {
           input,
         );
         await loadTasks({ silent: true });
-      } catch {
+      } catch (err) {
         setTasks((prev) =>
           prev.map((item) =>
             item.id === task.id ? { ...item, status: previousStatus } : item,
           ),
         );
-        setError('Failed to move task.');
+        setError(userMessage(err, WEB_ERROR.MOVE, { thing: 'this task' }));
       } finally {
         setMovingTaskIds((current) => removeMovingTaskId(current, task.id));
       }
@@ -458,13 +460,13 @@ export function AllTasksBoardPage() {
       try {
         await updateProjectTask(organizationId, projectId, taskId, input);
         await loadProjectCycle({ silent: true });
-      } catch {
+      } catch (err) {
         setCycleTasks((prev) =>
           prev.map((item) =>
             item.id === taskId ? { ...item, status: previousStatus } : item,
           ),
         );
-        setError('Failed to move task.');
+        setError(userMessage(err, WEB_ERROR.MOVE, { thing: 'this task' }));
       } finally {
         setMovingTaskIds((current) => removeMovingTaskId(current, taskId));
       }
@@ -475,8 +477,8 @@ export function AllTasksBoardPage() {
     await loadProjectCycle({ silent: true });
   }
 
-  function handleMoveError() {
-    setError('Failed to move task.');
+  function handleMoveError(err?: unknown) {
+    setError(userMessage(err, WEB_ERROR.MOVE, { thing: 'this task' }));
   }
 
   function handleViewModeChange(mode: 'board' | 'list') {
@@ -759,7 +761,7 @@ export function AllTasksBoardPage() {
       )}
 
       {loading && <p className="status-message">Loading tasks...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && topLevelCount === 0 && !listFiltersActive && (
         <p className="status-message">

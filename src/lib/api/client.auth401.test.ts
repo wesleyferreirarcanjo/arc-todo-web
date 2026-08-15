@@ -27,7 +27,11 @@ describe('apiRequest 401 handling', () => {
 
   it('does not clear session on login 401 (auth: false) and surfaces API message', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ message: 'Invalid credentials' }), {
+      new Response(JSON.stringify({
+        statusCode: 401,
+        code: 'ERR-ARC-AUTH-02',
+        message: 'That username or password is incorrect. Try again, or sign in with Google.',
+      }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       }),
@@ -40,8 +44,9 @@ describe('apiRequest 401 handling', () => {
         auth: false,
       }),
     ).rejects.toMatchObject({
-      message: 'Invalid credentials',
+      message: 'That username or password is incorrect. Try again, or sign in with Google.',
       status: 401,
+      code: 'ERR-ARC-AUTH-02',
     } satisfies Partial<ApiError>);
 
     expect(localStorage.getItem('arc_todo_token')).toBe('stale-token');
@@ -58,8 +63,9 @@ describe('apiRequest 401 handling', () => {
     );
 
     await expect(apiRequest('/tasks')).rejects.toMatchObject({
-      message: 'Unauthorized',
+      message: 'Your session ended. Sign in again to continue.',
       status: 401,
+      code: 'ERR-ARC-AUTH-10',
     });
 
     expect(localStorage.getItem('arc_todo_token')).toBeNull();

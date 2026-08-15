@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -51,7 +53,7 @@ export function ProjectWireframePreviewPage() {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
       } else {
-        setError('Failed to load wireframe.');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this wireframe' }));
       }
     } finally {
       setLoading(false);
@@ -66,7 +68,7 @@ export function ProjectWireframePreviewPage() {
     if (!orgId || !projectId || !wireframeId) return;
     const title = renameTitle.trim();
     if (!title) {
-      setRenameError('Enter a wireframe name.');
+      setRenameError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
       return;
     }
     setRenaming(true);
@@ -80,8 +82,8 @@ export function ProjectWireframePreviewPage() {
       );
       setWireframe(updated);
       setRenameOpen(false);
-    } catch {
-      setRenameError('Failed to rename wireframe.');
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this wireframe' }));
     } finally {
       setRenaming(false);
     }
@@ -93,8 +95,8 @@ export function ProjectWireframePreviewPage() {
     try {
       await deleteProjectWireframe(orgId, projectId, wireframeId);
       navigate(listPath);
-    } catch {
-      setError('Failed to delete wireframe.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
       setDeleteOpen(false);
     } finally {
       setDeleting(false);
@@ -195,7 +197,7 @@ export function ProjectWireframePreviewPage() {
       )}
 
       {loading && <p className="status-message">Loading wireframe...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && wireframe && (
         <iframe
@@ -227,7 +229,7 @@ export function ProjectWireframePreviewPage() {
             }}
           />
         </label>
-        {renameError && <div className="alert alert-error">{renameError}</div>}
+        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

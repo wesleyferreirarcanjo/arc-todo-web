@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useState } from 'react';
 import { PasswordInput } from './PasswordInput';
 import { ApiError } from '../lib/api/client';
@@ -81,7 +83,7 @@ export function UserList({
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError('Failed to update user.');
+        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this user' }));
       }
     } finally {
       setLoading(false);
@@ -102,7 +104,7 @@ export function UserList({
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError('Failed to delete user.');
+        setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this user' }));
       }
     } finally {
       setLoading(false);
@@ -120,7 +122,7 @@ export function UserList({
 
   return (
     <div className="entity-list">
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       {users.map((user) => {
         const isEditing = editingId === user.id;
         const isSelf = user.id === currentUserId;

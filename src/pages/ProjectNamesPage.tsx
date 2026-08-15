@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -64,7 +66,7 @@ export function ProjectNamesPage() {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
       } else {
-        setError('Failed to load name sessions.');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'name sessions' }));
       }
     } finally {
       setLoading(false);
@@ -98,7 +100,7 @@ export function ProjectNamesPage() {
     if (!orgId || !projectId) return;
     const title = newTitle.trim();
     if (!title) {
-      setCreateError('Enter a session name.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_SESSION));
       return;
     }
     setCreating(true);
@@ -110,8 +112,8 @@ export function ProjectNamesPage() {
         createNameSessionBasics(title, whatItIs, createGoal),
       );
       navigate(`/organizations/${orgId}/projects/${projectId}/names/${created.id}`);
-    } catch {
-      setCreateError('Failed to create name session.');
+    } catch (err) {
+      setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming session' }));
     } finally {
       setCreating(false);
     }
@@ -186,7 +188,7 @@ export function ProjectNamesPage() {
       </header>
 
       {loading && <p className="status-message">Loading name sessions...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && sessions.length === 0 && (
         <div className="diagrams-empty">
@@ -326,7 +328,7 @@ export function ProjectNamesPage() {
         <p className="page-subtitle">
           Enough to start checking names. Extra context can wait.
         </p>
-        {createError && <div className="alert alert-error">{createError}</div>}
+        {createError && <ErrorAlert>{createError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"
@@ -361,7 +363,7 @@ export function ProjectNamesPage() {
             onChange={(event) => setRenameTitle(event.target.value)}
           />
         </label>
-        {renameError && <div className="alert alert-error">{renameError}</div>}
+        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"
@@ -371,7 +373,7 @@ export function ProjectNamesPage() {
               if (!orgId || !projectId || !renameTarget) return;
               const title = renameTitle.trim();
               if (!title) {
-                setRenameError('Enter a session name.');
+                setRenameError(catalogMessage(WEB_ERROR.VAL_SESSION));
                 return;
               }
               setRenaming(true);
@@ -390,8 +392,8 @@ export function ProjectNamesPage() {
                   ),
                 );
                 setRenameTarget(null);
-              } catch {
-                setRenameError('Failed to rename session.');
+              } catch (err) {
+                setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this session' }));
               } finally {
                 setRenaming(false);
               }
@@ -423,8 +425,8 @@ export function ProjectNamesPage() {
             await deleteProjectNameSession(orgId, projectId, deleteTarget.id);
             setSessions((prev) => prev.filter((session) => session.id !== deleteTarget.id));
             setDeleteTarget(null);
-          } catch {
-            setError('Failed to delete session.');
+          } catch (err) {
+            setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this session' }));
             setDeleteTarget(null);
           } finally {
             setDeleting(false);

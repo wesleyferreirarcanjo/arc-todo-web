@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { RagSettingsNav } from '../components/RagSettingsNav';
@@ -352,7 +353,7 @@ export function RagTestingPage() {
       setIndexStatus(data);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load index status');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'index status' }));
       return null;
     } finally {
       setStatusRefreshing(false);
@@ -380,7 +381,7 @@ export function RagTestingPage() {
         setOrganizationId(orgs[0].id);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load RAG testing data');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'RAG testing data' }));
     } finally {
       setLoading(false);
     }
@@ -433,7 +434,7 @@ export function RagTestingPage() {
       setResult(response);
       await loadIndexStatus({ silent: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Retrieval failed');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'retrieval results' }));
     } finally {
       setRunning(false);
     }
@@ -459,7 +460,7 @@ export function RagTestingPage() {
       });
       setEstimate(nextEstimate);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to estimate tokens');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'token estimate' }));
     } finally {
       setCalculating(false);
     }
@@ -473,7 +474,7 @@ export function RagTestingPage() {
       setConfirmSyncOpen(false);
       await loadIndexStatus({ silent: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to queue sync');
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the index sync' }));
     } finally {
       setSyncing(false);
     }

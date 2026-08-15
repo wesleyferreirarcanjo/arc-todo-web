@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -83,8 +85,8 @@ export function KnowledgeIndexOverview({
         ]);
         setAggregate(aggregateData);
         setIndexStatus(statusData);
-      } catch {
-        setError('Failed to load indexing overview.');
+      } catch (err) {
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'indexing overview' }));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -115,8 +117,8 @@ export function KnowledgeIndexOverview({
       await syncRagIndex();
       setConfirmSyncOpen(false);
       await loadOverview({ silent: true });
-    } catch {
-      setError('Failed to queue sync.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the index sync' }));
     } finally {
       setSyncing(false);
     }
@@ -159,7 +161,7 @@ export function KnowledgeIndexOverview({
         </div>
       </div>
 
-      {error ? <div className="alert alert-error">{error}</div> : null}
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
       {loading && !aggregate && !indexStatus ? (
         <p className="status-message">Loading indexing overview...</p>

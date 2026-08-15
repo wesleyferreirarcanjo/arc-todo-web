@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useState } from 'react';
 import type { CreateTaskInput, TaskCategory, TaskCriticity, TaskStatus } from '../types/todo';
 import {
@@ -102,8 +104,8 @@ export function TaskForm({
       setDueDate('');
       setCategory(defaultCategory);
       setCoding(emptyCodingMetadataForm());
-    } catch {
-      setError('Failed to create task.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this task' }));
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ export function TaskForm({
   return (
     <form className="task-form" onSubmit={handleSubmit}>
       {!hideHeading && <h2>{heading}</h2>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
         Title

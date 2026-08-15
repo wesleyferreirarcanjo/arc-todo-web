@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { UserForm } from '../components/UserForm';
 import { UserList } from '../components/UserList';
@@ -44,8 +46,8 @@ export function AdminUsersPage() {
 
       setUsers(userList);
       setProjectOptions(projectGroups.flat());
-    } catch {
-      setError('Failed to load users or projects.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'users and projects' }));
     } finally {
       setLoading(false);
     }
@@ -87,7 +89,7 @@ export function AdminUsersPage() {
         </p>
       </header>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <UserForm projectOptions={projectOptions} onSubmit={handleCreate} />
 

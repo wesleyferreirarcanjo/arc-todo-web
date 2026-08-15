@@ -1,4 +1,5 @@
 import { getToken } from '../auth/tokenStorage';
+import { catalogMessage, WEB_ERROR } from '../errors/messages';
 
 const CHAT_API_BASE_URL =
   import.meta.env.VITE_CHAT_API_BASE_URL ?? 'http://localhost:8010';
@@ -37,31 +38,34 @@ export interface StreamChatCallbacks {
 
 export class ChatApiError extends Error {
   status: number;
+  code?: string;
   detail?: unknown;
 
-  constructor(message: string, status: number, detail?: unknown) {
+  constructor(message: string, status: number, detail?: unknown, code?: string) {
     super(message);
     this.status = status;
     this.detail = detail;
+    this.code = code;
   }
 }
 
-function parseErrorMessage(status: number, body: unknown): string {
+function parseErrorMessage(status: number, body: unknown): { message: string; code?: string } {
   if (typeof body === 'object' && body !== null) {
     const detail = (body as { detail?: unknown }).detail;
     if (typeof detail === 'string') {
-      return detail;
+      return { message: detail };
     }
     if (
       typeof detail === 'object' &&
       detail !== null &&
       'error' in detail &&
-      typeof (detail as { error?: { message?: string } }).error?.message === 'string'
+      typeof (detail as { error?: { message?: string; code?: string } }).error?.message === 'string'
     ) {
-      return (detail as { error: { message: string } }).error.message;
+      const error = (detail as { error: { message: string; code?: string } }).error;
+      return { message: error.message, code: error.code };
     }
   }
-  return `Chat request failed (${status})`;
+  return { message: `Chat request failed (${status})` };
 }
 
 export async function sendChatMessage(
@@ -69,7 +73,7 @@ export async function sendChatMessage(
 ): Promise<ChatResponse> {
   const token = getToken();
   if (!token) {
-    throw new ChatApiError('Not authenticated', 401);
+    throw new ChatApiError(catalogMessage(WEB_ERROR.CHAT_AUTH), 401, undefined, WEB_ERROR.CHAT_AUTH);
   }
 
   const response = await fetch(`${CHAT_API_BASE_URL}/chat`, {
@@ -82,15 +86,18 @@ export async function sendChatMessage(
   });
 
   if (!response.ok) {
-    let message = `Chat request failed (${response.status})`;
+    let message = catalogMessage(WEB_ERROR.CHAT_REQUEST);
+    let code: string | undefined = WEB_ERROR.CHAT_REQUEST;
     let body: unknown;
     try {
       body = await response.json();
-      message = parseErrorMessage(response.status, body);
+      const parsed = parseErrorMessage(response.status, body);
+      message = parsed.message;
+      code = parsed.code ?? code;
     } catch {
       // ignore parse errors
     }
-    throw new ChatApiError(message, response.status, body);
+    throw new ChatApiError(message, response.status, body, code);
   }
 
   return response.json() as Promise<ChatResponse>;
@@ -119,7 +126,7 @@ export async function streamChatMessage(
 ): Promise<ChatResponse> {
   const token = getToken();
   if (!token) {
-    throw new ChatApiError('Not authenticated', 401);
+    throw new ChatApiError(catalogMessage(WEB_ERROR.CHAT_AUTH), 401, undefined, WEB_ERROR.CHAT_AUTH);
   }
 
   const response = await fetch(`${CHAT_API_BASE_URL}/chat/stream`, {
@@ -133,20 +140,28 @@ export async function streamChatMessage(
   });
 
   if (!response.ok) {
-    let message = `Chat request failed (${response.status})`;
+    let message = catalogMessage(WEB_ERROR.CHAT_REQUEST);
+    let code: string | undefined = WEB_ERROR.CHAT_REQUEST;
     let body: unknown;
     try {
       body = await response.json();
-      message = parseErrorMessage(response.status, body);
+      const parsed = parseErrorMessage(response.status, body);
+      message = parsed.message;
+      code = parsed.code ?? code;
     } catch {
       // ignore parse errors
     }
-    throw new ChatApiError(message, response.status, body);
+    throw new ChatApiError(message, response.status, body, code);
   }
 
   const reader = response.body?.getReader();
   if (!reader) {
-    throw new ChatApiError('Streaming is not supported in this browser', 500);
+    throw new ChatApiError(
+      catalogMessage(WEB_ERROR.CHAT_STREAM),
+      500,
+      undefined,
+      WEB_ERROR.CHAT_STREAM,
+    );
   }
 
   const decoder = new TextDecoder();

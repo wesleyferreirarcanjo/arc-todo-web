@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchEvidenceStorageUsage } from '../lib/api/storage';
 import type { EvidenceStorageUsage } from '../types/storage';
@@ -30,7 +31,7 @@ export function StorageSettingsPage() {
       setUsage(data);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to load storage usage',
+        userMessage(err, WEB_ERROR.LOAD, { thing: 'storage usage' }),
       );
     } finally {
       setLoading(false);

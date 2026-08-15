@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useEffect, useState } from 'react';
 import { FileInput } from './FileInput';
 import { Select } from './Select';
@@ -69,8 +71,8 @@ export function KnowledgeForm({
       setTaskId('');
       setFiles([]);
       setFileInputKey((current) => current + 1);
-    } catch {
-      setError('Failed to create knowledge entry.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this knowledge entry' }));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export function KnowledgeForm({
   return (
     <form className="entity-form knowledge-form" onSubmit={handleSubmit}>
       <h2>New knowledge</h2>
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
         Title

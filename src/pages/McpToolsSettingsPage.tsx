@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   bulkUpdateMcpToolSettings,
@@ -82,7 +83,7 @@ export function McpToolsSettingsPage() {
       setGroups(data.groups);
       setTokenSummary(data.tokenSummary);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load MCP tools');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'MCP tools' }));
     } finally {
       setLoading(false);
     }
@@ -117,7 +118,7 @@ export function McpToolsSettingsPage() {
         return nextGroups;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update tool');
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this tool' }));
     } finally {
       setSavingKey(null);
     }
@@ -151,7 +152,7 @@ export function McpToolsSettingsPage() {
         return nextGroups;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update group');
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this tool group' }));
     } finally {
       setSavingGroup(null);
     }

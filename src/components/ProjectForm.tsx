@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useState } from 'react';
 import { DEFAULT_PROJECT_COLOR } from '../lib/color/entityColor';
 import type { CreateProjectInput } from '../types/project';
@@ -29,8 +31,8 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
       setName('');
       setDescription('');
       setColor(DEFAULT_PROJECT_COLOR);
-    } catch {
-      setError('Failed to create project.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this project' }));
     } finally {
       setLoading(false);
     }
@@ -39,7 +41,7 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
   return (
     <form className="entity-form" onSubmit={handleSubmit}>
       <h2>New project</h2>
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
         Name

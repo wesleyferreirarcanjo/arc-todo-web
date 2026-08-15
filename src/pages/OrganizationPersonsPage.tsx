@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { createPerson, fetchPersons } from '../lib/api/persons';
@@ -26,8 +28,8 @@ export function OrganizationPersonsPage() {
     try {
       const data = await fetchPersons(orgId);
       setPersons(data);
-    } catch {
-      setError('Failed to load people.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'people' }));
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export function OrganizationPersonsPage() {
       <PersonForm onSubmit={handleCreate} />
 
       {loading && <p className="status-message">Loading people...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && persons.length === 0 && (
         <p className="status-message">

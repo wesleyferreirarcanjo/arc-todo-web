@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { createProjectTask } from '../lib/api/todos';
 import { fetchProjects } from '../lib/api/projects';
@@ -115,8 +117,8 @@ export function MobileQuickCreateSheet({
       setLastProjectId(projectId);
       await onCreated();
       onClose();
-    } catch {
-      setError('Failed to create task.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this task' }));
     } finally {
       setLoading(false);
     }
@@ -133,7 +135,7 @@ export function MobileQuickCreateSheet({
       className="mobile-quick-create-modal"
     >
       <form className="mobile-quick-create-form" onSubmit={(event) => void handleSubmit(event)}>
-        {error ? <div className="alert alert-error">{error}</div> : null}
+        {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
         {!fixedScope ? (
           <div className="quick-create-context">

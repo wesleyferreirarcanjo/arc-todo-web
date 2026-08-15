@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
 import {
   Excalidraw,
   exportToBlob,
@@ -144,7 +146,7 @@ export function ProjectDiagramEditorPage() {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
       } else {
-        setError('Failed to load diagram.');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this diagram' }));
       }
     } finally {
       setLoading(false);
@@ -265,7 +267,7 @@ export function ProjectDiagramEditorPage() {
     saving: 'Saving…',
     saved: 'All changes saved',
     unsaved: 'Unsaved changes',
-    error: 'Failed to save diagram',
+    error: catalogMessage(WEB_ERROR.SAVE, { thing: 'this diagram' }),
   };
 
   return (
@@ -306,7 +308,7 @@ export function ProjectDiagramEditorPage() {
       </header>
 
       {loading && <p className="status-message">Loading diagram...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && diagram && initialData && (
         <div className="diagram-editor-canvas">

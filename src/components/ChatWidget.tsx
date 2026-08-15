@@ -1,3 +1,4 @@
+import { userMessage as formatUserError, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { streamChatMessage } from '../lib/api/chat';
@@ -364,7 +365,7 @@ export function ChatWidget() {
       updateLastAssistantMessage(response.message, response.usedTools ?? []);
       await refreshConversations();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Chat request failed');
+      setError(formatUserError(err, WEB_ERROR.CHAT_REQUEST));
     } finally {
       setLoading(false);
     }
@@ -396,7 +397,7 @@ export function ChatWidget() {
     try {
       await removeConversation(conversationId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to close conversation');
+      setError(formatUserError(err, WEB_ERROR.SAVE, { thing: 'this conversation' }));
     } finally {
       setClosingConversationId(null);
     }

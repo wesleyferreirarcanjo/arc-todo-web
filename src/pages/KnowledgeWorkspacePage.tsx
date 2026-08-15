@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -166,8 +168,8 @@ export function KnowledgeWorkspacePage({
             entry.scope === 'project',
         ),
       );
-    } catch {
-      setError('Failed to load knowledge.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'knowledge' }));
     } finally {
       setLoading(false);
     }
@@ -438,7 +440,7 @@ export function KnowledgeWorkspacePage({
       />
 
       {loading && <p className="status-message">Loading knowledge...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && entries.length === 0 && (
         <div className="diagrams-empty">

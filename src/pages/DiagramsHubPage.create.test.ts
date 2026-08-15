@@ -11,9 +11,9 @@ describe('diagrams hub New diagram (#arc-270)', () => {
   it('exposes hub create like Wireframes (org + project + name)', () => {
     expect(page).toContain('New diagram');
     expect(page).toContain('createProjectDiagram');
-    expect(page).toContain('Select an organization.');
-    expect(page).toContain('Select a project.');
-    expect(page).toContain('Enter a diagram name.');
+    expect(page).toContain('WEB_ERROR.VAL_ORG');
+    expect(page).toContain('WEB_ERROR.VAL_PROJECT');
+    expect(page).toContain('WEB_ERROR.VAL_DIAGRAM');
   });
 
   it('cancels .btn-primary form margin on page header actions', () => {

@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
 import { PasswordInput } from '../components/PasswordInput';
@@ -37,7 +38,7 @@ export function ChatbotSettingsPage() {
       setMaxHistoryTokens(String(data.maxHistoryTokens ?? 100000));
       setApiKey('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load chatbot settings');
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'chatbot settings' }));
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ export function ChatbotSettingsPage() {
       setApiKey('');
       setSuccess('Chatbot settings saved.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save chatbot settings');
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'chatbot settings' }));
     } finally {
       setSaving(false);
     }

@@ -6,16 +6,31 @@ const API_BASE_URL =
 
 export class ApiError extends Error {
   status: number;
+  code?: string;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   auth?: boolean;
+}
+
+function parseErrorPayload(data: {
+  message?: string | string[];
+  code?: string;
+}): { message?: string; code?: string } {
+  let message: string | undefined;
+  if (Array.isArray(data.message)) {
+    message = data.message.join(', ');
+  } else if (data.message) {
+    message = data.message;
+  }
+  return { message, code: data.code };
 }
 
 export async function apiRequest<T>(
@@ -59,22 +74,28 @@ export async function apiRequest<T>(
     if (window.location.pathname !== '/login') {
       window.location.assign('/login');
     }
-    throw new ApiError('Unauthorized', 401);
+    throw new ApiError(
+      'Your session ended. Sign in again to continue.',
+      401,
+      'ERR-ARC-AUTH-10',
+    );
   }
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
+    let code: string | undefined;
     try {
-      const data = (await response.json()) as { message?: string | string[] };
-      if (Array.isArray(data.message)) {
-        message = data.message.join(', ');
-      } else if (data.message) {
-        message = data.message;
-      }
+      const data = (await response.json()) as {
+        message?: string | string[];
+        code?: string;
+      };
+      const parsed = parseErrorPayload(data);
+      if (parsed.message) message = parsed.message;
+      code = parsed.code;
     } catch {
       // ignore parse errors
     }
-    throw new ApiError(message, response.status);
+    throw new ApiError(message, response.status, code);
   }
 
   if (response.status === 204 || response.status === 205) {
@@ -111,21 +132,27 @@ async function handleErrorResponse(response: Response): Promise<never> {
     if (window.location.pathname !== '/login') {
       window.location.assign('/login');
     }
-    throw new ApiError('Unauthorized', 401);
+    throw new ApiError(
+      'Your session ended. Sign in again to continue.',
+      401,
+      'ERR-ARC-AUTH-10',
+    );
   }
 
   let message = `Request failed (${response.status})`;
+  let code: string | undefined;
   try {
-    const data = (await response.json()) as { message?: string | string[] };
-    if (Array.isArray(data.message)) {
-      message = data.message.join(', ');
-    } else if (data.message) {
-      message = data.message;
-    }
+    const data = (await response.json()) as {
+      message?: string | string[];
+      code?: string;
+    };
+    const parsed = parseErrorPayload(data);
+    if (parsed.message) message = parsed.message;
+    code = parsed.code;
   } catch {
     // ignore parse errors
   }
-  throw new ApiError(message, response.status);
+  throw new ApiError(message, response.status, code);
 }
 
 function parseDownloadFilename(contentDisposition: string | null): string {

@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
@@ -38,8 +40,8 @@ export function ProjectTasksPage() {
     try {
       const data = await fetchProjectTasks(orgId, projectId);
       setTasks(data);
-    } catch {
-      setError('Failed to load tasks.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'tasks' }));
     } finally {
       setLoading(false);
     }
@@ -167,7 +169,7 @@ export function ProjectTasksPage() {
       <TaskForm onSubmit={handleCreate} />
 
       {loading && <p className="status-message">Loading tasks...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && topLevelCount === 0 && (
         <p className="status-message">No tasks yet. Create your first one above.</p>

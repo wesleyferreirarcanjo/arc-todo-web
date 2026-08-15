@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createProjectTask,
@@ -237,7 +238,7 @@ export function TaskQaChecklistModal({
       .catch((error: unknown) => {
         if (cancelled) return;
         onError?.(
-          error instanceof Error ? error.message : 'Failed to load evidence',
+          userMessage(error, WEB_ERROR.LOAD, { thing: 'evidence' }),
         );
       });
 
@@ -424,11 +425,7 @@ export function TaskQaChecklistModal({
         setDraftState(nextState);
         cancelReportItem();
       } catch (error: unknown) {
-        onError?.(
-          error instanceof Error
-            ? error.message
-            : 'Failed to create improvement task',
-        );
+        onError?.(userMessage(error, WEB_ERROR.CREATE, { thing: 'the improvement task' }));
       } finally {
         setUploadingItemId(null);
       }
@@ -441,7 +438,7 @@ export function TaskQaChecklistModal({
       nextState = result.nextState;
     } catch (error: unknown) {
       onError?.(
-        error instanceof Error ? error.message : 'Failed to mark item as bug',
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'this bug flag' }),
       );
       return;
     }
@@ -472,11 +469,7 @@ export function TaskQaChecklistModal({
         });
       }
     } catch (error: unknown) {
-      onError?.(
-        error instanceof Error
-          ? error.message
-          : 'Failed to upload item evidence',
-      );
+      onError?.(userMessage(error, WEB_ERROR.SAVE, { thing: 'item evidence' }));
     } finally {
       setUploadingItemId(null);
     }
@@ -526,7 +519,7 @@ export function TaskQaChecklistModal({
       handleCancelEditNote();
     } catch (error: unknown) {
       onError?.(
-        error instanceof Error ? error.message : 'Failed to update bug note',
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'the bug note' }),
       );
     }
   }
@@ -584,7 +577,7 @@ export function TaskQaChecklistModal({
       onClose();
     } catch (error: unknown) {
       onError?.(
-        error instanceof Error ? error.message : 'Failed to save checklist',
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'the checklist' }),
       );
     } finally {
       savingRef.current = false;
@@ -609,7 +602,7 @@ export function TaskQaChecklistModal({
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (error: unknown) {
       onError?.(
-        error instanceof Error ? error.message : 'Failed to open evidence',
+        userMessage(error, WEB_ERROR.LOAD, { thing: 'this evidence' }),
       );
     }
   }

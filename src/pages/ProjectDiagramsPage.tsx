@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -91,7 +93,7 @@ export function ProjectDiagramsPage() {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
       } else {
-        setError('Failed to load diagrams.');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'diagrams' }));
       }
     } finally {
       setLoading(false);
@@ -121,7 +123,7 @@ export function ProjectDiagramsPage() {
     if (!orgId || !projectId) return;
     const title = newTitle.trim();
     if (!title) {
-      setCreateError('Enter a diagram name.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_DIAGRAM));
       return;
     }
 
@@ -134,8 +136,8 @@ export function ProjectDiagramsPage() {
       navigate(
         `/organizations/${orgId}/projects/${projectId}/diagrams/${created.id}`,
       );
-    } catch {
-      setCreateError('Failed to create diagram.');
+    } catch (err) {
+      setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this diagram' }));
     } finally {
       setCreating(false);
     }
@@ -145,7 +147,7 @@ export function ProjectDiagramsPage() {
     if (!orgId || !projectId || !renameTarget) return;
     const title = renameTitle.trim();
     if (!title) {
-      setRenameError('Enter a diagram name.');
+      setRenameError(catalogMessage(WEB_ERROR.VAL_DIAGRAM));
       return;
     }
 
@@ -171,8 +173,8 @@ export function ProjectDiagramsPage() {
       );
       setRenameTarget(null);
       setRenameTitle('');
-    } catch {
-      setRenameError('Failed to rename diagram.');
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this diagram' }));
     } finally {
       setRenaming(false);
     }
@@ -187,8 +189,8 @@ export function ProjectDiagramsPage() {
         prev.filter((diagram) => diagram.id !== deleteTarget.id),
       );
       setDeleteTarget(null);
-    } catch {
-      setError('Failed to delete diagram.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this diagram' }));
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -264,7 +266,7 @@ export function ProjectDiagramsPage() {
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && canvasDiagrams.length === 0 && (
         <div className="diagrams-empty">
@@ -392,7 +394,7 @@ export function ProjectDiagramsPage() {
             }}
           />
         </label>
-        {createError && <div className="alert alert-error">{createError}</div>}
+        {createError && <ErrorAlert>{createError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"
@@ -434,7 +436,7 @@ export function ProjectDiagramsPage() {
             }}
           />
         </label>
-        {renameError && <div className="alert alert-error">{renameError}</div>}
+        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

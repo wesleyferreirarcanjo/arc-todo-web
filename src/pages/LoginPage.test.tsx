@@ -68,7 +68,11 @@ describe('LoginPage SSO 401', () => {
   it('keeps the Google button mounted and clickable after an unassigned-account 401', async () => {
     const user = userEvent.setup();
     loginWithGoogle.mockRejectedValue(
-      new ApiError('No Arc Todo user is assigned to this Google account', 401),
+      new ApiError(
+        'No Arc Todo user is assigned to this Google account. Ask an administrator to add your email, then try again.',
+        401,
+        'ERR-ARC-AUTH-07',
+      ),
     );
 
     render(
@@ -84,7 +88,7 @@ describe('LoginPage SSO 401', () => {
 
     expect(
       await screen.findByText(
-        'No Arc Todo user is assigned to this Google account',
+        'No Arc Todo user is assigned to this Google account. Ask an administrator to add your email, then try again.',
       ),
     ).toBeInTheDocument();
 

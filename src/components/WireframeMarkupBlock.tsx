@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -105,7 +107,7 @@ export function WireframeMarkupBlock({
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Failed to create markup.';
+            : userMessage(err, WEB_ERROR.CREATE, { thing: 'this markup' });
       setError(message);
     } finally {
       setCapturing(false);
@@ -115,7 +117,7 @@ export function WireframeMarkupBlock({
   async function handleConfirmName() {
     const title = nameValue.trim();
     if (!title) {
-      setNameError('Enter a name.');
+      setNameError(catalogMessage(WEB_ERROR.VAL_NAME));
       return;
     }
 
@@ -133,8 +135,8 @@ export function WireframeMarkupBlock({
       setNameMode(null);
       setNameTarget(null);
       onDiagramsChange();
-    } catch {
-      setNameError('Failed to rename markup.');
+    } catch (err) {
+      setNameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this markup' }));
     } finally {
       setSavingName(false);
     }
@@ -147,8 +149,8 @@ export function WireframeMarkupBlock({
       await deleteProjectDiagram(orgId, projectId, deleteTarget.id);
       setDeleteTarget(null);
       onDiagramsChange();
-    } catch {
-      setError('Failed to delete markup.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this markup' }));
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -171,7 +173,7 @@ export function WireframeMarkupBlock({
           </button>
         </div>
       )}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       {showList && diagrams.length > 0 && (
         <ul className="wireframe-markup-list">
           {diagrams.map((diagram) => (
@@ -228,7 +230,7 @@ export function WireframeMarkupBlock({
             }}
           />
         </label>
-        {nameError && <div className="alert alert-error">{nameError}</div>}
+        {nameError && <ErrorAlert>{nameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

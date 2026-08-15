@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -100,8 +102,8 @@ export function NamesHubPage() {
           setProjects(projectEntries.map((entry) => entry.project));
           setItems(sessionsByProject.flat());
         }
-      } catch {
-        if (!cancelled) setError('Failed to load name sessions.');
+      } catch (err) {
+        if (!cancelled) setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'name sessions' }));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -184,15 +186,15 @@ export function NamesHubPage() {
   async function handleCreate() {
     const title = newTitle.trim();
     if (!createOrgId) {
-      setCreateError('Select an organization.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
       return;
     }
     if (!title) {
-      setCreateError('Enter a working name.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_WORKING));
       return;
     }
     if (!isAdmin && !createProjectId) {
-      setCreateError('Select a project.');
+      setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
       return;
     }
     setCreating(true);
@@ -221,7 +223,7 @@ export function NamesHubPage() {
           'Creating a new product workspace is admin-only. Open a project you already belong to to start a session there.',
         );
       } else {
-        setCreateError('Failed to create naming workspace.');
+        setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming workspace' }));
       }
     } finally {
       setCreating(false);
@@ -232,7 +234,7 @@ export function NamesHubPage() {
     if (!renameTarget) return;
     const title = renameTitle.trim();
     if (!title) {
-      setRenameError('Enter a session name.');
+      setRenameError(catalogMessage(WEB_ERROR.VAL_SESSION));
       return;
     }
     setRenaming(true);
@@ -259,8 +261,8 @@ export function NamesHubPage() {
         ),
       );
       setRenameTarget(null);
-    } catch {
-      setRenameError('Failed to rename session.');
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this session' }));
     } finally {
       setRenaming(false);
     }
@@ -279,8 +281,8 @@ export function NamesHubPage() {
         prev.filter((item) => item.session.id !== deleteTarget.session.id),
       );
       setDeleteTarget(null);
-    } catch {
-      setError('Failed to delete session.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this session' }));
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -310,7 +312,7 @@ export function NamesHubPage() {
       </header>
 
       {loading && <p className="status-message">Loading name sessions...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && items.length === 0 && (
         <div className="diagrams-empty">
@@ -535,7 +537,7 @@ export function NamesHubPage() {
             ? 'Enough to start checking names. Extra context can wait. This also creates a project with the working name.'
             : 'Enough to start checking names. Extra context can wait. Stored on the selected project.'}
         </p>
-        {createError && <div className="alert alert-error">{createError}</div>}
+        {createError && <ErrorAlert>{createError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"
@@ -571,7 +573,7 @@ export function NamesHubPage() {
             autoFocus
           />
         </label>
-        {renameError && <div className="alert alert-error">{renameError}</div>}
+        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
         <div className="knowledge-actions">
           <button
             type="button"

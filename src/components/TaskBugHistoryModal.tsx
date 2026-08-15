@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchTaskHistory } from '../lib/api/todos';
 import type { Task, TaskHistoryEntry } from '../types/todo';
@@ -65,7 +66,7 @@ export function TaskBugHistoryModal({
       .catch((err: unknown) => {
         if (cancelled) return;
         setError(
-          err instanceof Error ? err.message : 'Failed to load bug history',
+          userMessage(err, WEB_ERROR.LOAD, { thing: 'bug history' }),
         );
       })
       .finally(() => {

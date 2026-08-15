@@ -1,3 +1,5 @@
+import { ErrorAlert } from './ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { FormEvent, useState } from 'react';
 import { DEFAULT_ORGANIZATION_COLOR } from '../lib/color/entityColor';
 import type { CreateOrganizationInput } from '../types/organization';
@@ -26,8 +28,8 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
       });
       setName('');
       setColor(DEFAULT_ORGANIZATION_COLOR);
-    } catch {
-      setError('Failed to create organization.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this organization' }));
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,7 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
         </p>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
         Name

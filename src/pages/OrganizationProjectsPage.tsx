@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
@@ -27,8 +28,8 @@ export function OrganizationProjectsPage() {
 
   useEffect(() => {
     if (!orgId) return;
-    refreshProjects(orgId).catch(() => {
-      setError('Organization not found or access denied.');
+    refreshProjects(orgId).catch((err) => {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this organization' }));
     });
   }, [orgId, refreshProjects]);
 

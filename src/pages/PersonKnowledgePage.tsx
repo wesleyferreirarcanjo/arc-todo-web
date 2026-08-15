@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
@@ -57,8 +59,8 @@ export function PersonKnowledgePage() {
       ]);
       setPerson(personData);
       setEntries(knowledgeData);
-    } catch {
-      setError('Failed to load person knowledge.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'person knowledge' }));
     } finally {
       setLoading(false);
     }
@@ -141,7 +143,7 @@ export function PersonKnowledgePage() {
       <KnowledgeForm onSubmit={handleCreate} />
 
       {loading && <p className="status-message">Loading knowledge...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && entries.length === 0 && (
         <p className="status-message">

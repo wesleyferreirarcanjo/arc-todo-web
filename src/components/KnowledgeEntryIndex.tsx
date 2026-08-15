@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchKnowledgeEntryIndex } from '../lib/api/knowledge';
 import {
@@ -32,9 +33,9 @@ export function KnowledgeEntryIndex({
       try {
         const data = await fetchKnowledgeEntryIndex(knowledgeId);
         setIndexMeta(data);
-      } catch {
+      } catch (err) {
         if (!silent) {
-          setError('Failed to load text indexing status.');
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'text indexing status' }));
         }
       } finally {
         if (!silent) {

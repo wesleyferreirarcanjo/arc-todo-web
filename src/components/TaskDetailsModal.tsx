@@ -1,3 +1,4 @@
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { CodingTaskMetadata } from '../lib/tasks/taskCategory';
@@ -195,11 +196,7 @@ export function TaskDetailsModal({
         if (cancelled) {
           return;
         }
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : 'Failed to load task details',
-        );
+        setError(userMessage(fetchError, WEB_ERROR.LOAD, { thing: 'task details' }));
       })
       .finally(() => {
         if (!cancelled) {
@@ -284,11 +281,7 @@ export function TaskDetailsModal({
       );
       handleCancelEditComment();
     } catch (saveError: unknown) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'Failed to update comment',
-      );
+      setError(userMessage(saveError, WEB_ERROR.SAVE, { thing: 'this comment' }));
     } finally {
       setSavingComment(false);
     }
@@ -315,11 +308,7 @@ export function TaskDetailsModal({
       }
       setCommentPendingDelete(null);
     } catch (deleteError: unknown) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : 'Failed to delete comment',
-      );
+      setError(userMessage(deleteError, WEB_ERROR.DELETE, { thing: 'this comment' }));
     } finally {
       setDeletingComment(false);
     }
@@ -343,11 +332,7 @@ export function TaskDetailsModal({
       setComments((current) => [...current, created]);
       setCommentBody('');
     } catch (postError: unknown) {
-      setError(
-        postError instanceof Error
-          ? postError.message
-          : 'Failed to add comment',
-      );
+      setError(userMessage(postError, WEB_ERROR.CREATE, { thing: 'this comment' }));
     } finally {
       setPostingComment(false);
     }
@@ -387,11 +372,7 @@ export function TaskDetailsModal({
       );
       setHistory(nextHistory);
     } catch (saveError: unknown) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'Failed to rename task',
-      );
+      setError(userMessage(saveError, WEB_ERROR.RENAME, { thing: 'this task' }));
     } finally {
       setSavingTitle(false);
     }

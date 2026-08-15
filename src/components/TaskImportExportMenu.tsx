@@ -1,3 +1,4 @@
+import { catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useRef, useState } from 'react';
 import { fetchAllTasks } from '../lib/api/todos';
 import {
@@ -62,7 +63,7 @@ export function TaskImportExportMenu({
       const exportTasksData =
         scope === 'filtered' ? tasks : await fetchAllTasks();
       if (exportTasksData.length === 0) {
-        setError('No tasks to export.');
+        setError(catalogMessage(WEB_ERROR.EXPORT_EMPTY));
         return;
       }
 
@@ -100,7 +101,7 @@ export function TaskImportExportMenu({
     try {
       const { rows } = await parseTaskFile(file);
       if (rows.length === 0) {
-        setError('Import file contains no tasks.');
+        setError(catalogMessage(WEB_ERROR.IMPORT_EMPTY));
         return;
       }
 

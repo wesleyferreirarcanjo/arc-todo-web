@@ -1,3 +1,5 @@
+import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -178,7 +180,7 @@ export function NameSessionPage() {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
       } else {
-        setError('Failed to load name session.');
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this naming session' }));
       }
     } finally {
       setLoading(false);
@@ -219,8 +221,8 @@ export function NameSessionPage() {
     try {
       await patch({ productDescription: desc, brief: session.brief });
       return true;
-    } catch {
-      setError('Failed to save description.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the description' }));
       return false;
     } finally {
       setBusy(null);
@@ -297,8 +299,8 @@ export function NameSessionPage() {
         );
         const updated = await patch({ candidates: merged });
         if (updated) setTypedName('');
-      } catch {
-        setError('Check name failed.');
+      } catch (err) {
+        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
       } finally {
         setBusy(null);
       }
@@ -327,8 +329,8 @@ export function NameSessionPage() {
       });
       setSession(updated);
       setTypedName('');
-    } catch {
-      setError('Check name failed.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
     } finally {
       setBusy(null);
     }
@@ -502,7 +504,7 @@ export function NameSessionPage() {
         </div>
       </header>
       {loading && <p className="status-message">Loading session...</p>}
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       {notice && <div className="alert">{notice}</div>}
       {session && (
         <>
