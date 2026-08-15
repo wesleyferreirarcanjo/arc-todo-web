@@ -72,6 +72,27 @@ const mass = {
   stroke: 'none' as const,
 };
 
+/**
+ * Product mark — AI in a task board whose outer mass reads as A + restrained
+ * wings. Login / PWA / default tab only. Do not use as a destination glyph.
+ */
+export function BrandMarkIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <path d="M12 3.4 17.1 6.8 20.2 20.4H3.8L6.9 6.8Z" />
+      <path d="M5.55 12.35h3.1M15.35 12.35h3.1" />
+      <path d="M12 15.7v4.7" />
+      <circle {...mass} cx="12" cy="12.35" r="3.35" />
+      <circle cx="12" cy="12.35" r="3.35" />
+      <path
+        fill="currentColor"
+        stroke="none"
+        d="M12 10.2 12.55 11.8 14.15 12.35 12.55 12.9 12 14.5 11.45 12.9 9.85 12.35 11.45 11.8Z"
+      />
+    </DuotoneIcon>
+  );
+}
+
 export function TasksIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>

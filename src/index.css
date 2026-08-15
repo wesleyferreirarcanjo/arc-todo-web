@@ -2386,6 +2386,14 @@ textarea:focus-visible {
   box-shadow: var(--shadow-lift);
 }
 
+.login-card .login-mark {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 3.25rem;
+  color: var(--accent);
+  margin-bottom: 0.85rem;
+}
+
 .login-card h1 {
   font-family: var(--font-display);
   font-size: 2rem;

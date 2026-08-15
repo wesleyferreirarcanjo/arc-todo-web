@@ -81,6 +81,11 @@ describe('LoginPage SSO 401', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByRole('heading', { name: 'Arc Todo' })).toBeInTheDocument();
+    const mark = document.querySelector('.login-mark');
+    expect(mark).toBeInTheDocument();
+    expect(mark).toHaveAttribute('aria-hidden', 'true');
+
     const googleButton = await screen.findByRole('button', {
       name: 'Sign in with Google',
     });

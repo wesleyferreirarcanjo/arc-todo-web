@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import {
-  DEFAULT_PROJECT_COLOR,
   getOrganizationColor,
   getProjectColor,
 } from '../lib/color/entityColor';
 
 const DEFAULT_TITLE = 'Arc Todo';
 const FAVICON_REL = 'icon';
+const MARK_FAVICON_HREF = '/icons/icon.svg';
 
 function colorFaviconHref(color: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="${color}"/></svg>`;
@@ -78,24 +78,22 @@ export function useDocumentChrome(): void {
   const projectName = project?.name ?? null;
   const orgName = organization?.name ?? null;
 
-  // Project color always beats org color when a project is selected.
-  const faviconColor = projectId
-    ? getProjectColor(project ?? { id: projectId })
-    : orgId
-      ? getOrganizationColor(organization ?? { id: orgId })
-      : DEFAULT_PROJECT_COLOR;
-
   const title = buildTitle(projectName, orgName, Boolean(projectId));
+  const faviconHref = projectId
+    ? colorFaviconHref(getProjectColor(project ?? { id: projectId }))
+    : orgId
+      ? colorFaviconHref(getOrganizationColor(organization ?? { id: orgId }))
+      : MARK_FAVICON_HREF;
 
   useEffect(() => {
     document.title = title;
-    ensureFaviconLink().href = colorFaviconHref(faviconColor);
-  }, [title, faviconColor]);
+    ensureFaviconLink().href = faviconHref;
+  }, [title, faviconHref]);
 
   useEffect(() => {
     return () => {
       document.title = DEFAULT_TITLE;
-      ensureFaviconLink().href = colorFaviconHref(DEFAULT_PROJECT_COLOR);
+      ensureFaviconLink().href = MARK_FAVICON_HREF;
     };
   }, []);
 }

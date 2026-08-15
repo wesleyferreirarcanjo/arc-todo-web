@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { BrandMarkIcon } from '../components/icons';
 import { ApiError } from '../lib/api/client';
 import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useAuth } from '../context/AuthContext';
@@ -111,6 +112,7 @@ export function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card notranslate" translate="no">
+        <BrandMarkIcon className="arc-icon login-mark" />
         <h1>Arc Todo</h1>
         <p className="subtitle">Sign in with your Google account</p>
 
