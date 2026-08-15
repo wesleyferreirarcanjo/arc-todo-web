@@ -37,4 +37,17 @@ describe('board columns never paint a scrollbar', () => {
     expect(scroller).not.toContain('scrollbar-gutter: stable');
     expect(css).toContain('.task-board-scroll::-webkit-scrollbar');
   });
+
+  it('does not let scatter-light overlay become a wheel scrollport', () => {
+    const overlay = ruleBlock('.task-card-scatter-lights');
+    expect(overlay).toContain('overflow: visible');
+    expect(overlay).toContain('pointer-events: none');
+    expect(overlay).not.toContain('overflow: hidden');
+  });
+
+  it('keeps scatter-card lights on hover instead of light-out', () => {
+    expect(css).toContain(':not(.has-scatter-lights)');
+    expect(css).toContain('--scatter-flee');
+    expect(css).toContain('mask-image: radial-gradient(');
+  });
 });

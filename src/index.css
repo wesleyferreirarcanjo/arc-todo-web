@@ -3367,6 +3367,10 @@ textarea {
   box-shadow: var(--shadow-card);
 }
 
+.task-card.has-accent.has-scatter-lights:hover {
+  box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
 .task-card:active {
   cursor: grabbing;
 }
@@ -3392,43 +3396,38 @@ textarea {
 }
 
 @media (hover: hover) {
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) {
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights):not(
+      :where(.has-scatter-lights *)
+    ) {
     box-shadow: var(--shadow-card);
   }
 
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within)::before {
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights):not(
+      :where(.has-scatter-lights *)
+    )::before {
     opacity: 0;
   }
 
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card-qa-progress {
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
+    .task-card-qa-progress {
     box-shadow: none;
   }
 
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card-qa-progress::after,
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .subtask-progress-badge::after {
-    opacity: 0;
-  }
-
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card.is-subtask.has-accent::before {
-    opacity: 0;
-  }
-
-  .task-card.has-accent.has-scatter-lights:hover:not(.has-menu-open):not(:focus-within) {
-    box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
-  }
-
-  .task-card.has-accent.has-scatter-lights:hover:not(.has-menu-open):not(:focus-within)::before {
-    opacity: 0;
-  }
-
-  .task-card.has-accent.has-scatter-lights:hover:not(.has-menu-open):not(:focus-within)
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
+    .task-card-qa-progress::after,
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
     .subtask-progress-badge::after {
-    opacity: calc(0.14 + (var(--subtask-progress, 0) * 0.16));
+    opacity: 0;
   }
 
-  .task-card.has-accent.has-scatter-lights:hover:not(.has-menu-open):not(:focus-within)
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
     .task-card.is-subtask.has-accent::before {
-    opacity: var(--subtask-light-opacity, 0.12);
+    opacity: 0;
+  }
+
+  .task-card.has-scatter-lights:hover:not(.has-menu-open):not(:focus-within) {
+    --scatter-flee: 1;
+    box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
   }
 }
 
@@ -3490,8 +3489,12 @@ textarea {
 }
 
 .task-card.has-accent.has-scatter-lights {
+  --scatter-mx: 50%;
+  --scatter-my: 50%;
+  --scatter-flee: 0;
   --scatter-scale: 1;
-  --scatter-light-opacity: 0.1;
+  --scatter-light-opacity: 0.2;
+  overflow: visible;
   --entity-corner-opacity: 0;
   --entity-corner-glow: 0 0 18px -10px
     color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 16%, transparent);
@@ -3499,7 +3502,7 @@ textarea {
 
 .task-card.has-accent.has-scatter-lights.is-done-stage {
   --scatter-scale: 1.38;
-  --scatter-light-opacity: 0.24;
+  --scatter-light-opacity: 0.34;
   --entity-corner-glow: 0 0 24px -8px
     color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 30%, transparent);
 }
@@ -3512,9 +3515,24 @@ textarea {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
   z-index: 0;
+}
+
+.task-card.has-scatter-lights:hover .task-card-scatter-lights {
+  -webkit-mask-image: radial-gradient(
+    circle 5rem at var(--scatter-mx) var(--scatter-my),
+    transparent 0%,
+    transparent 30%,
+    #000 78%
+  );
+  mask-image: radial-gradient(
+    circle 5rem at var(--scatter-mx) var(--scatter-my),
+    transparent 0%,
+    transparent 30%,
+    #000 78%
+  );
 }
 
 .task-card-scatter-light {
@@ -3523,7 +3541,11 @@ textarea {
   top: var(--sy);
   width: calc(var(--sw) * var(--scatter-scale, 1));
   height: calc(var(--sh) * var(--scatter-scale, 1));
-  transform: translate(-50%, -50%) translate(var(--flee-x, 0%), var(--flee-y, 0%));
+  transform: translate(-50%, -50%)
+    translate(
+      calc((var(--sx) - var(--scatter-mx)) * 0.28 * var(--scatter-flee)),
+      calc((var(--sy) - var(--scatter-my)) * 0.28 * var(--scatter-flee))
+    );
   border-radius: 50%;
   pointer-events: none;
   background: radial-gradient(
@@ -3531,11 +3553,21 @@ textarea {
     var(--entity-accent, var(--accent-secondary)),
     transparent 72%
   );
-  opacity: calc(var(--scatter-light-opacity, 0.1) * var(--scatter-spot-opacity, 1));
+  opacity: calc(var(--scatter-light-opacity, 0.2) * var(--scatter-spot-opacity, 1));
   transition: transform var(--transition-base);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .task-card.has-scatter-lights,
+  .task-card.has-scatter-lights:hover {
+    --scatter-flee: 0;
+  }
+
+  .task-card.has-scatter-lights:hover .task-card-scatter-lights {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
   .task-card-scatter-light {
     transition: none;
   }

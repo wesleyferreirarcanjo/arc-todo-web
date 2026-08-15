@@ -106,11 +106,9 @@ function scatterLightsFromId(id: string) {
   }));
 }
 
-function resetScatterFlee(card: HTMLElement) {
-  card.querySelectorAll<HTMLElement>('.task-card-scatter-light').forEach((light) => {
-    light.style.setProperty('--flee-x', '0%');
-    light.style.setProperty('--flee-y', '0%');
-  });
+function resetScatterPointer(card: HTMLElement) {
+  card.style.removeProperty('--scatter-mx');
+  card.style.removeProperty('--scatter-my');
 }
 
 function SubtaskProgressRing({
@@ -649,30 +647,28 @@ export function TaskCard({
       return;
     }
 
-    const rect = card.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
+    const { clientX, clientY } = event;
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
       return;
     }
-
-    const mouseX = ((event.clientX - rect.left) / rect.width) * 100;
-    const mouseY = ((event.clientY - rect.top) / rect.height) * 100;
-
     if (scatterRafRef.current != null) {
       cancelAnimationFrame(scatterRafRef.current);
     }
 
     scatterRafRef.current = requestAnimationFrame(() => {
       scatterRafRef.current = null;
-      card.querySelectorAll<HTMLElement>('.task-card-scatter-light').forEach((light) => {
-        const restX = Number(light.dataset.x);
-        const restY = Number(light.dataset.y);
-        const dx = restX - mouseX;
-        const dy = restY - mouseY;
-        const dist = Math.hypot(dx, dy) || 1;
-        const push = Math.min(10, (16 / (dist + 5)) * 9);
-        light.style.setProperty('--flee-x', `${(dx / dist) * push}%`);
-        light.style.setProperty('--flee-y', `${(dy / dist) * push}%`);
-      });
+      const rect = card.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        return;
+      }
+      card.style.setProperty(
+        '--scatter-mx',
+        `${((clientX - rect.left) / rect.width) * 100}%`,
+      );
+      card.style.setProperty(
+        '--scatter-my',
+        `${((clientY - rect.top) / rect.height) * 100}%`,
+      );
     });
   }
 
@@ -681,7 +677,7 @@ export function TaskCard({
       cancelAnimationFrame(scatterRafRef.current);
       scatterRafRef.current = null;
     }
-    resetScatterFlee(event.currentTarget);
+    resetScatterPointer(event.currentTarget);
   }
 
   function handleCardPointerMove(event: ReactPointerEvent<HTMLElement>) {
@@ -991,14 +987,12 @@ export function TaskCard({
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
         whileHover={
-          !showAsDragging && !isInteractionLocked
-            ? showScatterLights
-              ? { y: -1 }
-              : {
-                  y: -1,
-                  boxShadow: 'var(--shadow-lift)',
-                  borderColor: 'var(--border-strong)',
-                }
+          !showAsDragging && !isInteractionLocked && !showScatterLights
+            ? {
+                y: -1,
+                boxShadow: 'var(--shadow-lift)',
+                borderColor: 'var(--border-strong)',
+              }
             : undefined
         }
         transition={{
@@ -1008,11 +1002,11 @@ export function TaskCard({
         }}
         onDoubleClick={handleCardDoubleClick}
         onContextMenu={handleCardContextMenu}
+        {...draggableProps}
         onPointerMove={handleCardPointerMove}
         onPointerUp={handleSwipePointerUp}
         onPointerCancel={handleCardPointerCancel}
         onPointerLeave={handleCardPointerLeave}
-        {...draggableProps}
       >
         {showScatterLights ? (
           <span className="task-card-scatter-lights" aria-hidden="true">
@@ -1020,8 +1014,6 @@ export function TaskCard({
               <span
                 key={index}
                 className="task-card-scatter-light"
-                data-x={light.x}
-                data-y={light.y}
                 style={
                   {
                     '--sx': `${light.x}%`,
