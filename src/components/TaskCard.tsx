@@ -38,6 +38,7 @@ import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
 import { ConfirmDialog } from './ConfirmDialog';
+import { IosHapticHit } from './IosHapticHit';
 import { Modal } from './Modal';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
@@ -928,7 +929,7 @@ export function TaskCard({
           {canOpenDetails && (!isSubtask || isDetachedSubtask) && (
             <button
               type="button"
-              className="task-card-action-btn"
+              className="task-card-action-btn ios-haptic-host"
               aria-label="View details"
               onClick={handleOpenDetails}
             >
@@ -936,6 +937,7 @@ export function TaskCard({
               <span className="task-card-action-tooltip" role="tooltip">
                 View details
               </span>
+              <IosHapticHit />
             </button>
           )}
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { vibrateSafe } from './haptics';
+import { vibrateSafe, shouldUseIosSwitchHaptic } from './haptics';
 
 function stubMatchMedia(matches: boolean) {
   Object.defineProperty(window, 'matchMedia', {
@@ -21,6 +21,30 @@ function stubMatchMedia(matches: boolean) {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe('shouldUseIosSwitchHaptic', () => {
+  it('is true for iPhone Safari when motion is allowed', () => {
+    stubMatchMedia(false);
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X)',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    });
+
+    expect(shouldUseIosSwitchHaptic()).toBe(true);
+  });
+
+  it('is false when prefers-reduced-motion is reduce', () => {
+    stubMatchMedia(true);
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X)',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    });
+
+    expect(shouldUseIosSwitchHaptic()).toBe(false);
+  });
 });
 
 describe('vibrateSafe', () => {

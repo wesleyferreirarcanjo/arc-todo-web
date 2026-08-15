@@ -6,6 +6,17 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+export function shouldUseIosSwitchHaptic(): boolean {
+  if (typeof navigator === 'undefined' || prefersReducedMotion()) {
+    return false;
+  }
+  const ua = navigator.userAgent;
+  if (/iPhone|iPod|iPad/i.test(ua)) {
+    return true;
+  }
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+}
+
 export function vibrateSafe(ms = 12): void {
   if (prefersReducedMotion()) {
     return;

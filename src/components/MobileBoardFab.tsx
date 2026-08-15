@@ -12,6 +12,7 @@ import { usePwaInstall } from '../hooks/usePwaInstall';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { MobileQuickCreateSheet } from './MobileQuickCreateSheet';
 import { BoardStatusTabs } from './BoardStatusTabs';
+import { IosHapticHit } from './IosHapticHit';
 import {
   BackIcon,
   BellIcon,
@@ -62,7 +63,7 @@ function DialActionButton({
         role="menuitem"
         aria-label={labeled ? undefined : action.label}
         title={action.label}
-        className={`mobile-board-fab-dial-item${
+        className={`mobile-board-fab-dial-item ios-haptic-host${
           action.danger ? ' is-danger' : ''
         }${labeled ? ' is-labeled' : ''}`}
         onClick={action.onClick}
@@ -71,6 +72,7 @@ function DialActionButton({
         {labeled ? (
           <span className="mobile-board-fab-dial-label">{action.label}</span>
         ) : null}
+        <IosHapticHit />
       </button>
     </div>
   );
@@ -436,7 +438,7 @@ export function MobileBoardFab() {
 
         <motion.button
           type="button"
-          className="mobile-board-fab-button"
+          className="mobile-board-fab-button ios-haptic-host"
           aria-label={menuOpen ? 'Close actions' : 'Open actions'}
           aria-expanded={menuOpen}
           onClick={() => {
@@ -449,6 +451,7 @@ export function MobileBoardFab() {
           <span className="mobile-board-fab-icon" aria-hidden="true">
             <NewTaskIcon className="mobile-board-fab-glyph" />
           </span>
+          <IosHapticHit />
         </motion.button>
       </div>
 

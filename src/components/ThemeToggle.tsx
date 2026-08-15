@@ -1,5 +1,5 @@
 import { useTheme } from '../context/ThemeContext';
-import { MoonIcon, SunIcon } from './icons';
+import { IosHapticHit } from './IosHapticHit';
 
 interface ThemeToggleProps {
   variant?: 'header' | 'sidebar';
@@ -16,7 +16,7 @@ export function ThemeToggle({ variant = 'header', collapsed = false }: ThemeTogg
     return (
       <button
         type="button"
-        className="sidebar-footer-btn"
+        className="sidebar-footer-btn ios-haptic-host"
         onClick={toggleTheme}
         aria-label={label}
         data-tooltip={collapsed ? sidebarLabel : undefined}
@@ -27,6 +27,7 @@ export function ThemeToggle({ variant = 'header', collapsed = false }: ThemeTogg
           <MoonIcon className="sidebar-nav-icon" />
         )}
         {!collapsed && <span className="sidebar-nav-label">{sidebarLabel}</span>}
+        <IosHapticHit />
       </button>
     );
   }
@@ -34,12 +35,13 @@ export function ThemeToggle({ variant = 'header', collapsed = false }: ThemeTogg
   return (
     <button
       type="button"
-      className="btn btn-secondary theme-toggle-btn"
+      className="btn btn-secondary theme-toggle-btn ios-haptic-host"
       onClick={toggleTheme}
       aria-label={label}
       title={label}
     >
       {isDark ? <SunIcon className="theme-icon" /> : <MoonIcon className="theme-icon" />}
+      <IosHapticHit />
     </button>
   );
 }

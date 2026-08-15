@@ -19,6 +19,7 @@ import {
 } from '../lib/motion/variants';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
+import { IosHapticHit } from './IosHapticHit';
 
 function AssistantIcon() {
   return (
@@ -117,7 +118,7 @@ function ChatLauncherButton({
       type="button"
       layout
       layoutId="chat-widget-launcher"
-      className={`chat-widget-fab${chatOpen ? ' is-open' : ' is-closed'}`}
+      className={`chat-widget-fab${chatOpen ? ' is-open' : ' is-closed'} ios-haptic-host`}
       aria-label={chatOpen ? 'Close assistant' : 'Open assistant'}
       aria-expanded={chatOpen}
       aria-controls={panelId}
@@ -155,6 +156,7 @@ function ChatLauncherButton({
           </motion.span>
         )}
       </AnimatePresence>
+      <IosHapticHit />
     </motion.button>
   );
 }
@@ -459,10 +461,11 @@ export function ChatWidget() {
               <div className="chat-widget-mobile-header">
                 <button
                   type="button"
-                  className="chat-widget-back"
+                  className="chat-widget-back ios-haptic-host"
                   onClick={() => setChatOpen(false)}
                 >
                   Back
+                  <IosHapticHit />
                 </button>
                 <span className="chat-widget-mobile-title">Chatbot</span>
               </div>
