@@ -155,7 +155,7 @@ describe('TaskCard scan-first actions', () => {
     expect(document.querySelector('.task-card')).toHaveClass('is-done-stage');
     expect(document.querySelector('.task-card')).not.toHaveClass('has-scatter-lights');
     expect(document.querySelectorAll('.task-card-scatter-light')).toHaveLength(0);
-    expect(document.querySelectorAll('.task-card-done-hold-light').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.task-card-done-hold-light')).toHaveLength(0);
     const check = document.querySelector('.task-card-done-hold .task-card-action-icon');
     expect(check?.getAttribute('stroke-width')).toBe('2.85');
     expect(check?.querySelector('rect')).toBeNull();
@@ -444,7 +444,7 @@ describe('TaskCard scan-first actions', () => {
     expect(doneCard).not.toHaveClass('is-qa-stage');
     expect(container.querySelector('.task-card-done-hold')).not.toBeNull();
     expect(lightPositions(container)).toHaveLength(0);
-    expect(container.querySelectorAll('.task-card-done-hold-light').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.task-card-done-hold-light')).toHaveLength(0);
   });
 
   it('scatters hashed lights across a standalone To Do card', () => {

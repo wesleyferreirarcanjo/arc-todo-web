@@ -170,23 +170,6 @@ function scatterLightsFromId(
   });
 }
 
-function doneHoldLightsFromId(id: string) {
-  let seed = hashString(`${id}:done-hold`);
-  const next = () => {
-    const step = mulberryNext(seed);
-    seed = step.seed;
-    return step.value;
-  };
-
-  return Array.from({ length: 5 }, () => ({
-    x: 30 + next() * 40,
-    y: 30 + next() * 40,
-    w: 0.28 + next() * 0.34,
-    h: 0.22 + next() * 0.3,
-    o: 0.42 + next() * 0.4,
-  }));
-}
-
 function scatterBounceFromId(id: string, stage: ScatterStage) {
   const { focusX, focusY, bounceSpread } = SCATTER_STAGE[stage];
   let seed = hashString(`${id}:bounce`);
@@ -311,28 +294,11 @@ function QaChecklistProgress({
   );
 }
 
-function DoneLightHold({ seed }: { seed: string }) {
-  const lights = useMemo(() => doneHoldLightsFromId(seed), [seed]);
-
+function DoneLightHold() {
   return (
     <span className="task-card-qa-progress task-card-done-hold" aria-hidden="true">
       <span className="task-card-qa-progress-fill" aria-hidden="true" />
       <span className="task-card-qa-progress-well" aria-hidden="true" />
-      {lights.map((light, index) => (
-        <span
-          key={index}
-          className="task-card-done-hold-light"
-          style={
-            {
-              '--sx': `${light.x}%`,
-              '--sy': `${light.y}%`,
-              '--sw': `${light.w}rem`,
-              '--sh': `${light.h}rem`,
-              '--scatter-spot-opacity': String(light.o),
-            } as CSSProperties
-          }
-        />
-      ))}
       <CheckIcon className="task-card-action-icon" />
     </span>
   );
@@ -1435,7 +1401,7 @@ export function TaskCard({
                 }}
               />
             )}
-            {showDoneHold && <DoneLightHold seed={task.id} />}
+            {showDoneHold && <DoneLightHold />}
           </div>
         )}
 

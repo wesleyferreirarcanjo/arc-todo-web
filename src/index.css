@@ -3398,12 +3398,16 @@ textarea {
     opacity: 0;
   }
 
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights):not(
+      .is-done-stage
+    )
     .task-card-qa-progress {
     box-shadow: none;
   }
 
-  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights):not(
+      .is-done-stage
+    )
     .task-card-qa-progress::after,
   .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within):not(.has-scatter-lights)
     .subtask-progress-badge::after {
@@ -3524,6 +3528,7 @@ textarea {
 .task-card.has-accent.has-scatter-lights.is-done-stage {
   --scatter-flee-cap: 0;
   --scatter-scale: 1.12;
+  overflow: visible;
 }
 
 .task-card.has-accent.has-scatter-lights::before {
@@ -4142,6 +4147,25 @@ textarea {
   opacity: calc(0.4 + (var(--qa-progress) * 0.42));
 }
 
+.task-card.is-done-stage .task-card-done-hold::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3.35rem;
+  height: 3.35rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--entity-accent, var(--accent)) 78%, transparent),
+    transparent 68%
+  );
+  opacity: 0.92;
+}
+
 .task-card-qa-progress-fill {
   position: absolute;
   inset: 0;
@@ -4187,43 +4211,16 @@ textarea {
   --qa-progress: 1;
   pointer-events: none;
   border-radius: 50%;
-  overflow: clip;
-  box-shadow: none;
-}
-
-.task-card-done-hold .task-card-qa-progress-well {
-  background: color-mix(
-    in srgb,
-    var(--entity-accent, var(--accent)) 62%,
-    var(--bg-elevated)
-  );
-  box-shadow: inset 0 0 0.55rem
-    color-mix(in srgb, var(--entity-accent, var(--accent)) 48%, transparent);
-}
-
-.task-card-done-hold-light {
-  position: absolute;
-  left: var(--sx);
-  top: var(--sy);
-  width: var(--sw);
-  height: var(--sh);
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 2;
-  background: radial-gradient(
-    circle at 50% 50%,
-    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 88%, transparent),
-    transparent 72%
-  );
-  opacity: calc(0.55 * var(--scatter-spot-opacity, 1));
+  overflow: visible;
 }
 
 .task-card-done-hold .task-card-action-icon {
   width: 1rem;
   height: 1rem;
   color: color-mix(in srgb, var(--entity-accent, var(--accent)) 22%, var(--text-primary));
-  filter: none;
+  filter: drop-shadow(
+    0 0 0.28rem color-mix(in srgb, var(--entity-accent, var(--accent)) 70%, transparent)
+  );
   z-index: 3;
 }
 
