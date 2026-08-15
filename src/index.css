@@ -3743,6 +3743,14 @@ textarea {
   border-top: 1px dashed var(--border);
 }
 
+.task-subtask-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-end;
+  gap: 0.28rem;
+}
+
 .task-parent-label,
 .task-details-parent,
 .task-subtask-summary {
@@ -3890,10 +3898,6 @@ textarea {
     var(--entity-accent, var(--accent)) calc(18% + (var(--qa-progress) * 16%)),
     var(--bg-surface)
   );
-}
-
-.task-card-copy-actions .subtask-progress-badge {
-  margin-top: 0.05rem;
 }
 
 .task-details-copy-group {

@@ -142,14 +142,32 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByRole('button', { name: 'Smart copy' })).not.toBeInTheDocument();
   });
 
-  it('stacks Smart copy above subtask progress in the corner', () => {
+  it('puts subtask done on the right below the dashed divider, under elsewhere', () => {
+    const parent = makeTask({
+      status: 'todo',
+      title: 'Parent card',
+      subtaskProgress: { done: 1, total: 2 },
+    });
     render(
       <StatusMoveAnimationProvider>
         <TaskCard
-          task={makeTask({
-            status: 'todo',
-            subtaskProgress: { done: 1, total: 3 },
-          })}
+          task={parent}
+          subtasks={[
+            makeTask({
+              id: '22222222-2222-2222-2222-222222222222',
+              title: 'Nested child',
+              status: 'todo',
+              parentTaskId: parent.id,
+              displayId: '#arc-2',
+            }),
+            makeTask({
+              id: '33333333-3333-3333-3333-333333333333',
+              title: 'Elsewhere child',
+              status: 'in_progress',
+              parentTaskId: parent.id,
+              displayId: '#arc-3',
+            }),
+          ]}
           organizationId="org-1"
           projectId="proj-1"
           organizationName="Arc Org"
@@ -160,9 +178,14 @@ describe('TaskCard scan-first actions', () => {
       </StatusMoveAnimationProvider>,
     );
 
+    const elsewhere = screen.getByText('1 elsewhere');
+    const done = screen.getByText('1/2 done');
+    const child = screen.getByText('Nested child');
     const copy = screen.getByRole('button', { name: 'Smart copy' });
-    const done = screen.getByText('1/3 done');
-    expect(copy.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(elsewhere.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(done.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(child.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(elsewhere.closest('.task-subtask-meta')).toBe(done.closest('.task-subtask-meta'));
   });
 
   it('keeps Smart copy and QA below nested subtasks in the parent corner', () => {

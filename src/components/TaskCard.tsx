@@ -741,7 +741,11 @@ export function TaskCard({
   const inSmartCopyBasket = isInSmartCopyBasket(task.id);
   const showCornerActions =
     (!isSubtask || isDetachedSubtask) &&
-    (Boolean(qaProgress) || showSmartCopy || Boolean(subtaskProgress));
+    (Boolean(qaProgress) || showSmartCopy);
+  const showParentSubtaskMeta =
+    !compact && !isSubtask && (Boolean(subtaskProgress) || detachedSubtaskCount > 0);
+  const showSubtaskSection =
+    !compact && !isSubtask && (nestedSubtasks.length > 0 || showParentSubtaskMeta);
 
   const taskMenuItems = (
     <>
@@ -859,7 +863,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${qaProgress ? ' is-qa-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${qaProgress ? ' is-qa-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -1011,14 +1015,6 @@ export function TaskCard({
                 {subtaskProgress.done}/{subtaskProgress.total} done
               </span>
             )}
-            {detachedSubtaskCount > 0 && (
-              <span
-                className="task-subtask-elsewhere-badge"
-                title={`${detachedSubtaskCount} subtask${detachedSubtaskCount === 1 ? '' : 's'} in other columns`}
-              >
-                {detachedSubtaskCount} elsewhere
-              </span>
-            )}
           </div>
 
           {!isSubtask && compact && resolvedSubtasks.length > 0 && (
@@ -1043,8 +1039,36 @@ export function TaskCard({
           </span>
         ) : null}
 
-        {!compact && !isSubtask && nestedSubtasks.length > 0 && (
+        {showSubtaskSection && (
           <div className="task-subtasks" onPointerDown={stopCardPointer} onClick={stopCardPointer}>
+            {showParentSubtaskMeta && (
+              <div className="task-subtask-meta">
+                {detachedSubtaskCount > 0 && (
+                  <span
+                    className="task-subtask-elsewhere-badge"
+                    title={`${detachedSubtaskCount} subtask${detachedSubtaskCount === 1 ? '' : 's'} in other columns`}
+                  >
+                    {detachedSubtaskCount} elsewhere
+                  </span>
+                )}
+                {subtaskProgress && (
+                  <span
+                    className="subtask-progress-badge"
+                    style={
+                      accentColor
+                        ? ({ '--entity-accent': accentColor } as CSSProperties)
+                        : undefined
+                    }
+                  >
+                    <SubtaskProgressRing
+                      done={subtaskProgress.done}
+                      total={subtaskProgress.total}
+                    />
+                    {subtaskProgress.done}/{subtaskProgress.total} done
+                  </span>
+                )}
+              </div>
+            )}
             {nestedSubtasks.map((subtask) => (
               <TaskCard
                 key={subtask.id}
@@ -1103,22 +1127,6 @@ export function TaskCard({
                   setQaChecklistOpen(true);
                 }}
               />
-            )}
-            {subtaskProgress && (
-              <span
-                className="subtask-progress-badge"
-                style={
-                  accentColor
-                    ? ({ '--entity-accent': accentColor } as CSSProperties)
-                    : undefined
-                }
-              >
-                <SubtaskProgressRing
-                  done={subtaskProgress.done}
-                  total={subtaskProgress.total}
-                />
-                {subtaskProgress.done}/{subtaskProgress.total} done
-              </span>
             )}
           </div>
         )}
