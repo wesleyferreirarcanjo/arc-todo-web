@@ -119,6 +119,54 @@ function SubtaskProgressRing({
   );
 }
 
+function QaChecklistProgress({
+  done,
+  total,
+  clickable,
+  onClick,
+}: {
+  done: number;
+  total: number;
+  clickable: boolean;
+  onClick?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+}) {
+  const progress = total > 0 ? Math.min(Math.max(done / total, 0), 1) : 0;
+  const label = `Ver checklist, QA ${done}/${total}`;
+  const style = { '--qa-progress': progress } as CSSProperties;
+  const inner = (
+    <>
+      <span className="task-card-qa-progress-fill" aria-hidden="true" />
+      <span className="task-card-qa-progress-well" aria-hidden="true" />
+      <QaBoardIcon className="task-card-action-icon" />
+      {clickable ? (
+        <span className="task-card-action-tooltip" role="tooltip">
+          Ver checklist
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (clickable) {
+    return (
+      <button
+        type="button"
+        className="task-card-action-btn task-card-qa-progress"
+        aria-label={label}
+        style={style}
+        onClick={onClick}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <span className="task-card-qa-progress" aria-label={label} style={style}>
+      {inner}
+    </span>
+  );
+}
+
 
 interface TaskCardProps {
   task: Task;
@@ -686,9 +734,9 @@ export function TaskCard({
   const showSmartCopyBasketAction =
     showSmartCopy && (!isSubtask || isDetachedSubtask);
   const inSmartCopyBasket = isInSmartCopyBasket(task.id);
-  const showCopyActions =
+  const showCornerActions =
     (!isSubtask || isDetachedSubtask) &&
-    (Boolean(qaProgress) || showSmartCopy);
+    (Boolean(qaProgress) || showSmartCopy || Boolean(subtaskProgress));
 
   const taskMenuItems = (
     <>
@@ -806,7 +854,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -875,22 +923,6 @@ export function TaskCard({
                   className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
                 >
                   {bugBadgeLabel}
-                </span>
-              )}
-              {subtaskProgress && (
-                <span
-                  className="subtask-progress-badge"
-                  style={
-                    accentColor
-                      ? ({ '--entity-accent': accentColor } as CSSProperties)
-                      : undefined
-                  }
-                >
-                  <SubtaskProgressRing
-                    done={subtaskProgress.done}
-                    total={subtaskProgress.total}
-                  />
-                  {subtaskProgress.done}/{subtaskProgress.total} done
                 </span>
               )}
             </div>
@@ -1000,34 +1032,16 @@ export function TaskCard({
           )}
         </motion.div>
 
-        {showCopyActions && (
+        {showCornerActions && (
           <div
             className="task-card-copy-actions"
             onPointerDown={stopCardPointer}
             onClick={stopCardPointer}
           >
-            {qaProgress && (
-              <span className="task-qa-progress-badge">
-                QA {qaProgress.done}/{qaProgress.total}
-              </span>
-            )}
-            {qaProgress && canOpenDetails && (
-              <button
-                type="button"
-                className="task-card-next-action"
-                onClick={(event) => {
-                  stopCardPointer(event);
-                  setQaChecklistOpen(true);
-                }}
-              >
-                <QaBoardIcon className="task-card-action-icon" />
-                Ver checklist
-              </button>
-            )}
             {showSmartCopy && (
               <button
                 type="button"
-                className="task-card-next-action"
+                className="task-card-action-btn task-card-smart-copy-btn"
                 aria-label={smartCopyTooltip}
                 onClick={(event) => {
                   stopCardPointer(event);
@@ -1035,8 +1049,37 @@ export function TaskCard({
                 }}
               >
                 <CopyIcon className="task-card-action-icon" />
-                {smartCopyTooltip}
+                <span className="task-card-action-tooltip" role="tooltip">
+                  {smartCopyTooltip}
+                </span>
               </button>
+            )}
+            {qaProgress && (
+              <QaChecklistProgress
+                done={qaProgress.done}
+                total={qaProgress.total}
+                clickable={canOpenDetails}
+                onClick={(event) => {
+                  stopCardPointer(event);
+                  setQaChecklistOpen(true);
+                }}
+              />
+            )}
+            {subtaskProgress && (
+              <span
+                className="subtask-progress-badge"
+                style={
+                  accentColor
+                    ? ({ '--entity-accent': accentColor } as CSSProperties)
+                    : undefined
+                }
+              >
+                <SubtaskProgressRing
+                  done={subtaskProgress.done}
+                  total={subtaskProgress.total}
+                />
+                {subtaskProgress.done}/{subtaskProgress.total} done
+              </span>
             )}
           </div>
         )}

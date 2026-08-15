@@ -444,7 +444,7 @@ export function TaskDetailsModal({
             {isSmartCopyStatus(task.status) && (
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                className="btn btn-secondary btn-sm task-details-smart-copy-btn"
                 onClick={() => void handleSmartCopy()}
               >
                 Smart copy

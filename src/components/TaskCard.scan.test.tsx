@@ -121,7 +121,7 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.getByRole('button', { name: 'Task actions' })).toBeInTheDocument();
     expect(screen.queryByText(/A long business wall/)).not.toBeInTheDocument();
     expect(screen.queryByText('To Do')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ver checklist' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ver checklist/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/QA 0\/2/)).not.toBeInTheDocument();
   });
 
@@ -129,14 +129,39 @@ describe('TaskCard scan-first actions', () => {
     renderCard('done');
 
     expect(screen.queryByRole('button', { name: 'Smart copy' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ver checklist' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ver checklist/ })).not.toBeInTheDocument();
   });
 
-  it('shows Ver checklist and QA badge only on Dev Test', () => {
+  it('shows a checklist progress circle without QA x/x on Dev Test', () => {
     renderCard('dev_test');
 
-    expect(screen.getByRole('button', { name: 'Ver checklist' })).toBeInTheDocument();
-    expect(screen.getByText('QA 0/2')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Ver checklist, QA 0/2' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('QA 0/2')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Smart copy' })).not.toBeInTheDocument();
+  });
+
+  it('stacks Smart copy above subtask progress in the corner', () => {
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({
+            status: 'todo',
+            subtaskProgress: { done: 1, total: 3 },
+          })}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const copy = screen.getByRole('button', { name: 'Smart copy' });
+    const done = screen.getByText('1/3 done');
+    expect(copy.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

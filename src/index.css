@@ -36,6 +36,9 @@
   --success-text: #7fc19b;
   --warning-bg: #33291a;
   --warning-text: #d5aa63;
+  --smart-copy: #f5a524;
+  --bug-badge: #f13a48;
+  --bug-resolved-badge: #129b56;
   --color-success: var(--success-text);
   --color-danger: var(--danger-text);
   --link: #8cb4ff;
@@ -118,6 +121,9 @@
   --success-text: #2f7a58;
   --warning-bg: rgba(138, 106, 40, 0.12);
   --warning-text: #8a6a28;
+  --smart-copy: #c47d0a;
+  --bug-badge: #e11d32;
+  --bug-resolved-badge: #0d8a4b;
   --color-success: var(--success-text);
   --color-danger: var(--danger-text);
   --link: #3d52b8;
@@ -3762,73 +3768,80 @@ textarea {
 
 .task-card-copy-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.7rem;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-end;
+  gap: 0.28rem;
+  margin-top: 0.45rem;
 }
 
-.task-card-next-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 2.75rem;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--bg-surface);
-  color: var(--text);
-  font-size: var(--type-meta);
-  font-weight: 650;
-  cursor: pointer;
+.task-card-action-btn.task-card-smart-copy-btn {
+  color: var(--smart-copy);
 }
 
-.task-card-next-action .task-card-action-icon {
-  width: 1rem;
-  height: 1rem;
-  color: var(--accent);
-  stroke: var(--accent);
-}
-
-.task-card-next-action:hover,
-.task-card-next-action:focus-visible {
-  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
-  border-color: var(--border-strong);
-}
-
-.task-card-action-btn.task-card-smart-copy-btn,
-.task-details-smart-copy-btn {
-  background: transparent;
-  border-color: transparent;
-  color: var(--text-muted);
-}
-
-.task-card-action-btn.task-card-smart-copy-btn .task-card-action-icon,
-.task-details-smart-copy-btn .task-copy-icon {
-  color: var(--accent);
-  stroke: var(--accent);
+.task-card-action-btn.task-card-smart-copy-btn .task-card-action-icon {
+  color: var(--smart-copy);
 }
 
 .task-card-action-btn.task-card-smart-copy-btn:hover,
-.task-card-action-btn.task-card-smart-copy-btn:focus-visible,
-.task-details-smart-copy-btn:hover,
-.task-details-smart-copy-btn:focus-visible {
-  background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
-  border-color: var(--border-strong);
-  color: var(--text-muted);
+.task-card-action-btn.task-card-smart-copy-btn:focus-visible {
+  background: color-mix(in srgb, var(--bg-surface) 78%, var(--smart-copy) 22%);
+  border-color: color-mix(in srgb, var(--smart-copy) 45%, var(--border));
+  color: var(--smart-copy);
 }
 
-.task-card-action-btn.task-card-smart-copy-btn:hover .task-card-action-icon,
-.task-card-action-btn.task-card-smart-copy-btn:focus-visible .task-card-action-icon,
-.task-details-smart-copy-btn:hover .task-copy-icon,
-.task-details-smart-copy-btn:focus-visible .task-copy-icon {
-  color: var(--accent-secondary);
-  stroke: var(--accent-secondary);
+.task-card-qa-progress,
+.task-card-action-btn.task-card-qa-progress {
+  --qa-progress: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.25rem;
+  height: 2.25rem;
+  isolation: isolate;
+  background: color-mix(in srgb, var(--entity-accent, var(--accent)) 16%, var(--bg-surface));
+  border: none;
+  overflow: visible;
 }
 
-.task-card-action-btn.task-card-qa-board-btn .task-card-action-icon {
-  color: var(--accent);
-  stroke: var(--accent);
+.task-card-qa-progress-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--entity-accent, var(--accent)) calc(var(--qa-progress) * 360deg),
+    transparent 0
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.task-card-qa-progress-well {
+  position: absolute;
+  inset: 0.38rem;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.task-card-qa-progress .task-card-action-icon {
+  position: relative;
+  z-index: 2;
+  width: 1rem;
+  height: 1rem;
+  color: var(--entity-accent, var(--accent));
+}
+
+.task-card-qa-progress:hover,
+.task-card-qa-progress:focus-visible {
+  background: color-mix(in srgb, var(--entity-accent, var(--accent)) 22%, var(--bg-surface));
+}
+
+.task-card-copy-actions .subtask-progress-badge {
+  margin-top: 0.05rem;
 }
 
 .task-details-copy-group {
@@ -3837,8 +3850,18 @@ textarea {
   gap: 0.25rem;
 }
 
-.task-details-smart-copy-btn {
+.btn.task-details-smart-copy-btn {
   padding-inline: 0.55rem;
+  color: var(--smart-copy);
+  border-color: color-mix(in srgb, var(--smart-copy) 42%, var(--border));
+  background: color-mix(in srgb, var(--smart-copy) 12%, var(--bg-surface));
+}
+
+.btn.task-details-smart-copy-btn:hover:not(:disabled),
+.btn.task-details-smart-copy-btn:focus-visible {
+  color: var(--smart-copy);
+  border-color: color-mix(in srgb, var(--smart-copy) 62%, var(--border));
+  background: color-mix(in srgb, var(--smart-copy) 20%, var(--bg-surface));
 }
 
 .task-copy-icon {
@@ -8162,17 +8185,17 @@ section.board-cycle-header {
 .task-bug-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.45rem;
+  padding: 0.14rem 0.5rem;
   border-radius: 999px;
-  background: var(--danger-text);
+  background: var(--bug-badge);
   color: var(--accent-contrast);
   font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 800;
+  letter-spacing: 0.03em;
 }
 
 .task-bug-badge.is-resolved {
-  background: color-mix(in srgb, var(--success-text) 82%, var(--bg-page));
+  background: var(--bug-resolved-badge);
   color: var(--accent-contrast);
 }
 
