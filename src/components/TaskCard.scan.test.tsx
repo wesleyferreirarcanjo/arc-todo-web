@@ -67,6 +67,27 @@ const CHECKLIST = `## O que verificar
 - [ ] First item
 - [ ] Second item`;
 
+function lightPositions(container: HTMLElement) {
+  return [...container.querySelectorAll('.task-card-scatter-light')].map((node) => {
+    const el = node as HTMLElement;
+    return {
+      x: Number.parseFloat(el.style.getPropertyValue('--sx')),
+      y: Number.parseFloat(el.style.getPropertyValue('--sy')),
+    };
+  });
+}
+
+function meanDistance(
+  points: { x: number; y: number }[],
+  focusX: number,
+  focusY: number,
+) {
+  return (
+    points.reduce((sum, point) => sum + Math.hypot(point.x - focusX, point.y - focusY), 0) /
+    points.length
+  );
+}
+
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
     id: '11111111-1111-1111-1111-111111111111',
@@ -125,11 +146,13 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByText(/QA 0\/2/)).not.toBeInTheDocument();
   });
 
-  it('hides Smart copy on Done', () => {
+  it('hides Smart copy on Done and shows a corner check that holds the light', () => {
     renderCard('done');
 
     expect(screen.queryByRole('button', { name: 'Smart copy' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ver checklist/ })).not.toBeInTheDocument();
+    expect(document.querySelector('.task-card-done-hold')).not.toBeNull();
+    expect(document.querySelector('.task-card')).toHaveClass('is-done-stage');
   });
 
   it('shows a checklist progress circle without QA x/x on Dev Test', () => {
@@ -276,7 +299,7 @@ describe('TaskCard scan-first actions', () => {
     expect(card?.style.getPropertyValue('--qa-progress')).toBe('1');
   });
 
-  it('scatters weak lights on To Do parents with subtasks, not on QA', () => {
+  it('pulls hashed lights toward the task list, then the QA check, then a Done hold', () => {
     const parent = makeTask({
       status: 'todo',
       title: 'Parent card',
@@ -313,6 +336,7 @@ describe('TaskCard scan-first actions', () => {
     expect(todoCard).not.toHaveClass('is-done-stage');
     expect(todoCard).not.toHaveClass('is-qa-stage');
     expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
+    const todoSpread = meanDistance(lightPositions(container), 88, 32);
 
     const nestedCard = container.querySelector(
       '.task-subtasks > .task-card.is-subtask',
@@ -344,27 +368,8 @@ describe('TaskCard scan-first actions', () => {
     expect(container.querySelector('.task-card.has-scatter-lights')).not.toHaveClass(
       'is-todo-stage',
     );
-
-    rerender(
-      <StatusMoveAnimationProvider>
-        <TaskCard
-          task={{ ...parent, status: 'done' }}
-          subtasks={[{ ...nested, status: 'done' }]}
-          organizationId="org-1"
-          projectId="proj-1"
-          organizationName="Arc Org"
-          projectName="Frontend"
-          accentColor="#4c8dff"
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      </StatusMoveAnimationProvider>,
-    );
-
-    expect(container.querySelector('.task-card.has-scatter-lights')).toHaveClass('is-done-stage');
-    expect(container.querySelector('.task-card.has-scatter-lights')).not.toHaveClass(
-      'is-in-progress-stage',
-    );
+    const inProgressSpread = meanDistance(lightPositions(container), 90, 32);
+    expect(inProgressSpread).toBeLessThan(todoSpread);
 
     rerender(
       <StatusMoveAnimationProvider>
@@ -382,8 +387,58 @@ describe('TaskCard scan-first actions', () => {
       </StatusMoveAnimationProvider>,
     );
 
-    expect(container.querySelector('.task-card.is-qa-stage')).not.toBeNull();
-    expect(container.querySelector('.task-card.has-scatter-lights')).toBeNull();
-    expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(0);
+    const devCard = container.querySelector('.task-card.has-scatter-lights') as HTMLElement | null;
+    expect(devCard).toHaveClass('is-qa-stage');
+    expect(devCard).toHaveClass('is-dev-test-stage');
+    expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
+    const devSpread = meanDistance(lightPositions(container), 96, 92);
+    expect(devSpread).toBeLessThan(inProgressSpread);
+
+    rerender(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={{ ...parent, status: 'qa_test' }}
+          subtasks={[{ ...nested, status: 'qa_test' }]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const qaCard = container.querySelector('.task-card.has-scatter-lights') as HTMLElement | null;
+    expect(qaCard).toHaveClass('is-qa-stage');
+    expect(qaCard).toHaveClass('is-qa-test-stage');
+    expect(qaCard).not.toHaveClass('is-dev-test-stage');
+    const qaSpread = meanDistance(lightPositions(container), 97, 94);
+    expect(qaSpread).toBeLessThan(devSpread);
+
+    rerender(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={{ ...parent, status: 'done' }}
+          subtasks={[{ ...nested, status: 'done' }]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const doneCard = container.querySelector('.task-card.has-scatter-lights') as HTMLElement | null;
+    expect(doneCard).toHaveClass('is-done-stage');
+    expect(doneCard).not.toHaveClass('is-qa-stage');
+    expect(container.querySelector('.task-card-done-hold')).not.toBeNull();
+    const doneSpread = meanDistance(lightPositions(container), 97, 94);
+    expect(doneSpread).toBeLessThan(qaSpread);
+    expect(doneSpread).toBeLessThan(8);
   });
 });

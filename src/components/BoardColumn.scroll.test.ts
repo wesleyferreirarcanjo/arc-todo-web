@@ -60,14 +60,24 @@ describe('board columns never paint a scrollbar', () => {
     expect(css).not.toContain('mask-image: radial-gradient(');
   });
 
-  it('ramps scatter intensity from To Do to In Progress to Done', () => {
+  it('ramps scatter intensity from To Do through QA, then locks Done', () => {
     const todo = ruleBlock('.task-card.has-accent.has-scatter-lights');
     const inProgress = ruleBlock(
       '.task-card.has-accent.has-scatter-lights.is-in-progress-stage',
     );
+    const devTest = ruleBlock('.task-card.has-accent.has-scatter-lights.is-dev-test-stage');
+    const qaTest = ruleBlock('.task-card.has-accent.has-scatter-lights.is-qa-test-stage');
     const done = ruleBlock('.task-card.has-accent.has-scatter-lights.is-done-stage');
     expect(todo).toContain('--scatter-light-opacity: 0.15');
-    expect(inProgress).toContain('--scatter-light-opacity: 0.26');
-    expect(done).toContain('--scatter-light-opacity: 0.4');
+    expect(inProgress).toContain('--scatter-light-opacity: 0.24');
+    expect(devTest).toContain('--scatter-light-opacity: 0.32');
+    expect(qaTest).toContain('--scatter-light-opacity: 0.4');
+    expect(done).toContain('--scatter-light-opacity: 0.52');
+    expect(done).toContain('--scatter-flee-cap: 0');
+    expect(css).toContain('--scatter-flee: var(--scatter-flee-cap, 1)');
+    expect(ruleBlock('.task-card.has-accent.has-scatter-lights.is-qa-stage')).toContain(
+      'overflow: visible',
+    );
+    expect(done).toContain('overflow: visible');
   });
 });

@@ -45,6 +45,7 @@ import { TaskForm } from './TaskForm';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 import { UndoToast } from './UndoToast';
 import {
+  CheckIcon,
   CopyIcon,
   EyeIcon,
   MoreVerticalIcon,
@@ -86,7 +87,56 @@ function mulberryNext(seed: number): { seed: number; value: number } {
   return { seed: nextSeed, value: nextSeed / 4294967296 };
 }
 
-function scatterLightsFromId(id: string) {
+type ScatterStage = 'todo' | 'in_progress' | 'dev_test' | 'qa_test' | 'done';
+
+const SCATTER_STAGE = {
+  todo: {
+    focusX: 88,
+    focusY: 32,
+    spread: 0.66,
+    bounceSpread: 0.52,
+  },
+  in_progress: {
+    focusX: 90,
+    focusY: 32,
+    spread: 0.4,
+    bounceSpread: 0.36,
+  },
+  dev_test: {
+    focusX: 96,
+    focusY: 92,
+    spread: 0.24,
+    bounceSpread: 0.2,
+  },
+  qa_test: {
+    focusX: 97,
+    focusY: 94,
+    spread: 0.07,
+    bounceSpread: 0.12,
+  },
+  done: {
+    focusX: 97,
+    focusY: 94,
+    spread: 0.03,
+    bounceSpread: 0.08,
+  },
+} as const;
+
+function clusterToward(
+  x: number,
+  y: number,
+  focusX: number,
+  focusY: number,
+  spread: number,
+) {
+  return {
+    x: focusX + (x - focusX) * spread,
+    y: focusY + (y - focusY) * spread,
+  };
+}
+
+function scatterLightsFromId(id: string, stage: ScatterStage) {
+  const { focusX, focusY, spread } = SCATTER_STAGE[stage];
   let seed = hashString(id);
   const next = () => {
     const step = mulberryNext(seed);
@@ -94,16 +144,26 @@ function scatterLightsFromId(id: string) {
     return step.value;
   };
 
-  return Array.from({ length: 6 }, () => ({
-    x: 8 + next() * 84,
-    y: 10 + next() * 80,
-    w: 1.7 + next() * 2.5,
-    h: 1.3 + next() * 2.1,
-    o: 0.62 + next() * 0.5,
-  }));
+  return Array.from({ length: 6 }, () => {
+    const raw = clusterToward(
+      8 + next() * 84,
+      10 + next() * 80,
+      focusX,
+      focusY,
+      spread,
+    );
+    return {
+      x: raw.x,
+      y: raw.y,
+      w: 1.7 + next() * 2.5,
+      h: 1.3 + next() * 2.1,
+      o: 0.62 + next() * 0.5,
+    };
+  });
 }
 
-function scatterBounceFromId(id: string) {
+function scatterBounceFromId(id: string, stage: ScatterStage) {
+  const { focusX, focusY, bounceSpread } = SCATTER_STAGE[stage];
   let seed = hashString(`${id}:bounce`);
   const next = () => {
     const step = mulberryNext(seed);
@@ -111,9 +171,17 @@ function scatterBounceFromId(id: string) {
     return step.value;
   };
 
+  const raw = clusterToward(
+    10 + next() * 80,
+    12 + next() * 76,
+    focusX,
+    focusY,
+    bounceSpread,
+  );
+
   return {
-    x: 10 + next() * 80,
-    y: 12 + next() * 76,
+    x: raw.x,
+    y: raw.y,
     o: 0.07 + next() * 0.09,
   };
 }
@@ -218,6 +286,16 @@ function QaChecklistProgress({
   );
 }
 
+function DoneLightHold() {
+  return (
+    <span className="task-card-qa-progress task-card-done-hold" aria-hidden="true">
+      <span className="task-card-qa-progress-fill" aria-hidden="true" />
+      <span className="task-card-qa-progress-well" aria-hidden="true" />
+      <CheckIcon className="task-card-action-icon" />
+    </span>
+  );
+}
+
 
 interface TaskCardProps {
   task: Task;
@@ -244,6 +322,7 @@ interface TaskCardProps {
     organizationId: string;
     projectId: string;
   };
+  parentScatterStage?: ScatterStage | null;
 }
 
 const statusOptions = TASK_STATUS_OPTIONS;
@@ -277,6 +356,7 @@ export function TaskCard({
   onSetParent,
   parentCandidates = [],
   chatContextScope,
+  parentScatterStage = null,
 }: TaskCardProps) {
   const { requestTaskInsert, requestTaskRemove, isTaskReferenced } = useChat();
   const {
@@ -651,7 +731,7 @@ export function TaskCard({
     }
 
     const card = event.currentTarget;
-    if (!card.classList.contains('has-scatter-lights')) {
+    if (!card.classList.contains('has-scatter-lights') || card.classList.contains('is-done-stage')) {
       return;
     }
 
@@ -838,7 +918,9 @@ export function TaskCard({
       ? Math.min(Math.max(subtaskProgress.done / subtaskProgress.total, 0), 1)
       : 0;
   const scatterBounce =
-    isSubtask && !isDetachedSubtask ? scatterBounceFromId(task.id) : null;
+    isSubtask && !isDetachedSubtask && parentScatterStage
+      ? scatterBounceFromId(task.id, parentScatterStage)
+      : null;
 
   const cardStyle = {
     ...(accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : null),
@@ -870,21 +952,40 @@ export function TaskCard({
   const showSmartCopyBasketAction =
     showSmartCopy && (!isSubtask || isDetachedSubtask);
   const inSmartCopyBasket = isInSmartCopyBasket(task.id);
+  const showDoneHold =
+    task.status === 'done' && (!isSubtask || isDetachedSubtask);
   const showCornerActions =
     (!isSubtask || isDetachedSubtask) &&
-    (Boolean(qaProgress) || showSmartCopy);
+    (Boolean(qaProgress) || showSmartCopy || showDoneHold);
   const showParentSubtaskMeta =
     !compact && !isSubtask && (Boolean(subtaskProgress) || detachedSubtaskCount > 0);
   const showSubtaskSection =
     !compact && !isSubtask && (nestedSubtasks.length > 0 || showParentSubtaskMeta);
-  const showScatterLights =
-    Boolean(accentColor) &&
-    showSubtaskSection &&
-    !showQaStage &&
-    (task.status === 'todo' || task.status === 'in_progress' || task.status === 'done');
+  const scatterStage: ScatterStage | null = (() => {
+    if (!accentColor || (isSubtask && !isDetachedSubtask)) {
+      return null;
+    }
+    if (showQaStage && task.status === 'dev_test') {
+      return 'dev_test';
+    }
+    if (showQaStage && task.status === 'qa_test') {
+      return 'qa_test';
+    }
+    if (showDoneHold) {
+      return 'done';
+    }
+    if (
+      showSubtaskSection &&
+      (task.status === 'todo' || task.status === 'in_progress')
+    ) {
+      return task.status;
+    }
+    return null;
+  })();
+  const showScatterLights = scatterStage != null;
   const scatterLights = useMemo(
-    () => (showScatterLights ? scatterLightsFromId(task.id) : []),
-    [showScatterLights, task.id],
+    () => (scatterStage ? scatterLightsFromId(task.id, scatterStage) : []),
+    [scatterStage, task.id],
   );
 
   const taskMenuItems = (
@@ -1003,7 +1104,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${showScatterLights && task.status === 'todo' ? ' is-todo-stage' : ''}${showScatterLights && task.status === 'in_progress' ? ' is-in-progress-stage' : ''}${showScatterLights && task.status === 'done' ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -1250,6 +1351,7 @@ export function TaskCard({
                 onDelete={onDelete}
                 onCreateSubtask={onCreateSubtask}
                 onSetParent={onSetParent}
+                parentScatterStage={scatterStage}
               />
             ))}
           </div>
@@ -1288,6 +1390,7 @@ export function TaskCard({
                 }}
               />
             )}
+            {showDoneHold && <DoneLightHold />}
           </div>
         )}
 

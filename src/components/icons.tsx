@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Bell,
   ChatCircle,
+  Check,
   ClipboardText,
   Copy,
   DotsThreeVertical,
@@ -263,3 +264,4 @@ export const TrashIcon = phosphor(Trash);
 export const CopyIcon = phosphor(Copy);
 export const EyeIcon = phosphor(Eye);
 export const QaBoardIcon = phosphor(ClipboardText);
+export const CheckIcon = phosphor(Check);
