@@ -275,4 +275,79 @@ describe('TaskCard scan-first actions', () => {
     expect(card).not.toBeNull();
     expect(card?.style.getPropertyValue('--qa-progress')).toBe('1');
   });
+
+  it('scatters weak lights on To Do parents with subtasks, not on QA', () => {
+    const parent = makeTask({
+      status: 'todo',
+      title: 'Parent card',
+      subtaskProgress: { done: 1, total: 2 },
+    });
+    const nested = makeTask({
+      id: '22222222-2222-2222-2222-222222222222',
+      title: 'Nested child',
+      status: 'todo',
+      parentTaskId: parent.id,
+      displayId: '#arc-2',
+    });
+
+    const { container, rerender } = render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={parent}
+          subtasks={[nested]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const todoCard = container.querySelector('.task-card.has-scatter-lights') as HTMLElement | null;
+    expect(todoCard).not.toBeNull();
+    expect(todoCard).not.toHaveClass('is-done-stage');
+    expect(todoCard).not.toHaveClass('is-qa-stage');
+    expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
+
+    rerender(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={{ ...parent, status: 'done' }}
+          subtasks={[{ ...nested, status: 'done' }]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(container.querySelector('.task-card.has-scatter-lights')).toHaveClass('is-done-stage');
+
+    rerender(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={{ ...parent, status: 'dev_test' }}
+          subtasks={[{ ...nested, status: 'dev_test' }]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(container.querySelector('.task-card.is-qa-stage')).not.toBeNull();
+    expect(container.querySelector('.task-card.has-scatter-lights')).toBeNull();
+    expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(0);
+  });
 });

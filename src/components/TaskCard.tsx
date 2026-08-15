@@ -72,6 +72,47 @@ function formatBadgeLabel(label: string): string {
   return label.length > 15 ? `${label.slice(0, 15)}...` : label;
 }
 
+const SCATTER_CELLS = [
+  { x: 14, y: 16 },
+  { x: 62, y: 10 },
+  { x: 88, y: 34 },
+  { x: 24, y: 48 },
+  { x: 76, y: 64 },
+  { x: 42, y: 84 },
+] as const;
+
+function hashString(input: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function scatterLightsFromId(id: string) {
+  let seed = hashString(id);
+  const next = () => {
+    seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+
+  return SCATTER_CELLS.map((cell) => ({
+    x: Math.min(92, Math.max(8, cell.x + (next() - 0.5) * 22)),
+    y: Math.min(90, Math.max(8, cell.y + (next() - 0.5) * 20)),
+    w: 2.1 + next() * 1.9,
+    h: 1.6 + next() * 1.6,
+    o: 0.72 + next() * 0.4,
+  }));
+}
+
+function resetScatterFlee(card: HTMLElement) {
+  card.querySelectorAll<HTMLElement>('.task-card-scatter-light').forEach((light) => {
+    light.style.setProperty('--flee-x', '0%');
+    light.style.setProperty('--flee-y', '0%');
+  });
+}
+
 function SubtaskProgressRing({
   done,
   total,
@@ -232,7 +273,7 @@ export function TaskCard({
     isInBasket: isInSmartCopyBasket,
     toggleTask: toggleSmartCopyBasket,
   } = useSmartCopyBasket();
-  const { base } = useMotionTransition();
+  const { base, reducedMotion } = useMotionTransition();
   const { shouldAnimateStatusMove, markStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -273,6 +314,7 @@ export function TaskCard({
     startY: number;
     locked: 'horizontal' | 'vertical' | null;
   } | null>(null);
+  const scatterRafRef = useRef<number | null>(null);
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
 
   const menusOpen = actionMenuOpen || contextMenuPos !== null;
@@ -593,6 +635,69 @@ export function TaskCard({
     }
   }
 
+  function handleScatterPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    if (reducedMotion || isInteractionLocked) {
+      return;
+    }
+
+    const card = event.currentTarget;
+    if (!card.classList.contains('has-scatter-lights')) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+
+    const rect = card.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return;
+    }
+
+    const mouseX = ((event.clientX - rect.left) / rect.width) * 100;
+    const mouseY = ((event.clientY - rect.top) / rect.height) * 100;
+
+    if (scatterRafRef.current != null) {
+      cancelAnimationFrame(scatterRafRef.current);
+    }
+
+    scatterRafRef.current = requestAnimationFrame(() => {
+      scatterRafRef.current = null;
+      card.querySelectorAll<HTMLElement>('.task-card-scatter-light').forEach((light) => {
+        const restX = Number(light.dataset.x);
+        const restY = Number(light.dataset.y);
+        const dx = restX - mouseX;
+        const dy = restY - mouseY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const push = Math.min(10, (16 / (dist + 5)) * 9);
+        light.style.setProperty('--flee-x', `${(dx / dist) * push}%`);
+        light.style.setProperty('--flee-y', `${(dy / dist) * push}%`);
+      });
+    });
+  }
+
+  function handleScatterPointerLeave(event: ReactPointerEvent<HTMLElement>) {
+    if (scatterRafRef.current != null) {
+      cancelAnimationFrame(scatterRafRef.current);
+      scatterRafRef.current = null;
+    }
+    resetScatterFlee(event.currentTarget);
+  }
+
+  function handleCardPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    handleScatterPointerMove(event);
+    handleSwipePointerMove(event);
+  }
+
+  function handleCardPointerLeave(event: ReactPointerEvent<HTMLElement>) {
+    handleScatterPointerLeave(event);
+  }
+
+  function handleCardPointerCancel(event: ReactPointerEvent<HTMLElement>) {
+    handleScatterPointerLeave(event);
+    handleSwipePointerCancel(event);
+  }
+
   function stopCardPointer(event: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>) {
     event.stopPropagation();
   }
@@ -755,6 +860,15 @@ export function TaskCard({
     !compact && !isSubtask && (Boolean(subtaskProgress) || detachedSubtaskCount > 0);
   const showSubtaskSection =
     !compact && !isSubtask && (nestedSubtasks.length > 0 || showParentSubtaskMeta);
+  const showScatterLights =
+    Boolean(accentColor) &&
+    showSubtaskSection &&
+    !showQaStage &&
+    (task.status === 'todo' || task.status === 'in_progress' || task.status === 'done');
+  const scatterLights = useMemo(
+    () => (showScatterLights ? scatterLightsFromId(task.id) : []),
+    [showScatterLights, task.id],
+  );
 
   const taskMenuItems = (
     <>
@@ -872,17 +986,19 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${showScatterLights && task.status === 'done' ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
         whileHover={
           !showAsDragging && !isInteractionLocked
-            ? {
-                y: -1,
-                boxShadow: 'var(--shadow-lift)',
-                borderColor: 'var(--border-strong)',
-              }
+            ? showScatterLights
+              ? { y: -1 }
+              : {
+                  y: -1,
+                  boxShadow: 'var(--shadow-lift)',
+                  borderColor: 'var(--border-strong)',
+                }
             : undefined
         }
         transition={{
@@ -892,11 +1008,33 @@ export function TaskCard({
         }}
         onDoubleClick={handleCardDoubleClick}
         onContextMenu={handleCardContextMenu}
-        onPointerMove={handleSwipePointerMove}
+        onPointerMove={handleCardPointerMove}
         onPointerUp={handleSwipePointerUp}
-        onPointerCancel={handleSwipePointerCancel}
+        onPointerCancel={handleCardPointerCancel}
+        onPointerLeave={handleCardPointerLeave}
         {...draggableProps}
       >
+        {showScatterLights ? (
+          <span className="task-card-scatter-lights" aria-hidden="true">
+            {scatterLights.map((light, index) => (
+              <span
+                key={index}
+                className="task-card-scatter-light"
+                data-x={light.x}
+                data-y={light.y}
+                style={
+                  {
+                    '--sx': `${light.x}%`,
+                    '--sy': `${light.y}%`,
+                    '--sw': `${light.w}rem`,
+                    '--sh': `${light.h}rem`,
+                    '--scatter-spot-opacity': String(light.o),
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </span>
+        ) : null}
         {swipeHint ? (
           <span className="task-card-swipe-hint" role="status">
             {swipeHint}
