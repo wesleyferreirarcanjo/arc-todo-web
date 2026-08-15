@@ -117,7 +117,7 @@ const SCATTER_STAGE = {
   done: {
     focusX: 96,
     focusY: 92,
-    spread: 0.38,
+    spread: 0,
     bounceSpread: 0.3,
   },
 } as const;
@@ -168,6 +168,23 @@ function scatterLightsFromId(
       o: 0.62 + next() * 0.5,
     };
   });
+}
+
+function doneHoldLightsFromId(id: string) {
+  let seed = hashString(`${id}:done-hold`);
+  const next = () => {
+    const step = mulberryNext(seed);
+    seed = step.seed;
+    return step.value;
+  };
+
+  return Array.from({ length: 5 }, () => ({
+    x: 30 + next() * 40,
+    y: 30 + next() * 40,
+    w: 0.28 + next() * 0.34,
+    h: 0.22 + next() * 0.3,
+    o: 0.42 + next() * 0.4,
+  }));
 }
 
 function scatterBounceFromId(id: string, stage: ScatterStage) {
@@ -294,11 +311,28 @@ function QaChecklistProgress({
   );
 }
 
-function DoneLightHold() {
+function DoneLightHold({ seed }: { seed: string }) {
+  const lights = useMemo(() => doneHoldLightsFromId(seed), [seed]);
+
   return (
     <span className="task-card-qa-progress task-card-done-hold" aria-hidden="true">
       <span className="task-card-qa-progress-fill" aria-hidden="true" />
       <span className="task-card-qa-progress-well" aria-hidden="true" />
+      {lights.map((light, index) => (
+        <span
+          key={index}
+          className="task-card-done-hold-light"
+          style={
+            {
+              '--sx': `${light.x}%`,
+              '--sy': `${light.y}%`,
+              '--sw': `${light.w}rem`,
+              '--sh': `${light.h}rem`,
+              '--scatter-spot-opacity': String(light.o),
+            } as CSSProperties
+          }
+        />
+      ))}
       <CheckIcon className="task-card-action-icon" />
     </span>
   );
@@ -987,12 +1021,13 @@ export function TaskCard({
     }
     return null;
   })();
-  const showScatterLights = scatterStage != null;
+  const showScatterLights =
+    scatterStage != null && (scatterStage !== 'done' || showSubtaskSection);
   const scatterLoose =
     !showSubtaskSection && (scatterStage === 'todo' || scatterStage === 'in_progress');
   const scatterLights = useMemo(
     () =>
-      scatterStage
+      scatterStage && scatterStage !== 'done'
         ? scatterLightsFromId(task.id, scatterStage, { loose: scatterLoose })
         : [],
     [scatterLoose, scatterStage, task.id],
@@ -1140,7 +1175,7 @@ export function TaskCard({
         onPointerCancel={handleCardPointerCancel}
         onPointerLeave={handleCardPointerLeave}
       >
-        {showScatterLights ? (
+        {showScatterLights && scatterLights.length > 0 ? (
           <span className="task-card-scatter-lights" aria-hidden="true">
             {scatterLights.map((light, index) => (
               <span
@@ -1400,7 +1435,7 @@ export function TaskCard({
                 }}
               />
             )}
-            {showDoneHold && <DoneLightHold />}
+            {showDoneHold && <DoneLightHold seed={task.id} />}
           </div>
         )}
 

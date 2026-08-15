@@ -3524,33 +3524,19 @@ textarea {
 .task-card.has-accent.has-scatter-lights.is-done-stage {
   --scatter-flee-cap: 0;
   --scatter-scale: 1.12;
-  --scatter-light-opacity: 0.52;
-  --entity-corner-opacity: 0.5;
-  --entity-corner-glow: 8px 8px 18px -8px
-    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 48%, transparent);
-  overflow: visible;
 }
 
 .task-card.has-accent.has-scatter-lights::before {
   opacity: 0;
 }
 
-.task-card.has-accent.has-scatter-lights.is-qa-stage::before,
-.task-card.has-accent.has-scatter-lights.is-done-stage::before {
+.task-card.has-accent.has-scatter-lights.is-qa-stage::before {
   opacity: var(--entity-corner-opacity);
 }
 
 .task-card.has-accent.is-qa-stage.is-qa-test-stage::before {
   background: radial-gradient(
     ellipse calc(5.1rem + (var(--qa-progress) * 2.4rem)) calc(4.6rem + (var(--qa-progress) * 2.2rem)) at 100% 100%,
-    var(--entity-accent, var(--accent-secondary)),
-    transparent 70%
-  );
-}
-
-.task-card.has-accent.is-done-stage::before {
-  background: radial-gradient(
-    ellipse 2.4rem 2.2rem at 100% 100%,
     var(--entity-accent, var(--accent-secondary)),
     transparent 70%
   );
@@ -3951,7 +3937,7 @@ textarea {
 
 .task-card.is-subtask.is-detached-subtask {
   margin-left: 0;
-  padding: 0.75rem 0.85rem 3.5rem 0.95rem;
+  padding: 0.75rem 0.85rem 0.75rem 0.95rem;
   border-style: dashed;
   border-left-width: 3px;
   cursor: grab;
@@ -4126,8 +4112,7 @@ textarea {
     box-shadow var(--transition-fast);
 }
 
-.task-card.is-qa-stage .task-card-qa-progress::after,
-.task-card.is-done-stage .task-card-done-hold::after {
+.task-card.is-qa-stage .task-card-qa-progress::after {
   content: '';
   position: absolute;
   left: 50%;
@@ -4149,17 +4134,6 @@ textarea {
   );
   opacity: calc(0.28 + (var(--qa-progress) * 0.42));
   transition: opacity var(--transition-fast), width var(--transition-fast), height var(--transition-fast);
-}
-
-.task-card.is-done-stage .task-card-done-hold::after {
-  width: 3.35rem;
-  height: 3.35rem;
-  opacity: 0.92;
-  background: radial-gradient(
-    circle at center,
-    color-mix(in srgb, var(--entity-accent, var(--accent)) 78%, transparent),
-    transparent 68%
-  );
 }
 
 .task-card.is-qa-test-stage .task-card-qa-progress::after {
@@ -4213,6 +4187,8 @@ textarea {
   --qa-progress: 1;
   pointer-events: none;
   border-radius: 50%;
+  overflow: clip;
+  box-shadow: none;
 }
 
 .task-card-done-hold .task-card-qa-progress-well {
@@ -4225,11 +4201,30 @@ textarea {
     color-mix(in srgb, var(--entity-accent, var(--accent)) 48%, transparent);
 }
 
+.task-card-done-hold-light {
+  position: absolute;
+  left: var(--sx);
+  top: var(--sy);
+  width: var(--sw);
+  height: var(--sh);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 88%, transparent),
+    transparent 72%
+  );
+  opacity: calc(0.55 * var(--scatter-spot-opacity, 1));
+}
+
 .task-card-done-hold .task-card-action-icon {
-  width: 1.12rem;
-  height: 1.12rem;
+  width: 1rem;
+  height: 1rem;
   color: color-mix(in srgb, var(--entity-accent, var(--accent)) 22%, var(--text-primary));
   filter: none;
+  z-index: 3;
 }
 
 .task-details-copy-group {

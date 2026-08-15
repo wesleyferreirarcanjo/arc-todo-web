@@ -88,23 +88,26 @@ describe('board columns never paint a scrollbar', () => {
     expect(inProgress).toContain('--scatter-light-opacity: 0.24');
     expect(devTest).toContain('--scatter-light-opacity: 0.32');
     expect(qaTest).toContain('--scatter-light-opacity: 0.4');
-    expect(done).toContain('--scatter-light-opacity: 0.52');
     expect(done).toContain('--scatter-flee-cap: 0');
+    expect(done).not.toContain('overflow: visible');
     expect(css).toContain('--scatter-flee: var(--scatter-flee-cap, 1)');
     expect(ruleBlock('.task-card.has-accent.has-scatter-lights.is-qa-stage')).toContain(
       'overflow: visible',
     );
-    expect(done).toContain('overflow: visible');
   });
 
   it('keeps the Done check circular with light inside the icon', () => {
     const hold = ruleBlock('.task-card-done-hold');
     expect(hold).toContain('border-radius: 50%');
-    expect(css).toContain('border-radius: 50%');
-    expect(css).toContain('width: 3.35rem');
+    expect(hold).toContain('overflow: clip');
+    expect(hold).toContain('box-shadow: none');
+    expect(css).not.toContain('width: 3.35rem');
     expect(css).not.toContain('width: 9.2rem');
     expect(ruleBlock('.task-card-done-hold .task-card-qa-progress-well')).toContain(
       'var(--entity-accent, var(--accent)) 62%',
     );
+    const detached = ruleBlock('.task-card.is-subtask.is-detached-subtask');
+    expect(detached).toContain('padding: 0.75rem 0.85rem 0.75rem 0.95rem');
+    expect(detached).not.toContain('3.5rem');
   });
 });
