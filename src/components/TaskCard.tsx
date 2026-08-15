@@ -714,14 +714,23 @@ export function TaskCard({
     task.status === 'dev_test' || task.status === 'qa_test'
       ? checklistProgress
       : null;
+  const showQaStage =
+    Boolean(qaProgress) && (!isSubtask || isDetachedSubtask);
   const qaProgressRatio =
     qaProgress && qaProgress.total > 0
       ? Math.min(Math.max(qaProgress.done / qaProgress.total, 0), 1)
       : 0;
+  const subtaskProgressRatio =
+    !isSubtask && subtaskProgress && subtaskProgress.total > 0
+      ? Math.min(Math.max(subtaskProgress.done / subtaskProgress.total, 0), 1)
+      : 0;
 
   const cardStyle = {
     ...(accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : null),
-    ...(qaProgress ? ({ '--qa-progress': qaProgressRatio } as CSSProperties) : null),
+    ...(showQaStage ? ({ '--qa-progress': qaProgressRatio } as CSSProperties) : null),
+    ...(!isSubtask && subtaskProgress
+      ? ({ '--subtask-progress': subtaskProgressRatio } as CSSProperties)
+      : null),
     ...dragStyle,
     ...(swipeOffset
       ? {
@@ -863,7 +872,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${qaProgress ? ' is-qa-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}

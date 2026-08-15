@@ -3394,6 +3394,15 @@ textarea {
   .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card-qa-progress {
     box-shadow: none;
   }
+
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card-qa-progress::after,
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .subtask-progress-badge::after {
+    opacity: 0;
+  }
+
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card.is-subtask.has-accent::before {
+    opacity: 0;
+  }
 }
 
 .task-card-overlay.has-accent {
@@ -3417,18 +3426,37 @@ textarea {
 
 .task-card.has-accent.is-qa-stage {
   --qa-progress: 0;
-  --entity-corner-opacity: calc(0.12 + (var(--qa-progress) * 0.18));
-  --entity-corner-glow: 8px 8px calc(12px + (var(--qa-progress) * 8px)) calc(-11px + (var(--qa-progress) * 3px))
+  --entity-corner-opacity: calc(0.12 + (var(--qa-progress) * 0.27));
+  --entity-corner-glow: 8px 8px calc(12px + (var(--qa-progress) * 12px)) calc(-11px + (var(--qa-progress) * 4.5px))
     color-mix(
       in srgb,
-      var(--entity-accent, var(--accent-secondary)) calc(16% + (var(--qa-progress) * 26%)),
+      var(--entity-accent, var(--accent-secondary)) calc(16% + (var(--qa-progress) * 39%)),
       transparent
     );
 }
 
 .task-card.has-accent.is-qa-stage::before {
   background: radial-gradient(
-    ellipse calc(6.4rem + (var(--qa-progress) * 2.2rem)) calc(5.6rem + (var(--qa-progress) * 2rem)) at 100% 100%,
+    ellipse calc(6.4rem + (var(--qa-progress) * 3.3rem)) calc(5.6rem + (var(--qa-progress) * 3rem)) at 100% 100%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 72%
+  );
+}
+
+.task-card.has-accent.has-subtasks:not(.is-qa-stage) {
+  --subtask-progress: 0;
+  --entity-corner-opacity: calc(0.1 + (var(--subtask-progress) * 0.32));
+  --entity-corner-glow: 9px 2px calc(12px + (var(--subtask-progress) * 12px)) calc(-11px + (var(--subtask-progress) * 4.5px))
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) calc(16% + (var(--subtask-progress) * 39%)),
+      transparent
+    );
+}
+
+.task-card.has-accent.has-subtasks:not(.is-qa-stage)::before {
+  background: radial-gradient(
+    ellipse calc(5.2rem + (var(--subtask-progress) * 3.6rem)) calc(4.4rem + (var(--subtask-progress) * 3rem)) at 100% 36%,
     var(--entity-accent, var(--accent-secondary)),
     transparent 72%
   );
@@ -3445,35 +3473,63 @@ textarea {
 
 .task-card.is-subtask.has-accent::before {
   background: radial-gradient(
-    ellipse 4.4rem 2.6rem at var(--entity-light-x) var(--entity-light-y),
+    ellipse calc(4.4rem + (var(--subtask-progress, var(--qa-progress, 0)) * 1.8rem))
+      calc(2.6rem + (var(--subtask-progress, var(--qa-progress, 0)) * 1.2rem))
+      at var(--entity-light-x) var(--entity-light-y),
     var(--entity-accent, var(--accent-secondary)),
     transparent 66%
   );
   opacity: var(--subtask-light-opacity, 0.12);
 }
 
-.task-subtasks > .task-card.is-subtask.has-accent:nth-child(1) {
-  --entity-light-x: 4%;
-  --entity-light-y: -8%;
-  --subtask-light-opacity: 0.16;
+/* Nested bounce from the task-section load bar (above-right). */
+.task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(1) {
+  --entity-light-x: 96%;
+  --entity-light-y: -12%;
+  --subtask-light-opacity: calc(0.1 + (var(--subtask-progress, 0) * 0.14));
 }
 
-.task-subtasks > .task-card.is-subtask.has-accent:nth-child(2) {
-  --entity-light-x: 10%;
-  --entity-light-y: 20%;
-  --subtask-light-opacity: 0.1;
+.task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(2) {
+  --entity-light-x: 88%;
+  --entity-light-y: 22%;
+  --subtask-light-opacity: calc(0.06 + (var(--subtask-progress, 0) * 0.09));
 }
 
-.task-subtasks > .task-card.is-subtask.has-accent:nth-child(3) {
-  --entity-light-x: 14%;
-  --entity-light-y: 44%;
-  --subtask-light-opacity: 0.06;
+.task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(3) {
+  --entity-light-x: 82%;
+  --entity-light-y: 48%;
+  --subtask-light-opacity: calc(0.04 + (var(--subtask-progress, 0) * 0.05));
 }
 
-.task-subtasks > .task-card.is-subtask.has-accent:nth-child(n + 4) {
-  --entity-light-x: 18%;
+.task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(n + 4) {
+  --entity-light-x: 78%;
+  --entity-light-y: 68%;
+  --subtask-light-opacity: calc(0.02 + (var(--subtask-progress, 0) * 0.035));
+}
+
+/* QA checklist is below the nested list: bounce comes from below-right. */
+.task-card.is-qa-stage .task-subtasks > .task-card.is-subtask.has-accent:nth-last-of-type(1) {
+  --entity-light-x: 94%;
+  --entity-light-y: 118%;
+  --subtask-light-opacity: calc(0.1 + (var(--qa-progress) * 0.14));
+}
+
+.task-card.is-qa-stage .task-subtasks > .task-card.is-subtask.has-accent:nth-last-of-type(2) {
+  --entity-light-x: 86%;
+  --entity-light-y: 88%;
+  --subtask-light-opacity: calc(0.06 + (var(--qa-progress) * 0.09));
+}
+
+.task-card.is-qa-stage .task-subtasks > .task-card.is-subtask.has-accent:nth-last-of-type(3) {
+  --entity-light-x: 80%;
   --entity-light-y: 62%;
-  --subtask-light-opacity: 0.03;
+  --subtask-light-opacity: calc(0.04 + (var(--qa-progress) * 0.05));
+}
+
+.task-card.is-qa-stage .task-subtasks > .task-card.is-subtask.has-accent:nth-last-of-type(n + 4) {
+  --entity-light-x: 76%;
+  --entity-light-y: 42%;
+  --subtask-light-opacity: calc(0.02 + (var(--qa-progress) * 0.035));
 }
 
 .task-card.is-subtask.is-detached-subtask.has-accent::before {
@@ -3624,6 +3680,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -3631,6 +3690,30 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   padding: 0.15rem 0.5rem 0.15rem 0.4rem;
+}
+
+.task-card.has-subtasks:not(.is-qa-stage) .task-subtask-meta .subtask-progress-badge::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(7rem + (var(--subtask-progress, 0) * 6rem));
+  height: calc(6rem + (var(--subtask-progress, 0) * 5.2rem));
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    circle at center,
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent)) calc(28% + (var(--subtask-progress, 0) * 36%)),
+      transparent
+    ),
+    transparent 72%
+  );
+  opacity: calc(0.22 + (var(--subtask-progress, 0) * 0.41));
+  transition: opacity var(--transition-fast), width var(--transition-fast), height var(--transition-fast);
 }
 
 .subtask-progress-ring {
@@ -3843,20 +3926,44 @@ textarea {
   isolation: isolate;
   background: color-mix(
     in srgb,
-    var(--entity-accent, var(--accent)) calc(12% + (var(--qa-progress) * 16%)),
+    var(--entity-accent, var(--accent)) calc(12% + (var(--qa-progress) * 24%)),
     var(--bg-surface)
   );
   border: none;
   overflow: visible;
-  box-shadow: 0 0 calc(0.28rem + (var(--qa-progress) * 0.42rem))
+  box-shadow: 0 0 calc(0.28rem + (var(--qa-progress) * 0.63rem))
     color-mix(
       in srgb,
-      var(--entity-accent, var(--accent)) calc(16% + (var(--qa-progress) * 28%)),
+      var(--entity-accent, var(--accent)) calc(16% + (var(--qa-progress) * 42%)),
       transparent
     );
   transition:
     background var(--transition-fast),
     box-shadow var(--transition-fast);
+}
+
+.task-card.is-qa-stage .task-card-qa-progress::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(7.5rem + (var(--qa-progress) * 6.5rem));
+  height: calc(7.5rem + (var(--qa-progress) * 6.5rem));
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    circle at center,
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent)) calc(32% + (var(--qa-progress) * 36%)),
+      transparent
+    ),
+    transparent 72%
+  );
+  opacity: calc(0.28 + (var(--qa-progress) * 0.42));
+  transition: opacity var(--transition-fast), width var(--transition-fast), height var(--transition-fast);
 }
 
 .task-card-qa-progress-fill {

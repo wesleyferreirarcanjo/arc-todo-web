@@ -249,6 +249,7 @@ describe('TaskCard scan-first actions', () => {
     const child = screen.getByText('Nested child');
     expect(child.compareDocumentPosition(qa) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(qa.closest('.task-card')).toHaveClass('is-qa-stage');
+    expect(child.closest('.task-card.is-subtask')).not.toHaveClass('is-qa-stage');
   });
 
   it('brightens QA glow with checklist progress', () => {
