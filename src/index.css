@@ -2390,8 +2390,13 @@ textarea:focus-visible {
   width: 3.25rem;
   height: 3.25rem;
   font-size: 3.25rem;
-  color: var(--accent);
+  /* Black brand ink; dark theme inverts to the light text ink for contrast. */
+  color: var(--text-primary);
   margin-bottom: 0.85rem;
+}
+
+[data-theme='light'] .login-card .login-mark {
+  color: #000;
 }
 
 .login-card h1 {
