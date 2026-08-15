@@ -1,5 +1,6 @@
 import { useTheme } from '../context/ThemeContext';
 import { IosHapticHit } from './IosHapticHit';
+import { MoonIcon, SunIcon } from './icons';
 
 interface ThemeToggleProps {
   variant?: 'header' | 'sidebar';
