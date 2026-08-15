@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 import type { Icon } from '@phosphor-icons/react';
 import {
+  BRAND_MARK_SHAPES,
+  BRAND_MARK_STROKE_WIDTH,
+  BRAND_MARK_VIEWBOX,
+} from '../lib/brand/brandMark';
+import {
   ArrowLeft,
   Bell,
   ChatCircle,
@@ -74,37 +79,52 @@ const mass = {
 
 /**
  * Product mark — the QA clipboard (no text lines) carrying the Names A,
- * with angel wings behind the board. Thinner 1.15 stroke so the black
- * ink pops. Login / PWA / default tab only.
+ * with angel wings behind the board. Login, PWA, tab favicon, and the
+ * collapsed sidebar toggle.
  */
 export function BrandMarkIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <svg
       className={className}
-      viewBox="0 0 24 24"
+      viewBox={BRAND_MARK_VIEWBOX}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.15"
+      strokeWidth={BRAND_MARK_STROKE_WIDTH}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path
-        {...mass}
-        d="M7.4 7.2C5.7 6.4 3.6 5.4 1.9 5.6 1.8 7 2.3 8.4 3.3 9.3L3.9 8.9C4 9.9 4.4 10.8 5.2 11.3L5.7 10.9C5.9 11.8 6.4 12.4 7.4 12.7Z"
-      />
-      <path d="M7.4 7.2C5.7 6.4 3.6 5.4 1.9 5.6 1.8 7 2.3 8.4 3.3 9.3L3.9 8.9C4 9.9 4.4 10.8 5.2 11.3L5.7 10.9C5.9 11.8 6.4 12.4 7.4 12.7Z" />
-      <path
-        {...mass}
-        d="M16.6 7.2C18.3 6.4 20.4 5.4 22.1 5.6 22.2 7 21.7 8.4 20.7 9.3L20.1 8.9C20 9.9 19.6 10.8 18.8 11.3L18.3 10.9C18.1 11.8 17.6 12.4 16.6 12.7Z"
-      />
-      <path d="M16.6 7.2C18.3 6.4 20.4 5.4 22.1 5.6 22.2 7 21.7 8.4 20.7 9.3L20.1 8.9C20 9.9 19.6 10.8 18.8 11.3L18.3 10.9C18.1 11.8 17.6 12.4 16.6 12.7Z" />
-      <rect {...mass} x="7.1" y="4.8" width="9.8" height="14.2" rx="1.5" />
-      <rect x="7.1" y="4.8" width="9.8" height="14.2" rx="1.5" />
-      <rect x="9.9" y="3.7" width="4.2" height="2.2" rx="0.7" />
-      <path {...mass} d="M12 9.7 13.5 13.7H10.5Z" />
-      <path d="M9.5 16.4 12 8.6l2.5 7.8" />
-      <path d="M10.5 13.7h3" />
+      {BRAND_MARK_SHAPES.map((shape, index) => {
+        if (shape.kind === 'rect') {
+          return (
+            <g key={index}>
+              {shape.mass ? (
+                <rect
+                  {...mass}
+                  x={shape.x}
+                  y={shape.y}
+                  width={shape.width}
+                  height={shape.height}
+                  rx={shape.rx}
+                />
+              ) : null}
+              <rect
+                x={shape.x}
+                y={shape.y}
+                width={shape.width}
+                height={shape.height}
+                rx={shape.rx}
+              />
+            </g>
+          );
+        }
+        return (
+          <g key={index}>
+            {shape.mass ? <path {...mass} d={shape.d} /> : null}
+            <path d={shape.d} />
+          </g>
+        );
+      })}
     </svg>
   );
 }

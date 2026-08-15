@@ -53,7 +53,7 @@ describe('useDocumentChrome favicon', () => {
     expect(favicon()?.getAttribute('href')).toBe('/icons/icon.svg');
   });
 
-  it('uses a solid project-color square when a project is focused', () => {
+  it('uses the brand mark on a project-color square when a project is focused', () => {
     workspace.projects = [{ id: 'p1', name: 'arc-todo', color: '#c45c26' }];
     workspace.currentProjectId = 'p1';
     workspace.currentProject = workspace.projects[0];
@@ -64,6 +64,9 @@ describe('useDocumentChrome favicon', () => {
     );
     const href = favicon()?.getAttribute('href') ?? '';
     expect(href.startsWith('data:image/svg+xml,')).toBe(true);
-    expect(decodeURIComponent(href)).toContain('#c45c26');
+    const svg = decodeURIComponent(href);
+    expect(svg).toContain('fill="#c45c26"');
+    expect(svg).toContain('stroke="#000000"');
+    expect(svg).toContain('M9.5 16.4 12 8.6l2.5 7.8');
   });
 });

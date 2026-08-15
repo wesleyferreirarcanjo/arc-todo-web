@@ -421,6 +421,24 @@ textarea:focus-visible {
   background: var(--bg-elevated);
   border-color: var(--border-strong);
   box-shadow: var(--shadow-soft);
+  color: var(--text-primary);
+}
+
+.sidebar-toggle.is-collapsed.is-entity-mark {
+  background: var(--entity-accent);
+  border-color: transparent;
+  color: var(--mark-ink, #ffffff);
+  box-shadow: 0 0 10px -2px color-mix(
+    in srgb,
+    var(--entity-accent) 42%,
+    transparent
+  );
+}
+
+.sidebar-toggle.is-collapsed.is-entity-mark:hover {
+  background: var(--entity-accent);
+  border-color: transparent;
+  color: var(--mark-ink, #ffffff);
 }
 
 .sidebar-toggle:hover {
@@ -433,6 +451,12 @@ textarea:focus-visible {
   width: var(--icon-nav);
   height: var(--icon-nav);
   font-size: var(--icon-nav);
+}
+
+.sidebar-toggle-mark {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 1.7rem;
 }
 
 .sidebar.is-collapsed {
