@@ -1060,13 +1060,17 @@ textarea:focus-visible {
   line-height: 1;
   cursor: pointer;
   transition: border-color var(--transition-fast), color var(--transition-fast),
-    background var(--transition-fast);
+    background var(--transition-fast), transform var(--transition-fast);
 }
 
 .modal-close:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
   color: var(--text-primary);
+}
+
+.modal-close:active {
+  transform: scale(0.96);
 }
 
 .modal-body {
@@ -2675,11 +2679,17 @@ textarea {
   text-align: left;
   cursor: pointer;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
-    background var(--transition-fast);
+    background var(--transition-fast), transform var(--transition-fast);
 }
 
 .select-trigger:hover:not(:disabled) {
   border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, var(--accent) 12%);
+  box-shadow: var(--shadow-soft);
+}
+
+.select-trigger:active:not(:disabled) {
+  transform: scale(0.99);
 }
 
 .select-trigger:focus-visible {
@@ -2752,8 +2762,12 @@ textarea {
 
 .select-option:hover,
 .select-option:focus-visible {
-  background: var(--bg-elevated);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
   outline: none;
+}
+
+.select-option:active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-surface));
 }
 
 .select-option.is-selected {
@@ -2783,6 +2797,10 @@ textarea {
   transition: background var(--transition-fast), box-shadow var(--transition-fast),
     transform var(--transition-fast), border-color var(--transition-fast),
     color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:focus-visible {
@@ -2871,6 +2889,10 @@ textarea {
 .theme-toggle-btn:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.96);
 }
 
 .theme-icon {
@@ -3310,10 +3332,19 @@ textarea {
   box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
 }
 
-.task-card.has-accent:hover,
 .task-card.has-accent.has-menu-open,
 .task-card.has-accent:focus-within {
   box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
+@media (hover: hover) {
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) {
+    box-shadow: var(--shadow-card);
+  }
+
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within)::before {
+    opacity: 0;
+  }
 }
 
 .task-card-overlay.has-accent {
@@ -3332,6 +3363,7 @@ textarea {
     transparent 70%
   );
   opacity: var(--entity-corner-opacity);
+  transition: opacity var(--transition-fast);
 }
 
 .task-card.is-subtask.has-accent {
@@ -3786,7 +3818,7 @@ textarea {
   color: var(--text-muted);
   cursor: pointer;
   transition: border-color var(--transition-fast), background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast), transform var(--transition-fast);
 }
 
 .task-card-action-btn:hover,
@@ -3794,6 +3826,10 @@ textarea {
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   color: var(--text-primary);
+}
+
+.task-card-action-btn:active {
+  transform: scale(0.96);
 }
 
 .task-card-action-icon {
@@ -6467,6 +6503,15 @@ textarea {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.undo-toast-action:hover {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.undo-toast-action:active {
+  transform: scale(0.98);
 }
 
 .task-card-swipe-hint {
@@ -6507,6 +6552,18 @@ textarea {
     0 10px 28px rgba(0, 0, 0, 0.28),
     0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
   cursor: pointer;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.mobile-board-fab-button:hover {
+  box-shadow:
+    0 6px 10px rgba(0, 0, 0, 0.2),
+    0 14px 32px rgba(0, 0, 0, 0.32),
+    0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.mobile-board-fab-button:active {
+  transform: scale(0.96);
 }
 
 .mobile-board-fab-button:focus-visible {
@@ -6633,6 +6690,8 @@ textarea {
   box-shadow: var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.12));
   cursor: pointer;
   text-decoration: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .mobile-board-fab-dial-item:hover,
@@ -6641,6 +6700,10 @@ textarea {
   border-color: var(--accent, var(--border-strong));
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated, var(--bg-surface)));
   outline: none;
+}
+
+.mobile-board-fab-dial-item:active {
+  transform: scale(0.96);
 }
 
 .mobile-board-fab-dial-item.is-danger {
@@ -6813,6 +6876,17 @@ textarea {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.chat-widget-back:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated, var(--bg-surface)));
+}
+
+.chat-widget-back:active {
+  transform: scale(0.98);
 }
 
 .chat-widget-mobile-title {
@@ -7250,7 +7324,16 @@ textarea {
 
   .entity-card:hover,
   .task-card:hover,
-  .btn-primary:hover:not(:disabled) {
+  .btn-primary:hover:not(:disabled),
+  .btn:active:not(:disabled),
+  .select-trigger:active:not(:disabled),
+  .modal-close:active,
+  .theme-toggle-btn:active,
+  .mobile-board-fab-button:active,
+  .mobile-board-fab-dial-item:active,
+  .undo-toast-action:active,
+  .chat-widget-back:active,
+  .task-card-action-btn:active {
     transform: none;
   }
 

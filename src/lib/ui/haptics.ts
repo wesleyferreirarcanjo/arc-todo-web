@@ -1,4 +1,15 @@
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 export function vibrateSafe(ms = 12): void {
+  if (prefersReducedMotion()) {
+    return;
+  }
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
     return;
   }

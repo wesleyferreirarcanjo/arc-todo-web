@@ -310,6 +310,7 @@ export function TaskCard({
   }
 
   function handleOpenDetails() {
+    vibrateSafe(10);
     setDetailsModalOpen(true);
   }
 

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { getTheme, setTheme as persistTheme } from '../lib/storage/appStorage';
+import { vibrateSafe } from '../lib/ui/haptics';
 
 export type Theme = 'dark' | 'light';
 
@@ -32,6 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
+    vibrateSafe(10);
     setThemeState((current) => (current === 'dark' ? 'light' : 'dark'));
   }, []);
 

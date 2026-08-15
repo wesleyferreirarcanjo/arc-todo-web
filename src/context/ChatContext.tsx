@@ -25,6 +25,7 @@ import {
   messageHasTaskRefTokens,
   titleFromTaskRefs,
 } from '../lib/chat/taskRefTokens';
+import { vibrateSafe } from '../lib/ui/haptics';
 
 const WELCOME_MESSAGE: ChatMessage = {
   role: 'assistant',
@@ -166,7 +167,15 @@ export function shouldApplyLoadedMessages(options: {
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatOpen, setChatOpenState] = useState(false);
+  const setChatOpen = useCallback((open: boolean) => {
+    setChatOpenState((current) => {
+      if (current !== open) {
+        vibrateSafe(10);
+      }
+      return open;
+    });
+  }, []);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [visibleTabIds, setVisibleTabIds] = useState<string[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
@@ -591,7 +600,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         await syncConversationTaskContext([nextRef], nextRef.title);
       }
     },
-    [createNewConversation, syncConversationTaskContext],
+    [createNewConversation, setChatOpen, syncConversationTaskContext],
   );
 
   const requestTaskRemove = useCallback((taskId: string) => {
@@ -681,6 +690,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }),
     [
       chatOpen,
+      setChatOpen,
       conversations,
       visibleConversations,
       overflowConversations,

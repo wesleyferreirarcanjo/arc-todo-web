@@ -6,6 +6,7 @@ import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { useChat } from '../context/ChatContext';
 import { useTheme } from '../context/ThemeContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { vibrateSafe } from '../lib/ui/haptics';
 import { isBoardShellPath } from '../lib/board/boardShellPath';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -438,7 +439,10 @@ export function MobileBoardFab() {
           className="mobile-board-fab-button"
           aria-label={menuOpen ? 'Close actions' : 'Open actions'}
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={() => {
+            vibrateSafe(10);
+            setMenuOpen((open) => !open);
+          }}
           animate={reducedMotion ? undefined : { rotate: menuOpen ? 45 : 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
         >
