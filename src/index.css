@@ -258,14 +258,15 @@ textarea:focus-visible {
 }
 
 .content-area.is-board-page .task-board {
-  min-height: 0;
+  height: auto;
+  min-height: 100%;
 }
 
 .content-area.is-board-page .board-column {
-  min-height: 0;
-  height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+  /* UXP-ARC-14: columns grow with cards; never a nested scrollbar. */
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .content-area.is-board-page .board-column-body {
@@ -3024,11 +3025,18 @@ textarea {
   min-height: 0;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.task-board-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .task-board {
@@ -3036,7 +3044,8 @@ textarea {
   flex-wrap: nowrap;
   align-items: stretch;
   gap: 1rem;
-  height: 100%;
+  height: auto;
+  min-height: 100%;
 }
 
 .task-board.is-auto-fit {
@@ -3090,7 +3099,7 @@ textarea {
   min-height: 320px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: var(--shadow-card);
   transform-origin: center top;
   flex: 1 1 0;
@@ -7439,7 +7448,7 @@ textarea {
   width: 100%;
   min-width: 0;
   max-width: none;
-  /* Override board-page height:100% + min-height:0 collapse. */
+  /* Grow with cards; never a nested column scrollport. */
   height: auto;
   min-height: 16rem;
   overflow: visible;
