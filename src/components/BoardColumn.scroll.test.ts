@@ -40,14 +40,34 @@ describe('board columns never paint a scrollbar', () => {
 
   it('does not let scatter-light overlay become a wheel scrollport', () => {
     const overlay = ruleBlock('.task-card-scatter-lights');
-    expect(overlay).toContain('overflow: visible');
+    expect(overlay).toContain('overflow: clip');
     expect(overlay).toContain('pointer-events: none');
     expect(overlay).not.toContain('overflow: hidden');
+    expect(overlay).not.toContain('overflow: visible');
   });
 
-  it('keeps scatter-card lights on hover instead of light-out', () => {
+  it('clips scatter cards without creating a second scrollport', () => {
+    const card = ruleBlock('.task-card.has-accent.has-scatter-lights');
+    expect(card).toContain('overflow: clip');
+    expect(card).not.toContain('overflow: hidden');
+    expect(card).not.toContain('overflow: visible');
+  });
+
+  it('keeps scatter-card lights on hover and flees in layout percentages', () => {
     expect(css).toContain(':not(.has-scatter-lights)');
     expect(css).toContain('--scatter-flee');
-    expect(css).toContain('mask-image: radial-gradient(');
+    expect(css).toContain('(var(--sx) - var(--scatter-mx)) * 0.78 * var(--scatter-flee)');
+    expect(css).not.toContain('mask-image: radial-gradient(');
+  });
+
+  it('ramps scatter intensity from To Do to In Progress to Done', () => {
+    const todo = ruleBlock('.task-card.has-accent.has-scatter-lights');
+    const inProgress = ruleBlock(
+      '.task-card.has-accent.has-scatter-lights.is-in-progress-stage',
+    );
+    const done = ruleBlock('.task-card.has-accent.has-scatter-lights.is-done-stage');
+    expect(todo).toContain('--scatter-light-opacity: 0.15');
+    expect(inProgress).toContain('--scatter-light-opacity: 0.26');
+    expect(done).toContain('--scatter-light-opacity: 0.4');
   });
 });

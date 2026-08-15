@@ -72,15 +72,6 @@ function formatBadgeLabel(label: string): string {
   return label.length > 15 ? `${label.slice(0, 15)}...` : label;
 }
 
-const SCATTER_CELLS = [
-  { x: 14, y: 16 },
-  { x: 62, y: 10 },
-  { x: 88, y: 34 },
-  { x: 24, y: 48 },
-  { x: 76, y: 64 },
-  { x: 42, y: 84 },
-] as const;
-
 function hashString(input: string): number {
   let hash = 2166136261;
   for (let index = 0; index < input.length; index += 1) {
@@ -90,20 +81,41 @@ function hashString(input: string): number {
   return hash >>> 0;
 }
 
+function mulberryNext(seed: number): { seed: number; value: number } {
+  const nextSeed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+  return { seed: nextSeed, value: nextSeed / 4294967296 };
+}
+
 function scatterLightsFromId(id: string) {
   let seed = hashString(id);
   const next = () => {
-    seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
-    return seed / 4294967296;
+    const step = mulberryNext(seed);
+    seed = step.seed;
+    return step.value;
   };
 
-  return SCATTER_CELLS.map((cell) => ({
-    x: Math.min(92, Math.max(8, cell.x + (next() - 0.5) * 22)),
-    y: Math.min(90, Math.max(8, cell.y + (next() - 0.5) * 20)),
-    w: 2.1 + next() * 1.9,
-    h: 1.6 + next() * 1.6,
-    o: 0.72 + next() * 0.4,
+  return Array.from({ length: 6 }, () => ({
+    x: 8 + next() * 84,
+    y: 10 + next() * 80,
+    w: 1.7 + next() * 2.5,
+    h: 1.3 + next() * 2.1,
+    o: 0.62 + next() * 0.5,
   }));
+}
+
+function scatterBounceFromId(id: string) {
+  let seed = hashString(`${id}:bounce`);
+  const next = () => {
+    const step = mulberryNext(seed);
+    seed = step.seed;
+    return step.value;
+  };
+
+  return {
+    x: 10 + next() * 80,
+    y: 12 + next() * 76,
+    o: 0.07 + next() * 0.09,
+  };
 }
 
 function resetScatterPointer(card: HTMLElement) {
@@ -825,12 +837,21 @@ export function TaskCard({
     !isSubtask && subtaskProgress && subtaskProgress.total > 0
       ? Math.min(Math.max(subtaskProgress.done / subtaskProgress.total, 0), 1)
       : 0;
+  const scatterBounce =
+    isSubtask && !isDetachedSubtask ? scatterBounceFromId(task.id) : null;
 
   const cardStyle = {
     ...(accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : null),
     ...(showQaStage ? ({ '--qa-progress': qaProgressRatio } as CSSProperties) : null),
     ...(!isSubtask && subtaskProgress
       ? ({ '--subtask-progress': subtaskProgressRatio } as CSSProperties)
+      : null),
+    ...(scatterBounce
+      ? ({
+          '--scatter-bounce-x': `${scatterBounce.x}%`,
+          '--scatter-bounce-y': `${scatterBounce.y}%`,
+          '--scatter-bounce-opacity': String(scatterBounce.o),
+        } as CSSProperties)
       : null),
     ...dragStyle,
     ...(swipeOffset
@@ -982,7 +1003,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${showScatterLights && task.status === 'done' ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${showScatterLights && task.status === 'todo' ? ' is-todo-stage' : ''}${showScatterLights && task.status === 'in_progress' ? ' is-in-progress-stage' : ''}${showScatterLights && task.status === 'done' ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}

@@ -3492,19 +3492,26 @@ textarea {
   --scatter-mx: 50%;
   --scatter-my: 50%;
   --scatter-flee: 0;
-  --scatter-scale: 1;
-  --scatter-light-opacity: 0.2;
-  overflow: visible;
+  --scatter-scale: 0.9;
+  --scatter-light-opacity: 0.15;
+  overflow: clip;
   --entity-corner-opacity: 0;
-  --entity-corner-glow: 0 0 18px -10px
-    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 16%, transparent);
+  --entity-corner-glow: 0 0 16px -10px
+    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 12%, transparent);
+}
+
+.task-card.has-accent.has-scatter-lights.is-in-progress-stage {
+  --scatter-scale: 1.16;
+  --scatter-light-opacity: 0.26;
+  --entity-corner-glow: 0 0 20px -9px
+    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 22%, transparent);
 }
 
 .task-card.has-accent.has-scatter-lights.is-done-stage {
-  --scatter-scale: 1.38;
-  --scatter-light-opacity: 0.34;
-  --entity-corner-glow: 0 0 24px -8px
-    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 30%, transparent);
+  --scatter-scale: 1.46;
+  --scatter-light-opacity: 0.4;
+  --entity-corner-glow: 0 0 26px -7px
+    color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 32%, transparent);
 }
 
 .task-card.has-accent.has-scatter-lights::before {
@@ -3515,37 +3522,22 @@ textarea {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  overflow: visible;
+  overflow: clip;
   pointer-events: none;
   z-index: 0;
 }
 
-.task-card.has-scatter-lights:hover .task-card-scatter-lights {
-  -webkit-mask-image: radial-gradient(
-    circle 5rem at var(--scatter-mx) var(--scatter-my),
-    transparent 0%,
-    transparent 30%,
-    #000 78%
-  );
-  mask-image: radial-gradient(
-    circle 5rem at var(--scatter-mx) var(--scatter-my),
-    transparent 0%,
-    transparent 30%,
-    #000 78%
-  );
-}
-
 .task-card-scatter-light {
   position: absolute;
-  left: var(--sx);
-  top: var(--sy);
+  left: calc(
+    var(--sx) + (var(--sx) - var(--scatter-mx)) * 0.78 * var(--scatter-flee)
+  );
+  top: calc(
+    var(--sy) + (var(--sy) - var(--scatter-my)) * 0.78 * var(--scatter-flee)
+  );
   width: calc(var(--sw) * var(--scatter-scale, 1));
   height: calc(var(--sh) * var(--scatter-scale, 1));
-  transform: translate(-50%, -50%)
-    translate(
-      calc((var(--sx) - var(--scatter-mx)) * 0.28 * var(--scatter-flee)),
-      calc((var(--sy) - var(--scatter-my)) * 0.28 * var(--scatter-flee))
-    );
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   pointer-events: none;
   background: radial-gradient(
@@ -3554,18 +3546,18 @@ textarea {
     transparent 72%
   );
   opacity: calc(var(--scatter-light-opacity, 0.2) * var(--scatter-spot-opacity, 1));
-  transition: transform var(--transition-base);
+  transition:
+    left var(--transition-base),
+    top var(--transition-base),
+    width var(--transition-fast),
+    height var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .task-card.has-scatter-lights,
   .task-card.has-scatter-lights:hover {
     --scatter-flee: 0;
-  }
-
-  .task-card.has-scatter-lights:hover .task-card-scatter-lights {
-    -webkit-mask-image: none;
-    mask-image: none;
   }
 
   .task-card-scatter-light {
@@ -3616,6 +3608,39 @@ textarea {
   --entity-light-x: 78%;
   --entity-light-y: 68%;
   --subtask-light-opacity: calc(0.02 + (var(--subtask-progress, 0) * 0.035));
+}
+
+/* Scatter parents: nested bounce is hashed per subtask, not the done-bar cascade. */
+.task-card.has-scatter-lights .task-subtasks > .task-card.is-subtask.has-accent,
+.task-card.has-scatter-lights .task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(1),
+.task-card.has-scatter-lights .task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(2),
+.task-card.has-scatter-lights .task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(3),
+.task-card.has-scatter-lights .task-subtasks > .task-card.is-subtask.has-accent:nth-of-type(n + 4) {
+  --entity-light-x: var(--scatter-bounce-x, 48%);
+  --entity-light-y: var(--scatter-bounce-y, 42%);
+  --subtask-light-opacity: calc(
+    var(--scatter-bounce-opacity, 0.1) * var(--scatter-scale, 1)
+  );
+}
+
+.task-card.has-scatter-lights .task-subtasks > .task-card.is-subtask.has-accent::before {
+  background: radial-gradient(
+    ellipse calc(3.2rem + (var(--scatter-scale, 1) * 1.4rem))
+      calc(2rem + (var(--scatter-scale, 1) * 0.9rem))
+      at
+      calc(
+        var(--entity-light-x) + (var(--entity-light-x) - var(--scatter-mx)) * 0.78 *
+          var(--scatter-flee)
+      )
+      calc(
+        var(--entity-light-y) + (var(--entity-light-y) - var(--scatter-my)) * 0.78 *
+          var(--scatter-flee)
+      ),
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 66%
+  );
+  opacity: var(--subtask-light-opacity, 0.12);
+  transition: opacity var(--transition-fast);
 }
 
 /* QA checklist is below the nested list: bounce comes from below-right. */
@@ -3828,9 +3853,7 @@ textarea {
 }
 
 .task-card.has-scatter-lights .task-subtask-meta .subtask-progress-badge::after {
-  width: calc(2.4rem + (var(--subtask-progress, 0) * 1.2rem));
-  height: calc(2rem + (var(--subtask-progress, 0) * 1rem));
-  opacity: calc(0.16 + (var(--subtask-progress, 0) * 0.18));
+  display: none;
 }
 
 .subtask-progress-ring {

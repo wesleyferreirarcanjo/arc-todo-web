@@ -308,9 +308,42 @@ describe('TaskCard scan-first actions', () => {
 
     const todoCard = container.querySelector('.task-card.has-scatter-lights') as HTMLElement | null;
     expect(todoCard).not.toBeNull();
+    expect(todoCard).toHaveClass('is-todo-stage');
+    expect(todoCard).not.toHaveClass('is-in-progress-stage');
     expect(todoCard).not.toHaveClass('is-done-stage');
     expect(todoCard).not.toHaveClass('is-qa-stage');
     expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
+
+    const nestedCard = container.querySelector(
+      '.task-subtasks > .task-card.is-subtask',
+    ) as HTMLElement | null;
+    expect(nestedCard).not.toBeNull();
+    expect(nestedCard?.style.getPropertyValue('--scatter-bounce-x')).toMatch(/^\d+(\.\d+)?%$/);
+    expect(nestedCard?.style.getPropertyValue('--scatter-bounce-y')).toMatch(/^\d+(\.\d+)?%$/);
+    expect(nestedCard?.style.getPropertyValue('--scatter-bounce-x')).not.toBe('96%');
+
+    rerender(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={{ ...parent, status: 'in_progress' }}
+          subtasks={[nested]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(container.querySelector('.task-card.has-scatter-lights')).toHaveClass(
+      'is-in-progress-stage',
+    );
+    expect(container.querySelector('.task-card.has-scatter-lights')).not.toHaveClass(
+      'is-todo-stage',
+    );
 
     rerender(
       <StatusMoveAnimationProvider>
@@ -329,6 +362,9 @@ describe('TaskCard scan-first actions', () => {
     );
 
     expect(container.querySelector('.task-card.has-scatter-lights')).toHaveClass('is-done-stage');
+    expect(container.querySelector('.task-card.has-scatter-lights')).not.toHaveClass(
+      'is-in-progress-stage',
+    );
 
     rerender(
       <StatusMoveAnimationProvider>
