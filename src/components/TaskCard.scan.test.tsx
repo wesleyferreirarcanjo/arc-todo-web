@@ -164,4 +164,91 @@ describe('TaskCard scan-first actions', () => {
     const done = screen.getByText('1/3 done');
     expect(copy.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it('keeps Smart copy and QA below nested subtasks in the parent corner', () => {
+    const parent = makeTask({ status: 'todo', title: 'Parent card' });
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={parent}
+          subtasks={[
+            makeTask({
+              id: '22222222-2222-2222-2222-222222222222',
+              title: 'Nested child',
+              status: 'todo',
+              parentTaskId: parent.id,
+              displayId: '#arc-2',
+            }),
+          ]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const copy = screen.getByRole('button', { name: 'Smart copy' });
+    const child = screen.getByText('Nested child');
+    expect(child.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the QA circle below nested subtasks on Dev Test', () => {
+    const parent = makeTask({ status: 'dev_test', title: 'Parent card' });
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={parent}
+          subtasks={[
+            makeTask({
+              id: '22222222-2222-2222-2222-222222222222',
+              title: 'Nested child',
+              status: 'dev_test',
+              parentTaskId: parent.id,
+              displayId: '#arc-2',
+            }),
+          ]}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const qa = screen.getByRole('button', { name: 'Ver checklist, QA 0/2' });
+    const child = screen.getByText('Nested child');
+    expect(child.compareDocumentPosition(qa) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(qa.closest('.task-card')).toHaveClass('is-qa-stage');
+  });
+
+  it('brightens QA glow with checklist progress', () => {
+    const { container } = render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({
+            status: 'qa_test',
+            qaChecklistProgress: { done: 2, total: 2 },
+          })}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const card = container.querySelector('.task-card.is-qa-stage') as HTMLElement | null;
+    expect(card).not.toBeNull();
+    expect(card?.style.getPropertyValue('--qa-progress')).toBe('1');
+  });
 });

@@ -3390,6 +3390,10 @@ textarea {
   .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within)::before {
     opacity: 0;
   }
+
+  .task-card.has-accent:hover:not(.has-menu-open):not(:focus-within) .task-card-qa-progress {
+    box-shadow: none;
+  }
 }
 
 .task-card-overlay.has-accent {
@@ -3409,6 +3413,25 @@ textarea {
   );
   opacity: var(--entity-corner-opacity);
   transition: opacity var(--transition-fast);
+}
+
+.task-card.has-accent.is-qa-stage {
+  --qa-progress: 0;
+  --entity-corner-opacity: calc(0.12 + (var(--qa-progress) * 0.18));
+  --entity-corner-glow: 8px 8px calc(12px + (var(--qa-progress) * 8px)) calc(-11px + (var(--qa-progress) * 3px))
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) calc(16% + (var(--qa-progress) * 26%)),
+      transparent
+    );
+}
+
+.task-card.has-accent.is-qa-stage::before {
+  background: radial-gradient(
+    ellipse calc(6.4rem + (var(--qa-progress) * 2.2rem)) calc(5.6rem + (var(--qa-progress) * 2rem)) at 100% 100%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 72%
+  );
 }
 
 .task-card.is-subtask.has-accent {
@@ -3773,21 +3796,31 @@ textarea {
   align-self: flex-end;
   gap: 0.28rem;
   margin-top: 0.45rem;
+  position: relative;
+  z-index: 2;
+}
+
+.task-card.has-subtasks .task-card-copy-actions {
+  margin-top: 0.2rem;
 }
 
 .task-card-action-btn.task-card-smart-copy-btn {
-  color: var(--smart-copy);
+  color: var(--entity-accent, var(--smart-copy));
 }
 
 .task-card-action-btn.task-card-smart-copy-btn .task-card-action-icon {
-  color: var(--smart-copy);
+  color: var(--entity-accent, var(--smart-copy));
 }
 
 .task-card-action-btn.task-card-smart-copy-btn:hover,
 .task-card-action-btn.task-card-smart-copy-btn:focus-visible {
-  background: color-mix(in srgb, var(--bg-surface) 78%, var(--smart-copy) 22%);
-  border-color: color-mix(in srgb, var(--smart-copy) 45%, var(--border));
-  color: var(--smart-copy);
+  background: color-mix(
+    in srgb,
+    var(--bg-surface) 78%,
+    var(--entity-accent, var(--smart-copy)) 22%
+  );
+  border-color: color-mix(in srgb, var(--entity-accent, var(--smart-copy)) 45%, var(--border));
+  color: var(--entity-accent, var(--smart-copy));
 }
 
 .task-card-qa-progress,
@@ -3800,9 +3833,22 @@ textarea {
   width: 2.25rem;
   height: 2.25rem;
   isolation: isolate;
-  background: color-mix(in srgb, var(--entity-accent, var(--accent)) 16%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent)) calc(12% + (var(--qa-progress) * 16%)),
+    var(--bg-surface)
+  );
   border: none;
   overflow: visible;
+  box-shadow: 0 0 calc(0.28rem + (var(--qa-progress) * 0.42rem))
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent)) calc(16% + (var(--qa-progress) * 28%)),
+      transparent
+    );
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .task-card-qa-progress-fill {
@@ -3814,6 +3860,7 @@ textarea {
     var(--entity-accent, var(--accent)) calc(var(--qa-progress) * 360deg),
     transparent 0
   );
+  opacity: calc(0.78 + (var(--qa-progress) * 0.22));
   pointer-events: none;
   z-index: 0;
 }
@@ -3833,11 +3880,16 @@ textarea {
   width: 1rem;
   height: 1rem;
   color: var(--entity-accent, var(--accent));
+  filter: brightness(calc(0.94 + (var(--qa-progress) * 0.16)));
 }
 
 .task-card-qa-progress:hover,
 .task-card-qa-progress:focus-visible {
-  background: color-mix(in srgb, var(--entity-accent, var(--accent)) 22%, var(--bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent)) calc(18% + (var(--qa-progress) * 16%)),
+    var(--bg-surface)
+  );
 }
 
 .task-card-copy-actions .subtask-progress-badge {

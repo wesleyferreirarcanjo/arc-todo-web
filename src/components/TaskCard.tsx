@@ -710,9 +710,18 @@ export function TaskCard({
     resolvedSubtasks.length === 0 &&
     availableParents.length > 0;
   const canAddSubtask = Boolean(onCreateSubtask) && !isSubtask;
+  const qaProgress =
+    task.status === 'dev_test' || task.status === 'qa_test'
+      ? checklistProgress
+      : null;
+  const qaProgressRatio =
+    qaProgress && qaProgress.total > 0
+      ? Math.min(Math.max(qaProgress.done / qaProgress.total, 0), 1)
+      : 0;
 
   const cardStyle = {
     ...(accentColor ? ({ '--entity-accent': accentColor } as CSSProperties) : null),
+    ...(qaProgress ? ({ '--qa-progress': qaProgressRatio } as CSSProperties) : null),
     ...dragStyle,
     ...(swipeOffset
       ? {
@@ -724,10 +733,6 @@ export function TaskCard({
 
   const showAsDragging = isDragging || isDndDragging;
   const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
-  const qaProgress =
-    task.status === 'dev_test' || task.status === 'qa_test'
-      ? checklistProgress
-      : null;
   const showSmartCopy =
     isSmartCopyStatus(task.status) &&
     Boolean(resolvedOrganizationId && resolvedProjectId);
@@ -854,7 +859,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${nestedSubtasks.length > 0 ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${qaProgress ? ' is-qa-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -1032,6 +1037,40 @@ export function TaskCard({
           )}
         </motion.div>
 
+        {(!isSubtask || isDetachedSubtask) && chatContextTask ? (
+          <span className="task-card-tooltip" role="tooltip">
+            Ctrl+click insert reference · Shift+click remove
+          </span>
+        ) : null}
+
+        {!compact && !isSubtask && nestedSubtasks.length > 0 && (
+          <div className="task-subtasks" onPointerDown={stopCardPointer} onClick={stopCardPointer}>
+            {nestedSubtasks.map((subtask) => (
+              <TaskCard
+                key={subtask.id}
+                task={subtask}
+                isSubtask
+                parentDisplayId={task.displayId}
+                organizationId={organizationId}
+                projectId={projectId}
+                organizationName={organizationName}
+                projectName={projectName}
+                accentColor={accentColor}
+                compact={false}
+                draggable={isDraggable}
+                isDragging={draggingTaskId === subtask.id || draggingTaskId === task.id}
+                draggingTaskId={draggingTaskId}
+                chatContextScope={chatContextScope}
+                parentCandidates={parentCandidates}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+                onCreateSubtask={onCreateSubtask}
+                onSetParent={onSetParent}
+              />
+            ))}
+          </div>
+        )}
+
         {showCornerActions && (
           <div
             className="task-card-copy-actions"
@@ -1081,40 +1120,6 @@ export function TaskCard({
                 {subtaskProgress.done}/{subtaskProgress.total} done
               </span>
             )}
-          </div>
-        )}
-
-        {(!isSubtask || isDetachedSubtask) && chatContextTask ? (
-          <span className="task-card-tooltip" role="tooltip">
-            Ctrl+click insert reference · Shift+click remove
-          </span>
-        ) : null}
-
-        {!compact && !isSubtask && nestedSubtasks.length > 0 && (
-          <div className="task-subtasks" onPointerDown={stopCardPointer} onClick={stopCardPointer}>
-            {nestedSubtasks.map((subtask) => (
-              <TaskCard
-                key={subtask.id}
-                task={subtask}
-                isSubtask
-                parentDisplayId={task.displayId}
-                organizationId={organizationId}
-                projectId={projectId}
-                organizationName={organizationName}
-                projectName={projectName}
-                accentColor={accentColor}
-                compact={false}
-                draggable={isDraggable}
-                isDragging={draggingTaskId === subtask.id || draggingTaskId === task.id}
-                draggingTaskId={draggingTaskId}
-                chatContextScope={chatContextScope}
-                parentCandidates={parentCandidates}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                onCreateSubtask={onCreateSubtask}
-                onSetParent={onSetParent}
-              />
-            ))}
           </div>
         )}
 
