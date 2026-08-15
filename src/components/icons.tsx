@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Bell,
   ChatCircle,
-  Check,
   ClipboardText,
   Copy,
   DotsThreeVertical,
@@ -264,4 +263,21 @@ export const TrashIcon = phosphor(Trash);
 export const CopyIcon = phosphor(Copy);
 export const EyeIcon = phosphor(Eye);
 export const QaBoardIcon = phosphor(ClipboardText);
-export const CheckIcon = phosphor(Check);
+
+/** Destination glyph for the Done corner hold — thick stroke, no duotone square. */
+export function CheckIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.85"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5.1 12.6 9.7 17.3 19.1 6.8" />
+    </svg>
+  );
+}

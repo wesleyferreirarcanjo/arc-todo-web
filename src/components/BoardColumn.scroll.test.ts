@@ -80,4 +80,15 @@ describe('board columns never paint a scrollbar', () => {
     );
     expect(done).toContain('overflow: visible');
   });
+
+  it('keeps the Done check circular with light inside the icon', () => {
+    const hold = ruleBlock('.task-card-done-hold');
+    expect(hold).toContain('border-radius: 50%');
+    expect(css).toContain('border-radius: 50%');
+    expect(css).toContain('width: 3.35rem');
+    expect(css).not.toContain('width: 9.2rem');
+    expect(ruleBlock('.task-card-done-hold .task-card-qa-progress-well')).toContain(
+      'var(--entity-accent, var(--accent)) 62%',
+    );
+  });
 });

@@ -153,6 +153,9 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByRole('button', { name: /Ver checklist/ })).not.toBeInTheDocument();
     expect(document.querySelector('.task-card-done-hold')).not.toBeNull();
     expect(document.querySelector('.task-card')).toHaveClass('is-done-stage');
+    const check = document.querySelector('.task-card-done-hold .task-card-action-icon');
+    expect(check?.getAttribute('stroke-width')).toBe('2.85');
+    expect(check?.querySelector('rect')).toBeNull();
   });
 
   it('shows a checklist progress circle without QA x/x on Dev Test', () => {
@@ -437,8 +440,36 @@ describe('TaskCard scan-first actions', () => {
     expect(doneCard).toHaveClass('is-done-stage');
     expect(doneCard).not.toHaveClass('is-qa-stage');
     expect(container.querySelector('.task-card-done-hold')).not.toBeNull();
-    const doneSpread = meanDistance(lightPositions(container), 97, 94);
-    expect(doneSpread).toBeLessThan(qaSpread);
-    expect(doneSpread).toBeLessThan(8);
+    const doneSpread = meanDistance(lightPositions(container), 96, 92);
+    expect(doneSpread).toBeGreaterThan(qaSpread);
+    expect(doneSpread).toBeGreaterThan(8);
+    expect(doneSpread).toBeLessThan(todoSpread);
+    expect(
+      lightPositions(container).some((point) => Math.hypot(point.x - 96, point.y - 92) > 12),
+    ).toBe(true);
+  });
+
+  it('scatters hashed lights across a standalone To Do card', () => {
+    const { container } = render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({ status: 'todo' })}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const card = container.querySelector('.task-card.has-scatter-lights') as HTMLElement | null;
+    expect(card).not.toBeNull();
+    expect(card).toHaveClass('is-todo-stage');
+    expect(card).not.toHaveClass('has-subtasks');
+    expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
+    expect(meanDistance(lightPositions(container), 88, 32)).toBeGreaterThan(20);
   });
 });

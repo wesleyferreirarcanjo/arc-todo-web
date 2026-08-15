@@ -115,10 +115,10 @@ const SCATTER_STAGE = {
     bounceSpread: 0.12,
   },
   done: {
-    focusX: 97,
-    focusY: 94,
-    spread: 0.03,
-    bounceSpread: 0.08,
+    focusX: 96,
+    focusY: 92,
+    spread: 0.38,
+    bounceSpread: 0.3,
   },
 } as const;
 
@@ -135,8 +135,16 @@ function clusterToward(
   };
 }
 
-function scatterLightsFromId(id: string, stage: ScatterStage) {
-  const { focusX, focusY, spread } = SCATTER_STAGE[stage];
+function scatterLightsFromId(
+  id: string,
+  stage: ScatterStage,
+  options: { loose?: boolean } = {},
+) {
+  const preset = SCATTER_STAGE[stage];
+  const loose = Boolean(options.loose);
+  const focusX = loose ? 50 : preset.focusX;
+  const focusY = loose ? 48 : preset.focusY;
+  const spread = loose ? 0.94 : preset.spread;
   let seed = hashString(id);
   const next = () => {
     const step = mulberryNext(seed);
@@ -974,18 +982,20 @@ export function TaskCard({
     if (showDoneHold) {
       return 'done';
     }
-    if (
-      showSubtaskSection &&
-      (task.status === 'todo' || task.status === 'in_progress')
-    ) {
+    if (task.status === 'todo' || task.status === 'in_progress') {
       return task.status;
     }
     return null;
   })();
   const showScatterLights = scatterStage != null;
+  const scatterLoose =
+    !showSubtaskSection && (scatterStage === 'todo' || scatterStage === 'in_progress');
   const scatterLights = useMemo(
-    () => (scatterStage ? scatterLightsFromId(task.id, scatterStage) : []),
-    [scatterStage, task.id],
+    () =>
+      scatterStage
+        ? scatterLightsFromId(task.id, scatterStage, { loose: scatterLoose })
+        : [],
+    [scatterLoose, scatterStage, task.id],
   );
 
   const taskMenuItems = (
