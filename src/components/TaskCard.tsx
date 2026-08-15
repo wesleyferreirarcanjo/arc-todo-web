@@ -9,13 +9,11 @@ import { mergeSubtaskProgress, listParentCandidates, splitSubtasksByParentStatus
 import {
   buildTaskMetadataInput,
   codingMetadataFormFromTask,
-  formatTaskCategoryLabel,
   type CodingMetadataFormState,
 } from '../lib/tasks/taskCategory';
 import {
   buildTaskDescriptionInput,
   taskDescriptionFormFromTask,
-  taskDescriptionFieldsFromTask,
   type TaskDescriptionFormState,
 } from '../lib/tasks/taskDescriptions';
 import {
@@ -25,7 +23,6 @@ import {
 } from '../lib/tasks/taskQaChecklist';
 import { getAdjacentStatus } from '../lib/tasks/adjacentStatus';
 import {
-  formatTaskStatusLabel,
   isSmartCopyStatus,
   TASK_STATUS_OPTIONS,
 } from '../lib/tasks/taskStatus';
@@ -46,7 +43,6 @@ import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFor
 import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
-import { MarkdownContent } from './MarkdownContent';
 import { UndoToast } from './UndoToast';
 import {
   CopyIcon,
@@ -691,7 +687,6 @@ export function TaskCard({
     showSmartCopy && (!isSubtask || isDetachedSubtask);
   const inSmartCopyBasket = isInSmartCopyBasket(task.id);
   const showCopyActions =
-    !compact &&
     (!isSubtask || isDetachedSubtask) &&
     (Boolean(qaProgress) || showSmartCopy);
 
@@ -882,15 +877,6 @@ export function TaskCard({
                   {bugBadgeLabel}
                 </span>
               )}
-              <span className={`category-badge category-${task.category ?? 'other'}`}>
-                {formatTaskCategoryLabel(task.category ?? 'other')}
-              </span>
-              <span className={`criticity-badge criticity-${task.criticity}`}>
-                {task.criticity}
-              </span>
-              <span className={`task-card-status-badge task-list-status-${task.status}`}>
-                {formatTaskStatusLabel(task.status)}
-              </span>
               {subtaskProgress && (
                 <span
                   className="subtask-progress-badge"
@@ -1007,37 +993,9 @@ export function TaskCard({
             </p>
           )}
 
-          {(() => {
-            const preview = taskDescriptionFieldsFromTask(task).businessDescription;
-            return preview && !compact && (isDetachedSubtask || !isSubtask) ? (
-              <MarkdownContent
-                className="task-description"
-                variant="preview"
-                content={preview}
-              />
-            ) : null;
-          })()}
-
-          {!compact && (!isSubtask || isDetachedSubtask) && (
+          {!compact && (!isSubtask || isDetachedSubtask) && task.dueDate && (
             <div className="task-meta">
-              {task.category === 'coding' &&
-                typeof task.metadata?.repositoryUrl === 'string' &&
-                task.metadata.repositoryUrl && (
-                  <span className="task-meta-link">
-                    Repo:{' '}
-                    <a
-                      href={task.metadata.repositoryUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={stopCardPointer}
-                    >
-                      {task.metadata.repositoryUrl}
-                    </a>
-                  </span>
-                )}
-              {task.dueDate && (
-                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-              )}
+              <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             </div>
           )}
         </motion.div>
@@ -1056,23 +1014,20 @@ export function TaskCard({
             {qaProgress && canOpenDetails && (
               <button
                 type="button"
-                className="task-card-action-btn task-card-qa-board-btn"
-                aria-label="Ver checklist"
+                className="task-card-next-action"
                 onClick={(event) => {
                   stopCardPointer(event);
                   setQaChecklistOpen(true);
                 }}
               >
                 <QaBoardIcon className="task-card-action-icon" />
-                <span className="task-card-action-tooltip" role="tooltip">
-                  Ver checklist
-                </span>
+                Ver checklist
               </button>
             )}
             {showSmartCopy && (
               <button
                 type="button"
-                className="task-card-action-btn task-card-copy-btn task-card-smart-copy-btn"
+                className="task-card-next-action"
                 aria-label={smartCopyTooltip}
                 onClick={(event) => {
                   stopCardPointer(event);
@@ -1080,9 +1035,7 @@ export function TaskCard({
                 }}
               >
                 <CopyIcon className="task-card-action-icon" />
-                <span className="task-card-action-tooltip" role="tooltip">
-                  {smartCopyTooltip}
-                </span>
+                {smartCopyTooltip}
               </button>
             )}
           </div>
@@ -1414,28 +1367,11 @@ export function TaskCardOverlay({
             </span>
           )}
         </div>
-        <span className={`criticity-badge criticity-${task.criticity}`}>
-          {task.criticity}
-        </span>
       </div>
 
       <div className="task-card-header">
         <h3>{task.title}</h3>
-        <span className={`task-card-status-badge task-list-status-${task.status}`}>
-          {formatTaskStatusLabel(task.status)}
-        </span>
       </div>
-
-      {(() => {
-        const preview = taskDescriptionFieldsFromTask(task).businessDescription;
-        return preview && !compact ? (
-          <MarkdownContent
-            className="task-description"
-            variant="preview"
-            content={preview}
-          />
-        ) : null;
-      })()}
     </article>
   );
 }

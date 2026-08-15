@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { createOrganization } from '../lib/api/organizations';
 import { OrganizationForm } from '../components/OrganizationForm';
 import { OrganizationList } from '../components/OrganizationList';
+import { OrganizationsIcon } from '../components/icons';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreateOrganizationInput } from '../types/organization';
@@ -61,21 +62,18 @@ export function OrganizationsPage() {
         )}
 
         {loadingOrganizations && (
-          <div className="organizations-state-card" role="status">
-            <p className="organizations-state-title">Loading organizations...</p>
-            <p className="organizations-state-detail">
-              Fetching your workspaces.
-            </p>
-          </div>
+          <p className="status-message">Loading organizations...</p>
         )}
 
         {!loadingOrganizations && organizationCount === 0 && (
-          <div className="organizations-state-card">
-            <p className="organizations-state-title">No organizations yet</p>
-            <p className="organizations-state-detail">
+          <div className="diagrams-empty">
+            <span className="hub-empty-glyph" aria-hidden="true">
+              <OrganizationsIcon className="arc-icon-empty" />
+            </span>
+            <p className="status-message">
               {isAdmin
-                ? 'Create your first workspace above to group projects, people, and knowledge.'
-                : 'An admin can assign you to projects in an organization.'}
+                ? 'No organizations yet. Create your first workspace above to group projects, people, and knowledge.'
+                : 'No organizations yet. An admin can assign you to projects in an organization.'}
             </p>
           </div>
         )}

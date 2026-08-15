@@ -17,6 +17,7 @@ import {
 } from '../lib/api/todos';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ErrorAlert } from './ErrorAlert';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 import { TaskQaSection } from './TaskQaSection';
@@ -38,24 +39,6 @@ function TaskDescriptionView({
       variant="full"
       content={content}
     />
-  );
-}
-
-function CopyIcon({ className = 'task-copy-icon' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
   );
 }
 
@@ -138,6 +121,7 @@ export function TaskDetailsModal({
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [smartCopyState, setSmartCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [planCodeOpen, setPlanCodeOpen] = useState(false);
+  const [businessExpanded, setBusinessExpanded] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [savingTitle, setSavingTitle] = useState(false);
@@ -389,91 +373,8 @@ export function TaskDetailsModal({
       className="task-details-modal"
     >
       <div className="task-details-layout">
-        {(organizationName || projectName) && (
-          <div className="task-details-context">
-            {organizationName && (
-              <span className="task-badge task-badge-org">{organizationName}</span>
-            )}
-            {projectName && (
-              <span className="task-badge task-badge-project">{projectName}</span>
-            )}
-          </div>
-        )}
-
-        <div className="task-details-header">
-          <div className="task-details-badges">
-            <span className={`category-badge category-${task.category ?? 'other'}`}>
-              {formatTaskCategoryLabel(task.category ?? 'other')}
-            </span>
-            <span className={`criticity-badge criticity-${task.criticity}`}>
-              {task.criticity}
-            </span>
-            <span className="task-details-status">
-              {formatTaskStatusLabel(task.status)}
-            </span>
-            {bugBadgeLabel && (
-              <span
-                className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
-              >
-                {bugBadgeLabel}
-              </span>
-            )}
-          </div>
-          <div className="task-details-actions">
-            <div className="task-details-copy-group">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => void handleCopy()}
-              >
-                Copy title + description
-              </button>
-              {isSmartCopyStatus(task.status) && (
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm task-details-smart-copy-btn"
-                  aria-label="Smart copy for AI planning"
-                  title="Smart copy for AI planning"
-                  onClick={() => void handleSmartCopy()}
-                >
-                  <CopyIcon />
-                </button>
-              )}
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                setEditingTitle(true);
-                setTitleDraft(task.title);
-              }}
-              disabled={editingTitle}
-            >
-              Rename
-            </button>
-            {onEdit && (
-              <button type="button" className="btn btn-secondary btn-sm" onClick={onEdit}>
-                Edit
-              </button>
-            )}
-          </div>
-        </div>
-
-        {smartCopyState === 'copied' && (
-          <p className="task-details-copy-status">Smart copy ready — paste into Cursor.</p>
-        )}
-        {smartCopyState === 'error' && (
-          <p className="task-details-copy-status task-details-copy-status-error">
-            Smart copy failed.
-          </p>
-        )}
-        {copyState === 'copied' && (
-          <p className="task-details-copy-status">Copied to clipboard.</p>
-        )}
-        {copyState === 'error' && (
-          <p className="task-details-copy-status task-details-copy-status-error">
-            Clipboard copy failed.
-          </p>
+        {task.displayId && (
+          <span className="task-display-id">{task.displayId}</span>
         )}
 
         {editingTitle ? (
@@ -515,29 +416,111 @@ export function TaskDetailsModal({
           <h3 className="task-details-title">{task.title}</h3>
         )}
 
+        {(organizationName || projectName) && (
+          <div className="task-details-context">
+            {organizationName && (
+              <span className="task-badge task-badge-org">{organizationName}</span>
+            )}
+            {projectName && (
+              <span className="task-badge task-badge-project">{projectName}</span>
+            )}
+          </div>
+        )}
+
+        <div className="task-details-header">
+          <div className="task-details-badges">
+            <span className="task-details-status">
+              {formatTaskStatusLabel(task.status)}
+            </span>
+            {bugBadgeLabel && (
+              <span
+                className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
+              >
+                {bugBadgeLabel}
+              </span>
+            )}
+          </div>
+          <div className="task-details-actions">
+            {isSmartCopyStatus(task.status) && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => void handleSmartCopy()}
+              >
+                Smart copy
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setEditingTitle(true);
+                setTitleDraft(task.title);
+              }}
+              disabled={editingTitle}
+            >
+              Rename
+            </button>
+            {onEdit && (
+              <button type="button" className="btn btn-secondary btn-sm" onClick={onEdit}>
+                Edit
+              </button>
+            )}
+          </div>
+        </div>
+
+        {smartCopyState === 'copied' && (
+          <p className="task-details-copy-status">Smart copy ready — paste into Cursor.</p>
+        )}
+        {smartCopyState === 'error' && (
+          <p className="task-details-copy-status task-details-copy-status-error">
+            Smart copy failed.
+          </p>
+        )}
+        {copyState === 'copied' && (
+          <p className="task-details-copy-status">Copied to clipboard.</p>
+        )}
+        {copyState === 'error' && (
+          <p className="task-details-copy-status task-details-copy-status-error">
+            Clipboard copy failed.
+          </p>
+        )}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
+
         {parentDisplayId && (
           <p className="task-details-parent">Subtask of {parentDisplayId}</p>
         )}
 
         {task.subtaskProgress && task.subtaskProgress.total > 0 && (
-          <>
-            <p className="task-details-subtask-progress">
-              Subtasks: {task.subtaskProgress.done}/{task.subtaskProgress.total}{' '}
-              done
-            </p>
-            <p className="task-details-muted task-details-parent-qa-hint">
-              Acceptance QA (Ver checklist) covers this whole outcome — not each
-              subtask.
-            </p>
-          </>
+          <p className="task-details-subtask-progress">
+            Subtasks: {task.subtaskProgress.done}/{task.subtaskProgress.total}{' '}
+            done
+          </p>
         )}
 
         <section className="task-details-section">
           <h4>Business description</h4>
-          <TaskDescriptionView
-            content={descriptionFields.businessDescription}
-            emptyLabel="No business description"
-          />
+          <div
+            className={
+              businessExpanded
+                ? 'task-details-business'
+                : 'task-details-business is-clamped'
+            }
+          >
+            <TaskDescriptionView
+              content={descriptionFields.businessDescription}
+              emptyLabel="No business description"
+            />
+          </div>
+          {descriptionFields.businessDescription && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setBusinessExpanded((open) => !open)}
+            >
+              {businessExpanded ? 'Show less' : 'Show more'}
+            </button>
+          )}
         </section>
 
         {hasPlanCode && (
@@ -560,109 +543,6 @@ export function TaskDetailsModal({
           onTaskChange={onTaskSynced}
           onEvidenceImagePastedFromComment={() => setCommentPasteCue(true)}
         />
-
-        <dl className="task-details-meta-grid">
-          <div>
-            <dt>Category</dt>
-            <dd>{formatTaskCategoryLabel(task.category ?? 'other')}</dd>
-          </div>
-          <div>
-            <dt>Due date</dt>
-            <dd>{task.dueDate ? formatDisplayDate(task.dueDate) : 'No due date'}</dd>
-          </div>
-          <div>
-            <dt>Created</dt>
-            <dd>{formatDisplayDate(task.createdAt)}</dd>
-          </div>
-          <div>
-            <dt>Updated</dt>
-            <dd>{formatDisplayDate(task.updatedAt)}</dd>
-          </div>
-        </dl>
-
-        {task.category === 'coding' && (
-          <section className="task-details-section">
-            <h4>Code metadata</h4>
-            <dl className="task-details-meta-grid">
-              {(() => {
-                const coding = (task.metadata ?? {}) as CodingTaskMetadata;
-                const commits = coding.commits?.length
-                  ? coding.commits.join(', ')
-                  : '—';
-                return (
-                  <>
-                    <div>
-                      <dt>Repository</dt>
-                      <dd>
-                        {coding.repositoryUrl ? (
-                          <a href={coding.repositoryUrl} target="_blank" rel="noreferrer">
-                            {coding.repositoryUrl}
-                          </a>
-                        ) : (
-                          '—'
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Branch</dt>
-                      <dd>{coding.branch || '—'}</dd>
-                    </div>
-                    <div>
-                      <dt>Commits</dt>
-                      <dd>{commits}</dd>
-                    </div>
-                    <div>
-                      <dt>Pull request</dt>
-                      <dd>
-                        {coding.pullRequestUrl ? (
-                          <a href={coding.pullRequestUrl} target="_blank" rel="noreferrer">
-                            {coding.pullRequestUrl}
-                          </a>
-                        ) : (
-                          '—'
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Deployment</dt>
-                      <dd>
-                        {coding.deploymentUrl ? (
-                          <a href={coding.deploymentUrl} target="_blank" rel="noreferrer">
-                            {coding.deploymentUrl}
-                          </a>
-                        ) : (
-                          '—'
-                        )}
-                      </dd>
-                    </div>
-                    <div className="task-details-meta-wide">
-                      <dt>Implementation notes</dt>
-                      <dd>{coding.implementationNotes?.trim() || '—'}</dd>
-                    </div>
-                  </>
-                );
-              })()}
-            </dl>
-          </section>
-        )}
-
-        {subtasks.length > 0 && (
-          <section className="task-details-section">
-            <h4>Subtasks</h4>
-            <ul className="task-details-subtask-list">
-              {subtasks.map((subtask) => (
-                <li key={subtask.id}>
-                  <span>{subtask.title}</span>
-                  <span className="task-details-status">
-                    {formatTaskStatusLabel(subtask.status)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {error && <p className="task-details-error">{error}</p>}
 
         <section className="task-details-section">
           <h4>Comments</h4>
@@ -773,6 +653,116 @@ export function TaskDetailsModal({
           </form>
         </section>
 
+        <details className="task-details-more">
+          <summary>More details</summary>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => void handleCopy()}
+          >
+            Copy title + description
+          </button>
+          <dl className="task-details-meta-grid">
+            <div>
+              <dt>Category</dt>
+              <dd>{formatTaskCategoryLabel(task.category ?? 'other')}</dd>
+            </div>
+            <div>
+              <dt>Due date</dt>
+              <dd>{task.dueDate ? formatDisplayDate(task.dueDate) : 'No due date'}</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>{formatDisplayDate(task.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>Updated</dt>
+              <dd>{formatDisplayDate(task.updatedAt)}</dd>
+            </div>
+          </dl>
+
+          {task.category === 'coding' && (
+            <section className="task-details-section">
+              <h4>Code metadata</h4>
+              <dl className="task-details-meta-grid">
+                {(() => {
+                  const coding = (task.metadata ?? {}) as CodingTaskMetadata;
+                  const commits = coding.commits?.length
+                    ? coding.commits.join(', ')
+                    : '—';
+                  return (
+                    <>
+                      <div>
+                        <dt>Repository</dt>
+                        <dd>
+                          {coding.repositoryUrl ? (
+                            <a href={coding.repositoryUrl} target="_blank" rel="noreferrer">
+                              {coding.repositoryUrl}
+                            </a>
+                          ) : (
+                            '—'
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Branch</dt>
+                        <dd>{coding.branch || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt>Commits</dt>
+                        <dd>{commits}</dd>
+                      </div>
+                      <div>
+                        <dt>Pull request</dt>
+                        <dd>
+                          {coding.pullRequestUrl ? (
+                            <a href={coding.pullRequestUrl} target="_blank" rel="noreferrer">
+                              {coding.pullRequestUrl}
+                            </a>
+                          ) : (
+                            '—'
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Deployment</dt>
+                        <dd>
+                          {coding.deploymentUrl ? (
+                            <a href={coding.deploymentUrl} target="_blank" rel="noreferrer">
+                              {coding.deploymentUrl}
+                            </a>
+                          ) : (
+                            '—'
+                          )}
+                        </dd>
+                      </div>
+                      <div className="task-details-meta-wide">
+                        <dt>Implementation notes</dt>
+                        <dd>{coding.implementationNotes?.trim() || '—'}</dd>
+                      </div>
+                    </>
+                  );
+                })()}
+              </dl>
+            </section>
+          )}
+
+          {subtasks.length > 0 && (
+            <section className="task-details-section">
+              <h4>Subtasks</h4>
+              <ul className="task-details-subtask-list">
+                {subtasks.map((subtask) => (
+                  <li key={subtask.id}>
+                    <span>{subtask.title}</span>
+                    <span className="task-details-status">
+                      {formatTaskStatusLabel(subtask.status)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
         <section className="task-details-section">
           <h4>Change history</h4>
           {loading ? (
@@ -807,6 +797,7 @@ export function TaskDetailsModal({
               );
             })()}
         </section>
+        </details>
       </div>
 
       {hasPlanCode && (

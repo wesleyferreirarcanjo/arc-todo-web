@@ -5,6 +5,7 @@ import { createProject } from '../lib/api/projects';
 import { fetchOrganizationKnowledgeAccess } from '../lib/api/knowledge';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
+import { OrganizationsIcon } from '../components/icons';
 import {
   entityAccentStyle,
   useWorkspaceAccent,
@@ -104,11 +105,16 @@ export function OrganizationProjectsPage() {
       {loadingProjects && <p className="status-message">Loading projects...</p>}
 
       {!loadingProjects && projects.length === 0 && (
-        <p className="status-message">
-          {isAdmin
-            ? 'No projects yet. Create your first one above.'
-            : 'No projects assigned in this organization yet.'}
-        </p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <OrganizationsIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            {isAdmin
+              ? 'No projects yet. Create your first one above.'
+              : 'No projects assigned in this organization yet.'}
+          </p>
+        </div>
       )}
 
       {!loadingProjects && projects.length > 0 && (

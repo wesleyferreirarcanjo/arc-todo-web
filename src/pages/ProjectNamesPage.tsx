@@ -195,7 +195,9 @@ export function ProjectNamesPage() {
           <span className="hub-empty-glyph" aria-hidden="true">
             <NamesIcon className="arc-icon-empty" />
           </span>
-          <p className="status-message">No name sessions yet.</p>
+          <p className="status-message">
+            No name sessions yet. Create the first working name for this project.
+          </p>
           <button
             type="button"
             className="btn btn-primary"
@@ -235,6 +237,19 @@ export function ProjectNamesPage() {
               ]}
             />
           </label>
+        </div>
+      )}
+
+      {!loading && !error && sessions.length > 0 && visible.length === 0 && (
+        <div className="diagrams-empty">
+          <p className="status-message">No sessions match these filters.</p>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setSearchQuery('')}
+          >
+            Clear filters
+          </button>
         </div>
       )}
 

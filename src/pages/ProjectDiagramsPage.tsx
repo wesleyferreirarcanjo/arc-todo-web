@@ -314,7 +314,16 @@ export function ProjectDiagramsPage() {
       )}
 
       {!loading && !error && canvasDiagrams.length > 0 && visibleDiagrams.length === 0 && (
-        <p className="status-message">No diagrams match "{searchQuery}".</p>
+        <div className="diagrams-empty">
+          <p className="status-message">No diagrams match "{searchQuery}".</p>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setSearchQuery('')}
+          >
+            Clear filters
+          </button>
+        </div>
       )}
 
       {!loading && !error && visibleDiagrams.length > 0 && (

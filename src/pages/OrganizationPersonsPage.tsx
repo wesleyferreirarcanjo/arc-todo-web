@@ -5,6 +5,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { createPerson, fetchPersons } from '../lib/api/persons';
 import { PersonForm } from '../components/PersonForm';
 import { PersonList } from '../components/PersonList';
+import { PeopleIcon } from '../components/icons';
 import {
   entityAccentStyle,
   useWorkspaceAccent,
@@ -74,9 +75,14 @@ export function OrganizationPersonsPage() {
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && persons.length === 0 && (
-        <p className="status-message">
-          No people yet. Add your first person above.
-        </p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <PeopleIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            No people yet. Add your first person above.
+          </p>
+        </div>
       )}
 
       {!loading && !error && persons.length > 0 && (

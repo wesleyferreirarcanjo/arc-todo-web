@@ -12,6 +12,7 @@ import {
 import { fetchGeneralPerson } from '../lib/api/persons';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
+import { KnowledgeIcon } from '../components/icons';
 import type {
   CreateKnowledgeInput,
   KnowledgeEntry,
@@ -108,9 +109,14 @@ export function GeneralPersonKnowledgePage() {
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && entries.length === 0 && (
-        <p className="status-message">
-          No person knowledge yet. Create your first entry above.
-        </p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <KnowledgeIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            No person knowledge yet. Create your first entry above.
+          </p>
+        </div>
       )}
 
       {!loading && !error && entries.length > 0 && (

@@ -2,6 +2,7 @@ import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchTaskHistory } from '../lib/api/todos';
 import type { Task, TaskHistoryEntry } from '../types/todo';
+import { ErrorAlert } from './ErrorAlert';
 import { Modal } from './Modal';
 
 interface TaskBugHistoryModalProps {
@@ -114,7 +115,7 @@ export function TaskBugHistoryModal({
       {loading ? (
         <p className="task-details-muted">Loading history...</p>
       ) : error ? (
-        <p className="task-details-error">{error}</p>
+        <ErrorAlert>{error}</ErrorAlert>
       ) : entries.length === 0 ? (
         <p className="task-details-muted">
           Nenhum evento de bug registrado para esta tarefa.

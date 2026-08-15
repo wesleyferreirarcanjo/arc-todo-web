@@ -18,6 +18,7 @@ import {
   parseQaChecklistDocument,
 } from '../lib/tasks/taskQaChecklist';
 import type { Task, TaskEvidence } from '../types/todo';
+import { ErrorAlert } from './ErrorAlert';
 import { Modal } from './Modal';
 import { TaskBugHistoryModal } from './TaskBugHistoryModal';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
@@ -428,27 +429,6 @@ export function TaskQaSection({
 
   return (
     <section className="task-details-section task-qa-section">
-      <div className="task-qa-header">
-        <h4>QA</h4>
-        {!isSubtask && checklistProgress && (
-          <span className="task-qa-progress-badge">
-            Checklist {checklistProgress.done}/{checklistProgress.total}
-          </span>
-        )}
-        {bugBadgeLabel && (
-          <span
-            className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
-          >
-            {bugBadgeLabel}
-          </span>
-        )}
-        {improvementTasks.length > 0 && (
-          <span className="task-improvement-badge">
-            Melhoria {improvementTasks.length}
-          </span>
-        )}
-      </div>
-
       {isSubtask ? (
         <p className="task-qa-parent-owned-notice">
           Acceptance QA (Ver checklist and evidence) lives on the parent{' '}
@@ -457,8 +437,13 @@ export function TaskQaSection({
         </p>
       ) : null}
 
-      <div className="task-qa-actions">
-        {!isSubtask && hasChecklistContent && (
+      {!isSubtask && hasChecklistContent && (
+        <div className="task-details-plan-code-actions">
+          {checklistProgress && (
+            <span className="task-qa-progress-badge">
+              QA {checklistProgress.done}/{checklistProgress.total}
+            </span>
+          )}
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -466,7 +451,27 @@ export function TaskQaSection({
           >
             Ver checklist
           </button>
-        )}
+        </div>
+      )}
+
+      <details className="task-details-more">
+        <summary>QA, bugs, and evidence</summary>
+        <div className="task-qa-header">
+          <h4>QA</h4>
+          {bugBadgeLabel && (
+            <span
+              className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
+            >
+              {bugBadgeLabel}
+            </span>
+          )}
+          {improvementTasks.length > 0 && (
+            <span className="task-improvement-badge">
+              Melhoria {improvementTasks.length}
+            </span>
+          )}
+        </div>
+        <div className="task-qa-actions">
         <button
           type="button"
           className="btn btn-secondary btn-sm"
@@ -711,7 +716,9 @@ export function TaskQaSection({
         </div>
       )}
 
-      {qaError && <p className="task-details-error">{qaError}</p>}
+      </details>
+
+      {qaError && <ErrorAlert>{qaError}</ErrorAlert>}
 
       <Modal
         open={Boolean(lightboxItem)}

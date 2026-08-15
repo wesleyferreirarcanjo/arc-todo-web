@@ -423,7 +423,20 @@ export function WireframesHubPage() {
           </div>
 
           {visibleItems.length === 0 ? (
-            <p className="status-message">No wireframes match these filters.</p>
+            <div className="diagrams-empty">
+              <p className="status-message">No wireframes match these filters.</p>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setOrgFilter('');
+                  setProjectFilter('');
+                  setSearchQuery('');
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
             <ul className="diagrams-grid diagrams-grid--wireframe">
               {visibleItems.map((item) => {

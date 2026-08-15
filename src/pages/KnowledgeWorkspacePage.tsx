@@ -276,10 +276,10 @@ export function KnowledgeWorkspacePage({
         <header className="page-header">
           <h2>Knowledge</h2>
         </header>
-        <div className="alert alert-error">
+        <ErrorAlert>
           You do not have access to this knowledge base. Ask an administrator
           to grant knowledge access.
-        </div>
+        </ErrorAlert>
       </div>
     );
   }
@@ -444,14 +444,25 @@ export function KnowledgeWorkspacePage({
 
       {!loading && !error && entries.length === 0 && (
         <div className="diagrams-empty">
-          <span className="hub-empty-glyph" aria-hidden="true">
-            <KnowledgeIcon className="arc-icon-empty" />
-          </span>
+          {!hasFilters && (
+            <span className="hub-empty-glyph" aria-hidden="true">
+              <KnowledgeIcon className="arc-icon-empty" />
+            </span>
+          )}
           <p className="status-message">
             {hasFilters
               ? 'No knowledge matches these filters.'
               : 'No knowledge yet. Use New knowledge to create your first entry.'}
           </p>
+          {hasFilters && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={clearFilters}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       )}
 

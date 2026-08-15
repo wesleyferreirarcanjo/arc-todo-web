@@ -13,6 +13,7 @@ import {
 import { fetchPerson } from '../lib/api/persons';
 import { KnowledgeForm } from '../components/KnowledgeForm';
 import { KnowledgeList } from '../components/KnowledgeList';
+import { KnowledgeIcon } from '../components/icons';
 import {
   entityAccentStyle,
   useWorkspaceAccent,
@@ -106,10 +107,10 @@ export function PersonKnowledgePage() {
   if (accessDenied) {
     return (
       <div className="page-shell">
-        <div className="alert alert-error">
+        <ErrorAlert>
           You do not have access to this knowledge base. Ask an administrator
           to grant knowledge access.
-        </div>
+        </ErrorAlert>
         <div className="page-links">
           <Link to={`/organizations/${orgId}/persons`} className="text-link">
             Back to people
@@ -146,9 +147,14 @@ export function PersonKnowledgePage() {
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && entries.length === 0 && (
-        <p className="status-message">
-          No person knowledge yet. Create your first entry above.
-        </p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <KnowledgeIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            No person knowledge yet. Create your first entry above.
+          </p>
+        </div>
       )}
 
       {!loading && !error && entries.length > 0 && (

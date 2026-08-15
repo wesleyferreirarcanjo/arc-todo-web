@@ -47,6 +47,7 @@ import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverl
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
+import { TasksIcon } from '../components/icons';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -729,13 +730,6 @@ export function AllTasksBoardPage() {
         />
       </MobileBoardFiltersOverlay>
 
-      {!projectFocus && organizationId && !projectId && (
-        <p className="status-message board-cycle-focus-hint">
-          Select a project to manage its weekly sprint cycle, close completed
-          work into sprint history, and start the next week.
-        </p>
-      )}
-
       {projectFocus && activeCycle && autoClosesOn && (
         <BoardCycleHeader
           cycle={activeCycle}
@@ -764,13 +758,20 @@ export function AllTasksBoardPage() {
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && topLevelCount === 0 && !listFiltersActive && (
-        <p className="status-message">
-          {projectFocus
-            ? 'No active board work in this weekly cycle.'
-            : hasFilters
-              ? 'No tasks match this focus.'
-              : 'No tasks yet. Use New task in the filters to create one.'}
-        </p>
+        <div className="diagrams-empty">
+          {!projectFocus && !hasFilters && (
+            <span className="hub-empty-glyph" aria-hidden="true">
+              <TasksIcon className="arc-icon-empty" />
+            </span>
+          )}
+          <p className="status-message">
+            {projectFocus
+              ? 'No active board work in this weekly cycle.'
+              : hasFilters
+                ? 'No tasks match this focus.'
+                : 'No tasks yet. Use New task in the filters to create one.'}
+          </p>
+        </div>
       )}
 
       {!loading && !error && topLevelCount > 0 && projectFocus && (

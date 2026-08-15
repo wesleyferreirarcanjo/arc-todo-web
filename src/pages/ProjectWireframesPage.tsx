@@ -330,7 +330,16 @@ export function ProjectWireframesPage() {
       )}
 
       {!loading && !error && wireframes.length > 0 && visibleWireframes.length === 0 && (
-        <p className="status-message">No wireframes match "{searchQuery}".</p>
+        <div className="diagrams-empty">
+          <p className="status-message">No wireframes match "{searchQuery}".</p>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setSearchQuery('')}
+          >
+            Clear filters
+          </button>
+        </div>
       )}
 
       {!loading && !error && visibleWireframes.length > 0 && (

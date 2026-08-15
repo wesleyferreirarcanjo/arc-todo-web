@@ -13,6 +13,7 @@ import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TaskBoard } from '../components/TaskBoard';
 import { TaskForm } from '../components/TaskForm';
+import { TasksIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
@@ -172,7 +173,12 @@ export function ProjectTasksPage() {
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       {!loading && !error && topLevelCount === 0 && (
-        <p className="status-message">No tasks yet. Create your first one above.</p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <TasksIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">No tasks yet. Create your first one above.</p>
+        </div>
       )}
 
       {!loading && !error && topLevelCount > 0 && (

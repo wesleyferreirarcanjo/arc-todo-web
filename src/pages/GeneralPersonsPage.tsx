@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { createGeneralPerson, fetchGeneralPersons } from '../lib/api/persons';
 import { PersonForm } from '../components/PersonForm';
 import { PersonList } from '../components/PersonList';
+import { PeopleIcon } from '../components/icons';
 import type { CreatePersonInput, Person } from '../types/person';
 
 export function GeneralPersonsPage() {
@@ -69,12 +70,7 @@ export function GeneralPersonsPage() {
           </p>
         </div>
 
-        {loading && (
-          <div className="people-state-card" role="status">
-            <p className="people-state-title">Loading people...</p>
-            <p className="people-state-detail">Fetching your personal contacts.</p>
-          </div>
-        )}
+        {loading && <p className="status-message">Loading people...</p>}
 
         {error && (
           <div className="alert alert-error" role="alert">
@@ -83,10 +79,13 @@ export function GeneralPersonsPage() {
         )}
 
         {!loading && !error && personCount === 0 && (
-          <div className="people-state-card">
-            <p className="people-state-title">No people yet</p>
-            <p className="people-state-detail">
-              Add your first person to keep contact details and profile knowledge easy to find.
+          <div className="diagrams-empty">
+            <span className="hub-empty-glyph" aria-hidden="true">
+              <PeopleIcon className="arc-icon-empty" />
+            </span>
+            <p className="status-message">
+              No people yet. Add your first person above to keep contact details
+              and profile knowledge easy to find.
             </p>
           </div>
         )}
