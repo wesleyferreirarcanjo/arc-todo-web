@@ -95,4 +95,25 @@ describe('BoardCycleHeader', () => {
     expect(screen.queryByRole('heading', { name: 'Weekly cycle' })).not.toBeInTheDocument();
     expect(screen.getByText('Weekly cycle')).toBeInTheDocument();
   });
+
+  it('renders dates and close action without chrome when embedded', () => {
+    mediaState.mobile = false;
+    render(
+      <BoardCycleHeader
+        cycle={cycle}
+        autoClosesOn="2026-08-16"
+        advancing={false}
+        onAdvance={() => undefined}
+        embedded
+      />,
+    );
+
+    expect(document.querySelector('details.board-cycle-header')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Weekly cycle' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Weekly cycle')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Close early and start next week' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/auto-closes/i)).toBeInTheDocument();
+  });
 });

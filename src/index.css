@@ -1176,35 +1176,30 @@ textarea:focus-visible {
   box-shadow: var(--shadow-soft);
 }
 
-.board-quick-filters-row {
-  width: 100%;
-  min-width: 0;
-}
-
-.board-filters-disclosure {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.board-filters-disclosure-summary {
-  cursor: pointer;
-  font-size: var(--type-section);
-  font-weight: 600;
-  line-height: 1.2;
-  min-height: 2.75rem;
+.board-chrome-toolbar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.65rem;
-  padding: 0 0.85rem;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0.15rem 0;
+  scrollbar-width: thin;
 }
 
-.board-filters-disclosure-count {
+.board-chrome-toggle {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.board-chrome-toggle.is-open {
+  border-color: var(--accent, var(--border-strong));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+}
+
+.board-chrome-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1219,12 +1214,42 @@ textarea:focus-visible {
   line-height: 1;
 }
 
-.board-filters-disclosure .board-filters {
-  border: 0;
-  box-shadow: none;
-  background: transparent;
-  border-radius: 0;
-  padding: 0 0.85rem 1rem;
+.board-chrome-toolbar .board-quick-filters {
+  flex: 1 1 auto;
+  width: auto;
+  padding: 0;
+}
+
+.board-chrome-toolbar + .board-filters {
+  margin-top: 0.5rem;
+}
+
+.board-chrome-panel {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.board-chrome-panel .board-cycle-header-body {
+  padding-bottom: 0;
+}
+
+.board-chrome-panel .board-cycle-dates {
+  margin: 0 0 0.35rem;
+}
+
+.board-chrome-panel .board-cycle-note:first-of-type {
+  margin-top: 0;
+}
+
+.board-chrome-panel .board-cycle-history-list {
+  margin-top: 0.75rem;
 }
 
 .board-filter-actions {
@@ -2681,6 +2706,7 @@ textarea {
   }
 
   .btn-sm,
+  .board-chrome-toggle,
   .board-view-toggle-btn,
   .modal-close,
   .quick-create-trigger,
@@ -7565,6 +7591,8 @@ textarea {
   }
 
   /* Collapsed by default; when open, cap height so cycle chrome cannot steal the tabbed column. */
+  .content-area.is-board-page .board-chrome-toolbar,
+  .content-area.is-board-page .board-chrome-panel,
   .content-area.is-board-page .board-cycle-header,
   .content-area.is-board-page .board-cycle-history {
     flex: 0 0 auto;
@@ -7582,6 +7610,7 @@ textarea {
     padding-top: 0.5rem;
   }
 
+  .content-area.is-board-page .board-chrome-panel,
   .content-area.is-board-page .board-cycle-header[open],
   .content-area.is-board-page .board-cycle-history[open] {
     display: flex;
@@ -7589,6 +7618,7 @@ textarea {
     max-height: 40vh;
   }
 
+  .content-area.is-board-page .board-chrome-panel,
   .content-area.is-board-page .board-cycle-header[open] .board-cycle-header-body,
   .content-area.is-board-page .board-cycle-history[open] .board-cycle-history-list {
     overflow-y: auto;

@@ -6,8 +6,10 @@ interface BoardCycleHeaderProps {
   autoClosesOn: string;
   advancing: boolean;
   onAdvance: () => void;
-  /** Closed `<details>` at every width (All tasks). Default keeps desktop expanded. */
+  /** Closed `<details>` at every width. Default keeps desktop expanded. */
   alwaysCollapsed?: boolean;
+  /** Body only — parent owns the toggle button (All tasks toolbar). */
+  embedded?: boolean;
 }
 
 function formatDate(date: string): string {
@@ -40,9 +42,10 @@ export function BoardCycleHeader({
   advancing,
   onAdvance,
   alwaysCollapsed = false,
+  embedded = false,
 }: BoardCycleHeaderProps) {
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
-  const collapse = alwaysCollapsed || isMobileBoard;
+  const collapse = !embedded && (alwaysCollapsed || isMobileBoard);
   const remainingDays = daysUntil(autoClosesOn);
   const dateRange = formatDateRange(cycle.startDate, cycle.endDate);
   const autoCloseCopy =
@@ -71,6 +74,16 @@ export function BoardCycleHeader({
       {advancing ? 'Closing cycle…' : 'Close early and start next week'}
     </button>
   );
+
+  if (embedded) {
+    return (
+      <div className="board-cycle-header-body">
+        <p className="board-cycle-dates">{dateRange}</p>
+        {notes}
+        {closeButton}
+      </div>
+    );
+  }
 
   if (collapse) {
     return (

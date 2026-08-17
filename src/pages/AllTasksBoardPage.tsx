@@ -2,7 +2,7 @@ import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { advanceBoardCycle, fetchCurrentBoardCycle } from '../lib/api/boardCycles';
+import { advanceBoardCycle, fetchBoardCycleHistory, fetchCurrentBoardCycle } from '../lib/api/boardCycles';
 import {
   createProjectTask,
   deleteProjectTask,
@@ -37,6 +37,7 @@ import {
 } from '../lib/storage/appStorage';
 import { getProjectColor } from '../lib/color/entityColor';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
+import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
 import { BoardFiltersControls } from '../components/BoardFiltersControls';
 import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
 import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
@@ -48,7 +49,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
-import type { BoardCycle } from '../types/boardCycle';
+import type { BoardCycle, BoardCycleHistoryResponse } from '../types/boardCycle';
 import type {
   CreateTaskInput,
   ListTasksQuery,
@@ -67,6 +68,15 @@ function removeMovingTaskId(current: Set<string>, taskId: string): Set<string> {
   const next = new Set(current);
   next.delete(taskId);
   return next;
+}
+
+type BoardChromePanel = 'filters' | 'cycle' | 'history' | null;
+
+function toggleBoardChrome(
+  current: BoardChromePanel,
+  next: Exclude<BoardChromePanel, null>,
+): BoardChromePanel {
+  return current === next ? null : next;
 }
 
 export function AllTasksBoardPage() {
@@ -91,6 +101,11 @@ export function AllTasksBoardPage() {
     () => getBoardTaskSort().direction,
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [chromePanel, setChromePanel] = useState<BoardChromePanel>(null);
+  const [cycleHistory, setCycleHistory] = useState<BoardCycleHistoryResponse>({
+    cycles: [],
+  });
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [quickFilter, setQuickFilter] = useState<BoardQuickFilter>(() => {
     const stored = getBoardQuickFilter();
     if (stored !== 'all') return stored;
@@ -160,6 +175,14 @@ export function AllTasksBoardPage() {
         setActiveCycle(current.cycle);
         setAutoClosesOn(current.autoClosesOn);
         setCycleTasks(current.tasks);
+        if (!silent) setHistoryLoading(true);
+        try {
+          setCycleHistory(await fetchBoardCycleHistory(organizationId, projectId));
+        } catch {
+          if (!silent) setCycleHistory({ cycles: [] });
+        } finally {
+          if (!silent) setHistoryLoading(false);
+        }
         if (silent) setError(null);
       } catch (err) {
         if (!silent) setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'the weekly cycle' }));
@@ -177,6 +200,13 @@ export function AllTasksBoardPage() {
       void loadProjectCycle();
       return;
     }
+    setActiveCycle(null);
+    setAutoClosesOn(null);
+    setCycleTasks([]);
+    setCycleHistory({ cycles: [] });
+    setChromePanel((current) =>
+      current === 'cycle' || current === 'history' ? null : current,
+    );
     void loadTasks();
   }, [projectFocus, loadProjectCycle, loadTasks]);
 
@@ -333,6 +363,12 @@ export function AllTasksBoardPage() {
       await loadTasks({ silent: true });
     }
   }, [projectFocus, loadProjectCycle, loadTasks]);
+
+  useEffect(() => {
+    if (isMobileShell && chromePanel === 'filters') {
+      setChromePanel(null);
+    }
+  }, [isMobileShell, chromePanel]);
 
   const openFilters = useCallback(() => {
     setFiltersOpen(true);
@@ -685,24 +721,89 @@ export function AllTasksBoardPage() {
       <header className="page-header">
         <h2>All tasks</h2>
       </header>
-      <div className="board-quick-filters-row">
+      <div className="board-chrome-toolbar">
+        {!isMobileShell ? (
+          <button
+            type="button"
+            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'filters' ? ' is-open' : ''}`}
+            aria-expanded={chromePanel === 'filters'}
+            aria-controls={chromePanel === 'filters' ? 'board-chrome-panel' : undefined}
+            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'filters'))}
+          >
+            Filters
+            {extraFilterCount > 0 ? (
+              <span className="board-chrome-count" aria-hidden="true">
+                {extraFilterCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
+        {projectFocus && activeCycle && autoClosesOn ? (
+          <button
+            type="button"
+            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'cycle' ? ' is-open' : ''}`}
+            aria-expanded={chromePanel === 'cycle'}
+            aria-controls={chromePanel === 'cycle' ? 'board-chrome-panel' : undefined}
+            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'cycle'))}
+          >
+            Weekly cycle
+          </button>
+        ) : null}
+        {projectFocus ? (
+          <button
+            type="button"
+            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'history' ? ' is-open' : ''}`}
+            aria-expanded={chromePanel === 'history'}
+            aria-controls={chromePanel === 'history' ? 'board-chrome-panel' : undefined}
+            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'history'))}
+          >
+            Sprint history
+          </button>
+        ) : null}
         <BoardQuickFilterChips
           value={quickFilter}
           onChange={handleQuickFilterChange}
         />
       </div>
-      {!isMobileShell ? (
-        <details className="board-filters-disclosure">
-          <summary className="board-filters-disclosure-summary">
-            Filters
-            {extraFilterCount > 0 ? (
-              <span className="board-filters-disclosure-count">{extraFilterCount}</span>
-            ) : null}
-          </summary>
-          <div className="board-filters board-filters-inline">
-            {renderFilterControls(true)}
-          </div>
-        </details>
+      {chromePanel === 'filters' && !isMobileShell ? (
+        <div
+          id="board-chrome-panel"
+          className="board-filters board-filters-inline"
+          role="region"
+          aria-label="Filters"
+        >
+          {renderFilterControls(true)}
+        </div>
+      ) : null}
+      {chromePanel === 'cycle' && projectFocus && activeCycle && autoClosesOn ? (
+        <div
+          id="board-chrome-panel"
+          className="board-chrome-panel"
+          role="region"
+          aria-label="Weekly cycle"
+        >
+          <BoardCycleHeader
+            cycle={activeCycle}
+            autoClosesOn={autoClosesOn}
+            advancing={advancing}
+            onAdvance={() => void handleAdvanceCycle()}
+            embedded
+          />
+        </div>
+      ) : null}
+      {chromePanel === 'history' && projectFocus ? (
+        <div
+          id="board-chrome-panel"
+          className="board-chrome-panel"
+          role="region"
+          aria-label="Sprint history"
+        >
+          <BoardCycleHistoryPanel
+            history={cycleHistory}
+            loading={historyLoading}
+            embedded
+          />
+        </div>
       ) : null}
 
       <MobileBoardFiltersOverlay
@@ -711,16 +812,6 @@ export function AllTasksBoardPage() {
       >
         {renderFilterControls(false)}
       </MobileBoardFiltersOverlay>
-
-      {projectFocus && activeCycle && autoClosesOn && (
-        <BoardCycleHeader
-          cycle={activeCycle}
-          autoClosesOn={autoClosesOn}
-          advancing={advancing}
-          onAdvance={() => void handleAdvanceCycle()}
-          alwaysCollapsed
-        />
-      )}
 
       {hiddenColumns.length > 0 && !loading && (
         <p className="status-message board-columns-hidden-hint" role="status">

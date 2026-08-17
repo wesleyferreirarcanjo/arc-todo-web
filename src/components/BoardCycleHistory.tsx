@@ -4,6 +4,8 @@ import type { BoardCycleHistoryResponse } from '../types/boardCycle';
 interface BoardCycleHistoryProps {
   history: BoardCycleHistoryResponse;
   loading: boolean;
+  /** Body only — parent owns the toggle button (All tasks toolbar). */
+  embedded?: boolean;
 }
 
 function formatDate(date: string): string {
@@ -72,9 +74,18 @@ function HistoryStatus({ loading }: { loading: boolean }) {
 export function BoardCycleHistoryPanel({
   history,
   loading,
+  embedded = false,
 }: BoardCycleHistoryProps) {
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
   const showStatus = loading || history.cycles.length === 0;
+
+  if (embedded) {
+    return showStatus ? (
+      <HistoryStatus loading={loading} />
+    ) : (
+      <HistoryEntries history={history} />
+    );
+  }
 
   if (isMobileBoard) {
     return (

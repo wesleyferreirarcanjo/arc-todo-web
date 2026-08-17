@@ -102,4 +102,14 @@ describe('BoardCycleHistoryPanel', () => {
     expect(disclosure).not.toHaveAttribute('open');
     expect(screen.getByText('Sprint history')).toBeInTheDocument();
   });
+
+  it('renders archived rows without chrome when embedded', () => {
+    mediaState.mobile = false;
+    render(<BoardCycleHistoryPanel history={history} loading={false} embedded />);
+
+    expect(document.querySelector('details.board-cycle-history')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Sprint history' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Sprint history')).not.toBeInTheDocument();
+    expect(screen.getByText('#arc-220')).toBeInTheDocument();
+  });
 });
