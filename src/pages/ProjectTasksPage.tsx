@@ -27,7 +27,7 @@ import type {
 export function ProjectTasksPage() {
   const { orgId, projectId } = useParams();
   const { isAdmin } = useAuth();
-  const { currentProject } = useWorkspace();
+  const { currentProject, currentOrganization } = useWorkspace();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +187,8 @@ export function ProjectTasksPage() {
           accentColor={projectAccent}
           organizationId={orgId}
           projectId={projectId}
+          organizationName={currentOrganization?.name}
+          projectName={currentProject?.name}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onCreateSubtask={handleCreateSubtask}

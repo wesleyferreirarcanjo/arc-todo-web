@@ -6,7 +6,8 @@ import { formatTaskCategoryLabel } from '../lib/tasks/taskCategory';
 import { taskDescriptionFieldsFromTask } from '../lib/tasks/taskDescriptions';
 import { formatTaskStatusLabel, isSmartCopyStatus } from '../lib/tasks/taskStatus';
 import { getTaskBugBadgeLabel } from '../lib/tasks/taskQaChecklist';
-import type { Task, TaskComment, TaskHistoryEntry } from '../types/todo';
+import { getProjectColor } from '../lib/color/entityColor';
+import type { Task, TaskComment, TaskHistoryEntry, TaskWithContext } from '../types/todo';
 import {
   createTaskComment,
   deleteTaskComment,
@@ -91,6 +92,43 @@ function formatHistoryValue(
   return value;
 }
 
+function isTaskWithContext(task: Task): task is TaskWithContext {
+  return 'organization' in task && 'project' in task;
+}
+
+function resolveTaskModalIdentity({
+  task,
+  projectId,
+  organizationName,
+  projectName,
+  accentColor,
+}: {
+  task: Task;
+  projectId: string;
+  organizationName?: string;
+  projectName?: string;
+  accentColor?: string;
+}): {
+  organizationName?: string;
+  projectName?: string;
+  accentColor: string;
+} {
+  const fromTask = isTaskWithContext(task)
+    ? {
+        organizationName: task.organization.name,
+        projectName: task.project.name,
+        accentColor: getProjectColor(task.project),
+      }
+    : {};
+
+  return {
+    organizationName: organizationName || fromTask.organizationName,
+    projectName: projectName || fromTask.projectName,
+    accentColor:
+      accentColor || fromTask.accentColor || getProjectColor({ id: projectId }),
+  };
+}
+
 function TaskModalIdentity({
   organizationName,
   projectName,
@@ -105,12 +143,14 @@ function TaskModalIdentity({
   return (
     <div className="modal-identity">
       <span className="sidebar-workspace-pip" aria-hidden="true" />
-      {organizationName ? (
-        <span className="task-badge">{organizationName}</span>
-      ) : null}
-      {projectName ? (
-        <span className="task-badge task-badge-project">{projectName}</span>
-      ) : null}
+      <span className="sidebar-workspace-copy">
+        {organizationName ? (
+          <span className="sidebar-workspace-org">{organizationName}</span>
+        ) : null}
+        {projectName ? (
+          <span className="sidebar-workspace-project">{projectName}</span>
+        ) : null}
+      </span>
     </div>
   );
 }
@@ -389,6 +429,13 @@ export function TaskDetailsModal({
   }
 
   const bugBadgeLabel = getTaskBugBadgeLabel(task);
+  const identity = resolveTaskModalIdentity({
+    task,
+    projectId,
+    organizationName,
+    projectName,
+    accentColor,
+  });
 
   return (
     <Modal
@@ -397,11 +444,11 @@ export function TaskDetailsModal({
       title="Task details"
       titleId={`task-details-modal-${task.id}`}
       className="task-details-modal"
-      accentColor={accentColor}
+      accentColor={identity.accentColor}
       eyebrow={
         <TaskModalIdentity
-          organizationName={organizationName}
-          projectName={projectName}
+          organizationName={identity.organizationName}
+          projectName={identity.projectName}
         />
       }
     >
@@ -562,7 +609,7 @@ export function TaskDetailsModal({
           organizationId={organizationId}
           projectId={projectId}
           parentDisplayId={parentDisplayId}
-          accentColor={accentColor}
+          accentColor={identity.accentColor}
           onTaskChange={onTaskSynced}
           onEvidenceImagePastedFromComment={() => setCommentPasteCue(true)}
         />
@@ -830,7 +877,7 @@ export function TaskDetailsModal({
           title="Plan / code description"
           titleId={`task-plan-code-modal-${task.id}`}
           className="task-plan-code-modal"
-          accentColor={accentColor}
+          accentColor={identity.accentColor}
         >
           <TaskDescriptionView
             content={descriptionFields.planCodeDescription}

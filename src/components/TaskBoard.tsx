@@ -33,6 +33,8 @@ interface TaskBoardProps {
   accentColor?: string;
   organizationId?: string;
   projectId?: string;
+  organizationName?: string;
+  projectName?: string;
   onUpdate: (id: string, input: Partial<UpdateTaskInput>, replaced?: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
@@ -64,6 +66,8 @@ function TaskBoardInner({
   accentColor,
   organizationId,
   projectId,
+  organizationName,
+  projectName,
   onUpdate,
   onDelete,
   onCreateSubtask,
@@ -194,6 +198,8 @@ function TaskBoardInner({
             subtasks={task.subtasks}
             organizationId={organizationId}
             projectId={projectId}
+            organizationName={organizationName}
+            projectName={projectName}
             accentColor={accentColor}
             compact={isCompact}
             draggable={cardDraggable}
@@ -223,6 +229,8 @@ function TaskBoardInner({
           parentDisplayId={item.parentDisplayId}
           organizationId={organizationId}
           projectId={projectId}
+          organizationName={organizationName}
+          projectName={projectName}
           accentColor={accentColor}
           compact={isCompact}
           draggable={cardDraggable}
@@ -323,6 +331,8 @@ function TaskBoardInner({
           {activeTask ? (
             <TaskCardOverlay
               task={activeTask}
+              organizationName={organizationName}
+              projectName={projectName}
               accentColor={accentColor}
               compact={focusMode && focusedStatus !== activeTask.status}
             />

@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Task } from '../types/todo';
+import type { Task, TaskWithContext } from '../types/todo';
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
@@ -102,5 +102,36 @@ describe('TaskDetailsModal summary-first order', () => {
     expect(
       project.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it('reads org and project names from the task when hosts omit identity props', () => {
+    const taskWithContext: TaskWithContext = {
+      ...task,
+      organization: { id: 'org-1', name: 'Arc Org', slug: 'arc-org' },
+      project: {
+        id: 'proj-1',
+        name: 'Frontend',
+        organizationId: 'org-1',
+        color: '#4a7c59',
+        acronym: 'frn',
+      },
+    };
+
+    render(
+      <TaskDetailsModal
+        open
+        onClose={() => {}}
+        task={taskWithContext}
+        organizationId="org-1"
+        projectId="proj-1"
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Task details' });
+
+    expect(dialog).toHaveClass('has-accent');
+    expect(dialog.style.getPropertyValue('--entity-accent')).toBe('#4a7c59');
+    expect(screen.getByText('Arc Org')).toBeInTheDocument();
+    expect(screen.getByText('Frontend')).toBeInTheDocument();
   });
 });

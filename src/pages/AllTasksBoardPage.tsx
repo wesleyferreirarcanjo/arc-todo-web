@@ -871,6 +871,8 @@ export function AllTasksBoardPage() {
             }
             organizationId={organizationId}
             projectId={projectId}
+            organizationName={organizations.find((org) => org.id === organizationId)?.name}
+            projectName={focusedProject?.name}
             onUpdate={handleCycleUpdate}
             onDelete={handleCycleDelete}
             onCreateSubtask={handleCycleCreateSubtask}
