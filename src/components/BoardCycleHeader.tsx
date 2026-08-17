@@ -6,6 +6,8 @@ interface BoardCycleHeaderProps {
   autoClosesOn: string;
   advancing: boolean;
   onAdvance: () => void;
+  /** Closed `<details>` at every width (All tasks). Default keeps desktop expanded. */
+  alwaysCollapsed?: boolean;
 }
 
 function formatDate(date: string): string {
@@ -37,8 +39,10 @@ export function BoardCycleHeader({
   autoClosesOn,
   advancing,
   onAdvance,
+  alwaysCollapsed = false,
 }: BoardCycleHeaderProps) {
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
+  const collapse = alwaysCollapsed || isMobileBoard;
   const remainingDays = daysUntil(autoClosesOn);
   const dateRange = formatDateRange(cycle.startDate, cycle.endDate);
   const autoCloseCopy =
@@ -68,7 +72,7 @@ export function BoardCycleHeader({
     </button>
   );
 
-  if (isMobileBoard) {
+  if (collapse) {
     return (
       <details className="board-cycle-header">
         <summary className="board-cycle-header-summary">

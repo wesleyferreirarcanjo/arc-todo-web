@@ -2,11 +2,7 @@ import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  advanceBoardCycle,
-  fetchBoardCycleHistory,
-  fetchCurrentBoardCycle,
-} from '../lib/api/boardCycles';
+import { advanceBoardCycle, fetchCurrentBoardCycle } from '../lib/api/boardCycles';
 import {
   createProjectTask,
   deleteProjectTask,
@@ -41,8 +37,8 @@ import {
 } from '../lib/storage/appStorage';
 import { getProjectColor } from '../lib/color/entityColor';
 import { BoardCycleHeader } from '../components/BoardCycleHeader';
-import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
 import { BoardFiltersControls } from '../components/BoardFiltersControls';
+import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
 import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
@@ -52,10 +48,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
-import type {
-  BoardCycle,
-  BoardCycleHistoryResponse,
-} from '../types/boardCycle';
+import type { BoardCycle } from '../types/boardCycle';
 import type {
   CreateTaskInput,
   ListTasksQuery,
@@ -85,11 +78,7 @@ export function AllTasksBoardPage() {
   const [cycleTasks, setCycleTasks] = useState<Task[]>([]);
   const [activeCycle, setActiveCycle] = useState<BoardCycle | null>(null);
   const [autoClosesOn, setAutoClosesOn] = useState<string | null>(null);
-  const [cycleHistory, setCycleHistory] = useState<BoardCycleHistoryResponse>({
-    cycles: [],
-  });
   const [loading, setLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState(getBoardViewMode);
@@ -163,26 +152,20 @@ export function AllTasksBoardPage() {
       const silent = options?.silent ?? false;
       if (!silent) {
         setLoading(true);
-        setHistoryLoading(true);
         setError(null);
       }
 
       try {
-        const [current, history] = await Promise.all([
-          fetchCurrentBoardCycle(organizationId, projectId),
-          fetchBoardCycleHistory(organizationId, projectId),
-        ]);
+        const current = await fetchCurrentBoardCycle(organizationId, projectId);
         setActiveCycle(current.cycle);
         setAutoClosesOn(current.autoClosesOn);
         setCycleTasks(current.tasks);
-        setCycleHistory(history);
         if (silent) setError(null);
       } catch (err) {
         if (!silent) setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'the weekly cycle' }));
       } finally {
         if (!silent) {
           setLoading(false);
-          setHistoryLoading(false);
         }
       }
     },
@@ -625,7 +608,50 @@ export function AllTasksBoardPage() {
     setBoardTaskSort({ field: sortField, direction });
   }
 
+  const extraFilterCount =
+    Number(searchActive) +
+    Number(priorityActive) +
+    Number(Boolean(organizationId)) +
+    Number(Boolean(projectId));
+
   const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
+
+  function renderFilterControls(showQuickCreate: boolean) {
+    return (
+      <BoardFiltersControls
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        priorityFilter={priorityFilter}
+        onPriorityFilterChange={setPriorityFilter}
+        sortField={sortField}
+        onSortFieldChange={handleSortFieldChange}
+        sortDirection={sortDirection}
+        onSortDirectionChange={handleSortDirectionChange}
+        organizationId={organizationId ?? null}
+        projectId={projectId ?? null}
+        organizations={organizations}
+        projects={projects}
+        onOrganizationChange={handleOrganizationChange}
+        onProjectChange={handleProjectChange}
+        quickFilter={quickFilter}
+        onQuickFilterChange={handleQuickFilterChange}
+        hasFilters={hasFilters}
+        onClearFocus={() => {
+          setSearchParams(new URLSearchParams());
+        }}
+        hiddenColumns={hiddenColumns}
+        onHiddenColumnsChange={handleHiddenColumnsChange}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        tasks={tasks}
+        query={query}
+        onImported={projectFocus ? loadProjectCycle : loadTasks}
+        onCreated={projectFocus ? loadProjectCycle : loadTasks}
+        showQuickCreate={showQuickCreate}
+        showQuickFilters={false}
+      />
+    );
+  }
 
   const matchingTaskCount = useMemo(() => {
     if (!listFiltersActive) return visibleTasks.length;
@@ -659,75 +685,31 @@ export function AllTasksBoardPage() {
       <header className="page-header">
         <h2>All tasks</h2>
       </header>
-      <div className="board-filters board-filters-inline">
-        <BoardFiltersControls
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          priorityFilter={priorityFilter}
-          onPriorityFilterChange={setPriorityFilter}
-          sortField={sortField}
-          onSortFieldChange={handleSortFieldChange}
-          sortDirection={sortDirection}
-          onSortDirectionChange={handleSortDirectionChange}
-          organizationId={organizationId ?? null}
-          projectId={projectId ?? null}
-          organizations={organizations}
-          projects={projects}
-          onOrganizationChange={handleOrganizationChange}
-          onProjectChange={handleProjectChange}
-          quickFilter={quickFilter}
-          onQuickFilterChange={handleQuickFilterChange}
-          hasFilters={hasFilters}
-          onClearFocus={() => {
-            setSearchParams(new URLSearchParams());
-          }}
-          hiddenColumns={hiddenColumns}
-          onHiddenColumnsChange={handleHiddenColumnsChange}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          tasks={tasks}
-          query={query}
-          onImported={projectFocus ? loadProjectCycle : loadTasks}
-          onCreated={projectFocus ? loadProjectCycle : loadTasks}
-          showQuickCreate
+      <div className="board-quick-filters-row">
+        <BoardQuickFilterChips
+          value={quickFilter}
+          onChange={handleQuickFilterChange}
         />
       </div>
+      {!isMobileShell ? (
+        <details className="board-filters-disclosure">
+          <summary className="board-filters-disclosure-summary">
+            Filters
+            {extraFilterCount > 0 ? (
+              <span className="board-filters-disclosure-count">{extraFilterCount}</span>
+            ) : null}
+          </summary>
+          <div className="board-filters board-filters-inline">
+            {renderFilterControls(true)}
+          </div>
+        </details>
+      ) : null}
 
       <MobileBoardFiltersOverlay
         open={isMobileShell && filtersOpen}
         onClose={() => setFiltersOpen(false)}
       >
-        <BoardFiltersControls
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          priorityFilter={priorityFilter}
-          onPriorityFilterChange={setPriorityFilter}
-          sortField={sortField}
-          onSortFieldChange={handleSortFieldChange}
-          sortDirection={sortDirection}
-          onSortDirectionChange={handleSortDirectionChange}
-          organizationId={organizationId ?? null}
-          projectId={projectId ?? null}
-          organizations={organizations}
-          projects={projects}
-          onOrganizationChange={handleOrganizationChange}
-          onProjectChange={handleProjectChange}
-          quickFilter={quickFilter}
-          onQuickFilterChange={handleQuickFilterChange}
-          hasFilters={hasFilters}
-          onClearFocus={() => {
-            setSearchParams(new URLSearchParams());
-          }}
-          hiddenColumns={hiddenColumns}
-          onHiddenColumnsChange={handleHiddenColumnsChange}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          tasks={tasks}
-          query={query}
-          onImported={projectFocus ? loadProjectCycle : loadTasks}
-          onCreated={projectFocus ? loadProjectCycle : loadTasks}
-          showQuickCreate={false}
-        />
+        {renderFilterControls(false)}
       </MobileBoardFiltersOverlay>
 
       {projectFocus && activeCycle && autoClosesOn && (
@@ -736,6 +718,7 @@ export function AllTasksBoardPage() {
           autoClosesOn={autoClosesOn}
           advancing={advancing}
           onAdvance={() => void handleAdvanceCycle()}
+          alwaysCollapsed
         />
       )}
 
@@ -838,13 +821,6 @@ export function AllTasksBoardPage() {
             onUpdateStatus={handleListStatusUpdate}
           />
         )
-      )}
-
-      {projectFocus && (
-        <BoardCycleHistoryPanel
-          history={cycleHistory}
-          loading={historyLoading}
-        />
       )}
 
       {deepLinkTask ? (

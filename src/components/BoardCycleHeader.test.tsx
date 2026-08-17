@@ -76,4 +76,23 @@ describe('BoardCycleHeader', () => {
     ).toBeInTheDocument();
     expect(document.querySelector('details.board-cycle-header')).not.toBeInTheDocument();
   });
+
+  it('stays a closed details when alwaysCollapsed on desktop', () => {
+    mediaState.mobile = false;
+    const { container } = render(
+      <BoardCycleHeader
+        cycle={cycle}
+        autoClosesOn="2026-08-16"
+        advancing={false}
+        onAdvance={() => undefined}
+        alwaysCollapsed
+      />,
+    );
+
+    const disclosure = container.querySelector('details.board-cycle-header');
+    expect(disclosure).toBeInTheDocument();
+    expect(disclosure).not.toHaveAttribute('open');
+    expect(screen.queryByRole('heading', { name: 'Weekly cycle' })).not.toBeInTheDocument();
+    expect(screen.getByText('Weekly cycle')).toBeInTheDocument();
+  });
 });

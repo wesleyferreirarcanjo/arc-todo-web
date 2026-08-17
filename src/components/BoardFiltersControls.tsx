@@ -53,6 +53,8 @@ export interface BoardFiltersControlsProps {
   onCreated: () => Promise<void>;
   /** Hide desktop-only actions (quick create lives in FAB on mobile). */
   showQuickCreate?: boolean;
+  /** Page-level chip row owns All / My Tasks / Due Today / Overdue. */
+  showQuickFilters?: boolean;
 }
 
 export function BoardFiltersControls({
@@ -83,6 +85,7 @@ export function BoardFiltersControls({
   onImported,
   onCreated,
   showQuickCreate = true,
+  showQuickFilters = true,
 }: BoardFiltersControlsProps) {
   return (
     <>
@@ -158,10 +161,12 @@ export function BoardFiltersControls({
         />
       </label>
 
-      <BoardQuickFilterChips
-        value={quickFilter}
-        onChange={onQuickFilterChange}
-      />
+      {showQuickFilters ? (
+        <BoardQuickFilterChips
+          value={quickFilter}
+          onChange={onQuickFilterChange}
+        />
+      ) : null}
 
       {hasFilters ? (
         <button
