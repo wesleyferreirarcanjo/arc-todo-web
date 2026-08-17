@@ -7,6 +7,7 @@ import {
 } from '../lib/bodyScrollLock';
 import { modalPanelVariants, overlayVariants } from '../lib/motion/variants';
 import { useMotionTransition } from '../lib/motion/useMotionTransition';
+import { EntityScatterLights } from './EntityScatterLights';
 
 interface ModalProps {
   open: boolean;
@@ -85,6 +86,7 @@ export function Modal({
             exit="exit"
             transition={base}
           >
+            {accentColor ? <EntityScatterLights seed={titleId} /> : null}
             <header className="modal-header">
               <div className="modal-header-copy">
                 {eyebrow}

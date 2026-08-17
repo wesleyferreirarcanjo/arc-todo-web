@@ -1209,12 +1209,14 @@ textarea:focus-visible {
     var(--entity-accent, var(--border)) 55%,
     var(--border)
   );
-  background: color-mix(
-    in srgb,
-    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-header),
-    var(--bg-surface)
-  );
+  background: var(--bg-surface);
   box-shadow: var(--shadow-lift), var(--entity-corner-glow), var(--entity-rail-glow);
+  --scatter-mx: 50%;
+  --scatter-my: 50%;
+  --scatter-flee: 0;
+  --scatter-flee-cap: 1;
+  --scatter-scale: 1.18;
+  --scatter-light-opacity: 0.28;
 }
 
 .modal.has-accent::before {
@@ -1233,11 +1235,36 @@ textarea:focus-visible {
 }
 
 .modal.has-accent .modal-header {
+  background: transparent;
+}
+
+.modal.has-accent .modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(
+      in srgb,
+      var(--entity-accent, var(--text-muted)) 55%,
+      var(--text-muted)
+    )
+    transparent;
+}
+
+.modal.has-accent .modal-body::-webkit-scrollbar {
+  width: 0.55rem;
+}
+
+.modal.has-accent .modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal.has-accent .modal-body::-webkit-scrollbar-thumb {
+  border: 0.15rem solid transparent;
+  border-radius: 999px;
   background: color-mix(
     in srgb,
-    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-header),
-    var(--bg-elevated)
+    var(--entity-accent, var(--text-muted)) 55%,
+    var(--text-muted)
   );
+  background-clip: padding-box;
 }
 
 .quick-create-context {
@@ -9129,23 +9156,6 @@ section.board-cycle-header {
 
 .task-qa-checklist-modal .modal-body {
   padding: 1rem;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--accent) 55%, var(--text-muted)) transparent;
-}
-
-.task-qa-checklist-modal .modal-body::-webkit-scrollbar {
-  width: 0.55rem;
-}
-
-.task-qa-checklist-modal .modal-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.task-qa-checklist-modal .modal-body::-webkit-scrollbar-thumb {
-  border: 0.15rem solid transparent;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 55%, var(--text-muted));
-  background-clip: padding-box;
 }
 
 .task-qa-checklist-panel {

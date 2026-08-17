@@ -98,6 +98,7 @@ describe('TaskDetailsModal summary-first order', () => {
 
     expect(dialog).toHaveClass('has-accent');
     expect(dialog.style.getPropertyValue('--entity-accent')).toBe('#4c8dff');
+    expect(dialog.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
     expect(screen.getByText('Arc Org')).toBeInTheDocument();
     expect(
       project.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -131,6 +132,7 @@ describe('TaskDetailsModal summary-first order', () => {
 
     expect(dialog).toHaveClass('has-accent');
     expect(dialog.style.getPropertyValue('--entity-accent')).toBe('#4a7c59');
+    expect(dialog.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
     expect(screen.getByText('Arc Org')).toBeInTheDocument();
     expect(screen.getByText('Frontend')).toBeInTheDocument();
   });

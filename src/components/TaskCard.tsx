@@ -27,6 +27,7 @@ import {
   TASK_STATUS_OPTIONS,
 } from '../lib/tasks/taskStatus';
 import { vibrateSafe } from '../lib/ui/haptics';
+import { scatterBounceFromId, type ScatterStage } from '../lib/ui/scatterLights';
 import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { useChat } from '../context/ChatContext';
 import { useSmartCopyBasket } from '../context/SmartCopyBasketContext';
@@ -35,6 +36,7 @@ import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
 import { ConfirmDialog } from './ConfirmDialog';
+import { EntityScatterLights } from './EntityScatterLights';
 import { IosHapticHit } from './IosHapticHit';
 import { Modal } from './Modal';
 import { Select } from './Select';
@@ -71,127 +73,6 @@ function formatDueDateForInput(dueDate: string | null): string {
 
 function formatBadgeLabel(label: string): string {
   return label.length > 15 ? `${label.slice(0, 15)}...` : label;
-}
-
-function hashString(input: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function mulberryNext(seed: number): { seed: number; value: number } {
-  const nextSeed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
-  return { seed: nextSeed, value: nextSeed / 4294967296 };
-}
-
-type ScatterStage = 'todo' | 'in_progress' | 'dev_test' | 'qa_test' | 'done';
-
-const SCATTER_STAGE = {
-  todo: {
-    focusX: 88,
-    focusY: 32,
-    spread: 0.66,
-    bounceSpread: 0.52,
-  },
-  in_progress: {
-    focusX: 90,
-    focusY: 32,
-    spread: 0.4,
-    bounceSpread: 0.36,
-  },
-  dev_test: {
-    focusX: 96,
-    focusY: 92,
-    spread: 0.24,
-    bounceSpread: 0.2,
-  },
-  qa_test: {
-    focusX: 97,
-    focusY: 94,
-    spread: 0.07,
-    bounceSpread: 0.12,
-  },
-  done: {
-    focusX: 96,
-    focusY: 92,
-    spread: 0,
-    bounceSpread: 0.3,
-  },
-} as const;
-
-function clusterToward(
-  x: number,
-  y: number,
-  focusX: number,
-  focusY: number,
-  spread: number,
-) {
-  return {
-    x: focusX + (x - focusX) * spread,
-    y: focusY + (y - focusY) * spread,
-  };
-}
-
-function scatterLightsFromId(
-  id: string,
-  stage: ScatterStage,
-  options: { loose?: boolean } = {},
-) {
-  const preset = SCATTER_STAGE[stage];
-  const loose = Boolean(options.loose);
-  const focusX = loose ? 50 : preset.focusX;
-  const focusY = loose ? 48 : preset.focusY;
-  const spread = loose ? 0.94 : preset.spread;
-  let seed = hashString(id);
-  const next = () => {
-    const step = mulberryNext(seed);
-    seed = step.seed;
-    return step.value;
-  };
-
-  return Array.from({ length: 6 }, () => {
-    const raw = clusterToward(
-      8 + next() * 84,
-      10 + next() * 80,
-      focusX,
-      focusY,
-      spread,
-    );
-    return {
-      x: raw.x,
-      y: raw.y,
-      w: 1.7 + next() * 2.5,
-      h: 1.3 + next() * 2.1,
-      o: 0.62 + next() * 0.5,
-    };
-  });
-}
-
-function scatterBounceFromId(id: string, stage: ScatterStage) {
-  const { focusX, focusY, bounceSpread } = SCATTER_STAGE[stage];
-  let seed = hashString(`${id}:bounce`);
-  const next = () => {
-    const step = mulberryNext(seed);
-    seed = step.seed;
-    return step.value;
-  };
-
-  const raw = clusterToward(
-    10 + next() * 80,
-    12 + next() * 76,
-    focusX,
-    focusY,
-    bounceSpread,
-  );
-
-  return {
-    x: raw.x,
-    y: raw.y,
-    o: 0.07 + next() * 0.09,
-  };
 }
 
 function resetScatterPointer(card: HTMLElement) {
@@ -991,13 +872,6 @@ export function TaskCard({
     scatterStage != null && (scatterStage !== 'done' || showSubtaskSection);
   const scatterLoose =
     !showSubtaskSection && (scatterStage === 'todo' || scatterStage === 'in_progress');
-  const scatterLights = useMemo(
-    () =>
-      scatterStage && scatterStage !== 'done'
-        ? scatterLightsFromId(task.id, scatterStage, { loose: scatterLoose })
-        : [],
-    [scatterLoose, scatterStage, task.id],
-  );
 
   const taskMenuItems = (
     <>
@@ -1141,24 +1015,12 @@ export function TaskCard({
         onPointerCancel={handleCardPointerCancel}
         onPointerLeave={handleCardPointerLeave}
       >
-        {showScatterLights && scatterLights.length > 0 ? (
-          <span className="task-card-scatter-lights" aria-hidden="true">
-            {scatterLights.map((light, index) => (
-              <span
-                key={index}
-                className="task-card-scatter-light"
-                style={
-                  {
-                    '--sx': `${light.x}%`,
-                    '--sy': `${light.y}%`,
-                    '--sw': `${light.w}rem`,
-                    '--sh': `${light.h}rem`,
-                    '--scatter-spot-opacity': String(light.o),
-                  } as CSSProperties
-                }
-              />
-            ))}
-          </span>
+        {showScatterLights && scatterStage && scatterStage !== 'done' ? (
+          <EntityScatterLights
+            seed={task.id}
+            stage={scatterStage}
+            loose={scatterLoose}
+          />
         ) : null}
         {swipeHint ? (
           <span className="task-card-swipe-hint" role="status">
