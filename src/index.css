@@ -1179,7 +1179,7 @@ textarea:focus-visible {
 .board-chrome-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1.25rem;
   width: 100%;
   min-width: 0;
   flex-wrap: nowrap;
@@ -1187,6 +1187,13 @@ textarea:focus-visible {
   overscroll-behavior-x: contain;
   padding: 0.15rem 0;
   scrollbar-width: thin;
+}
+
+.board-chrome-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .board-chrome-toggle {
@@ -1215,9 +1222,13 @@ textarea:focus-visible {
 }
 
 .board-chrome-toolbar .board-quick-filters {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   width: auto;
-  padding: 0;
+  padding: 0.22rem;
+}
+
+.board-chrome-actions + .board-quick-filters {
+  margin-left: auto;
 }
 
 .board-chrome-toolbar + .board-filters {
@@ -7650,37 +7661,9 @@ textarea {
 }
 
 .board-quick-filters {
-  display: flex;
+  display: inline-flex;
   flex-wrap: nowrap;
-  gap: 0.4rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  padding: 0.15rem 0;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  flex: 1 1 100%;
   min-width: 0;
-}
-
-.board-quick-filter-chip {
-  flex: 0 0 auto;
-  min-height: 2.5rem;
-  padding: 0.4rem 0.85rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.board-quick-filter-chip.is-active {
-  color: var(--text-primary);
-  border-color: var(--accent, var(--border-strong));
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
 }
 
 .board-status-tabs {

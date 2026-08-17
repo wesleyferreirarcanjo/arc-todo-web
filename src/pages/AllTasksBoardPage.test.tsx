@@ -138,11 +138,16 @@ describe('AllTasksBoardPage chrome', () => {
 
     const toolbar = document.querySelector('.board-chrome-toolbar');
     expect(toolbar).toBeInTheDocument();
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filters' }));
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'My Tasks' }));
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Due Today' }));
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Overdue' }));
+    const actions = document.querySelector('.board-chrome-actions');
+    const tabs = document.querySelector('.board-chrome-toolbar .board-view-toggle');
+    expect(actions).toBeInTheDocument();
+    expect(tabs).toBeInTheDocument();
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
+    expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
+    expect(tabs).toContainElement(screen.getByRole('button', { name: 'My Tasks' }));
+    expect(tabs).toContainElement(screen.getByRole('button', { name: 'Due Today' }));
+    expect(tabs).toContainElement(screen.getByRole('button', { name: 'Overdue' }));
+    expect(actions).not.toContainElement(screen.getByRole('button', { name: 'All' }));
 
     expect(screen.getByRole('button', { name: 'Filters' })).toHaveAttribute(
       'aria-expanded',
@@ -163,7 +168,10 @@ describe('AllTasksBoardPage chrome', () => {
     });
 
     const toolbar = document.querySelector('.board-chrome-toolbar');
+    const tabs = document.querySelector('.board-chrome-toolbar .board-view-toggle');
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
+    expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
+    expect(document.querySelector('.board-chrome-actions')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Filters' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Weekly cycle' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sprint history' })).not.toBeInTheDocument();
@@ -178,10 +186,15 @@ describe('AllTasksBoardPage chrome', () => {
     });
 
     const toolbar = document.querySelector('.board-chrome-toolbar');
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filters' }));
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Weekly cycle' }));
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Sprint history' }));
+    const actions = document.querySelector('.board-chrome-actions');
+    const tabs = document.querySelector('.board-chrome-toolbar .board-view-toggle');
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
+    expect(actions).toBeInTheDocument();
+    expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Weekly cycle' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Sprint history' }));
+    expect(tabs).not.toContainElement(screen.getByRole('button', { name: 'Filters' }));
 
     expect(screen.getByRole('button', { name: 'Weekly cycle' })).toHaveAttribute(
       'aria-expanded',

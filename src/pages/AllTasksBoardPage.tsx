@@ -650,6 +650,11 @@ export function AllTasksBoardPage() {
     Number(Boolean(organizationId)) +
     Number(Boolean(projectId));
 
+  const showFiltersButton = !isMobileShell;
+  const showCycleButton = Boolean(projectFocus && activeCycle && autoClosesOn);
+  const showHistoryButton = projectFocus;
+  const showChromeActions = showFiltersButton || showCycleButton || showHistoryButton;
+
   const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
 
   function renderFilterControls(showQuickCreate: boolean) {
@@ -722,43 +727,47 @@ export function AllTasksBoardPage() {
         <h2>All tasks</h2>
       </header>
       <div className="board-chrome-toolbar">
-        {!isMobileShell ? (
-          <button
-            type="button"
-            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'filters' ? ' is-open' : ''}`}
-            aria-expanded={chromePanel === 'filters'}
-            aria-controls={chromePanel === 'filters' ? 'board-chrome-panel' : undefined}
-            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'filters'))}
-          >
-            Filters
-            {extraFilterCount > 0 ? (
-              <span className="board-chrome-count" aria-hidden="true">
-                {extraFilterCount}
-              </span>
+        {showChromeActions ? (
+          <div className="board-chrome-actions">
+            {showFiltersButton ? (
+              <button
+                type="button"
+                className={`btn btn-secondary board-chrome-toggle${chromePanel === 'filters' ? ' is-open' : ''}`}
+                aria-expanded={chromePanel === 'filters'}
+                aria-controls={chromePanel === 'filters' ? 'board-chrome-panel' : undefined}
+                onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'filters'))}
+              >
+                Filters
+                {extraFilterCount > 0 ? (
+                  <span className="board-chrome-count" aria-hidden="true">
+                    {extraFilterCount}
+                  </span>
+                ) : null}
+              </button>
             ) : null}
-          </button>
-        ) : null}
-        {projectFocus && activeCycle && autoClosesOn ? (
-          <button
-            type="button"
-            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'cycle' ? ' is-open' : ''}`}
-            aria-expanded={chromePanel === 'cycle'}
-            aria-controls={chromePanel === 'cycle' ? 'board-chrome-panel' : undefined}
-            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'cycle'))}
-          >
-            Weekly cycle
-          </button>
-        ) : null}
-        {projectFocus ? (
-          <button
-            type="button"
-            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'history' ? ' is-open' : ''}`}
-            aria-expanded={chromePanel === 'history'}
-            aria-controls={chromePanel === 'history' ? 'board-chrome-panel' : undefined}
-            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'history'))}
-          >
-            Sprint history
-          </button>
+            {showCycleButton ? (
+              <button
+                type="button"
+                className={`btn btn-secondary board-chrome-toggle${chromePanel === 'cycle' ? ' is-open' : ''}`}
+                aria-expanded={chromePanel === 'cycle'}
+                aria-controls={chromePanel === 'cycle' ? 'board-chrome-panel' : undefined}
+                onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'cycle'))}
+              >
+                Weekly cycle
+              </button>
+            ) : null}
+            {showHistoryButton ? (
+              <button
+                type="button"
+                className={`btn btn-secondary board-chrome-toggle${chromePanel === 'history' ? ' is-open' : ''}`}
+                aria-expanded={chromePanel === 'history'}
+                aria-controls={chromePanel === 'history' ? 'board-chrome-panel' : undefined}
+                onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'history'))}
+              >
+                Sprint history
+              </button>
+            ) : null}
+          </div>
         ) : null}
         <BoardQuickFilterChips
           value={quickFilter}
