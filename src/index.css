@@ -9255,11 +9255,11 @@ section.board-cycle-header {
 }
 
 .task-qa-checklist-check input:checked {
-  border-color: var(--accent);
+  border-color: var(--entity-accent, var(--accent));
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 6.2 4.8 8.5 9.5 3.8' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
       center / 0.72rem no-repeat,
-    var(--accent);
+    var(--entity-accent, var(--accent));
 }
 
 .task-qa-checklist-check input:focus-visible {
