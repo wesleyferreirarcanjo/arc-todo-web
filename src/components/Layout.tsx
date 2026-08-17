@@ -160,7 +160,10 @@ export function Layout() {
       <div className="app-body">
         <aside
           ref={sidebarRef}
-          className={`sidebar${collapsed ? ' is-collapsed' : ''}`}
+          className={`sidebar${collapsed ? ' is-collapsed' : ''}${
+            workspaceColor ? ' has-accent' : ''
+          }`}
+          style={entityAccentStyle(workspaceColor)}
         >
           <div className="sidebar-header">
             <button

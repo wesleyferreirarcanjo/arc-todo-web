@@ -300,14 +300,55 @@ textarea:focus-visible {
   width: var(--sidebar-width);
   height: 100dvh;
   max-height: 100dvh;
+  isolation: isolate;
   background: var(--bg-shell);
-  border-right: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-blob-alt);
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   overflow: hidden;
-  transition: width var(--transition-base), padding var(--transition-base);
+  transition: width var(--transition-base), padding var(--transition-base),
+    background var(--transition-base), border-color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.sidebar-header,
+.sidebar-workspace,
+.sidebar-primary-nav,
+.sidebar-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar.has-accent {
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-header),
+    var(--bg-shell)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--entity-accent, var(--border)) 55%,
+    var(--border)
+  );
+  box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
+.sidebar.has-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 14rem 22rem at 100% 0%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 72%
+  );
+  opacity: var(--entity-corner-opacity);
 }
 
 .sidebar-toggle {
@@ -349,7 +390,7 @@ textarea:focus-visible {
   gap: 0.65rem;
   min-width: 0;
   padding: 0.35rem 0.5rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-blob-alt);
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
@@ -576,7 +617,7 @@ textarea:focus-visible {
   gap: 0.55rem;
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-blob-alt);
   color: var(--text-muted);
   font-size: var(--type-body);
   font-weight: 500;
@@ -606,7 +647,7 @@ textarea:focus-visible {
   gap: 0.55rem;
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-blob-alt);
   color: var(--text-muted);
   font-size: var(--type-body);
   font-weight: 500;
@@ -899,7 +940,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 0.65rem;
   padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-blob-alt);
   color: var(--text-primary);
   text-decoration: none;
   font-size: var(--type-body);
@@ -1966,7 +2007,8 @@ textarea:focus-visible {
 
 .entity-card.management-card.has-accent,
 .task-card.has-accent,
-.modal.has-accent {
+.modal.has-accent,
+.sidebar.has-accent {
   --entity-rail-card-color: color-mix(
     in srgb,
     var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),
@@ -1990,6 +2032,11 @@ textarea:focus-visible {
         var(--entity-accent, var(--accent-secondary)) var(--entity-rail-glow-in-mix),
         transparent
       );
+}
+
+.entity-card.management-card.has-accent,
+.task-card.has-accent,
+.modal.has-accent {
   border-left: var(--entity-rail-card-width) solid var(--entity-rail-card-color);
 }
 
