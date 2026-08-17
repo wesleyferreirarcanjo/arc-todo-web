@@ -1215,8 +1215,8 @@ textarea:focus-visible {
   --scatter-my: 50%;
   --scatter-flee: 0;
   --scatter-flee-cap: 1;
-  --scatter-scale: 1.18;
-  --scatter-light-opacity: 0.28;
+  --scatter-scale: 1.1;
+  --scatter-light-opacity: 0.2;
 }
 
 .modal.has-accent::before {
@@ -1234,8 +1234,23 @@ textarea:focus-visible {
   opacity: var(--entity-corner-opacity);
 }
 
+.modal.has-accent .modal-header,
+.modal.has-accent .modal-body {
+  z-index: auto;
+}
+
 .modal.has-accent .modal-header {
   background: transparent;
+}
+
+.modal.has-accent .task-card-scatter-lights {
+  z-index: 0;
+}
+
+@media (hover: hover) {
+  .modal.has-accent.has-scatter-lights:hover {
+    --scatter-flee: var(--scatter-flee-cap, 1);
+  }
 }
 
 .modal.has-accent .modal-body {
@@ -3848,7 +3863,9 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .task-card.has-scatter-lights,
-  .task-card.has-scatter-lights:hover {
+  .task-card.has-scatter-lights:hover,
+  .modal.has-scatter-lights,
+  .modal.has-scatter-lights:hover {
     --scatter-flee: 0;
   }
 

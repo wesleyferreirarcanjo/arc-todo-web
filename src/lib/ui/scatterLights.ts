@@ -118,3 +118,27 @@ export function scatterBounceFromId(id: string, stage: ScatterStage) {
     o: 0.07 + next() * 0.09,
   };
 }
+
+export function setScatterPointer(
+  host: HTMLElement,
+  clientX: number,
+  clientY: number,
+) {
+  const rect = host.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    return;
+  }
+  host.style.setProperty(
+    '--scatter-mx',
+    `${((clientX - rect.left) / rect.width) * 100}%`,
+  );
+  host.style.setProperty(
+    '--scatter-my',
+    `${((clientY - rect.top) / rect.height) * 100}%`,
+  );
+}
+
+export function clearScatterPointer(host: HTMLElement) {
+  host.style.removeProperty('--scatter-mx');
+  host.style.removeProperty('--scatter-my');
+}

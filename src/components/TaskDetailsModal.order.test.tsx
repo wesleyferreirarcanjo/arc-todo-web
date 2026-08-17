@@ -97,6 +97,7 @@ describe('TaskDetailsModal summary-first order', () => {
     const title = screen.getByRole('heading', { name: 'Layered details' });
 
     expect(dialog).toHaveClass('has-accent');
+    expect(dialog).toHaveClass('has-scatter-lights');
     expect(dialog.style.getPropertyValue('--entity-accent')).toBe('#4c8dff');
     expect(dialog.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
     expect(screen.getByText('Arc Org')).toBeInTheDocument();
@@ -131,6 +132,7 @@ describe('TaskDetailsModal summary-first order', () => {
     const dialog = screen.getByRole('dialog', { name: 'Task details' });
 
     expect(dialog).toHaveClass('has-accent');
+    expect(dialog).toHaveClass('has-scatter-lights');
     expect(dialog.style.getPropertyValue('--entity-accent')).toBe('#4a7c59');
     expect(dialog.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
     expect(screen.getByText('Arc Org')).toBeInTheDocument();
