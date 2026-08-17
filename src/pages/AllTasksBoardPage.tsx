@@ -930,8 +930,24 @@ export function AllTasksBoardPage() {
           task={deepLinkTask.task}
           organizationId={deepLinkTask.organizationId}
           projectId={deepLinkTask.projectId}
-          organizationName={deepLinkTask.organizationName}
-          projectName={deepLinkTask.projectName}
+          organizationName={
+            deepLinkTask.organizationName
+            ?? organizations.find((org) => org.id === deepLinkTask.organizationId)?.name
+          }
+          projectName={
+            deepLinkTask.projectName
+            ?? projects.find((project) => project.id === deepLinkTask.projectId)?.name
+          }
+          accentColor={
+            isTaskWithContext(deepLinkTask.task)
+              ? getProjectColor(deepLinkTask.task.project)
+              : focusedProject
+                ? getProjectColor(focusedProject)
+                : getProjectColor(
+                    projects.find((project) => project.id === deepLinkTask.projectId)
+                      ?? { id: deepLinkTask.projectId },
+                  )
+          }
           subtasks={deepLinkTask.subtasks}
         />
       ) : null}

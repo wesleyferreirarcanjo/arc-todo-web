@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { Task, TaskStatus, TaskWithContext } from '../types/todo';
+import { getProjectColor } from '../lib/color/entityColor';
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { Select } from './Select';
 import { TaskDetailsModal } from './TaskDetailsModal';
@@ -280,6 +281,11 @@ export function TaskListView({
           projectId={detailsContext.projectId}
           organizationName={detailsContext.organizationName}
           projectName={detailsContext.projectName}
+          accentColor={
+            isTaskWithContext(detailsTask)
+              ? getProjectColor(detailsTask.project)
+              : accentColor
+          }
           parentDisplayId={parentDisplayIdByTaskId.get(detailsTask.id)}
           subtasks={subtasksByParentId.get(detailsTask.id) ?? []}
           onEdit={

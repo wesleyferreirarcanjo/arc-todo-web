@@ -11,6 +11,7 @@ import {
 } from '../lib/storage/appStorage';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { Project } from '../types/project';
+import { getProjectColor } from '../lib/color/entityColor';
 import { Modal } from './Modal';
 import { Select } from './Select';
 
@@ -33,7 +34,7 @@ export function MobileQuickCreateSheet({
   onCreated,
   scope,
 }: MobileQuickCreateSheetProps) {
-  const { organizations, loadingOrganizations } = useWorkspace();
+  const { organizations, loadingOrganizations, projects: workspaceProjects } = useWorkspace();
   const fixedScope = Boolean(scope?.organizationId && scope?.projectId);
   const [organizationId, setOrganizationId] = useState(scope?.organizationId ?? '');
   const [projectId, setProjectId] = useState(scope?.projectId ?? '');
@@ -125,6 +126,9 @@ export function MobileQuickCreateSheet({
   }
 
   const canCreate = Boolean(organizationId && projectId && title.trim());
+  const selectedProject =
+    projects.find((project) => project.id === projectId)
+    ?? workspaceProjects.find((project) => project.id === projectId);
 
   return (
     <Modal
@@ -133,6 +137,7 @@ export function MobileQuickCreateSheet({
       title="New task"
       titleId="mobile-quick-create-title"
       className="mobile-quick-create-modal"
+      accentColor={selectedProject ? getProjectColor(selectedProject) : undefined}
     >
       <form className="mobile-quick-create-form" onSubmit={(event) => void handleSubmit(event)}>
         {error ? <ErrorAlert>{error}</ErrorAlert> : null}

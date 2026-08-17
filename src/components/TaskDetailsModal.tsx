@@ -50,6 +50,7 @@ interface TaskDetailsModalProps {
   projectId: string;
   organizationName?: string;
   projectName?: string;
+  accentColor?: string;
   parentDisplayId?: string;
   subtasks?: Task[];
   /** Full edit form (status, descriptions, …). Omit when the host has no edit UI. */
@@ -90,6 +91,30 @@ function formatHistoryValue(
   return value;
 }
 
+function TaskModalIdentity({
+  organizationName,
+  projectName,
+}: {
+  organizationName?: string;
+  projectName?: string;
+}) {
+  if (!organizationName && !projectName) {
+    return null;
+  }
+
+  return (
+    <div className="modal-identity">
+      <span className="sidebar-workspace-pip" aria-hidden="true" />
+      {organizationName ? (
+        <span className="task-badge">{organizationName}</span>
+      ) : null}
+      {projectName ? (
+        <span className="task-badge task-badge-project">{projectName}</span>
+      ) : null}
+    </div>
+  );
+}
+
 export function TaskDetailsModal({
   open,
   onClose,
@@ -98,6 +123,7 @@ export function TaskDetailsModal({
   projectId,
   organizationName,
   projectName,
+  accentColor,
   parentDisplayId,
   subtasks = [],
   onEdit,
@@ -371,6 +397,13 @@ export function TaskDetailsModal({
       title="Task details"
       titleId={`task-details-modal-${task.id}`}
       className="task-details-modal"
+      accentColor={accentColor}
+      eyebrow={
+        <TaskModalIdentity
+          organizationName={organizationName}
+          projectName={projectName}
+        />
+      }
     >
       <div className="task-details-layout">
         {task.displayId && (
@@ -414,17 +447,6 @@ export function TaskDetailsModal({
           </form>
         ) : (
           <h3 className="task-details-title">{task.title}</h3>
-        )}
-
-        {(organizationName || projectName) && (
-          <div className="task-details-context">
-            {organizationName && (
-              <span className="task-badge task-badge-org">{organizationName}</span>
-            )}
-            {projectName && (
-              <span className="task-badge task-badge-project">{projectName}</span>
-            )}
-          </div>
         )}
 
         <div className="task-details-header">
@@ -540,6 +562,7 @@ export function TaskDetailsModal({
           organizationId={organizationId}
           projectId={projectId}
           parentDisplayId={parentDisplayId}
+          accentColor={accentColor}
           onTaskChange={onTaskSynced}
           onEvidenceImagePastedFromComment={() => setCommentPasteCue(true)}
         />
@@ -807,6 +830,7 @@ export function TaskDetailsModal({
           title="Plan / code description"
           titleId={`task-plan-code-modal-${task.id}`}
           className="task-plan-code-modal"
+          accentColor={accentColor}
         >
           <TaskDescriptionView
             content={descriptionFields.planCodeDescription}

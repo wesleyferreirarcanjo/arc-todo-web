@@ -1435,6 +1435,7 @@ export function TaskCard({
           task={task}
           organizationId={resolvedOrganizationId!}
           projectId={resolvedProjectId!}
+          accentColor={accentColor}
           onTaskChange={(updated) => void onUpdate(task.id, {}, updated)}
         />
       )}
@@ -1449,6 +1450,7 @@ export function TaskCard({
           projectId={resolvedProjectId!}
           organizationName={organizationName}
           projectName={projectName}
+          accentColor={accentColor}
           onEdit={handleStartEdit}
           onTaskSynced={(updated) => void onUpdate(task.id, {}, updated)}
           subtasks={resolvedSubtasks}
@@ -1463,6 +1465,7 @@ export function TaskCard({
           title={`Add subtask to ${task.title}`}
           titleId={`subtask-modal-${task.id}`}
           className="task-create-modal"
+          accentColor={accentColor}
         >
           <TaskForm
             heading="New subtask"
@@ -1485,6 +1488,7 @@ export function TaskCard({
           title={`Set parent for ${task.title}`}
           titleId={`set-parent-modal-${task.id}`}
           className="task-create-modal"
+          accentColor={accentColor}
         >
           <form
             className="task-form"
@@ -1525,6 +1529,7 @@ export function TaskCard({
         title="Edit task"
         titleId={`edit-task-modal-${task.id}`}
         className="task-edit-modal"
+        accentColor={accentColor}
       >
         <form
           className="task-edit-form"

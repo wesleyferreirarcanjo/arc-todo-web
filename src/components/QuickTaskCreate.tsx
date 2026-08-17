@@ -10,6 +10,7 @@ import {
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreateTaskInput } from '../types/todo';
 import type { Project } from '../types/project';
+import { getProjectColor } from '../lib/color/entityColor';
 import { Modal } from './Modal';
 import { Select } from './Select';
 import { TaskForm } from './TaskForm';
@@ -99,6 +100,7 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
   }
 
   const canCreate = Boolean(organizationId && projectId);
+  const selectedProject = projects.find((project) => project.id === projectId);
 
   return (
     <>
@@ -116,6 +118,7 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
         title="New task"
         titleId="task-create-modal-title"
         className="task-create-modal"
+        accentColor={selectedProject ? getProjectColor(selectedProject) : undefined}
       >
         <div className="quick-create-context">
           <label className="board-filter-field">

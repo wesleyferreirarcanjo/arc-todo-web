@@ -32,6 +32,7 @@ interface TaskQaChecklistModalProps {
   task: Task;
   organizationId: string;
   projectId: string;
+  accentColor?: string;
   onTaskChange?: (task: Task) => void;
   onError?: (message: string) => void;
   onEvidenceChange?: (evidence: TaskEvidence[]) => void;
@@ -160,6 +161,7 @@ export function TaskQaChecklistModal({
   task,
   organizationId,
   projectId,
+  accentColor,
   onTaskChange,
   onError,
   onEvidenceChange,
@@ -615,6 +617,7 @@ export function TaskQaChecklistModal({
       title="Checklist de QA"
       titleId={`task-qa-checklist-${task.id}`}
       className="task-qa-checklist-modal"
+      accentColor={accentColor}
     >
       {helpMarkdown && (
         <section className="task-qa-checklist-help" aria-label="Test description">

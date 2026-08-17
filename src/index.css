@@ -1085,11 +1085,20 @@ textarea:focus-visible {
 .modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
+  position: relative;
+  z-index: 1;
+}
+
+.modal-header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .modal-header h2 {
@@ -1101,10 +1110,22 @@ textarea:focus-visible {
   letter-spacing: -0.02em;
 }
 
+.modal-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.modal-identity .sidebar-workspace-pip {
+  height: 1rem;
+}
+
 .modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 2.25rem;
   height: 2.25rem;
   border: 1px solid var(--border-strong);
@@ -1134,6 +1155,40 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.modal.has-accent {
+  position: relative;
+  box-shadow: var(--shadow-lift), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
+.modal.has-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 18rem 14rem at 100% 0%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 72%
+  );
+  opacity: var(--entity-corner-opacity);
+}
+
+.modal.has-accent .modal-header {
+  background: linear-gradient(
+    90deg,
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) var(--entity-mix-header),
+      var(--bg-elevated)
+    ),
+    var(--bg-elevated) 68%
+  );
 }
 
 .quick-create-context {
@@ -1910,7 +1965,8 @@ textarea:focus-visible {
 }
 
 .entity-card.management-card.has-accent,
-.task-card.has-accent {
+.task-card.has-accent,
+.modal.has-accent {
   --entity-rail-card-color: color-mix(
     in srgb,
     var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),
@@ -7889,6 +7945,12 @@ textarea {
     border-radius: 0;
     border-left: none;
     border-right: none;
+  }
+
+  .modal.has-accent {
+    border-left: none;
+    border-top: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+    box-shadow: var(--shadow-lift), var(--entity-corner-glow);
   }
 
   .task-details-modal {

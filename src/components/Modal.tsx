@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -14,6 +14,9 @@ interface ModalProps {
   title: string;
   titleId?: string;
   className?: string;
+  /** Project/org hex. Portals to body, so identity must be set on the dialog. */
+  accentColor?: string;
+  eyebrow?: ReactNode;
   children: ReactNode;
 }
 
@@ -23,6 +26,8 @@ export function Modal({
   title,
   titleId = 'modal-title',
   className,
+  accentColor,
+  eyebrow,
   children,
 }: ModalProps) {
   const { base } = useMotionTransition();
@@ -62,7 +67,14 @@ export function Modal({
           transition={base}
         >
           <motion.div
-            className={`modal${className ? ` ${className}` : ''}`}
+            className={['modal', className, accentColor ? 'has-accent' : null]
+              .filter(Boolean)
+              .join(' ')}
+            style={
+              accentColor
+                ? ({ '--entity-accent': accentColor } as CSSProperties)
+                : undefined
+            }
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -74,7 +86,10 @@ export function Modal({
             transition={base}
           >
             <header className="modal-header">
-              <h2 id={titleId}>{title}</h2>
+              <div className="modal-header-copy">
+                {eyebrow}
+                <h2 id={titleId}>{title}</h2>
+              </div>
               <button
                 type="button"
                 className="modal-close"

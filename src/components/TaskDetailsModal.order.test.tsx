@@ -77,4 +77,30 @@ describe('TaskDetailsModal summary-first order', () => {
     expect(moreDetails).toBeInTheDocument();
     expect(screen.queryByText('Do not dump this on first paint.')).not.toBeInTheDocument();
   });
+
+  it('puts named project identity in the dialog chrome with the project color', () => {
+    render(
+      <TaskDetailsModal
+        open
+        onClose={() => {}}
+        task={task}
+        organizationId="org-1"
+        projectId="proj-1"
+        organizationName="Arc Org"
+        projectName="Frontend"
+        accentColor="#4c8dff"
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Task details' });
+    const project = screen.getByText('Frontend');
+    const title = screen.getByRole('heading', { name: 'Layered details' });
+
+    expect(dialog).toHaveClass('has-accent');
+    expect(dialog.style.getPropertyValue('--entity-accent')).toBe('#4c8dff');
+    expect(screen.getByText('Arc Org')).toBeInTheDocument();
+    expect(
+      project.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
 });

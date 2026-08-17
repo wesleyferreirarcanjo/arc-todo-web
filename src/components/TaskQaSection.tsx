@@ -28,6 +28,7 @@ interface TaskQaSectionProps {
   organizationId: string;
   projectId: string;
   parentDisplayId?: string;
+  accentColor?: string;
   onTaskChange?: (task: Task) => void;
   /** Fired after a clipboard image upload succeeds while focus was in Comments. */
   onEvidenceImagePastedFromComment?: () => void;
@@ -68,6 +69,7 @@ export function TaskQaSection({
   organizationId,
   projectId,
   parentDisplayId,
+  accentColor,
   onTaskChange,
   onEvidenceImagePastedFromComment,
 }: TaskQaSectionProps) {
@@ -726,6 +728,7 @@ export function TaskQaSection({
         title={lightboxItem?.originalFilename ?? 'Evidence'}
         titleId="task-qa-evidence-lightbox-title"
         className="task-qa-evidence-lightbox-modal"
+        accentColor={accentColor}
       >
         {lightboxUrl ? (
           <img
@@ -745,6 +748,7 @@ export function TaskQaSection({
           task={task}
           organizationId={organizationId}
           projectId={projectId}
+          accentColor={accentColor}
           onTaskChange={onTaskChange}
           onError={setQaError}
           onEvidenceChange={setEvidence}
@@ -757,6 +761,7 @@ export function TaskQaSection({
         task={task}
         organizationId={organizationId}
         projectId={projectId}
+        accentColor={accentColor}
       />
     </section>
   );

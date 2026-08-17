@@ -11,6 +11,7 @@ interface TaskBugHistoryModalProps {
   task: Task;
   organizationId: string;
   projectId: string;
+  accentColor?: string;
 }
 
 function formatDisplayDate(value: string): string {
@@ -41,6 +42,7 @@ export function TaskBugHistoryModal({
   task,
   organizationId,
   projectId,
+  accentColor,
 }: TaskBugHistoryModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +108,7 @@ export function TaskBugHistoryModal({
       title="Histórico de bug"
       titleId={`task-bug-history-${task.id}`}
       className="task-bug-history-modal"
+      accentColor={accentColor}
     >
       <p className="task-bug-history-summary">
         Reportado {reportCount} {reportCount === 1 ? 'vez' : 'vezes'} · Resolvido{' '}
