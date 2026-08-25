@@ -76,6 +76,7 @@ describe('TaskDetailsModal summary-first order', () => {
     expect(showMore).toBeInTheDocument();
     expect(moreDetails).toBeInTheDocument();
     expect(screen.queryByText('Do not dump this on first paint.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
   });
 
   it('puts named project identity in the dialog chrome with the project color', () => {

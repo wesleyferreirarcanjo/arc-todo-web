@@ -11,6 +11,7 @@ import {
   buildTaskDescriptionInput,
   type TaskDescriptionFormState,
 } from '../lib/tasks/taskDescriptions';
+import { useAuth } from '../context/AuthContext';
 import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import {
   assigneeCreatePayload,
@@ -57,6 +58,7 @@ export function TaskForm({
   projectId,
   defaultAssigneeId = null,
 }: TaskFormProps) {
+  const { isAdmin } = useAuth();
   const [title, setTitle] = useState('');
   const [descriptions, setDescriptions] = useState<TaskDescriptionFormState>({
     businessDescription: '',
@@ -108,7 +110,9 @@ export function TaskForm({
         parentTaskId,
         category,
         metadata,
-        ...assigneeCreatePayload(assigneeId, defaultAssigneeId),
+        ...(isAdmin
+          ? assigneeCreatePayload(assigneeId, defaultAssigneeId)
+          : {}),
       });
       setTitle('');
       setDescriptions({
@@ -185,15 +189,17 @@ export function TaskForm({
           />
         </label>
 
-        <label>
-          Assignee
-          <AssigneeSelect
-            orgId={organizationId}
-            projectId={projectId}
-            value={assigneeId}
-            onChange={setAssigneeId}
-          />
-        </label>
+        {isAdmin && (
+          <label>
+            Assignee
+            <AssigneeSelect
+              orgId={organizationId}
+              projectId={projectId}
+              value={assigneeId}
+              onChange={setAssigneeId}
+            />
+          </label>
+        )}
       </div>
 
       <TaskCategoryFormFields

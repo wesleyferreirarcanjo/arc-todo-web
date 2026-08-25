@@ -29,6 +29,7 @@ import {
 import { vibrateSafe } from '../lib/ui/haptics';
 import { scatterBounceFromId, type ScatterStage } from '../lib/ui/scatterLights';
 import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { useSmartCopyBasket } from '../context/SmartCopyBasketContext';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
@@ -250,6 +251,7 @@ export function TaskCard({
   chatContextScope,
   parentScatterStage = null,
 }: TaskCardProps) {
+  const { isAdmin } = useAuth();
   const { requestTaskInsert, requestTaskRemove, isTaskReferenced } = useChat();
   const {
     isInBasket: isInSmartCopyBasket,
@@ -509,7 +511,7 @@ export function TaskCard({
         criticity,
         dueDate: dueDate || null,
         parentTaskId: parentTaskId || null,
-        assigneeId: assigneeId || null,
+        ...(isAdmin ? { assigneeId: assigneeId || null } : {}),
         category,
         metadata,
       });
@@ -1140,7 +1142,7 @@ export function TaskCard({
           <div className="task-card-header">
             <div className="task-card-heading">
               <h3>{task.title}</h3>
-              <AssigneeChip assignee={task.assignee} />
+              {isAdmin && <AssigneeChip assignee={task.assignee} />}
             </div>
             {isSubtask && !isDetachedSubtask && subtaskProgress && (
               <span
@@ -1463,15 +1465,17 @@ export function TaskCard({
               />
             </label>
 
-            <label>
-              Assignee
-              <AssigneeSelect
-                orgId={resolvedOrganizationId}
-                projectId={resolvedProjectId}
-                value={assigneeId}
-                onChange={setAssigneeId}
-              />
-            </label>
+            {isAdmin && (
+              <label>
+                Assignee
+                <AssigneeSelect
+                  orgId={resolvedOrganizationId}
+                  projectId={resolvedProjectId}
+                  value={assigneeId}
+                  onChange={setAssigneeId}
+                />
+              </label>
+            )}
           </div>
 
           {resolvedSubtasks.length === 0 && availableParents.length > 0 && (
@@ -1550,6 +1554,7 @@ export function TaskCardOverlay({
   accentColor,
   compact = false,
 }: TaskCardOverlayProps) {
+  const { isAdmin } = useAuth();
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor } as CSSProperties)
     : undefined;
@@ -1590,7 +1595,7 @@ export function TaskCardOverlay({
       <div className="task-card-header">
         <div className="task-card-heading">
           <h3>{task.title}</h3>
-          <AssigneeChip assignee={task.assignee} compact />
+          {isAdmin && <AssigneeChip assignee={task.assignee} compact />}
         </div>
       </div>
     </article>

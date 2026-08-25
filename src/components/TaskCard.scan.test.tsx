@@ -11,11 +11,15 @@ vi.mock('../context/ChatContext', () => ({
   }),
 }));
 
+const authState = vi.hoisted(() => ({
+  isAdmin: false,
+}));
+
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-1', username: 'wesley' },
     isAuthenticated: true,
-    isAdmin: false,
+    isAdmin: authState.isAdmin,
   }),
 }));
 
@@ -131,6 +135,7 @@ function renderCard(status: TaskStatus) {
 describe('TaskCard scan-first actions', () => {
   afterEach(() => {
     cleanup();
+    authState.isAdmin = false;
   });
 
   it('shows title, display id, and Smart copy on To Do without the business wall', () => {
@@ -146,12 +151,42 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByText(/QA 0\/2/)).not.toBeInTheDocument();
   });
 
-  it('shows Unassigned when the card has no owner', () => {
+  it('hides Unassigned and assignee from members', () => {
+    renderCard('todo');
+    expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
+  });
+
+  it('hides the assigned username from members', () => {
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({
+            assigneeId: 'user-2',
+            assignee: { id: 'user-2', username: 'arthura' },
+          })}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(screen.queryByText('arthura')).not.toBeInTheDocument();
+    expect(screen.queryByText('AR')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
+  });
+
+  it('shows Unassigned to admins when the card has no owner', () => {
+    authState.isAdmin = true;
     renderCard('todo');
     expect(screen.getByText('Unassigned')).toBeInTheDocument();
   });
 
-  it('shows assignee initials and username without opening the card', () => {
+  it('shows assignee initials and username to admins without opening the card', () => {
+    authState.isAdmin = true;
     render(
       <StatusMoveAnimationProvider>
         <TaskCard

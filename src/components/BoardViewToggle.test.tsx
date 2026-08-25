@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1', username: 'wesley' },
+    isAuthenticated: true,
+    isAdmin: false,
+  }),
+}));
+
 import { BoardViewModePanel } from './BoardViewToggle';
 import { TaskListView } from './TaskListView';
 import type { Task } from '../types/todo';

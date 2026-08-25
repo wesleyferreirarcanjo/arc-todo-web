@@ -187,7 +187,7 @@ export function TaskDetailsModal({
   onEdit,
   onTaskSynced,
 }: TaskDetailsModalProps) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -520,7 +520,7 @@ export function TaskDetailsModal({
             <span className="task-details-status">
               {formatTaskStatusLabel(task.status)}
             </span>
-            <AssigneeChip assignee={task.assignee} />
+            {isAdmin && <AssigneeChip assignee={task.assignee} />}
             {bugBadgeLabel && (
               <span
                 className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
@@ -858,7 +858,16 @@ export function TaskDetailsModal({
           {loading ? (
             <p className="task-details-muted">Loading history...</p>
           ) : (() => {
-              const visibleHistory = history.filter(isVisibleChangeHistoryEntry);
+              const visibleHistory = history.filter(
+                (
+                  entry,
+                ): entry is TaskHistoryEntry & {
+                  field: 'title' | 'description' | 'dueDate' | 'assignee';
+                } => {
+                  if (!isVisibleChangeHistoryEntry(entry)) return false;
+                  return isAdmin || entry.field !== 'assignee';
+                },
+              );
               if (visibleHistory.length === 0) {
                 return (
                   <p className="task-details-muted">

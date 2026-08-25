@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { Task, TaskStatus, TaskWithContext } from '../types/todo';
+import { useAuth } from '../context/AuthContext';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { Select } from './Select';
@@ -49,6 +50,7 @@ export function TaskListView({
   onUpdateStatus,
   onEditTask,
 }: TaskListViewProps) {
+  const { isAdmin } = useAuth();
   const [detailsTask, setDetailsTask] = useState<Task | TaskWithContext | null>(null);
 
   // Page owns ordering (AllTasksBoardPage sortTasks); render in given order.
@@ -140,7 +142,11 @@ export function TaskListView({
 
   return (
     <>
-      <div className="task-list-view" role="table" aria-label="Tasks">
+      <div
+        className={`task-list-view${isAdmin ? ' has-assignee' : ''}`}
+        role="table"
+        aria-label="Tasks"
+      >
         <div className="task-list-header" role="row">
           <span className="task-list-col task-list-col-id" role="columnheader">
             ID
@@ -148,9 +154,11 @@ export function TaskListView({
           <span className="task-list-col task-list-col-title" role="columnheader">
             Title
           </span>
-          <span className="task-list-col task-list-col-assignee" role="columnheader">
-            Assignee
-          </span>
+          {isAdmin && (
+            <span className="task-list-col task-list-col-assignee" role="columnheader">
+              Assignee
+            </span>
+          )}
           <span className="task-list-col task-list-col-status" role="columnheader">
             Status
           </span>
@@ -205,13 +213,15 @@ export function TaskListView({
                 >
                   {task.title}
                 </span>
-                <span
-                  className="task-list-col task-list-col-assignee"
-                  role="cell"
-                  data-label="Assignee"
-                >
-                  <AssigneeChip assignee={task.assignee} compact />
-                </span>
+                {isAdmin && (
+                  <span
+                    className="task-list-col task-list-col-assignee"
+                    role="cell"
+                    data-label="Assignee"
+                  >
+                    <AssigneeChip assignee={task.assignee} compact />
+                  </span>
+                )}
                 <span
                   className={`task-list-col task-list-col-status task-list-status-${task.status}`}
                   role="cell"
