@@ -1620,7 +1620,7 @@ textarea:focus-visible {
 .task-list-row {
   display: grid;
   grid-template-columns:
-    5.75rem minmax(0, 1.6fr) 7rem 5.75rem 7.25rem minmax(0, 1.1fr);
+    5.75rem minmax(0, 1.45fr) 8.5rem 7rem 5.75rem 7.25rem minmax(0, 1.1fr);
   gap: 0.85rem 1rem;
   align-items: center;
   padding: 0.75rem 1.15rem;
@@ -1711,6 +1711,10 @@ textarea:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-primary);
+}
+
+.task-list-col-assignee {
+  min-width: 0;
 }
 
 .task-list-col-status {
@@ -4123,6 +4127,69 @@ textarea {
   justify-content: space-between;
   gap: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.task-card-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.assignee-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  min-height: 1.5rem;
+  padding: 0.1rem 0.45rem 0.1rem 0.12rem;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 22%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-elevated) 82%, var(--bg-page));
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.assignee-chip-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.28rem;
+  height: 1.28rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: hsl(var(--assignee-hue, 250) 46% 36%);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.assignee-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assignee-chip.is-unassigned {
+  border-style: dashed;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.assignee-chip.is-unassigned .assignee-chip-initials {
+  background: color-mix(in srgb, var(--bg-surface) 70%, var(--border));
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.assignee-chip.is-compact {
+  padding-right: 0.4rem;
 }
 
 .subtask-progress-badge {

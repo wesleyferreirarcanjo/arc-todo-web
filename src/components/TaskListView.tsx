@@ -4,6 +4,7 @@ import type { Task, TaskStatus, TaskWithContext } from '../types/todo';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import { Select } from './Select';
+import { AssigneeChip } from './AssigneeChip';
 import { TaskDetailsModal } from './TaskDetailsModal';
 
 const STATUS_LABELS = TASK_STATUS_LABELS;
@@ -147,6 +148,9 @@ export function TaskListView({
           <span className="task-list-col task-list-col-title" role="columnheader">
             Title
           </span>
+          <span className="task-list-col task-list-col-assignee" role="columnheader">
+            Assignee
+          </span>
           <span className="task-list-col task-list-col-status" role="columnheader">
             Status
           </span>
@@ -200,6 +204,13 @@ export function TaskListView({
                   data-label="Title"
                 >
                   {task.title}
+                </span>
+                <span
+                  className="task-list-col task-list-col-assignee"
+                  role="cell"
+                  data-label="Assignee"
+                >
+                  <AssigneeChip assignee={task.assignee} compact />
                 </span>
                 <span
                   className={`task-list-col task-list-col-status task-list-status-${task.status}`}

@@ -167,7 +167,12 @@ export function ProjectTasksPage() {
         </div>
       </header>
 
-      <TaskForm onSubmit={handleCreate} />
+      <TaskForm
+        onSubmit={handleCreate}
+        organizationId={orgId}
+        projectId={projectId}
+        defaultAssigneeId={currentProject?.defaultAssigneeId}
+      />
 
       {loading && <p className="status-message">Loading tasks...</p>}
       {error && <ErrorAlert>{error}</ErrorAlert>}

@@ -1,6 +1,6 @@
 import { ErrorAlert } from './ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import type { CreateTaskInput, TaskCategory, TaskCriticity, TaskStatus } from '../types/todo';
 import {
   buildTaskMetadataInput,
@@ -13,11 +13,16 @@ import {
 } from '../lib/tasks/taskDescriptions';
 import { TASK_STATUS_OPTIONS } from '../lib/tasks/taskStatus';
 import {
+  assigneeCreatePayload,
+  UNASSIGNED_VALUE,
+} from '../lib/users/assigneeDisplay';
+import {
   CategorySelect,
   DEFAULT_TASK_CATEGORY,
   TaskCategoryFormFields,
 } from './TaskCategoryFormFields';
 import { TaskDescriptionFields } from './TaskDescriptionFields';
+import { AssigneeSelect } from './AssigneeSelect';
 import { Select } from './Select';
 
 interface TaskFormProps {
@@ -27,6 +32,9 @@ interface TaskFormProps {
   heading?: string;
   submitLabel?: string;
   hideHeading?: boolean;
+  organizationId?: string;
+  projectId?: string;
+  defaultAssigneeId?: string | null;
 }
 
 const statuses = TASK_STATUS_OPTIONS;
@@ -45,6 +53,9 @@ export function TaskForm({
   heading = 'New task',
   submitLabel = 'Add task',
   hideHeading = false,
+  organizationId,
+  projectId,
+  defaultAssigneeId = null,
 }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [descriptions, setDescriptions] = useState<TaskDescriptionFormState>({
@@ -55,10 +66,15 @@ export function TaskForm({
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [criticity, setCriticity] = useState<TaskCriticity>('medium');
   const [dueDate, setDueDate] = useState('');
+  const [assigneeId, setAssigneeId] = useState(defaultAssigneeId ?? UNASSIGNED_VALUE);
   const [category, setCategory] = useState<TaskCategory>(defaultCategory);
   const [coding, setCoding] = useState<CodingMetadataFormState>(emptyCodingMetadataForm());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAssigneeId(defaultAssigneeId ?? UNASSIGNED_VALUE);
+  }, [defaultAssigneeId, organizationId, projectId]);
 
   function handleCodingChange(
     field: keyof CodingMetadataFormState,
@@ -92,6 +108,7 @@ export function TaskForm({
         parentTaskId,
         category,
         metadata,
+        ...assigneeCreatePayload(assigneeId, defaultAssigneeId),
       });
       setTitle('');
       setDescriptions({
@@ -102,6 +119,7 @@ export function TaskForm({
       setStatus('todo');
       setCriticity('medium');
       setDueDate('');
+      setAssigneeId(defaultAssigneeId ?? UNASSIGNED_VALUE);
       setCategory(defaultCategory);
       setCoding(emptyCodingMetadataForm());
     } catch (err) {
@@ -164,6 +182,16 @@ export function TaskForm({
             type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value)}
+          />
+        </label>
+
+        <label>
+          Assignee
+          <AssigneeSelect
+            orgId={organizationId}
+            projectId={projectId}
+            value={assigneeId}
+            onChange={setAssigneeId}
           />
         </label>
       </div>

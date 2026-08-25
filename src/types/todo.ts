@@ -77,6 +77,8 @@ export interface Task {
   subtaskProgress?: SubtaskProgress | null;
   subtasks?: Task[];
   createdById?: string | null;
+  assigneeId?: string | null;
+  assignee?: { id: string; username: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -117,6 +119,7 @@ export interface CreateTaskInput {
   criticity?: TaskCriticity;
   dueDate?: string;
   parentTaskId?: string;
+  assigneeId?: string | null;
   category?: TaskCategory;
   metadata?: Record<string, unknown>;
 }
@@ -131,6 +134,7 @@ export interface UpdateTaskInput {
   criticity?: TaskCriticity;
   dueDate?: string | null;
   parentTaskId?: string | null;
+  assigneeId?: string | null;
   category?: TaskCategory;
   metadata?: Record<string, unknown>;
   isBug?: boolean;
@@ -143,7 +147,8 @@ export type TaskHistoryField =
   | 'description'
   | 'dueDate'
   | 'isBug'
-  | 'bugReason';
+  | 'bugReason'
+  | 'assignee';
 
 export interface TaskComment {
   id: string;

@@ -4,7 +4,9 @@ import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, updateProject } from '../lib/api/projects';
 import { getProjectColor } from '../lib/color/entityColor';
+import { UNASSIGNED_VALUE } from '../lib/users/assigneeDisplay';
 import type { Project, UpdateProjectInput } from '../types/project';
+import { AssigneeSelect } from './AssigneeSelect';
 
 interface ProjectListProps {
   projects: Project[];
@@ -19,6 +21,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('');
+  const [defaultAssigneeId, setDefaultAssigneeId] = useState(UNASSIGNED_VALUE);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -31,6 +34,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
     setName(project.name);
     setDescription(project.description ?? '');
     setColor(getProjectColor(project));
+    setDefaultAssigneeId(project.defaultAssigneeId ?? UNASSIGNED_VALUE);
     setEditingId(project.id);
   }
 
@@ -39,6 +43,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
     setName('');
     setDescription('');
     setColor('');
+    setDefaultAssigneeId(UNASSIGNED_VALUE);
   }
 
   async function handleSave(project: Project) {
@@ -53,6 +58,10 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
       input.description = trimmedDescription || null;
     }
     if (color !== getProjectColor(project)) input.color = color;
+    const nextDefault = defaultAssigneeId || null;
+    if (nextDefault !== (project.defaultAssigneeId ?? null)) {
+      input.defaultAssigneeId = nextDefault;
+    }
 
     if (Object.keys(input).length === 0) {
       handleCancelEdit();
@@ -140,6 +149,16 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                     />
                     <span className="color-value">{color}</span>
                   </div>
+                </label>
+
+                <label>
+                  Default assignee
+                  <AssigneeSelect
+                    orgId={orgId}
+                    projectId={project.id}
+                    value={defaultAssigneeId}
+                    onChange={setDefaultAssigneeId}
+                  />
                 </label>
 
                 <div className="entity-edit-actions">

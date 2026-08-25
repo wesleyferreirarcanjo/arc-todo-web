@@ -53,3 +53,12 @@ export function deleteProject(
     },
   );
 }
+
+export function fetchAssignableUsers(
+  orgId: string,
+  projectId: string,
+): Promise<Array<{ id: string; username: string }>> {
+  return apiRequest<Array<{ id: string; username: string }>>(
+    `/organizations/${orgId}/projects/${projectId}/assignable-users`,
+  );
+}

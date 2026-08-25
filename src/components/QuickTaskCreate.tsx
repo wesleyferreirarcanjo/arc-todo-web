@@ -175,7 +175,14 @@ export function QuickTaskCreate({ onCreated }: QuickTaskCreateProps) {
         )}
 
         {canCreate && (
-          <TaskForm onSubmit={handleCreate} hideHeading heading="New task" />
+          <TaskForm
+            onSubmit={handleCreate}
+            hideHeading
+            heading="New task"
+            organizationId={organizationId}
+            projectId={projectId}
+            defaultAssigneeId={selectedProject?.defaultAssigneeId}
+          />
         )}
       </Modal>
     </>

@@ -23,6 +23,7 @@ import {
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorAlert } from './ErrorAlert';
+import { AssigneeChip } from './AssigneeChip';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 import { TaskQaSection } from './TaskQaSection';
@@ -63,16 +64,27 @@ interface TaskDetailsModalProps {
   onTaskSynced?: (task: Task) => void;
 }
 
-const historyFieldLabels: Record<'title' | 'description' | 'dueDate', string> = {
+const historyFieldLabels: Record<
+  'title' | 'description' | 'dueDate' | 'assignee',
+  string
+> = {
   title: 'Title',
   description: 'Description',
   dueDate: 'Due date',
+  assignee: 'Assignee',
 };
 
 function isVisibleChangeHistoryEntry(
   entry: TaskHistoryEntry,
-): entry is TaskHistoryEntry & { field: 'title' | 'description' | 'dueDate' } {
-  return entry.field === 'title' || entry.field === 'description' || entry.field === 'dueDate';
+): entry is TaskHistoryEntry & {
+  field: 'title' | 'description' | 'dueDate' | 'assignee';
+} {
+  return (
+    entry.field === 'title' ||
+    entry.field === 'description' ||
+    entry.field === 'dueDate' ||
+    entry.field === 'assignee'
+  );
 }
 
 function formatDisplayDate(value: string | null | undefined): string {
@@ -87,11 +99,13 @@ function isCommentEdited(comment: TaskComment): boolean {
 }
 
 function formatHistoryValue(
-  field: 'title' | 'description' | 'dueDate',
+  field: 'title' | 'description' | 'dueDate' | 'assignee',
   value: string | null,
 ): string {
   if (!value) {
-    return field === 'dueDate' ? 'No due date' : 'Empty';
+    if (field === 'dueDate') return 'No due date';
+    if (field === 'assignee') return 'Unassigned';
+    return 'Empty';
   }
   return value;
 }
@@ -506,6 +520,7 @@ export function TaskDetailsModal({
             <span className="task-details-status">
               {formatTaskStatusLabel(task.status)}
             </span>
+            <AssigneeChip assignee={task.assignee} />
             {bugBadgeLabel && (
               <span
                 className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}

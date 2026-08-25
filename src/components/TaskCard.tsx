@@ -44,6 +44,9 @@ import { TaskDetailsModal } from './TaskDetailsModal';
 import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
 import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
+import { AssigneeChip } from './AssigneeChip';
+import { AssigneeSelect } from './AssigneeSelect';
+import { UNASSIGNED_VALUE } from '../lib/users/assigneeDisplay';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
 import { UndoToast } from './UndoToast';
 import {
@@ -280,6 +283,7 @@ export function TaskCard({
     codingMetadataFormFromTask(task.metadata),
   );
   const [parentTaskId, setParentTaskId] = useState(task.parentTaskId ?? '');
+  const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? UNASSIGNED_VALUE);
   const [selectedParentId, setSelectedParentId] = useState(task.parentTaskId ?? '');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -365,6 +369,7 @@ export function TaskCard({
     setCategory(task.category ?? DEFAULT_TASK_CATEGORY);
     setCoding(codingMetadataFormFromTask(task.metadata));
     setParentTaskId(task.parentTaskId ?? '');
+    setAssigneeId(task.assigneeId ?? UNASSIGNED_VALUE);
     setSelectedParentId(task.parentTaskId ?? '');
   }
 
@@ -504,6 +509,7 @@ export function TaskCard({
         criticity,
         dueDate: dueDate || null,
         parentTaskId: parentTaskId || null,
+        assigneeId: assigneeId || null,
         category,
         metadata,
       });
@@ -1132,7 +1138,10 @@ export function TaskCard({
           transition={base}
         >
           <div className="task-card-header">
-            <h3>{task.title}</h3>
+            <div className="task-card-heading">
+              <h3>{task.title}</h3>
+              <AssigneeChip assignee={task.assignee} />
+            </div>
             {isSubtask && !isDetachedSubtask && subtaskProgress && (
               <span
                 className="subtask-progress-badge"
@@ -1335,6 +1344,8 @@ export function TaskCard({
             hideHeading
             parentTaskId={task.id}
             defaultCategory={task.category ?? DEFAULT_TASK_CATEGORY}
+            organizationId={resolvedOrganizationId}
+            projectId={resolvedProjectId}
             onSubmit={async (input) => {
               await onCreateSubtask!(task.id, input);
               setSubtaskModalOpen(false);
@@ -1449,6 +1460,16 @@ export function TaskCard({
                 type="date"
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
+              />
+            </label>
+
+            <label>
+              Assignee
+              <AssigneeSelect
+                orgId={resolvedOrganizationId}
+                projectId={resolvedProjectId}
+                value={assigneeId}
+                onChange={setAssigneeId}
               />
             </label>
           </div>
@@ -1567,7 +1588,10 @@ export function TaskCardOverlay({
       </div>
 
       <div className="task-card-header">
-        <h3>{task.title}</h3>
+        <div className="task-card-heading">
+          <h3>{task.title}</h3>
+          <AssigneeChip assignee={task.assignee} compact />
+        </div>
       </div>
     </article>
   );

@@ -146,6 +146,34 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByText(/QA 0\/2/)).not.toBeInTheDocument();
   });
 
+  it('shows Unassigned when the card has no owner', () => {
+    renderCard('todo');
+    expect(screen.getByText('Unassigned')).toBeInTheDocument();
+  });
+
+  it('shows assignee initials and username without opening the card', () => {
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({
+            assigneeId: 'user-2',
+            assignee: { id: 'user-2', username: 'arthura' },
+          })}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(screen.getByText('arthura')).toBeInTheDocument();
+    expect(screen.getByText('AR')).toBeInTheDocument();
+    expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
+  });
+
   it('hides Smart copy on Done and shows a corner check that holds the light', () => {
     renderCard('done');
 
