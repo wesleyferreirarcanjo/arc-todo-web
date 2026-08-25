@@ -12,17 +12,28 @@ import {
 import { ErrorAlert } from '../components/ErrorAlert';
 import { Select } from '../components/Select';
 import { AnalyticsIcon } from '../components/icons';
-import { fetchAnalyticsSummary } from '../lib/api/analytics';
+import {
+  ANALYTICS_PERIOD_OPTIONS,
+  fetchAnalyticsSummary,
+} from '../lib/api/analytics';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import {
   checklistChartRows,
+  dwellChartRows,
   personChartRows,
   statusChartRows,
 } from '../lib/analytics/chartData';
 import { formatAnalyticsDuration } from '../lib/analytics/formatDuration';
+import { formatGrowthCopy } from '../lib/analytics/growthCopy';
+import {
+  analyticsQueryFromFilters,
+  readAnalyticsFilters,
+  writeAnalyticsFilters,
+  type AnalyticsPageFilters,
+} from '../lib/analytics/period';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import type { AnalyticsSummary } from '../types/analytics';
+import type { AnalyticsGrowthMetric, AnalyticsSummary } from '../types/analytics';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
@@ -59,10 +70,30 @@ function durationOrEmpty(ms: number | null, empty: string): string {
   return formatAnalyticsDuration(ms) || empty;
 }
 
+function GrowthCard({
+  title,
+  metric,
+  previousLabel,
+}: {
+  title: string;
+  metric: AnalyticsGrowthMetric;
+  previousLabel: string | null;
+}) {
+  const copy = formatGrowthCopy(metric, previousLabel);
+  const direction =
+    metric.delta === null ? '' : metric.delta > 0 ? 'up' : metric.delta < 0 ? 'down' : 'flat';
+  return (
+    <article className={`analytics-kpi analytics-growth-card is-${direction || 'none'}`}>
+      <h3>{title}</h3>
+      <p className="analytics-kpi-value">{metric.current}</p>
+      <p className="analytics-kpi-meta">{copy}</p>
+    </article>
+  );
+}
+
 export function AnalyticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const orgFilter = searchParams.get('organizationId') ?? '';
-  const projectFilter = searchParams.get('projectId') ?? '';
+  const filters = useMemo(() => readAnalyticsFilters(searchParams), [searchParams]);
   const colors = useChartColors();
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -73,21 +104,20 @@ export function AnalyticsPage() {
 
   const projectOptions = useMemo(
     () =>
-      orgFilter
-        ? projects.filter((project) => project.organizationId === orgFilter)
+      filters.organizationId
+        ? projects.filter((project) => project.organizationId === filters.organizationId)
         : projects,
-    [projects, orgFilter],
+    [projects, filters.organizationId],
   );
 
   const setFilters = useCallback(
-    (nextOrg: string, nextProject: string) => {
-      const next = new URLSearchParams();
-      if (nextOrg) next.set('organizationId', nextOrg);
-      if (nextProject) next.set('projectId', nextProject);
-      setSearchParams(next, { replace: true });
+    (next: AnalyticsPageFilters) => {
+      setSearchParams(writeAnalyticsFilters(next), { replace: true });
     },
     [setSearchParams],
   );
+
+  const queryState = analyticsQueryFromFilters(filters);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,25 +144,36 @@ export function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    if (!projectFilter) {
+    if (!filters.projectId) {
       return;
     }
-    const project = projects.find((entry) => entry.id === projectFilter);
-    if (project && orgFilter && project.organizationId !== orgFilter) {
-      setFilters(orgFilter, '');
+    const project = projects.find((entry) => entry.id === filters.projectId);
+    if (project && filters.organizationId && project.organizationId !== filters.organizationId) {
+      setFilters({ ...filters, projectId: '' });
     }
-  }, [orgFilter, projectFilter, projects, setFilters]);
+  }, [filters, projects, setFilters]);
 
   useEffect(() => {
+    if ('pending' in queryState) {
+      setLoading(false);
+      setSummary(null);
+      setError(null);
+      return;
+    }
+    if ('error' in queryState) {
+      setLoading(false);
+      setSummary(null);
+      setError(queryState.error);
+      return;
+    }
+
+    const request = queryState;
     let cancelled = false;
     async function loadSummary() {
       setLoading(true);
       setError(null);
       try {
-        const next = await fetchAnalyticsSummary({
-          organizationId: orgFilter || undefined,
-          projectId: projectFilter || undefined,
-        });
+        const next = await fetchAnalyticsSummary(request);
         if (!cancelled) {
           setSummary(next);
         }
@@ -151,18 +192,24 @@ export function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [orgFilter, projectFilter]);
+  }, [searchParams]);
 
   const statusRows = summary ? statusChartRows(summary.byStatus) : [];
   const checklistRows = summary ? checklistChartRows(summary) : [];
   const personRows = summary ? personChartRows(summary.byPerson) : [];
+  const dwellRows = summary ? dwellChartRows(summary.dwellByStatus) : [];
+  const pendingDates = 'pending' in queryState;
+  const periodLabel = summary?.period.label ?? ANALYTICS_PERIOD_OPTIONS.find((option) => option.value === filters.period)?.label;
+  const compareCaption =
+    summary?.period.previousLabel ??
+    (filters.period === 'all' ? null : 'the previous period');
 
   return (
     <div className="page-shell analytics-page">
       <header className="page-header">
         <h2>Analytics</h2>
         <p className="page-subtitle">
-          Task, checklist, and board timing for administrators.
+          Growth, board timing, and checklist coverage for administrators.
         </p>
       </header>
 
@@ -170,8 +217,8 @@ export function AnalyticsPage() {
         <label className="board-filter-field">
           Organization
           <Select
-            value={orgFilter}
-            onChange={(value) => setFilters(value, '')}
+            value={filters.organizationId}
+            onChange={(value) => setFilters({ ...filters, organizationId: value, projectId: '' })}
             options={[
               { value: '', label: 'All organizations' },
               ...organizations.map((organization) => ({
@@ -184,8 +231,8 @@ export function AnalyticsPage() {
         <label className="board-filter-field">
           Project
           <Select
-            value={projectFilter}
-            onChange={(value) => setFilters(orgFilter, value)}
+            value={filters.projectId}
+            onChange={(value) => setFilters({ ...filters, projectId: value })}
             options={[
               { value: '', label: 'All projects' },
               ...projectOptions.map((project) => ({
@@ -197,32 +244,132 @@ export function AnalyticsPage() {
         </label>
       </div>
 
-      {error && <ErrorAlert>{error}</ErrorAlert>}
-      {loading && <p className="status-message">Loading analytics...</p>}
+      <div
+        className="board-view-toggle analytics-period-toggle"
+        role="group"
+        aria-label="Date range"
+      >
+        {ANALYTICS_PERIOD_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`board-view-toggle-btn${filters.period === option.value ? ' is-active' : ''}`}
+            aria-pressed={filters.period === option.value}
+            onClick={() =>
+              setFilters({
+                ...filters,
+                period: option.value,
+                compareMode: option.value === 'all' ? 'previous' : filters.compareMode,
+              })
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
-      {!loading && summary && summary.tasksCreated === 0 && (
-        <div className="diagrams-empty">
-          <div className="hub-empty-glyph">
-            <AnalyticsIcon className="arc-icon arc-icon-empty" />
-          </div>
-          <p className="status-message">No tasks in this view yet.</p>
+      {filters.period === 'custom' && (
+        <div className="analytics-date-row">
+          <label className="board-filter-field">
+            From
+            <input
+              type="date"
+              value={filters.from}
+              onChange={(event) => setFilters({ ...filters, from: event.target.value })}
+            />
+          </label>
+          <label className="board-filter-field">
+            To
+            <input
+              type="date"
+              value={filters.to}
+              onChange={(event) => setFilters({ ...filters, to: event.target.value })}
+            />
+          </label>
         </div>
       )}
 
-      {!loading && summary && summary.tasksCreated > 0 && (
+      {filters.period !== 'all' && (
+        <div className="analytics-date-row">
+          <label className="board-filter-field">
+            Compared with
+            <Select
+              value={filters.compareMode}
+              onChange={(value) =>
+                setFilters({
+                  ...filters,
+                  compareMode: value === 'custom' ? 'custom' : 'previous',
+                })
+              }
+              options={[
+                { value: 'previous', label: 'Previous period' },
+                { value: 'custom', label: 'Another range' },
+              ]}
+            />
+          </label>
+          {filters.compareMode === 'custom' && (
+            <>
+              <label className="board-filter-field">
+                Compare from
+                <input
+                  type="date"
+                  value={filters.compareFrom}
+                  onChange={(event) =>
+                    setFilters({ ...filters, compareFrom: event.target.value })
+                  }
+                />
+              </label>
+              <label className="board-filter-field">
+                Compare to
+                <input
+                  type="date"
+                  value={filters.compareTo}
+                  onChange={(event) => setFilters({ ...filters, compareTo: event.target.value })}
+                />
+              </label>
+            </>
+          )}
+        </div>
+      )}
+
+      <p className="analytics-period-caption">
+        {pendingDates
+          ? 'Pick a From date and a To date.'
+          : `Showing ${periodLabel}${compareCaption ? ` · compared with ${compareCaption}` : ''}.`}
+      </p>
+
+      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {loading && <p className="status-message">Loading analytics...</p>}
+
+      {!loading && summary && (
         <>
-          <section className="analytics-kpis" aria-label="Analytics figures">
-            <article className="analytics-kpi">
-              <h3>Tasks created</h3>
-              <p className="analytics-kpi-value">{summary.tasksCreated}</p>
-              <p className="analytics-kpi-meta">
-                {summary.activeCount} active · {summary.archivedCount} archived
-              </p>
-            </article>
-            <article className="analytics-kpi">
-              <h3>Last 7 days</h3>
-              <p className="analytics-kpi-value">{summary.tasksCreatedLast7Days}</p>
-            </article>
+          <section className="analytics-kpis analytics-growth" aria-label="Growth">
+            <header className="analytics-section-head">
+              <h3>Growth</h3>
+              <p>How production, moves, and bug reports changed versus the comparison window.</p>
+            </header>
+            <GrowthCard
+              title="Tasks created"
+              metric={summary.growth.tasksCreated}
+              previousLabel={summary.period.previousLabel}
+            />
+            <GrowthCard
+              title="Moves"
+              metric={summary.growth.moves}
+              previousLabel={summary.period.previousLabel}
+            />
+            <GrowthCard
+              title="Bug reports"
+              metric={summary.growth.bugReports}
+              previousLabel={summary.period.previousLabel}
+            />
+          </section>
+
+          <section className="analytics-kpis" aria-label="This period">
+            <header className="analytics-section-head">
+              <h3>This period</h3>
+              <p>Times and averages inside {summary.period.label}.</p>
+            </header>
             <article className="analytics-kpi">
               <h3>Average time to Done</h3>
               <p className="analytics-kpi-value">
@@ -231,15 +378,6 @@ export function AnalyticsPage() {
               <p className="analytics-footnote">
                 Uses the same completion time as Weekly cycle.
               </p>
-            </article>
-            <article className="analytics-kpi">
-              <h3>Moves</h3>
-              <p className="analytics-kpi-value">{summary.moves}</p>
-            </article>
-            <article className="analytics-kpi">
-              <h3>Bug flags</h3>
-              <p className="analytics-kpi-value">{summary.openBugs}</p>
-              <p className="analytics-kpi-meta">{summary.bugReports} reports</p>
             </article>
             <article className="analytics-kpi">
               <h3>Average time to solve a bug</h3>
@@ -258,21 +396,55 @@ export function AnalyticsPage() {
                 {durationOrEmpty(summary.averageMsInQaTest, 'No finished test times yet.')}
               </p>
             </article>
-            <article className="analytics-kpi">
-              <h3>Checklist</h3>
-              <p className="analytics-kpi-value">
-                {summary.checklistItemsChecked} / {summary.checklistItemsTotal}
-              </p>
-              <p className="analytics-kpi-meta">
-                {summary.checklistCompleteTasks} complete · {summary.checklistOpenBugs} open
-                bugs
-              </p>
-            </article>
           </section>
 
           <section className="analytics-panels">
+            <article className="analytics-panel analytics-panel-wide">
+              <h3>Where work stayed longest</h3>
+              {summary.longestStay ? (
+                <p className="analytics-kpi-meta">
+                  {summary.longestStay.label} held work the longest —{' '}
+                  {formatAnalyticsDuration(summary.longestStay.averageMs)} on average before it
+                  moved on.
+                </p>
+              ) : (
+                <p className="analytics-kpi-meta">No finished stays in this period yet.</p>
+              )}
+              <div className="analytics-chart">
+                <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                  <BarChart data={dwellRows} layout="vertical" margin={{ left: 8, right: 16 }}>
+                    <CartesianGrid stroke={colors.grid} horizontal={false} />
+                    <XAxis type="number" hide />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={104}
+                      stroke={colors.muted}
+                      tick={{ fill: colors.muted, fontSize: 12 }}
+                    />
+                    <Tooltip
+                      formatter={(value) => formatAnalyticsDuration(Number(value)) || 'No finished stays yet.'}
+                    />
+                    <Bar dataKey="ms" name="Average stay" fill={colors.secondary} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
+          </section>
+
+          <section className="analytics-panels" aria-label="On the board now">
+            <header className="analytics-section-head analytics-section-head-wide">
+              <h3>On the board now</h3>
+              <p>
+                Current columns, open bugs, and checklist — not limited to {summary.period.label}.
+              </p>
+            </header>
             <article className="analytics-panel">
               <h3>By status</h3>
+              <p className="analytics-kpi-meta">
+                {summary.activeCount} active · {summary.archivedCount} archived · {summary.openBugs}{' '}
+                open bugs
+              </p>
               <div className="analytics-chart">
                 <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
                   <BarChart data={statusRows} layout="vertical" margin={{ left: 8, right: 16 }}>
@@ -295,7 +467,8 @@ export function AnalyticsPage() {
             <article className="analytics-panel">
               <h3>Checklist</h3>
               <p className="analytics-kpi-meta">
-                {summary.checklistItemsChecked} of {summary.checklistItemsTotal} checked
+                {summary.checklistItemsChecked} of {summary.checklistItemsTotal} checked ·{' '}
+                {summary.checklistCompleteTasks} complete · {summary.checklistOpenBugs} open bugs
               </p>
               <div className="analytics-chart">
                 <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
@@ -312,6 +485,10 @@ export function AnalyticsPage() {
 
             <article className="analytics-panel analytics-panel-wide">
               <h3>By person</h3>
+              <p className="analytics-kpi-meta">
+                Tasks created and Moves are for {summary.period.label}. Open bugs are on the board
+                now.
+              </p>
               {personRows.length === 0 ? (
                 <p className="status-message">No person activity in this view yet.</p>
               ) : (
@@ -336,7 +513,7 @@ export function AnalyticsPage() {
                           <th scope="col">Person</th>
                           <th scope="col">Tasks created</th>
                           <th scope="col">Moves</th>
-                          <th scope="col">Open bugs</th>
+                          <th scope="col">Open bugs now</th>
                           <th scope="col">Time to Done</th>
                           <th scope="col">Time in test</th>
                         </tr>
@@ -364,6 +541,15 @@ export function AnalyticsPage() {
             </article>
           </section>
         </>
+      )}
+
+      {!loading && !summary && !error && !pendingDates && (
+        <div className="diagrams-empty">
+          <div className="hub-empty-glyph">
+            <AnalyticsIcon className="arc-icon arc-icon-empty" />
+          </div>
+          <p className="status-message">No tasks in this view yet.</p>
+        </div>
       )}
     </div>
   );

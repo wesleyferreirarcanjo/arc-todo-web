@@ -10487,6 +10487,56 @@ section.board-cycle-header {
   gap: 1.25rem;
 }
 
+.analytics-section-head {
+  grid-column: 1 / -1;
+}
+
+.analytics-section-head h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: var(--type-section);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.analytics-section-head p {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
+.analytics-period-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  overflow: visible;
+  margin: 0 0 1rem;
+}
+
+.analytics-date-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.analytics-period-caption {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
+.analytics-growth-card.is-up .analytics-kpi-meta {
+  color: var(--text-primary);
+}
+
+.analytics-growth-card.is-down .analytics-kpi-meta {
+  color: var(--text-muted);
+}
+
 .analytics-kpi,
 .analytics-panel {
   background: var(--bg-surface);
