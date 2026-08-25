@@ -1,8 +1,10 @@
 import type {
   AnalyticsByStatus,
   AnalyticsDwellByStatus,
-  AnalyticsPersonRow,
+  AnalyticsTrendBucket,
 } from '../../types/analytics';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function statusChartRows(byStatus: AnalyticsByStatus) {
   return [
@@ -36,10 +38,20 @@ export function dwellChartRows(dwellByStatus: AnalyticsDwellByStatus) {
   ];
 }
 
-export function personChartRows(rows: AnalyticsPersonRow[]) {
-  return rows.map((row) => ({
-    name: row.username,
-    created: row.tasksCreated,
-    moves: row.moves,
+export function trendChartRows(buckets: AnalyticsTrendBucket[]) {
+  return buckets.map((bucket) => ({
+    date: bucket.date,
+    label: formatTrendTick(bucket.date),
+    created: bucket.tasksCreated,
+    moves: bucket.moves,
+    bugs: bucket.bugReports,
   }));
+}
+
+function formatTrendTick(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) {
+    return iso;
+  }
+  return `${day} ${MONTHS[month - 1]}`;
 }

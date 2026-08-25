@@ -102,6 +102,13 @@ const summary: AnalyticsSummary = {
       sampleSizeTestDwells: 0,
     },
   ],
+  trend: {
+    granularity: 'day',
+    buckets: [
+      { date: '2026-07-26', tasksCreated: 1, moves: 2, bugReports: 0 },
+      { date: '2026-07-27', tasksCreated: 0, moves: 1, bugReports: 1 },
+    ],
+  },
 };
 
 describe('AnalyticsPage copy', () => {
@@ -117,24 +124,19 @@ describe('AnalyticsPage copy', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'What changed' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'New tasks' })).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByText(
-        /Window numbers use Last 30 days, compared with Previous period \(26 Jun 2026 – 25 Jul 2026\)\. Board-now numbers ignore these dates\./,
-      ),
-    ).toBeInTheDocument();
     expect(screen.getAllByText('In this window').length).toBeGreaterThan(1);
-    expect(screen.getByRole('heading', { name: 'New tasks' })).toBeInTheDocument();
-    expect(screen.getByText('Times a task changed status')).toBeInTheDocument();
-    expect(screen.getByText('Times a task was marked Bug')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Current columns, open bugs, and checklist. These are not limited to Last 30 days.',
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText('How many tasks sit in each status right now')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Column moves' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bugs flagged' })).toBeInTheDocument();
+    expect(screen.getByText('5 more +50%')).toBeInTheDocument();
+    expect(screen.getByText('3 fewer −60%')).toBeInTheDocument();
+    expect(screen.queryByText(/good|bad|success|danger/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.analytics-delta.is-up')).toBeTruthy();
+    expect(document.querySelector('.analytics-delta.is-down')).toBeTruthy();
+    expect(document.querySelector('.analytics-delta.is-success')).toBeNull();
+    expect(document.querySelector('.analytics-delta.is-danger')).toBeNull();
     expect(
       screen.getByRole('img', { name: '12 of 20 checklist items checked' }),
     ).toBeInTheDocument();

@@ -17,6 +17,7 @@ import {
   Flask,
   Funnel,
   GearSix,
+  Info,
   Moon,
   PencilSimple,
   Plus,
@@ -326,6 +327,7 @@ export const FilterIcon = phosphor(Funnel);
 export const NewTaskIcon = phosphor(Plus);
 export const BackIcon = phosphor(ArrowLeft);
 export const FlaskIcon = phosphor(Flask);
+export const InfoIcon = phosphor(Info);
 export const InstallIcon = phosphor(DownloadSimple);
 export const BellIcon = phosphor(Bell);
 export const MoreVerticalIcon = phosphor(DotsThreeVertical);

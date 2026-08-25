@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatGrowthCopy, formatPeriodCaption, formatSampleCopy } from './growthCopy';
+import { formatGrowthCopy, formatGrowthPill, formatPeriodCaption, formatSampleCopy } from './growthCopy';
 
 describe('formatGrowthCopy', () => {
   it('asks for a dated window when there is no previous period', () => {
@@ -37,6 +37,23 @@ describe('formatGrowthCopy', () => {
         'the previous window',
       ),
     ).toBe('6 fewer than the previous window (−60%). That window had 10.');
+  });
+});
+
+describe('formatGrowthPill', () => {
+  it('puts more/fewer in a short pill and never names good or bad', () => {
+    expect(
+      formatGrowthPill({ current: 15, previous: 10, delta: 5, percent: 50 }),
+    ).toEqual({ direction: 'up', text: '5 more +50%' });
+    expect(
+      formatGrowthPill({ current: 4, previous: 10, delta: -6, percent: -60 }),
+    ).toEqual({ direction: 'down', text: '6 fewer −60%' });
+    expect(
+      formatGrowthPill({ current: 40, previous: null, delta: null, percent: null }),
+    ).toEqual({ direction: 'none', text: 'No comparison' });
+    expect(
+      formatGrowthPill({ current: 40, previous: 40, delta: 0, percent: 0 }),
+    ).toEqual({ direction: 'flat', text: 'Same' });
   });
 });
 

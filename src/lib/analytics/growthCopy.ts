@@ -28,6 +28,27 @@ export function formatGrowthCopy(
   return `${amount} ${direction} than ${vs}${percent}. That window had ${metric.previous}.`;
 }
 
+export function formatGrowthPill(metric: AnalyticsGrowthMetric): {
+  direction: 'up' | 'down' | 'flat' | 'none';
+  text: string;
+} {
+  if (metric.delta === null) {
+    return { direction: 'none', text: 'No comparison' };
+  }
+  if (metric.delta === 0) {
+    return { direction: 'flat', text: 'Same' };
+  }
+  const word = metric.delta > 0 ? 'more' : 'fewer';
+  const percent =
+    metric.percent === null
+      ? ''
+      : ` ${metric.percent > 0 ? '+' : '−'}${Math.abs(metric.percent)}%`;
+  return {
+    direction: metric.delta > 0 ? 'up' : 'down',
+    text: `${Math.abs(metric.delta)} ${word}${percent}`,
+  };
+}
+
 export function formatPeriodCaption({
   pending,
   periodKey,

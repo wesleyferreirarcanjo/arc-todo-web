@@ -6,13 +6,18 @@ import {
   CartesianGrid,
   LabelList,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+import { AnalyticsClockChip, AnalyticsKpiCard } from '../components/analytics/AnalyticsKpiCard';
+import { AnalyticsMetricInfo } from '../components/analytics/AnalyticsMetricInfo';
+import { AnalyticsToolbar } from '../components/analytics/AnalyticsToolbar';
+import { useChartColors } from '../components/analytics/useChartColors';
 import { ErrorAlert } from '../components/ErrorAlert';
-import { Select } from '../components/Select';
 import { AnalyticsIcon } from '../components/icons';
 import {
   ANALYTICS_PERIOD_OPTIONS,
@@ -20,7 +25,7 @@ import {
 } from '../lib/api/analytics';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
-import { dwellChartRows, personChartRows, statusChartRows } from '../lib/analytics/chartData';
+import { dwellChartRows, statusChartRows, trendChartRows } from '../lib/analytics/chartData';
 import { formatAnalyticsDuration } from '../lib/analytics/formatDuration';
 import {
   formatGrowthCopy,
@@ -34,39 +39,13 @@ import {
   type AnalyticsPageFilters,
 } from '../lib/analytics/period';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import type { AnalyticsGrowthMetric, AnalyticsSummary } from '../types/analytics';
+import type { AnalyticsSummary } from '../types/analytics';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
 const CHART_HEIGHT = 248;
+const HERO_HEIGHT = 280;
 const VERTICAL_Y_WIDTH = 108;
-
-function readToken(name: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return value || fallback;
-}
-
-function useChartColors() {
-  const [colors, setColors] = useState({
-    accent: '#4862ce',
-    secondary: '#6846b8',
-    text: '#e8ecf4',
-    muted: '#9aa6bc',
-    grid: 'rgba(142, 160, 188, 0.18)',
-  });
-
-  useEffect(() => {
-    setColors({
-      accent: readToken('--accent', '#4862ce'),
-      secondary: readToken('--accent-secondary', '#6846b8'),
-      text: readToken('--text-primary', '#e8ecf4'),
-      muted: readToken('--text-muted', '#9aa6bc'),
-      grid: readToken('--border', 'rgba(142, 160, 188, 0.18)'),
-    });
-  }, []);
-
-  return colors;
-}
 
 function durationOrEmpty(ms: number | null, empty: string): string {
   return formatAnalyticsDuration(ms) || empty;
@@ -113,72 +92,35 @@ function ChartTooltip({
   );
 }
 
-function ScopeHeader({
+function PanelHead({
   clock,
   title,
-  children,
+  info,
 }: {
   clock: 'window' | 'now';
   title: string;
-  children: ReactNode;
+  info: ReactNode;
 }) {
   return (
-    <header className="analytics-section-head">
-      <p className="analytics-scope">{clock === 'window' ? 'In this window' : 'Right now'}</p>
+    <header className="analytics-panel-head">
+      <AnalyticsClockChip clock={clock} />
       <h3>{title}</h3>
-      {typeof children === 'string' ? <p>{children}</p> : children}
+      <AnalyticsMetricInfo label={title}>{info}</AnalyticsMetricInfo>
     </header>
   );
 }
 
-function GrowthCard({
-  title,
-  hint,
-  metric,
-  previousLabel,
-}: {
-  title: string;
-  hint: string;
-  metric: AnalyticsGrowthMetric;
-  previousLabel: string | null;
-}) {
-  const copy = formatGrowthCopy(metric, previousLabel);
-  const direction =
-    metric.delta === null ? '' : metric.delta > 0 ? 'up' : metric.delta < 0 ? 'down' : 'flat';
+function AnalyticsSkeleton() {
   return (
-    <article className={`analytics-kpi analytics-growth-card is-${direction || 'none'}`}>
-      <h3>{title}</h3>
-      <p className="analytics-kpi-hint">{hint}</p>
-      <p className="analytics-kpi-value">{metric.current}</p>
-      <p className="analytics-kpi-meta">{copy}</p>
-    </article>
-  );
-}
-
-function DurationCard({
-  title,
-  hint,
-  value,
-  empty,
-  sample,
-}: {
-  title: string;
-  hint: string;
-  value: string;
-  empty: boolean;
-  sample: string;
-}) {
-  return (
-    <article className="analytics-kpi">
-      <h3>{title}</h3>
-      <p className="analytics-kpi-hint">{hint}</p>
-      {empty ? (
-        <p className="analytics-kpi-empty">{value}</p>
-      ) : (
-        <p className="analytics-kpi-value">{value}</p>
-      )}
-      {sample ? <p className="analytics-footnote">{sample}</p> : null}
-    </article>
+    <div className="analytics-skeleton" aria-hidden="true">
+      <div className="analytics-kpis">
+        <div className="analytics-skeleton-block" />
+        <div className="analytics-skeleton-block" />
+        <div className="analytics-skeleton-block" />
+        <div className="analytics-skeleton-block" />
+      </div>
+      <div className="analytics-skeleton-block analytics-skeleton-hero" />
+    </div>
   );
 }
 
@@ -286,8 +228,8 @@ export function AnalyticsPage() {
   }, [searchParams]);
 
   const statusRows = summary ? statusChartRows(summary.byStatus) : [];
-  const personRows = summary ? personChartRows(summary.byPerson) : [];
   const dwellRows = summary ? dwellChartRows(summary.dwellByStatus) : [];
+  const trendRows = summary ? trendChartRows(summary.trend.buckets) : [];
   const pendingDates = 'pending' in queryState;
   const periodLabel =
     summary?.period.label ??
@@ -304,243 +246,173 @@ export function AnalyticsPage() {
   const bugEmpty = !summary || summary.averageMsToSolveBug === null;
   const devTestEmpty = !summary || summary.averageMsInDevTest === null;
   const qaTestEmpty = !summary || summary.averageMsInQaTest === null;
+  const caption = formatPeriodCaption({
+    pending: pendingDates,
+    periodKey: filters.period,
+    periodLabel,
+    compareLabel: compareCaption,
+  });
 
   return (
     <div className="page-shell analytics-page">
-      <header className="page-header">
-        <h2>Analytics</h2>
-        <p className="page-subtitle">
-          Window numbers count the dates you pick. Board-now numbers are the columns and checklist
-          sitting there at this moment.
-        </p>
-      </header>
-
-      <div className="analytics-controls">
-        <div className="analytics-control-block">
-          <p className="analytics-scope">Whose boards</p>
-          <div className="board-filters diagrams-hub-filters analytics-filters">
-            <label className="board-filter-field">
-              Organization
-              <Select
-                value={filters.organizationId}
-                onChange={(value) =>
-                  setFilters({ ...filters, organizationId: value, projectId: '' })
-                }
-                options={[
-                  { value: '', label: 'All organizations' },
-                  ...organizations.map((organization) => ({
-                    value: organization.id,
-                    label: organization.name,
-                  })),
-                ]}
-              />
-            </label>
-            <label className="board-filter-field">
-              Project
-              <Select
-                value={filters.projectId}
-                onChange={(value) => setFilters({ ...filters, projectId: value })}
-                options={[
-                  { value: '', label: 'All projects' },
-                  ...projectOptions.map((project) => ({
-                    value: project.id,
-                    label: project.name,
-                  })),
-                ]}
-              />
-            </label>
-          </div>
-        </div>
-
-        <div className="analytics-control-block">
-          <p className="analytics-scope">Which dates</p>
-          <div
-            className="board-view-toggle analytics-period-toggle"
-            role="group"
-            aria-label="Time window"
-          >
-            {ANALYTICS_PERIOD_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`board-view-toggle-btn${filters.period === option.value ? ' is-active' : ''}`}
-                aria-pressed={filters.period === option.value}
-                onClick={() =>
-                  setFilters({
-                    ...filters,
-                    period: option.value,
-                    compareMode: option.value === 'all' ? 'previous' : filters.compareMode,
-                  })
-                }
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {filters.period === 'custom' && (
-            <div className="analytics-date-row">
-              <label className="board-filter-field">
-                From
-                <input
-                  type="date"
-                  value={filters.from}
-                  onChange={(event) => setFilters({ ...filters, from: event.target.value })}
-                />
-              </label>
-              <label className="board-filter-field">
-                To
-                <input
-                  type="date"
-                  value={filters.to}
-                  onChange={(event) => setFilters({ ...filters, to: event.target.value })}
-                />
-              </label>
-            </div>
-          )}
-
-          {filters.period !== 'all' && (
-            <div className="analytics-date-row">
-              <label className="board-filter-field">
-                Compared with
-                <Select
-                  value={filters.compareMode}
-                  onChange={(value) =>
-                    setFilters({
-                      ...filters,
-                      compareMode: value === 'custom' ? 'custom' : 'previous',
-                    })
-                  }
-                  options={[
-                    { value: 'previous', label: 'Previous window' },
-                    { value: 'custom', label: 'Another range' },
-                  ]}
-                />
-              </label>
-              {filters.compareMode === 'custom' && (
-                <>
-                  <label className="board-filter-field">
-                    Compare from
-                    <input
-                      type="date"
-                      value={filters.compareFrom}
-                      onChange={(event) =>
-                        setFilters({ ...filters, compareFrom: event.target.value })
-                      }
-                    />
-                  </label>
-                  <label className="board-filter-field">
-                    Compare to
-                    <input
-                      type="date"
-                      value={filters.compareTo}
-                      onChange={(event) =>
-                        setFilters({ ...filters, compareTo: event.target.value })
-                      }
-                    />
-                  </label>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <p className="analytics-period-caption">
-        {formatPeriodCaption({
-          pending: pendingDates,
-          periodKey: filters.period,
-          periodLabel,
-          compareLabel: compareCaption,
-        })}
-      </p>
+      <AnalyticsToolbar
+        filters={filters}
+        organizations={organizations}
+        projectOptions={projectOptions}
+        periodLabel={pendingDates ? undefined : periodLabel}
+        compareCaption={filters.period === 'all' ? null : compareCaption}
+        caption={caption}
+        onChange={setFilters}
+      />
 
       {error && <ErrorAlert>{error}</ErrorAlert>}
-      {loading && <p className="status-message">Loading analytics...</p>}
+      {loading && !summary && <p className="sr-only">Loading analytics...</p>}
+      {loading && !summary && <AnalyticsSkeleton />}
 
-      {!loading && summary && (
+      {!loading && !summary && !error && !pendingDates && (
+        <div className="diagrams-empty">
+          <div className="hub-empty-glyph">
+            <AnalyticsIcon className="arc-icon arc-icon-empty" />
+          </div>
+          <p className="status-message">No tasks in this view yet.</p>
+        </div>
+      )}
+
+      {summary && (
         <>
-          <section className="analytics-chapter" aria-label="What changed">
-            <ScopeHeader clock="window" title="What changed">
-              How many tasks were opened, moved to another column, or marked Bug in {windowName}.
-            </ScopeHeader>
+          <section className="analytics-row" aria-label="What changed">
+            <div className="analytics-row-label">
+              <AnalyticsClockChip clock="window" />
+            </div>
             <div className="analytics-kpis analytics-growth">
-              <GrowthCard
+              <AnalyticsKpiCard
                 title="New tasks"
-                hint="Tasks opened in this window"
+                value={String(summary.growth.tasksCreated.current)}
                 metric={summary.growth.tasksCreated}
-                previousLabel={summary.period.previousLabel}
+                info={
+                  <>
+                    <p>Tasks opened in this window.</p>
+                    <p>{formatGrowthCopy(summary.growth.tasksCreated, summary.period.previousLabel)}</p>
+                  </>
+                }
               />
-              <GrowthCard
+              <AnalyticsKpiCard
                 title="Column moves"
-                hint="Times a task changed status"
+                value={String(summary.growth.moves.current)}
                 metric={summary.growth.moves}
-                previousLabel={summary.period.previousLabel}
+                info={
+                  <>
+                    <p>Times a task changed status.</p>
+                    <p>{formatGrowthCopy(summary.growth.moves, summary.period.previousLabel)}</p>
+                  </>
+                }
               />
-              <GrowthCard
+              <AnalyticsKpiCard
                 title="Bugs flagged"
-                hint="Times a task was marked Bug"
+                value={String(summary.growth.bugReports.current)}
                 metric={summary.growth.bugReports}
-                previousLabel={summary.period.previousLabel}
+                info={
+                  <>
+                    <p>Times a task was marked Bug.</p>
+                    <p>{formatGrowthCopy(summary.growth.bugReports, summary.period.previousLabel)}</p>
+                  </>
+                }
               />
-            </div>
-          </section>
-
-          <section className="analytics-chapter" aria-label="How long work took">
-            <ScopeHeader clock="window" title="How long work took">
-              Averages for work that finished inside {windowName}.
-            </ScopeHeader>
-            <div className="analytics-kpis">
-              <DurationCard
+              <AnalyticsKpiCard
                 title="Create to Done"
-                hint="From opening a task until it reached Done"
-                value={durationOrEmpty(
-                  summary.averageMsToDone,
-                  'No completed tasks in this window yet.',
-                )}
+                value={durationOrEmpty(summary.averageMsToDone, '—')}
                 empty={doneEmpty}
-                sample={formatSampleCopy(summary.sampleSize, 'completed task')}
-              />
-              <DurationCard
-                title="Bug to solved"
-                hint="From marking Bug until it was resolved"
-                value={durationOrEmpty(
-                  summary.averageMsToSolveBug,
-                  'No solved bugs in this window yet.',
-                )}
-                empty={bugEmpty}
-                sample={formatSampleCopy(summary.sampleSizeBugSolves, 'solved bug')}
-              />
-              <DurationCard
-                title="Time in Dev Test"
-                hint="Average stay in Dev Test before moving on"
-                value={durationOrEmpty(
-                  summary.averageMsInDevTest,
-                  'No finished Dev Test stays in this window yet.',
-                )}
-                empty={devTestEmpty}
-                sample={formatSampleCopy(summary.sampleSizeDevTestDwells, 'finished stay')}
-              />
-              <DurationCard
-                title="Time in QA Test"
-                hint="Average stay in QA Test before moving on"
-                value={durationOrEmpty(
-                  summary.averageMsInQaTest,
-                  'No finished QA Test stays in this window yet.',
-                )}
-                empty={qaTestEmpty}
-                sample={formatSampleCopy(summary.sampleSizeQaTestDwells, 'finished stay')}
+                info={
+                  <>
+                    <p>From opening a task until it reached Done, for work that finished in {windowName}.</p>
+                    <p>
+                      {doneEmpty
+                        ? 'No completed tasks in this window yet.'
+                        : formatSampleCopy(summary.sampleSize, 'completed task')}
+                    </p>
+                  </>
+                }
               />
             </div>
           </section>
 
-          <section className="analytics-chapter" aria-label="Where work stayed longest">
-            <ScopeHeader clock="window" title="Where work stayed longest">
-              {summary.longestStay
-                ? `Tasks spent the most time in ${summary.longestStay.label} before moving on — ${formatAnalyticsDuration(summary.longestStay.averageMs)} on average. ${formatSampleCopy(summary.longestStay.sampleSize, 'finished stay')}`
-                : 'No finished stays in this window yet. A stay counts when the task leaves that column.'}
-            </ScopeHeader>
+          <section className="analytics-hero" aria-label="Trend">
+            <header className="analytics-panel-head">
+              <AnalyticsClockChip clock="window" />
+              <h3>Trend</h3>
+              <AnalyticsMetricInfo label="Trend">
+                New tasks, column moves, and bugs flagged across {windowName}.
+              </AnalyticsMetricInfo>
+            </header>
             <article className="analytics-panel analytics-panel-wide">
+              <p className="analytics-chart-caption">Counts per {summary.trend.granularity} in this window.</p>
+              <div className="analytics-chart">
+                <ResponsiveContainer width="100%" height={HERO_HEIGHT}>
+                  <LineChart data={trendRows} margin={{ top: 8, left: 8, right: 8, bottom: 4 }}>
+                    <CartesianGrid stroke={colors.grid} vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      stroke={colors.muted}
+                      tick={{ fill: colors.muted, fontSize: 12 }}
+                    />
+                    <YAxis allowDecimals={false} stroke={colors.muted} />
+                    <Tooltip
+                      cursor={{ stroke: colors.grid }}
+                      content={
+                        <ChartTooltip
+                          formatValue={(value, name) =>
+                            `${value} ${name.toLowerCase()} in ${windowName}`
+                          }
+                        />
+                      }
+                    />
+                    <Legend
+                      wrapperStyle={{ color: colors.muted, fontSize: 12 }}
+                      formatter={(value) => (
+                        <span style={{ color: colors.muted }}>{value}</span>
+                      )}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="created"
+                      name="New tasks"
+                      stroke={colors.accent}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="moves"
+                      name="Column moves"
+                      stroke={colors.secondary}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="bugs"
+                      name="Bugs flagged"
+                      stroke={colors.tertiary}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
+          </section>
+
+          <section className="analytics-flow" aria-label="Flow">
+            <article className="analytics-panel">
+              <PanelHead
+                clock="window"
+                title="Where work stayed longest"
+                info={
+                  summary.longestStay
+                    ? `Tasks spent the most time in ${summary.longestStay.label} before moving on — ${formatAnalyticsDuration(summary.longestStay.averageMs)} on average. ${formatSampleCopy(summary.longestStay.sampleSize, 'finished stay')}`
+                    : 'No finished stays in this window yet. A stay counts when the task leaves that column.'
+                }
+              />
               <p className="analytics-chart-caption">
                 Bar length is average time in that column before the task moved on.
               </p>
@@ -589,59 +461,111 @@ export function AnalyticsPage() {
                 </ResponsiveContainer>
               </div>
             </article>
+
+            <article className="analytics-panel">
+              <PanelHead
+                clock="now"
+                title="Tasks by column"
+                info="How many tasks sit in each status right now. These are not limited to the date window."
+              />
+              <p className="analytics-kpi-meta">
+                {summary.activeCount} active · {summary.archivedCount} archived · {summary.openBugs}{' '}
+                open bugs
+              </p>
+              <div className="analytics-chart">
+                <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                  <BarChart
+                    data={statusRows}
+                    layout="vertical"
+                    margin={{ top: 4, left: 4, right: 40, bottom: 4 }}
+                  >
+                    <CartesianGrid stroke={colors.grid} horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} hide />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={VERTICAL_Y_WIDTH}
+                      stroke={colors.muted}
+                      tick={{ fill: colors.muted, fontSize: 12 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: colors.grid }}
+                      content={
+                        <ChartTooltip
+                          formatValue={(value) =>
+                            `${value} ${value === 1 ? 'task' : 'tasks'} in this column now`
+                          }
+                        />
+                      }
+                    />
+                    <Bar dataKey="count" name="Tasks now" fill={colors.accent} radius={[0, 6, 6, 0]}>
+                      <LabelList dataKey="count" position="right" fill={colors.text} fontSize={12} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
           </section>
 
-          <section className="analytics-chapter is-now" aria-label="On the board now">
-            <ScopeHeader clock="now" title="On the board now">
-              Current columns, open bugs, and checklist. These are not limited to {windowName}.
-            </ScopeHeader>
-            <div className="analytics-panels">
-              <article className="analytics-panel">
-                <h3>Tasks by column</h3>
-                <p className="analytics-kpi-hint">How many tasks sit in each status right now</p>
-                <p className="analytics-kpi-meta">
-                  {summary.activeCount} active · {summary.archivedCount} archived · {summary.openBugs}{' '}
-                  open bugs
-                </p>
-                <div className="analytics-chart">
-                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <BarChart
-                      data={statusRows}
-                      layout="vertical"
-                      margin={{ top: 4, left: 4, right: 40, bottom: 4 }}
-                    >
-                      <CartesianGrid stroke={colors.grid} horizontal={false} />
-                      <XAxis type="number" allowDecimals={false} hide />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        width={VERTICAL_Y_WIDTH}
-                        stroke={colors.muted}
-                        tick={{ fill: colors.muted, fontSize: 12 }}
-                      />
-                      <Tooltip
-                        cursor={{ fill: colors.grid }}
-                        content={
-                          <ChartTooltip
-                            formatValue={(value) =>
-                              `${value} ${value === 1 ? 'task' : 'tasks'} in this column now`
-                            }
-                          />
-                        }
-                      />
-                      <Bar dataKey="count" name="Tasks now" fill={colors.accent} radius={[0, 6, 6, 0]}>
-                        <LabelList dataKey="count" position="right" fill={colors.text} fontSize={12} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </article>
-
-              <article className="analytics-panel">
-                <h3>QA checklist</h3>
-                <p className="analytics-kpi-hint">
-                  Checklist items on tasks that are on the board now
-                </p>
+          <section className="analytics-timing" aria-label="How long work took">
+            <div className="analytics-row-label">
+              <AnalyticsClockChip clock="window" />
+            </div>
+            <div className="analytics-kpis analytics-timing-kpis">
+              <AnalyticsKpiCard
+                title="Bug to solved"
+                value={durationOrEmpty(summary.averageMsToSolveBug, '—')}
+                empty={bugEmpty}
+                info={
+                  <>
+                    <p>From marking Bug until it was resolved.</p>
+                    <p>
+                      {bugEmpty
+                        ? 'No solved bugs in this window yet.'
+                        : formatSampleCopy(summary.sampleSizeBugSolves, 'solved bug')}
+                    </p>
+                  </>
+                }
+              />
+              <AnalyticsKpiCard
+                title="Time in Dev Test"
+                value={durationOrEmpty(summary.averageMsInDevTest, '—')}
+                empty={devTestEmpty}
+                info={
+                  <>
+                    <p>Average stay in Dev Test before moving on.</p>
+                    <p>
+                      {devTestEmpty
+                        ? 'No finished Dev Test stays in this window yet.'
+                        : formatSampleCopy(summary.sampleSizeDevTestDwells, 'finished stay')}
+                    </p>
+                  </>
+                }
+              />
+              <AnalyticsKpiCard
+                title="Time in QA Test"
+                value={durationOrEmpty(summary.averageMsInQaTest, '—')}
+                empty={qaTestEmpty}
+                info={
+                  <>
+                    <p>Average stay in QA Test before moving on.</p>
+                    <p>
+                      {qaTestEmpty
+                        ? 'No finished QA Test stays in this window yet.'
+                        : formatSampleCopy(summary.sampleSizeQaTestDwells, 'finished stay')}
+                    </p>
+                  </>
+                }
+              />
+              <article className="analytics-kpi">
+                <header className="analytics-kpi-head">
+                  <h3>QA checklist</h3>
+                  <AnalyticsMetricInfo label="QA checklist">
+                    Checklist items on tasks that are on the board now. These are not limited to{' '}
+                    {windowName}.
+                  </AnalyticsMetricInfo>
+                </header>
+                <AnalyticsClockChip clock="now" />
                 {checklistTotal === 0 ? (
                   <p className="analytics-kpi-empty">No checklist items on the board yet.</p>
                 ) : (
@@ -667,118 +591,66 @@ export function AnalyticsPage() {
             </div>
           </section>
 
-          <section className="analytics-chapter" aria-label="By person">
-            <header className="analytics-section-head">
+          <section className="analytics-people" aria-label="By person">
+            <header className="analytics-panel-head">
               <p className="analytics-scope">Both clocks</p>
               <h3>By person</h3>
-              <p>
+              <AnalyticsMetricInfo label="By person">
                 New tasks and column moves are for {windowName}. Open bugs are the board right now.
-              </p>
+              </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
-              {personRows.length === 0 ? (
+              {summary.byPerson.length === 0 ? (
                 <p className="status-message">No person activity in this view yet.</p>
               ) : (
-                <>
-                  <p className="analytics-chart-caption">
-                    Bars are this window only — new tasks opened and times that person moved a
-                    task.
-                  </p>
-                  <div className="analytics-chart">
-                    <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                      <BarChart data={personRows} margin={{ top: 8, left: 8, right: 8, bottom: 4 }}>
-                        <CartesianGrid stroke={colors.grid} vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          stroke={colors.muted}
-                          tick={{ fill: colors.muted, fontSize: 12 }}
-                        />
-                        <YAxis allowDecimals={false} stroke={colors.muted} />
-                        <Tooltip
-                          cursor={{ fill: colors.grid }}
-                          content={
-                            <ChartTooltip
-                              formatValue={(value, name) =>
-                                `${value} ${name.toLowerCase()} in ${windowName}`
-                              }
-                            />
-                          }
-                        />
-                        <Legend
-                          wrapperStyle={{ color: colors.muted, fontSize: 12 }}
-                          formatter={(value) => (
-                            <span style={{ color: colors.muted }}>{value}</span>
-                          )}
-                        />
-                        <Bar dataKey="created" name="New tasks" fill={colors.accent} />
-                        <Bar dataKey="moves" name="Column moves" fill={colors.secondary} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="analytics-table-wrap">
-                    <table className="analytics-table">
-                      <caption className="sr-only">
-                        By person: window counts and board-now open bugs
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th scope="col" rowSpan={2}>
-                            Person
-                          </th>
-                          <th scope="colgroup" colSpan={2}>
-                            In this window
-                          </th>
-                          <th scope="col">Right now</th>
-                          <th scope="colgroup" colSpan={2}>
-                            In this window
-                          </th>
+                <div className="analytics-table-wrap">
+                  <table className="analytics-table">
+                    <caption className="sr-only">
+                      By person: window counts and board-now open bugs
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col" rowSpan={2}>
+                          Person
+                        </th>
+                        <th scope="colgroup" colSpan={2}>
+                          In this window
+                        </th>
+                        <th scope="col">Right now</th>
+                        <th scope="colgroup" colSpan={2}>
+                          In this window
+                        </th>
+                      </tr>
+                      <tr>
+                        <th scope="col">New tasks</th>
+                        <th scope="col">Column moves</th>
+                        <th scope="col">Open bugs</th>
+                        <th scope="col">Avg to Done</th>
+                        <th scope="col">Avg in test</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {summary.byPerson.map((row) => (
+                        <tr key={row.userId ?? 'unassigned'}>
+                          <th scope="row">{row.username}</th>
+                          <td>{row.tasksCreated}</td>
+                          <td>{row.moves}</td>
+                          <td>{row.openBugs}</td>
+                          <td>
+                            {durationOrEmpty(row.averageMsToDone, '—')}
+                          </td>
+                          <td>
+                            {durationOrEmpty(row.averageMsInTest, '—')}
+                          </td>
                         </tr>
-                        <tr>
-                          <th scope="col">New tasks</th>
-                          <th scope="col">Column moves</th>
-                          <th scope="col">Open bugs</th>
-                          <th scope="col">Avg to Done</th>
-                          <th scope="col">Avg in test</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {summary.byPerson.map((row) => (
-                          <tr key={row.userId ?? 'unassigned'}>
-                            <th scope="row">{row.username}</th>
-                            <td>{row.tasksCreated}</td>
-                            <td>{row.moves}</td>
-                            <td>{row.openBugs}</td>
-                            <td>
-                              {durationOrEmpty(
-                                row.averageMsToDone,
-                                'No completed tasks yet.',
-                              )}
-                            </td>
-                            <td>
-                              {durationOrEmpty(
-                                row.averageMsInTest,
-                                'No finished test times yet.',
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </article>
           </section>
         </>
-      )}
-
-      {!loading && !summary && !error && !pendingDates && (
-        <div className="diagrams-empty">
-          <div className="hub-empty-glyph">
-            <AnalyticsIcon className="arc-icon arc-icon-empty" />
-          </div>
-          <p className="status-message">No tasks in this view yet.</p>
-        </div>
       )}
     </div>
   );
