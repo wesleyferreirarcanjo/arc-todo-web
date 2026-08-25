@@ -2,7 +2,6 @@ import type {
   AnalyticsByStatus,
   AnalyticsDwellByStatus,
   AnalyticsPersonRow,
-  AnalyticsSummary,
 } from '../../types/analytics';
 
 export function statusChartRows(byStatus: AnalyticsByStatus) {
@@ -34,16 +33,6 @@ export function dwellChartRows(dwellByStatus: AnalyticsDwellByStatus) {
       sample: dwellByStatus.qa_test.sampleSize,
     },
     { name: 'Done', ms: dwellByStatus.done.averageMs ?? 0, sample: dwellByStatus.done.sampleSize },
-  ];
-}
-
-export function checklistChartRows(summary: AnalyticsSummary) {
-  return [
-    { name: 'Checked', count: summary.checklistItemsChecked },
-    {
-      name: 'Remaining',
-      count: Math.max(0, summary.checklistItemsTotal - summary.checklistItemsChecked),
-    },
   ];
 }
 
