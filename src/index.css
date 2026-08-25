@@ -7034,8 +7034,10 @@ textarea {
 
 @media (max-width: 1023px) {
   .app-shell {
+    /* Grow with cards so the page is the only vertical scroller (UXP-ARC-14 / #arc-375). */
+    align-items: start;
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: minmax(100dvh, auto);
     width: 100%;
     overflow-x: visible;
   }
@@ -7065,6 +7067,10 @@ textarea {
     padding-top: env(safe-area-inset-top, 0px);
     padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
     padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    /* Bar + floating FAB — page scroll owns clearance now (#arc-375). */
+    padding-bottom: calc(
+      3.25rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom, 0px)
+    );
     background: var(--bg-page);
   }
 
@@ -7711,26 +7717,18 @@ textarea {
   }
 
   .content-area.is-board-page {
-    /* Board scroll owns FAB clearance; avoid empty surface slab under the FAB. */
-    padding-bottom: 0;
-    min-height: 0;
-    height: 100%;
-    max-height: 100%;
-    overflow: hidden;
+    /* UXP-ARC-14 / #arc-375: page Y pan — do not lock the tabbed board. */
+    min-height: auto;
+    height: auto;
+    max-height: none;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 
   .content-area.is-board-page .app-main,
   .content-area.is-board-page .tasks-page {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .task-board-scroll.is-mobile-tabbed,
-  .content-area.is-board-page .task-list-view {
-    /* Last cards can scroll clear of bar + floating FAB. */
-    padding-bottom: calc(
-      2.85rem + 3.5rem + 0.75rem + env(safe-area-inset-bottom, 0px)
-    );
+    flex: 1 0 auto;
+    min-height: auto;
   }
 
   .knowledge-workspace {
@@ -7740,20 +7738,15 @@ textarea {
   }
 
   .content-area.is-board-page .task-list-view {
-    overflow: auto;
-    min-height: 12rem;
+    overflow: visible;
+    flex: 1 0 auto;
+    min-height: auto;
   }
 
   .content-area.is-board-page .task-list-body {
     overflow: visible;
     flex: none;
-  }
-
-  /* Board page: lock shell to viewport so tabbed column flex height is real (not blank). */
-  .app-shell:has(.content-area.is-board-page) {
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
+    min-height: auto;
   }
 
   /* Collapsed by default; when open, cap height so cycle chrome cannot steal the tabbed column. */
@@ -7901,30 +7894,20 @@ textarea {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-/* Tabs + column list share remaining viewport height (prevents blank board). */
+/* Tabbed board grows with cards; page scroll is the Y pan (UXP-ARC-14 / #arc-375). */
 .task-board-shell.is-mobile-tabbed {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: none;
+  min-height: auto;
   min-width: 0;
 }
 
 .task-board-scroll.is-mobile-tabbed {
-  flex: 1 1 0%;
-  min-height: 12rem;
+  flex: none;
+  min-height: auto;
   overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.task-board-scroll.is-mobile-tabbed::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  overflow-y: clip;
 }
 
 .task-board.is-mobile-tabbed {
@@ -7952,8 +7935,8 @@ textarea {
 }
 
 .content-area.is-board-page .task-board-shell.is-mobile-tabbed {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: none;
+  min-height: auto;
 }
 
 .content-area.is-board-page .task-board.is-mobile-tabbed {

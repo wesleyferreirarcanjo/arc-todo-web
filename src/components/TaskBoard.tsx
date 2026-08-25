@@ -261,7 +261,7 @@ function TaskBoardInner({
         onDragEnd={(event) => void handleDragEnd(event)}
         onDragCancel={handleDragCancel}
       >
-        {/* Flex shell so tabbed columns keep a real height; status tabs live in Bottom App Bar. */}
+        {/* Tabbed column grows with cards; status tabs live in Bottom App Bar. */}
         <div
           className={`task-board-shell${isMobileBoard ? ' is-mobile-tabbed' : ''}`}
         >

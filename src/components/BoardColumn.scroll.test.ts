@@ -47,11 +47,16 @@ describe('board columns never paint a scrollbar', () => {
     expect(tasksPage).not.toContain('min-height: 0');
   });
 
-  it('keeps the viewport-locked mobile tabbed board as the only nested Y port', () => {
+  it('lets the tabbed board use page scroll instead of a nested Y port', () => {
     const mobile = ruleBlock('.task-board-scroll.is-mobile-tabbed');
-    expect(mobile).toContain('overflow-y: auto');
-    expect(mobile).toContain('scrollbar-width: none');
-    expect(css).toContain('.task-board-scroll.is-mobile-tabbed::-webkit-scrollbar');
+    expect(mobile).toContain('overflow-y: clip');
+    expect(mobile).toContain('overflow-x: hidden');
+    expect(mobile).toContain('flex: none');
+    expect(mobile).not.toContain('overflow-y: auto');
+    expect(mobile).not.toContain('overscroll-behavior: contain');
+    expect(mobile).not.toContain('scrollbar-width: none');
+    expect(css).not.toContain('.task-board-scroll.is-mobile-tabbed::-webkit-scrollbar');
+    expect(css).not.toContain('.app-shell:has(.content-area.is-board-page)');
   });
 
   it('does not let scatter-light overlay become a wheel scrollport', () => {
