@@ -7,7 +7,10 @@ import {
   updateProjectTask,
   uploadTaskEvidence,
 } from '../lib/api/todos';
-import { extractClipboardImage } from '../lib/tasks/clipboardImage';
+import {
+  clipboardMediaKind,
+  extractClipboardImage,
+} from '../lib/tasks/clipboardImage';
 import {
   addChecklistItemImprovementTaskRef,
   buildChecklistTaskUpdate,
@@ -345,8 +348,8 @@ export function TaskQaChecklistModal({
     return () => window.clearTimeout(id);
   }, [reportPasteCue]);
 
-  // While reporting a checklist-item bug, Ctrl+V / Cmd+V with an image in the
-  // clipboard appends it as an optional attachment (uploaded on confirm).
+  // While reporting a checklist-item bug, Ctrl+V / Cmd+V with an image or
+  // video in the clipboard appends it as an optional attachment (uploaded on confirm).
   useEffect(() => {
     if (!open || !reportingItemId) return;
 
@@ -653,6 +656,7 @@ export function TaskQaChecklistModal({
               const canConfirmReport = isImprovementReport
                 ? reportTitle.trim().length > 0 && reportNote.trim().length > 0
                 : reportNote.trim().length > 0;
+              const lastReportFile = reportFiles[reportFiles.length - 1];
 
               return (
                 <li
@@ -908,12 +912,15 @@ export function TaskQaChecklistModal({
                         )}
                         <p className="task-qa-evidence-paste-hint">
                           {isImprovementReport
-                            ? 'Cole imagens (Ctrl+V / Cmd+V) ou escolha arquivos. As imagens vão para a nova tarefa de melhoria ao confirmar.'
-                            : 'Cole imagens (Ctrl+V / Cmd+V) ou escolha arquivos. As imagens só são enviadas ao confirmar. Você pode adicionar vários motivos neste mesmo item.'}
+                            ? 'Cole imagens ou vídeos (Ctrl+V / Cmd+V) ou escolha arquivos. Os arquivos vão para a nova tarefa de melhoria ao confirmar.'
+                            : 'Cole imagens ou vídeos (Ctrl+V / Cmd+V) ou escolha arquivos. Os arquivos só são enviados ao confirmar. Você pode adicionar vários motivos neste mesmo item.'}
                         </p>
-                        {reportPasteCue && reportFiles.length > 0 && (
+                        {reportPasteCue && lastReportFile && (
                           <p className="task-qa-paste-cue" role="status">
-                            Imagem colada: {reportFiles[reportFiles.length - 1]?.name}
+                            {clipboardMediaKind(lastReportFile) === 'video'
+                              ? 'Vídeo colado'
+                              : 'Imagem colada'}
+                            : {lastReportFile.name}
                           </p>
                         )}
                         {!canConfirmReport && (

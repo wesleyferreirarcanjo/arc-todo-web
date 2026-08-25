@@ -16,6 +16,10 @@ import {
   updateProjectTask,
   updateTaskComment,
 } from '../lib/api/todos';
+import {
+  evidencePasteCueMessage,
+  type ClipboardMediaKind,
+} from '../lib/tasks/clipboardImage';
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorAlert } from './ErrorAlert';
@@ -176,7 +180,8 @@ export function TaskDetailsModal({
   const [error, setError] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState('');
   const [postingComment, setPostingComment] = useState(false);
-  const [commentPasteCue, setCommentPasteCue] = useState(false);
+  const [commentPasteCue, setCommentPasteCue] =
+    useState<ClipboardMediaKind | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [savingComment, setSavingComment] = useState(false);
@@ -203,7 +208,7 @@ export function TaskDetailsModal({
 
   useEffect(() => {
     if (!commentPasteCue) return;
-    const id = window.setTimeout(() => setCommentPasteCue(false), 4500);
+    const id = window.setTimeout(() => setCommentPasteCue(null), 4500);
     return () => window.clearTimeout(id);
   }, [commentPasteCue]);
 
@@ -212,7 +217,7 @@ export function TaskDetailsModal({
       setPlanCodeOpen(false);
       setEditingTitle(false);
       setTitleDraft(task.title);
-      setCommentPasteCue(false);
+      setCommentPasteCue(null);
       setEditingCommentId(null);
       setEditDraft('');
       setCommentPendingDelete(null);
@@ -611,7 +616,7 @@ export function TaskDetailsModal({
           parentDisplayId={parentDisplayId}
           accentColor={identity.accentColor}
           onTaskChange={onTaskSynced}
-          onEvidenceImagePastedFromComment={() => setCommentPasteCue(true)}
+          onEvidenceImagePastedFromComment={(kind) => setCommentPasteCue(kind)}
         />
 
         <section className="task-details-section">
@@ -710,7 +715,7 @@ export function TaskDetailsModal({
             </label>
             {commentPasteCue && (
               <p className="task-comment-paste-cue" role="status">
-                Imagem enviada para Evidências
+                {evidencePasteCueMessage(commentPasteCue)}
               </p>
             )}
             <button

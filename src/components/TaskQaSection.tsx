@@ -8,7 +8,12 @@ import {
   updateProjectTask,
   uploadTaskEvidence,
 } from '../lib/api/todos';
-import { extractClipboardImage } from '../lib/tasks/clipboardImage';
+import {
+  clipboardMediaKind,
+  evidencePasteCueMessage,
+  extractClipboardImage,
+  type ClipboardMediaKind,
+} from '../lib/tasks/clipboardImage';
 import {
   addImprovementTaskRef,
   buildImprovementTaskDraft,
@@ -30,8 +35,8 @@ interface TaskQaSectionProps {
   parentDisplayId?: string;
   accentColor?: string;
   onTaskChange?: (task: Task) => void;
-  /** Fired after a clipboard image upload succeeds while focus was in Comments. */
-  onEvidenceImagePastedFromComment?: () => void;
+  /** Fired after a clipboard image/video upload succeeds while focus was in Comments. */
+  onEvidenceImagePastedFromComment?: (kind: ClipboardMediaKind) => void;
 }
 
 function formatBytes(size: number): string {
@@ -89,7 +94,8 @@ export function TaskQaSection({
   const [creatingImprovement, setCreatingImprovement] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [lightboxItem, setLightboxItem] = useState<TaskEvidence | null>(null);
-  const [bugReasonPasteCue, setBugReasonPasteCue] = useState(false);
+  const [bugReasonPasteCue, setBugReasonPasteCue] =
+    useState<ClipboardMediaKind | null>(null);
   const [evidencePasteFlash, setEvidencePasteFlash] = useState(false);
 
   const checklistDocument = useMemo(
@@ -208,10 +214,10 @@ export function TaskQaSection({
       );
       setEvidence((current) => [created, ...current]);
       if (options?.pasteCue === 'bug-reason') {
-        setBugReasonPasteCue(true);
+        setBugReasonPasteCue(clipboardMediaKind(file));
         setEvidencePasteFlash(true);
       } else if (options?.pasteCue === 'comment') {
-        onEvidenceImagePastedFromComment?.();
+        onEvidenceImagePastedFromComment?.(clipboardMediaKind(file));
         setEvidencePasteFlash(true);
       }
     } catch (error: unknown) {
@@ -230,7 +236,7 @@ export function TaskQaSection({
 
   useEffect(() => {
     if (!bugReasonPasteCue) return;
-    const id = window.setTimeout(() => setBugReasonPasteCue(false), 4500);
+    const id = window.setTimeout(() => setBugReasonPasteCue(null), 4500);
     return () => window.clearTimeout(id);
   }, [bugReasonPasteCue]);
 
@@ -257,7 +263,7 @@ export function TaskQaSection({
   }
 
   // Listen while parent Evidências is mounted — no hover/focus gate, and
-  // image paste still uploads even when comentário / Motivo do bug is focused
+  // image/video paste still uploads even when comentário / Motivo do bug is focused
   // (text-only clipboard is ignored so normal typing paste still works).
   // Skip while Ver checklist is open so per-item Ctrl+V is not stolen as task evidence.
   useEffect(() => {
@@ -543,7 +549,7 @@ export function TaskQaSection({
           </label>
           {bugReasonPasteCue && (
             <p className="task-qa-paste-cue" role="status">
-              Imagem enviada para Evidências
+              {evidencePasteCueMessage(bugReasonPasteCue)}
             </p>
           )}
           {!canFlagBug && (
@@ -631,7 +637,7 @@ export function TaskQaSection({
 
       {task.isBug && bugReasonPasteCue && (
         <p className="task-qa-paste-cue" role="status">
-          Imagem enviada para Evidências
+          {evidencePasteCueMessage(bugReasonPasteCue)}
         </p>
       )}
 
@@ -662,10 +668,10 @@ export function TaskQaSection({
           </div>
 
           <p className="task-qa-evidence-paste-hint">
-            Com os detalhes abertos, cole uma imagem (Ctrl+V / Cmd+V) para enviar
-            como evidência — inclusive com foco em comentário ou Motivo do bug —
-            ou use Enviar arquivo. Colar só texto não envia evidência. Evidências
-            de itens do checklist ficam no Ver checklist.
+            Com os detalhes abertos, cole uma imagem ou um vídeo (Ctrl+V / Cmd+V)
+            para enviar como evidência — inclusive com foco em comentário ou
+            Motivo do bug — ou use Enviar arquivo. Colar só texto não envia
+            evidência. Evidências de itens do checklist ficam no Ver checklist.
           </p>
 
           {loadingEvidence ? (
