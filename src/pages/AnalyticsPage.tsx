@@ -238,6 +238,12 @@ export function AnalyticsPage() {
     summary?.period.previousLabel ??
     (filters.period === 'all' ? null : 'the previous window');
   const windowName = periodLabel ?? 'this window';
+  const completedGrowth = summary?.growth.tasksCompleted ?? {
+    current: summary?.tasksCompleted ?? summary?.sampleSize ?? 0,
+    previous: null,
+    delta: null,
+    percent: null,
+  };
   const checklistTotal = summary?.checklistItemsTotal ?? 0;
   const checklistChecked = summary?.checklistItemsChecked ?? 0;
   const checklistPercent =
@@ -297,6 +303,22 @@ export function AnalyticsPage() {
                 }
               />
               <AnalyticsKpiCard
+                title="Tasks completed"
+                value={String(completedGrowth.current)}
+                metric={completedGrowth}
+                info={
+                  <>
+                    <p>
+                      Tasks that reached Done in {windowName}, including work archived when a
+                      sprint closed. This count can be larger than the Done column right now.
+                    </p>
+                    <p>
+                      {formatGrowthCopy(completedGrowth, summary.period.previousLabel)}
+                    </p>
+                  </>
+                }
+              />
+              <AnalyticsKpiCard
                 title="Column moves"
                 value={String(summary.growth.moves.current)}
                 metric={summary.growth.moves}
@@ -318,21 +340,6 @@ export function AnalyticsPage() {
                   </>
                 }
               />
-              <AnalyticsKpiCard
-                title="Create to Done"
-                value={durationOrEmpty(summary.averageMsToDone, '—')}
-                empty={doneEmpty}
-                info={
-                  <>
-                    <p>From opening a task until it reached Done, for work that finished in {windowName}.</p>
-                    <p>
-                      {doneEmpty
-                        ? 'No completed tasks in this window yet.'
-                        : formatSampleCopy(summary.sampleSize, 'completed task')}
-                    </p>
-                  </>
-                }
-              />
             </div>
           </section>
 
@@ -341,7 +348,7 @@ export function AnalyticsPage() {
               <AnalyticsClockChip clock="window" />
               <h3>Trend</h3>
               <AnalyticsMetricInfo label="Trend">
-                New tasks, column moves, and bugs flagged across {windowName}.
+                New tasks, tasks completed, column moves, and bugs flagged across {windowName}.
               </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
@@ -382,6 +389,14 @@ export function AnalyticsPage() {
                     />
                     <Line
                       type="monotone"
+                      dataKey="completed"
+                      name="Tasks completed"
+                      stroke={colors.muted}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
                       dataKey="moves"
                       name="Column moves"
                       stroke={colors.secondary}
@@ -409,8 +424,8 @@ export function AnalyticsPage() {
                 title="Where work stayed longest"
                 info={
                   summary.longestStay
-                    ? `Tasks spent the most time in ${summary.longestStay.label} before moving on — ${formatAnalyticsDuration(summary.longestStay.averageMs)} on average. ${formatSampleCopy(summary.longestStay.sampleSize, 'finished stay')}`
-                    : 'No finished stays in this window yet. A stay counts when the task leaves that column.'
+                    ? `Tasks spent the most time in ${summary.longestStay.label} before moving on — ${formatAnalyticsDuration(summary.longestStay.averageMs)} on average. ${formatSampleCopy(summary.longestStay.sampleSize, 'finished stay')} Sprint close counts time in Done.`
+                    : 'No finished stays in this window yet. A stay counts when the task leaves that column, or when Done work is archived at sprint close.'
                 }
               />
               <p className="analytics-chart-caption">
@@ -466,7 +481,7 @@ export function AnalyticsPage() {
               <PanelHead
                 clock="now"
                 title="Tasks by column"
-                info="How many tasks sit in each status right now. These are not limited to the date window."
+                info="How many tasks sit in each status right now. Sprint-archived Done work is not in this chart — it still counts in Tasks completed for the window."
               />
               <p className="analytics-kpi-meta">
                 {summary.activeCount} active · {summary.archivedCount} archived · {summary.openBugs}{' '}
@@ -512,6 +527,24 @@ export function AnalyticsPage() {
               <AnalyticsClockChip clock="window" />
             </div>
             <div className="analytics-kpis analytics-timing-kpis">
+              <AnalyticsKpiCard
+                title="Create to Done"
+                value={durationOrEmpty(summary.averageMsToDone, '—')}
+                empty={doneEmpty}
+                info={
+                  <>
+                    <p>
+                      From opening a task until it reached Done, for work that finished in{' '}
+                      {windowName}, including tasks archived after sprint close.
+                    </p>
+                    <p>
+                      {doneEmpty
+                        ? 'No completed tasks in this window yet.'
+                        : formatSampleCopy(summary.sampleSize, 'completed task')}
+                    </p>
+                  </>
+                }
+              />
               <AnalyticsKpiCard
                 title="Bug to solved"
                 value={durationOrEmpty(summary.averageMsToSolveBug, '—')}
@@ -596,7 +629,8 @@ export function AnalyticsPage() {
               <p className="analytics-scope">Both clocks</p>
               <h3>By person</h3>
               <AnalyticsMetricInfo label="By person">
-                New tasks and column moves are for {windowName}. Open bugs are the board right now.
+                New tasks, tasks completed, and column moves are for {windowName}. Open bugs are
+                the board right now.
               </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
@@ -613,7 +647,7 @@ export function AnalyticsPage() {
                         <th scope="col" rowSpan={2}>
                           Person
                         </th>
-                        <th scope="colgroup" colSpan={2}>
+                        <th scope="colgroup" colSpan={3}>
                           In this window
                         </th>
                         <th scope="col">Right now</th>
@@ -623,6 +657,7 @@ export function AnalyticsPage() {
                       </tr>
                       <tr>
                         <th scope="col">New tasks</th>
+                        <th scope="col">Completed</th>
                         <th scope="col">Column moves</th>
                         <th scope="col">Open bugs</th>
                         <th scope="col">Avg to Done</th>
@@ -634,6 +669,7 @@ export function AnalyticsPage() {
                         <tr key={row.userId ?? 'unassigned'}>
                           <th scope="row">{row.username}</th>
                           <td>{row.tasksCreated}</td>
+                          <td>{row.tasksCompleted ?? row.sampleSizeToDone}</td>
                           <td>{row.moves}</td>
                           <td>{row.openBugs}</td>
                           <td>

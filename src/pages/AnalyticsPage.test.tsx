@@ -51,10 +51,12 @@ const summary: AnalyticsSummary = {
   },
   growth: {
     tasksCreated: { current: 15, previous: 10, delta: 5, percent: 50 },
+    tasksCompleted: { current: 8, previous: 4, delta: 4, percent: 100 },
     moves: { current: 40, previous: 40, delta: 0, percent: 0 },
     bugReports: { current: 2, previous: 5, delta: -3, percent: -60 },
   },
   tasksCreated: 15,
+  tasksCompleted: 8,
   activeCount: 8,
   archivedCount: 1,
   byStatus: { todo: 3, in_progress: 2, dev_test: 1, qa_test: 1, done: 1 },
@@ -94,6 +96,7 @@ const summary: AnalyticsSummary = {
       userId: 'u1',
       username: 'wesley',
       tasksCreated: 4,
+      tasksCompleted: 2,
       moves: 10,
       openBugs: 1,
       averageMsToDone: 4 * 24 * 60 * 60 * 1000,
@@ -105,8 +108,8 @@ const summary: AnalyticsSummary = {
   trend: {
     granularity: 'day',
     buckets: [
-      { date: '2026-07-26', tasksCreated: 1, moves: 2, bugReports: 0 },
-      { date: '2026-07-27', tasksCreated: 0, moves: 1, bugReports: 1 },
+      { date: '2026-07-26', tasksCreated: 1, tasksCompleted: 0, moves: 2, bugReports: 0 },
+      { date: '2026-07-27', tasksCreated: 0, tasksCompleted: 1, moves: 1, bugReports: 1 },
     ],
   },
 };
@@ -129,7 +132,9 @@ describe('AnalyticsPage copy', () => {
 
     expect(screen.getAllByText('In this window').length).toBeGreaterThan(1);
     expect(screen.getByRole('heading', { name: 'Column moves' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tasks completed' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Bugs flagged' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Completed' })).toBeInTheDocument();
     expect(screen.getByText('5 more +50%')).toBeInTheDocument();
     expect(screen.getByText('3 fewer −60%')).toBeInTheDocument();
     expect(screen.queryByText(/good|bad|success|danger/i)).not.toBeInTheDocument();

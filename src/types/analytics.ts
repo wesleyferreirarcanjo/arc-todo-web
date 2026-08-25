@@ -14,6 +14,7 @@ export interface AnalyticsPersonRow {
   userId: string | null;
   username: string;
   tasksCreated: number;
+  tasksCompleted?: number;
   moves: number;
   openBugs: number;
   averageMsToDone: number | null;
@@ -58,6 +59,7 @@ export type AnalyticsTrendGranularity = 'day' | 'week';
 export interface AnalyticsTrendBucket {
   date: string;
   tasksCreated: number;
+  tasksCompleted?: number;
   moves: number;
   bugReports: number;
 }
@@ -71,10 +73,12 @@ export interface AnalyticsSummary {
   period: AnalyticsPeriodInfo;
   growth: {
     tasksCreated: AnalyticsGrowthMetric;
+    tasksCompleted?: AnalyticsGrowthMetric;
     moves: AnalyticsGrowthMetric;
     bugReports: AnalyticsGrowthMetric;
   };
   tasksCreated: number;
+  tasksCompleted?: number;
   activeCount: number;
   archivedCount: number;
   byStatus: AnalyticsByStatus;

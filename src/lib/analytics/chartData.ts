@@ -43,6 +43,7 @@ export function trendChartRows(buckets: AnalyticsTrendBucket[]) {
     date: bucket.date,
     label: formatTrendTick(bucket.date),
     created: bucket.tasksCreated,
+    completed: bucket.tasksCompleted ?? 0,
     moves: bucket.moves,
     bugs: bucket.bugReports,
   }));
