@@ -38,122 +38,45 @@ export interface TaskSmartCopyContext {
   subtasks?: Task[];
 }
 
-function formatDueDate(value: string | null | undefined): string {
-  if (!value) return 'none';
-  return new Date(value).toISOString().slice(0, 10);
+function formatSmartCopyFlags(task: Task, context: TaskSmartCopyContext): string[] {
+  const subtasks = context.subtasks ?? [];
+  const lines = [
+    `- display_id: ${task.displayId}`,
+    `- title: ${task.title}`,
+    `- status: ${task.status}`,
+    `- is_bug: ${Boolean(task.isBug)}`,
+    `- has_subtasks: ${subtasks.length > 0}`,
+  ];
+  if (context.parentDisplayId) {
+    lines.push(`- parent_display_id: ${context.parentDisplayId}`);
+  }
+  return lines;
 }
 
-function formatSubtaskBlock(subtask: Task, index: number): string {
-  const fields = taskDescriptionFieldsFromTask(subtask);
-  return [
-    `### ${index + 1}. ${subtask.title} (${subtask.displayId})`,
-    `- id: ${subtask.id}`,
-    `- status: ${subtask.status}`,
-    `- criticity: ${subtask.criticity}`,
-    `- due_date: ${formatDueDate(subtask.dueDate)}`,
-    '',
-    formatDescriptionSection('Business Description', fields.businessDescription),
-    '',
-    formatDescriptionSection('Plan / Code Description', fields.planCodeDescription),
-    '',
-    formatDescriptionSection('Test Description', fields.testDescription),
-  ].join('\n');
+function formatSmartCopyRetrieveHint(task: Task): string[] {
+  const lines = [
+    'Retrieve the live plan with Arc Todo MCP. Do not treat this paste as the execution plan.',
+    `get_task(task_id="${task.displayId}", include="plan")`,
+  ];
+  if (task.isBug) {
+    lines.push(
+      'If is_bug: also fetch include="qa" plus comments/evidence as needed before fixing.',
+    );
+  }
+  return lines;
 }
 
 export function formatTaskSmartCopyText(
   task: Task,
   context: TaskSmartCopyContext,
 ): string {
-  const fields = taskDescriptionFieldsFromTask(task);
-  const subtasks = context.subtasks ?? [];
-  const lines: string[] = [
+  return [
     '# Arc Todo Smart Copy',
     '',
-    'Start here: make a concise implementation plan from this task before editing. If anything important is unclear, ask all focused questions needed to make the plan strong, and include your proposed solution/default for each question.',
+    ...formatSmartCopyFlags(task, context),
     '',
-    'After the plan is approved, execute the work, verify it with the test description, then use Arc Todo MCP to move completed implementation work to Dev Test (not Done unless the task explicitly allows skipping test stages).',
-    '',
-    '## Task',
-    `- display_id: ${task.displayId}`,
-    `- id: ${task.id}`,
-    `- title: ${task.title}`,
-    `- status: ${task.status}`,
-    `- criticity: ${task.criticity}`,
-    `- due_date: ${formatDueDate(task.dueDate)}`,
-    '',
-    '## Context',
-    `- organization_id: ${context.organizationId}`,
-    `- organization_name: ${context.organizationName ?? 'unknown'}`,
-    `- project_id: ${context.projectId}`,
-    `- project_name: ${context.projectName ?? 'unknown'}`,
-  ];
-
-  if (context.parentDisplayId) {
-    lines.push('', '## Parent', `- display_id: ${context.parentDisplayId}`);
-  }
-
-  lines.push(
-    '',
-    formatDescriptionSection('Business Description', fields.businessDescription),
-    '',
-    '## Plan / Code Description',
-    fields.planCodeDescription?.trim() || 'No plan / code description',
-    '',
-    formatDescriptionSection('Test Description', fields.testDescription),
-  );
-
-  if (subtasks.length > 0) {
-    lines.push('', '## Subtasks');
-    subtasks.forEach((subtask, index) => {
-      lines.push('', formatSubtaskBlock(subtask, index));
-    });
-  } else {
-    lines.push('', '## Subtasks', 'none');
-  }
-
-  lines.push(
-    '',
-    '## Agent Instructions',
-    '',
-    '### Planning',
-    '- Treat Business Description as product intent, scope, and acceptance criteria.',
-    '- Treat Plan / Code Description as the main execution plan; subtask bodies are technical execution plans.',
-    '- Use Test Description when defining verification steps.',
-    '- First response should be a useful implementation plan, not a summary of this packet.',
-    '- Ask every material product/architecture question needed for a good plan. Every question must include a proposed solution/default.',
-    '- When useful, suggest one improvement or simpler alternative during the question process.',
-    '- In plan mode: produce a concise implementation plan from this packet and wait for approval before edits.',
-    '',
-    '### Execution (Arc Todo MCP)',
-    '- Use the enabled Arc Todo MCP server unless the user names another.',
-    '- Read tool descriptors before calling: `get_task`, `list_tasks`, and `update_task`; use `retrieve_knowledge` when context is unclear.',
-    `- Fetch this task: get_task(organization_id="${context.organizationId}", project_id="${context.projectId}", task_id="${task.displayId}")`,
-    '- Set parent to in_progress before implementation unless already active or in a test stage.',
-  );
-
-  if (subtasks.length > 0) {
-    lines.push(
-      `- List subtasks: list_tasks(organization_id="${context.organizationId}", project_id="${context.projectId}", parent_task_id=<parent UUID from get_task>)`,
-      '- ponytail: list_tasks parent_task_id filter requires UUID — resolve via get_task first, not friendly ID.',
-      '- Execute each subtask plan in order; mark each done via update_task before moving the parent forward.',
-    );
-  } else {
-    lines.push('- No subtasks: execute directly from Plan / Code Description.');
-  }
-
-  lines.push(
-    '- Run the smallest meaningful verification after non-trivial work, guided by Test Description.',
-    '',
-    '### Completion',
-    '- After implementation and verification, move the task to `dev_test` instead of `done` unless the task explicitly says Dev Test/QA Test can be skipped.',
-    '- Reserve `done` for after Dev Test and QA Test are complete, or when the user explicitly skips test stages.',
-    '- Mark completed subtasks `done`, then move the parent to `dev_test` or `done` according to the workflow above.',
-    '- Commit and push when the user expects it or repo workflow requires it.',
-    '- Deploy only when repo scripts/docs make the path clear; ask if deploy target or command is ambiguous.',
-    '- Do not hardcode machine-specific paths or deploy commands into task text.',
-  );
-
-  return lines.join('\n');
+    ...formatSmartCopyRetrieveHint(task),
+  ].join('\n');
 }
 
 export async function copyTextToClipboard(text: string): Promise<void> {
@@ -203,59 +126,18 @@ export interface TaskBatchSmartCopyItem {
   context: TaskSmartCopyContext;
 }
 
-function formatCompactBatchTaskBlock(
+function formatBatchTaskRow(
   task: Task,
   context: TaskSmartCopyContext,
   index: number,
-  total: number,
 ): string {
-  const fields = taskDescriptionFieldsFromTask(task);
-  const subtasks = context.subtasks ?? [];
-  const lines: string[] = [
-    `## Task ${index + 1} of ${total}: ${task.displayId}`,
-    `- display_id: ${task.displayId}`,
-    `- id: ${task.id}`,
-    `- title: ${task.title}`,
-    `- status: ${task.status}`,
-    `- criticity: ${task.criticity}`,
-    `- due_date: ${formatDueDate(task.dueDate)}`,
-    '',
-    '## Context',
-    `- organization_id: ${context.organizationId}`,
-    `- organization_name: ${context.organizationName ?? 'unknown'}`,
-    `- project_id: ${context.projectId}`,
-    `- project_name: ${context.projectName ?? 'unknown'}`,
-  ];
-
-  if (context.parentDisplayId) {
-    lines.push('', '## Parent', `- display_id: ${context.parentDisplayId}`);
-  }
-
-  lines.push(
-    '',
-    formatDescriptionSection('Business Description', fields.businessDescription),
-    '',
-    '## Plan / Code Description',
-    fields.planCodeDescription?.trim() || 'No plan / code description',
-    '',
-    formatDescriptionSection('Test Description', fields.testDescription),
-  );
-
-  if (subtasks.length > 0) {
-    lines.push('', '## Subtasks');
-    subtasks.forEach((subtask, subIndex) => {
-      lines.push('', formatSubtaskBlock(subtask, subIndex));
-    });
-  } else {
-    lines.push('', '## Subtasks', 'none');
-  }
-
-  return lines.join('\n');
+  const hasSubtasks = (context.subtasks ?? []).length > 0;
+  return `${index + 1}. ${task.displayId} — ${task.title} — is_bug: ${Boolean(task.isBug)} — has_subtasks: ${hasSubtasks}`;
 }
 
 /**
  * Multi-task Smart Copy for batch skills.
- * Compact: shared batch agent instructions once; per-task bodies omit the long single-task agent block.
+ * Pointer packet: IDs + flags; retrieve live plans via MCP.
  * Throws if `items.length` is 0 or greater than {@link BATCH_SMART_COPY_MAX}.
  */
 export function formatTasksBatchSmartCopyText(
@@ -270,7 +152,7 @@ export function formatTasksBatchSmartCopyText(
     );
   }
 
-  const displayIds = items.map((item) => item.task.displayId);
+  const hasBug = items.some((item) => item.task.isBug);
   const lines: string[] = [
     '# Arc Todo Batch Smart Copy',
     '',
@@ -281,25 +163,19 @@ export function formatTasksBatchSmartCopyText(
     'Do not treat this as a single-task Smart Copy. Explicit IDs below win for skill recovery.',
     '',
     '## Selected tasks',
-    ...displayIds.map((id, index) => `${index + 1}. ${id}`),
+    ...items.map((item, index) => formatBatchTaskRow(item.task, item.context, index)),
     '',
-    '## Agent Instructions (batch)',
-    '- Prefer the batch skills named above over executing one packet at a time.',
-    '- Execute / verify each selected task; move completed work to Dev Test (not Done) unless a task explicitly allows skipping test stages.',
-    '- Keep single-task Smart Copy behavior unchanged when pasting a non-batch packet.',
-    '',
+    'Retrieve each live plan with Arc Todo MCP. Do not treat this paste as the execution plan.',
+    'get_task(task_id="<display_id>", include="plan")',
   ];
 
-  items.forEach((item, index) => {
+  if (hasBug) {
     lines.push(
-      '---',
-      '',
-      formatCompactBatchTaskBlock(item.task, item.context, index, items.length),
-      '',
+      'If is_bug: also fetch include="qa" plus comments/evidence as needed before fixing.',
     );
-  });
+  }
 
-  return lines.join('\n').trimEnd() + '\n';
+  return lines.join('\n') + '\n';
 }
 
 export async function copyTasksBatchSmartToClipboard(

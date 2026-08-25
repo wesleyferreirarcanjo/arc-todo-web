@@ -47,6 +47,15 @@ const subtask: Task = {
   updatedAt: '2026-06-01T00:00:00.000Z',
 };
 
+const bugTask: Task = {
+  ...parentTask,
+  id: '66666666-6666-6666-6666-666666666666',
+  title: 'Fix login freeze',
+  displayId: '#arc-123',
+  taskNumber: 123,
+  isBug: true,
+};
+
 describe('formatTaskCopyText', () => {
   it('includes subtasks and structured descriptions in the simple copy format', () => {
     const text = formatTaskCopyText(parentTask, [subtask]);
@@ -60,7 +69,7 @@ describe('formatTaskCopyText', () => {
 });
 
 describe('formatTaskSmartCopyText', () => {
-  it('includes structured descriptions, subtasks, MCP hints, and Dev Test handoff', () => {
+  it('is a pointer packet with flags and MCP retrieve, not description bodies', () => {
     const text = formatTaskSmartCopyText(parentTask, {
       organizationId: '57df4a79-d87d-40e1-9fb0-2da29d8ebecf',
       projectId: parentTask.projectId,
@@ -70,32 +79,33 @@ describe('formatTaskSmartCopyText', () => {
     });
 
     expect(text).toContain('# Arc Todo Smart Copy');
-    expect(text).toContain('verify it with the test description');
-    expect(text).toContain('move completed implementation work to Dev Test');
-    expect(text).toContain('## Business Description');
-    expect(text).toContain('## Plan / Code Description');
-    expect(text).toContain('## Test Description');
     expect(text).toContain('display_id: #arc-1');
-    expect(text).toContain('organization_id: 57df4a79-d87d-40e1-9fb0-2da29d8ebecf');
-    expect(text).toContain('project_name: Frontend');
-    expect(text).toContain('Wire UI button (#arc-2)');
-    expect(text).toContain('get_task(');
-    expect(text).toContain('parent_task_id=<parent UUID from get_task>');
-    expect(text).toContain('list_tasks parent_task_id filter requires UUID');
-    expect(text).toContain('move the task to `dev_test` instead of `done`');
-    expect(text).toContain('Treat Plan / Code Description as the main execution plan');
+    expect(text).toContain('title: Add smart copy');
+    expect(text).toContain('status: todo');
+    expect(text).toContain('is_bug: false');
+    expect(text).toContain('has_subtasks: true');
+    expect(text).toContain('get_task(task_id="#arc-1", include="plan")');
+    expect(text).toContain('Do not treat this paste as the execution plan');
+    expect(text).not.toContain('## Business Description');
+    expect(text).not.toContain('## Plan / Code Description');
+    expect(text).not.toContain('## Test Description');
+    expect(text).not.toContain('Ship portable agent copy from the board.');
+    expect(text).not.toContain('organization_id:');
+    expect(text).not.toContain('Wire UI button');
   });
 
-  it('includes parent reference for subtasks', () => {
-    const text = formatTaskSmartCopyText(subtask, {
+  it('includes parent display id and bug retrieve hint when relevant', () => {
+    const text = formatTaskSmartCopyText(bugTask, {
       organizationId: '57df4a79-d87d-40e1-9fb0-2da29d8ebecf',
-      projectId: subtask.projectId,
+      projectId: bugTask.projectId,
       parentDisplayId: '#arc-1',
     });
 
-    expect(text).toContain('## Parent');
-    expect(text).toContain('display_id: #arc-1');
-    expect(text).toContain('## Subtasks\nnone');
+    expect(text).toContain('display_id: #arc-123');
+    expect(text).toContain('is_bug: true');
+    expect(text).toContain('parent_display_id: #arc-1');
+    expect(text).toContain('include="qa"');
+    expect(text).not.toContain('## Subtasks');
   });
 });
 
@@ -109,10 +119,10 @@ describe('formatTasksBatchSmartCopyText', () => {
     displayId: '#arc-3',
   };
 
-  it('builds a multi-task packet with header, id list, and per-task blocks', () => {
+  it('builds a multi-task pointer packet with ids and flags', () => {
     const text = formatTasksBatchSmartCopyText([
       {
-        task: parentTask,
+        task: { ...parentTask, isBug: true },
         context: {
           organizationId: orgId,
           projectId: parentTask.projectId,
@@ -135,14 +145,15 @@ describe('formatTasksBatchSmartCopyText', () => {
     expect(text).toContain('arc-todo-batch-execute-tasks');
     expect(text).toContain('arc-todo-batch-execute-bugs');
     expect(text).toContain('## Selected tasks');
-    expect(text).toContain('1. #arc-1');
-    expect(text).toContain('2. #arc-3');
-    expect(text).toContain('## Task 1 of 2: #arc-1');
-    expect(text).toContain('## Task 2 of 2: #arc-3');
-    expect(text).toContain('Wire UI button (#arc-2)');
-    expect(text).toContain('Second batch task');
+    expect(text).toContain('1. #arc-1 — Add smart copy — is_bug: true — has_subtasks: true');
+    expect(text).toContain('2. #arc-3 — Second batch task — is_bug: false — has_subtasks: false');
+    expect(text).toContain('get_task(task_id="<display_id>", include="plan")');
+    expect(text).toContain('include="qa"');
     expect(text).not.toContain('# Arc Todo Smart Copy');
-    expect(text).not.toContain('make a concise implementation plan from this task before editing');
+    expect(text).not.toContain('## Business Description');
+    expect(text).not.toContain('## Plan / Code Description');
+    expect(text).not.toContain('Ship portable agent copy from the board.');
+    expect(text).not.toContain('Wire UI button');
   });
 
   it('rejects empty and over-cap batches', () => {
@@ -185,6 +196,6 @@ describe('formatTasksBatchSmartCopyText', () => {
     const text = formatTasksBatchSmartCopyText(items);
     expect(text).toContain(`1. #arc-200`);
     expect(text).toContain(`5. #arc-204`);
-    expect(text).toContain('## Task 5 of 5: #arc-204');
+    expect(text).not.toContain('## Task 5 of 5: #arc-204');
   });
 });
