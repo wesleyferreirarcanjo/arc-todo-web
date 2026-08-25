@@ -1,8 +1,5 @@
 import type { Task } from '../types/todo';
-import {
-  formatDescriptionSection,
-  taskDescriptionFieldsFromTask,
-} from './tasks/taskDescriptions';
+import { taskDescriptionFieldsFromTask } from './tasks/taskDescriptions';
 
 function formatSimpleDueDate(value: string | null | undefined): string {
   if (!value) return 'No due date';
