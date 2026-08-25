@@ -186,6 +186,7 @@ export function TaskQaChecklistModal({
   const [reportFiles, setReportFiles] = useState<File[]>([]);
   const [reportPasteCue, setReportPasteCue] = useState(false);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
+  const [lastIdleItemId, setLastIdleItemId] = useState<string | null>(null);
   const [editingNoteKey, setEditingNoteKey] = useState<string | null>(null);
   const [editNoteDraft, setEditNoteDraft] = useState('');
   const [notePendingDelete, setNotePendingDelete] = useState<{
@@ -194,6 +195,8 @@ export function TaskQaChecklistModal({
   } | null>(null);
   const reportingItemIdRef = useRef<string | null>(null);
   reportingItemIdRef.current = reportingItemId;
+  const lastIdleItemIdRef = useRef<string | null>(null);
+  lastIdleItemIdRef.current = lastIdleItemId;
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -225,6 +228,7 @@ export function TaskQaChecklistModal({
     setReportNote('');
     setReportFiles([]);
     setReportPasteCue(false);
+    setLastIdleItemId(null);
     setEditingNoteKey(null);
     setEditNoteDraft('');
     setNotePendingDelete(null);
@@ -348,23 +352,59 @@ export function TaskQaChecklistModal({
     return () => window.clearTimeout(id);
   }, [reportPasteCue]);
 
-  // While reporting a checklist-item bug, Ctrl+V / Cmd+V with an image or
-  // video in the clipboard appends it as an optional attachment (uploaded on confirm).
+  async function uploadIdleItemEvidence(itemId: string, file: File) {
+    if (clipboardMediaKind(file) !== 'image') return;
+
+    setUploadingItemId(itemId);
+    try {
+      const created = await uploadTaskEvidence(
+        organizationId,
+        projectId,
+        task.id,
+        file,
+        itemId,
+      );
+      setEvidence((current) => {
+        const next = [created, ...current];
+        onEvidenceChange?.(next);
+        return next;
+      });
+    } catch (error: unknown) {
+      onError?.(userMessage(error, WEB_ERROR.SAVE, { thing: 'item evidence' }));
+    } finally {
+      setUploadingItemId(null);
+    }
+  }
+
+  const uploadIdleItemEvidenceRef = useRef(uploadIdleItemEvidence);
+  uploadIdleItemEvidenceRef.current = uploadIdleItemEvidence;
+
+  // Idle item: Ctrl+V / Cmd+V uploads an image immediately onto the last
+  // focused item. While reporting Bug/melhoria, paste still only stages
+  // optional attachments (image or video) until confirm.
   useEffect(() => {
-    if (!open || !reportingItemId) return;
+    if (!open) return;
 
     function onDocumentPaste(event: ClipboardEvent) {
-      if (!reportingItemIdRef.current) return;
       const file = extractClipboardImage(event.clipboardData);
       if (!file) return;
+
+      if (reportingItemIdRef.current) {
+        event.preventDefault();
+        setReportFiles((current) => [...current, file]);
+        setReportPasteCue(true);
+        return;
+      }
+
+      const itemId = lastIdleItemIdRef.current;
+      if (!itemId || clipboardMediaKind(file) !== 'image') return;
       event.preventDefault();
-      setReportFiles((current) => [...current, file]);
-      setReportPasteCue(true);
+      void uploadIdleItemEvidenceRef.current(itemId, file);
     }
 
     document.addEventListener('paste', onDocumentPaste);
     return () => document.removeEventListener('paste', onDocumentPaste);
-  }, [open, reportingItemId]);
+  }, [open]);
 
   async function confirmReportItem(itemId: string) {
     const note = reportNote.trim();
@@ -662,6 +702,8 @@ export function TaskQaChecklistModal({
                 <li
                   key={item.id}
                   className={`task-qa-checklist-item${isBugged ? ' is-bugged' : ''}${itemImprovements.length > 0 ? ' has-improvement' : ''}`}
+                  onClick={() => setLastIdleItemId(item.id)}
+                  onFocusCapture={() => setLastIdleItemId(item.id)}
                 >
                   <label className="task-qa-checklist-check">
                     <input
@@ -960,6 +1002,27 @@ export function TaskQaChecklistModal({
                   <div className="task-qa-checklist-item-actions">
                     {!isReporting && (
                       <>
+                        <label
+                          className="btn btn-secondary btn-sm task-qa-upload-btn"
+                          title="Paste image (Ctrl+V) onto this item"
+                        >
+                          {uploadingItemId === item.id
+                            ? 'Sending...'
+                            : 'Send image'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            aria-label={`Send image for ${formatChecklistLabel(item.label)}`}
+                            disabled={saving || uploadingItemId === item.id}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              event.target.value = '';
+                              if (!file) return;
+                              setLastIdleItemId(item.id);
+                              void uploadIdleItemEvidence(item.id, file);
+                            }}
+                          />
+                        </label>
                         <button
                           type="button"
                           className={`btn btn-secondary btn-sm task-qa-checklist-bug-btn${isBugged ? ' is-active' : ''}`}
