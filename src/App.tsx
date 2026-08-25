@@ -6,6 +6,7 @@ import { AdminRoute } from './components/AdminRoute';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminUsersPage } from './pages/AdminUsersPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
@@ -80,6 +81,7 @@ export default function App() {
                 />
                 <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route element={<AdminRoute />}>
+                  <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />
                   <Route
                     path="/settings/chatbot"

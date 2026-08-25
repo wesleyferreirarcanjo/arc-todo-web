@@ -34,6 +34,7 @@ import {
   SettingsIcon,
   StorageIcon,
   SunIcon,
+  AnalyticsIcon,
   TasksIcon,
   UsersIcon,
   WireframesIcon,
@@ -308,6 +309,12 @@ export function MobileBoardFab() {
       },
     ];
     if (isAdmin) {
+      items.push({
+        id: 'nav-analytics',
+        label: 'Analytics',
+        icon: <AnalyticsIcon />,
+        onClick: () => go('/analytics'),
+      });
       items.push({
         id: 'nav-users',
         label: 'Users',

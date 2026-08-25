@@ -35,6 +35,7 @@ import {
   RagIcon,
   StorageIcon,
   TasksIcon,
+  AnalyticsIcon,
   UsersIcon,
   WireframesIcon,
 } from './icons';
@@ -64,6 +65,7 @@ export function Layout() {
   );
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isAdminUsersPage = location.pathname.startsWith('/admin/users');
+  const isAnalyticsPage = location.pathname.startsWith('/analytics');
   const isRagSettingsPage = location.pathname.startsWith('/settings/rag');
   const isBoardShell = isBoardShellPath(location.pathname);
 
@@ -230,6 +232,21 @@ export function Layout() {
                 <span className="sidebar-nav-label">{label}</span>
               </NavLink>
             ))}
+            {isAdmin && (
+              <NavLink
+                to="/analytics"
+                aria-label="Analytics"
+                data-tooltip={collapsed ? 'Analytics' : undefined}
+                className={({ isActive }) =>
+                  isActive || isAnalyticsPage
+                    ? 'sidebar-nav-link active'
+                    : 'sidebar-nav-link'
+                }
+              >
+                <AnalyticsIcon className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">Analytics</span>
+              </NavLink>
+            )}
             {isAdmin && (
               <NavLink
                 to="/admin/users"

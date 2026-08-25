@@ -14,6 +14,7 @@ const leftoverStatusTabs: BoardMobileStatusTabs = {
 
 const shellState = vi.hoisted(() => ({
   statusTabs: null as BoardMobileStatusTabs | null,
+  isAdmin: false,
 }));
 
 vi.mock('../hooks/useMediaQuery', () => ({
@@ -24,7 +25,7 @@ vi.mock('../hooks/useMediaQuery', () => ({
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     logout: vi.fn(),
-    isAdmin: false,
+    isAdmin: shellState.isAdmin,
     user: null,
     isAuthenticated: true,
   }),
@@ -67,6 +68,7 @@ import { MobileBoardFab } from './MobileBoardFab';
 
 afterEach(() => {
   shellState.statusTabs = null;
+  shellState.isAdmin = false;
   cleanup();
 });
 
@@ -116,6 +118,35 @@ describe('MobileBoardFab Navigate labels', () => {
     expect(
       screen.queryByRole('menuitem', { name: 'Users' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: 'Analytics' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('includes Analytics then Users for an administrator', async () => {
+    shellState.isAdmin = true;
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/board']}>
+        <MobileBoardFab />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Open actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
+      'Back',
+      'All tasks',
+      'Knowledge',
+      'Diagrams',
+      'Wireframes',
+      'Names',
+      'People',
+      'Organizations',
+      'Analytics',
+      'Users',
+    ]);
   });
 });
 

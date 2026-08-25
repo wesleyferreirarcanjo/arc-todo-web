@@ -2,6 +2,10 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const authState = vi.hoisted(() => ({
+  isAdmin: false,
+}));
+
 const workspace = vi.hoisted(() => ({
   currentOrgId: null as string | null,
   currentProjectId: null as string | null,
@@ -21,7 +25,7 @@ vi.mock('../hooks/useMediaQuery', () => ({
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     logout: vi.fn(),
-    isAdmin: false,
+    isAdmin: authState.isAdmin,
     user: { id: 'user-1' },
     isAuthenticated: true,
   }),
@@ -47,6 +51,7 @@ import { Layout } from './Layout';
 
 afterEach(() => {
   cleanup();
+  authState.isAdmin = false;
   workspace.currentOrgId = null;
   workspace.currentProjectId = null;
   workspace.currentOrganization = null;
@@ -93,5 +98,23 @@ describe('Layout sidebar identity', () => {
       .closest('aside');
     expect(sidebar).toHaveClass('has-accent');
     expect(sidebar).toHaveStyle({ '--entity-accent': '#4a7c59' });
+  });
+
+  it('shows Analytics before Users for an administrator', () => {
+    authState.isAdmin = true;
+    renderLayout();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toContain('Analytics');
+    expect(labels).toContain('Users');
+    expect(labels.indexOf('Analytics')).toBeLessThan(labels.indexOf('Users'));
+  });
+
+  it('hides Analytics from a project member', () => {
+    renderLayout();
+    expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
   });
 });
