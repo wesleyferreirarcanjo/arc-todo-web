@@ -45,7 +45,6 @@ import { TaskDetailsModal } from './TaskDetailsModal';
 import { DEFAULT_TASK_CATEGORY, TaskCategoryFormFields } from './TaskCategoryFormFields';
 import { TaskDescriptionFields } from './TaskDescriptionFields';
 import { TaskForm } from './TaskForm';
-import { AssigneeChip } from './AssigneeChip';
 import { AssigneeSelect } from './AssigneeSelect';
 import { UNASSIGNED_VALUE } from '../lib/users/assigneeDisplay';
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
@@ -1142,7 +1141,6 @@ export function TaskCard({
           <div className="task-card-header">
             <div className="task-card-heading">
               <h3>{task.title}</h3>
-              {isAdmin && <AssigneeChip assignee={task.assignee} />}
             </div>
             {isSubtask && !isDetachedSubtask && subtaskProgress && (
               <span
@@ -1554,7 +1552,6 @@ export function TaskCardOverlay({
   accentColor,
   compact = false,
 }: TaskCardOverlayProps) {
-  const { isAdmin } = useAuth();
   const cardStyle = accentColor
     ? ({ '--entity-accent': accentColor } as CSSProperties)
     : undefined;
@@ -1595,7 +1592,6 @@ export function TaskCardOverlay({
       <div className="task-card-header">
         <div className="task-card-heading">
           <h3>{task.title}</h3>
-          {isAdmin && <AssigneeChip assignee={task.assignee} compact />}
         </div>
       </div>
     </article>

@@ -179,13 +179,13 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
   });
 
-  it('shows Unassigned to admins when the card has no owner', () => {
+  it('hides Unassigned from admins on the card', () => {
     authState.isAdmin = true;
     renderCard('todo');
-    expect(screen.getByText('Unassigned')).toBeInTheDocument();
+    expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
   });
 
-  it('shows assignee initials and username to admins without opening the card', () => {
+  it('hides assignee initials and username from admins on the card', () => {
     authState.isAdmin = true;
     render(
       <StatusMoveAnimationProvider>
@@ -204,8 +204,8 @@ describe('TaskCard scan-first actions', () => {
       </StatusMoveAnimationProvider>,
     );
 
-    expect(screen.getByText('arthura')).toBeInTheDocument();
-    expect(screen.getByText('AR')).toBeInTheDocument();
+    expect(screen.queryByText('arthura')).not.toBeInTheDocument();
+    expect(screen.queryByText('AR')).not.toBeInTheDocument();
     expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
   });
 

@@ -23,7 +23,6 @@ import {
 import { copyTaskSmartToClipboard, copyTaskToClipboard } from '../lib/taskCopy';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorAlert } from './ErrorAlert';
-import { AssigneeChip } from './AssigneeChip';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 import { TaskQaSection } from './TaskQaSection';
@@ -187,7 +186,7 @@ export function TaskDetailsModal({
   onEdit,
   onTaskSynced,
 }: TaskDetailsModalProps) {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -520,7 +519,6 @@ export function TaskDetailsModal({
             <span className="task-details-status">
               {formatTaskStatusLabel(task.status)}
             </span>
-            {isAdmin && <AssigneeChip assignee={task.assignee} />}
             {bugBadgeLabel && (
               <span
                 className={`task-bug-badge${bugBadgeLabel === 'Bug resolvido' ? ' is-resolved' : ''}`}
@@ -865,7 +863,7 @@ export function TaskDetailsModal({
                   field: 'title' | 'description' | 'dueDate' | 'assignee';
                 } => {
                   if (!isVisibleChangeHistoryEntry(entry)) return false;
-                  return isAdmin || entry.field !== 'assignee';
+                  return entry.field !== 'assignee';
                 },
               );
               if (visibleHistory.length === 0) {
