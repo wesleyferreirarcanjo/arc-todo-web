@@ -231,6 +231,17 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                     className="btn btn-secondary"
                     onClick={() =>
                       navigate(
+                        `/organizations/${orgId}/projects/${project.id}/qa-info`,
+                      )
+                    }
+                  >
+                    QA info
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() =>
+                      navigate(
                         `/organizations/${orgId}/projects/${project.id}/wireframes`,
                       )
                     }

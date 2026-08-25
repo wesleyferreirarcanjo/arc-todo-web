@@ -28,6 +28,7 @@ import type { QaChecklistState, Task, TaskEvidence } from '../types/todo';
 import { ConfirmDialog } from './ConfirmDialog';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
+import { ProjectQaInfoForm } from './ProjectQaInfoForm';
 
 interface TaskQaChecklistModalProps {
   open: boolean;
@@ -662,6 +663,14 @@ export function TaskQaChecklistModal({
       className="task-qa-checklist-modal"
       accentColor={accentColor}
     >
+      <section className="task-qa-checklist-help" aria-label="QA info">
+        <h4 className="task-qa-checklist-help-title">QA info</h4>
+        <ProjectQaInfoForm
+          organizationId={organizationId}
+          projectId={projectId}
+          compact
+        />
+      </section>
       {helpMarkdown && (
         <section className="task-qa-checklist-help" aria-label="Test description">
           <h4 className="task-qa-checklist-help-title">Test description</h4>

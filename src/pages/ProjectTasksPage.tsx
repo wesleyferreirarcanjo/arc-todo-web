@@ -156,6 +156,12 @@ export function ProjectTasksPage() {
           <Link to="/organizations" className="text-link">
             Back to organizations
           </Link>
+          <Link
+            to={`/organizations/${orgId}/projects/${projectId}/qa-info`}
+            className="text-link"
+          >
+            QA info
+          </Link>
           {hasKnowledgeAccess && (
             <Link
               to={`/organizations/${orgId}/projects/${projectId}/knowledge`}

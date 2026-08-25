@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import type { Task } from '../types/todo';
 
 const uploadTaskEvidence = vi.fn();
@@ -15,6 +16,20 @@ vi.mock('../lib/api/todos', () => ({
   uploadTaskEvidence: (...args: unknown[]) => uploadTaskEvidence(...args),
   updateProjectTask: (...args: unknown[]) => updateProjectTask(...args),
   createProjectTask: vi.fn(),
+}));
+
+vi.mock('../lib/api/qaInfo', () => ({
+  fetchProjectQaInfo: vi.fn(async () => ({
+    id: null,
+    projectId: 'proj-1',
+    environments: [],
+    users: [],
+    notes: null,
+    updatedById: null,
+    createdAt: null,
+    updatedAt: null,
+  })),
+  updateProjectQaInfo: vi.fn(),
 }));
 
 import { TaskQaChecklistModal } from './TaskQaChecklistModal';
@@ -49,13 +64,15 @@ const task: Task = {
 
 function renderModal() {
   return render(
-    <TaskQaChecklistModal
-      open
-      onClose={() => {}}
-      task={task}
-      organizationId="org-1"
-      projectId="proj-1"
-    />,
+    <MemoryRouter>
+      <TaskQaChecklistModal
+        open
+        onClose={() => {}}
+        task={task}
+        organizationId="org-1"
+        projectId="proj-1"
+      />
+    </MemoryRouter>
   );
 }
 

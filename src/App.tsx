@@ -35,6 +35,7 @@ import { NamesHubPage } from './pages/NamesHubPage';
 import { ProjectNamesPage } from './pages/ProjectNamesPage';
 import { NameSessionPage } from './pages/NameSessionPage';
 import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
+import { ProjectQaInfoPage } from './pages/ProjectQaInfoPage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
 
 export default function App() {
@@ -147,6 +148,10 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/knowledge"
                   element={<ProjectKnowledgePage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/qa-info"
+                  element={<ProjectQaInfoPage />}
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/diagrams"

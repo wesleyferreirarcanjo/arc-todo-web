@@ -6,7 +6,8 @@ export type McpToolGroup =
   | 'rag'
   | 'diagrams'
   | 'wireframes'
-  | 'names';
+  | 'names'
+  | 'qa';
 
 export interface McpToolSetting {
   key: string;
@@ -64,4 +65,5 @@ export const MCP_TOOL_GROUP_LABELS: Record<McpToolGroup, string> = {
   diagrams: 'Diagrams',
   wireframes: 'Wireframes',
   names: 'Names',
+  qa: 'QA',
 };
