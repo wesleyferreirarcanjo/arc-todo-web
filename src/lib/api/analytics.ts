@@ -1,4 +1,5 @@
 import type {
+  AnalyticsBugFlagDossier,
   AnalyticsCompareMode,
   AnalyticsPeriodKey,
   AnalyticsSummary,
@@ -30,6 +31,14 @@ export function fetchAnalyticsSummary(
   query: AnalyticsSummaryQuery = {},
 ): Promise<AnalyticsSummary> {
   return apiRequest<AnalyticsSummary>(`/analytics/summary${buildSummaryQuery(query)}`);
+}
+
+export function fetchAnalyticsBugFlags(
+  query: AnalyticsSummaryQuery = {},
+): Promise<{ items: AnalyticsBugFlagDossier[] }> {
+  return apiRequest<{ items: AnalyticsBugFlagDossier[] }>(
+    `/analytics/bug-flags${buildSummaryQuery(query)}`,
+  );
 }
 
 export const ANALYTICS_PERIOD_OPTIONS: { value: AnalyticsPeriodKey; label: string }[] = [

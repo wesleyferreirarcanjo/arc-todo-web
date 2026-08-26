@@ -116,3 +116,16 @@ export interface AnalyticsSummaryQuery {
   compareFrom?: string;
   compareTo?: string;
 }
+
+export interface AnalyticsBugFlagDossier {
+  id: string;
+  taskId: string;
+  displayId: string;
+  title: string;
+  primary: string;
+  secondary: string[];
+  motivo: string;
+  evidence: string | null;
+  createdAt: string;
+  createdById: string | null;
+}

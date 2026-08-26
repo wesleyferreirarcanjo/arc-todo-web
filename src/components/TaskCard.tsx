@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -59,14 +59,30 @@ import {
   TrashIcon,
 } from './icons';
 
+const CONTEXT_MENU_PAD = 8;
+const CONTEXT_MENU_WIDTH = 220;
+const CONTEXT_MENU_HEIGHT = 340;
+const KEBAB_MENU_GAP = 6;
+
 function clampContextMenuPosition(clientX: number, clientY: number) {
-  const pad = 8;
-  const menuWidth = 220;
-  const menuHeight = 340;
   return {
-    x: Math.max(pad, Math.min(clientX, window.innerWidth - menuWidth - pad)),
-    y: Math.max(pad, Math.min(clientY, window.innerHeight - menuHeight - pad)),
+    x: Math.max(
+      CONTEXT_MENU_PAD,
+      Math.min(clientX, window.innerWidth - CONTEXT_MENU_WIDTH - CONTEXT_MENU_PAD),
+    ),
+    y: Math.max(
+      CONTEXT_MENU_PAD,
+      Math.min(clientY, window.innerHeight - CONTEXT_MENU_HEIGHT - CONTEXT_MENU_PAD),
+    ),
   };
+}
+
+function kebabMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect();
+  return clampContextMenuPosition(
+    rect.right - CONTEXT_MENU_WIDTH,
+    rect.bottom + KEBAB_MENU_GAP,
+  );
 }
 
 function formatDueDateForInput(dueDate: string | null): string {
@@ -260,16 +276,18 @@ export function TaskCard({
   const { shouldAnimateStatusMove, markStatusMove } = useStatusMoveAnimation();
   const animateStatusMove = shouldAnimateStatusMove(task.id);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [subtaskModalOpen, setSubtaskModalOpen] = useState(false);
   const [setParentModalOpen, setSetParentModalOpen] = useState(false);
   const [qaChecklistOpen, setQaChecklistOpen] = useState(false);
-  const [actionMenuOpen, setActionMenuOpen] = useState(false);
-  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [overlayMenu, setOverlayMenu] = useState<{
+    x: number;
+    y: number;
+    source: 'kebab' | 'context';
+  } | null>(null);
   const [copyTooltip, setCopyTooltip] = useState('Copy task');
   const [smartCopyTooltip, setSmartCopyTooltip] = useState('Smart copy');
   const [title, setTitle] = useState(task.title);
@@ -301,7 +319,8 @@ export function TaskCard({
   const scatterRafRef = useRef<number | null>(null);
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
 
-  const menusOpen = actionMenuOpen || contextMenuPos !== null;
+  const menusOpen = overlayMenu !== null;
+  const actionMenuOpen = overlayMenu?.source === 'kebab';
   const isInteractionLocked =
     detailsModalOpen ||
     editModalOpen ||
@@ -331,8 +350,17 @@ export function TaskCard({
       : undefined;
 
   function closeActionMenus() {
-    setActionMenuOpen(false);
-    setContextMenuPos(null);
+    setOverlayMenu(null);
+  }
+
+  function openKebabMenu() {
+    if (overlayMenu?.source === 'kebab') {
+      closeActionMenus();
+      return;
+    }
+    const trigger = menuTriggerRef.current;
+    if (!trigger) return;
+    setOverlayMenu({ ...kebabMenuPosition(trigger), source: 'kebab' });
   }
 
   useEffect(() => {
@@ -360,6 +388,23 @@ export function TaskCard({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [menusOpen]);
+
+  useLayoutEffect(() => {
+    if (overlayMenu?.source !== 'kebab') return;
+
+    function updateKebabPosition() {
+      const trigger = menuTriggerRef.current;
+      if (!trigger) return;
+      setOverlayMenu({ ...kebabMenuPosition(trigger), source: 'kebab' });
+    }
+
+    window.addEventListener('resize', updateKebabPosition);
+    window.addEventListener('scroll', updateKebabPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateKebabPosition);
+      window.removeEventListener('scroll', updateKebabPosition, true);
+    };
+  }, [overlayMenu?.source]);
 
   function resetEditFields() {
     setTitle(task.title);
@@ -422,8 +467,10 @@ export function TaskCard({
 
     event.preventDefault();
     event.stopPropagation();
-    setActionMenuOpen(false);
-    setContextMenuPos(clampContextMenuPosition(event.clientX, event.clientY));
+    setOverlayMenu({
+      ...clampContextMenuPosition(event.clientX, event.clientY),
+      source: 'context',
+    });
   }
 
   async function handleCopyTask() {
@@ -1111,24 +1158,16 @@ export function TaskCard({
 
           <div className="task-action-menu">
             <button
+              ref={menuTriggerRef}
               type="button"
               className="task-menu-trigger"
               aria-label="Task actions"
               aria-haspopup="menu"
               aria-expanded={actionMenuOpen}
-              onClick={() => {
-                setContextMenuPos(null);
-                setActionMenuOpen((open) => !open);
-              }}
+              onClick={openKebabMenu}
             >
               <MoreVerticalIcon className="task-menu-icon" />
             </button>
-
-            {actionMenuOpen && (
-              <div className="task-action-menu-panel" role="menu">
-                {taskMenuItems}
-              </div>
-            )}
           </div>
         </div>
 
@@ -1279,14 +1318,14 @@ export function TaskCard({
       </motion.article>
       ) : null}
 
-      {contextMenuPos &&
+      {overlayMenu &&
         createPortal(
           <div
             ref={contextMenuRef}
             className="task-card-context-menu"
             role="menu"
             aria-label="Task actions"
-            style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
+            style={{ left: overlayMenu.x, top: overlayMenu.y }}
             onPointerDown={stopCardPointer}
             onClick={stopCardPointer}
             onContextMenu={(event) => {

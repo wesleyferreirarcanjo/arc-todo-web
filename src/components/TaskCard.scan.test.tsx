@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task, TaskStatus } from '../types/todo';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
@@ -532,5 +532,33 @@ describe('TaskCard scan-first actions', () => {
     expect(card).not.toHaveClass('has-subtasks');
     expect(container.querySelectorAll('.task-card-scatter-light')).toHaveLength(6);
     expect(meanDistance(lightPositions(container), 88, 32)).toBeGreaterThan(20);
+  });
+
+  it('portals Task actions so scatter overflow clip cannot cover the menu', () => {
+    const { container } = render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({ status: 'todo' })}
+          organizationId="org-1"
+          projectId="proj-1"
+          organizationName="Arc Org"
+          projectName="Frontend"
+          accentColor="#4c8dff"
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    const card = container.querySelector('.task-card.has-scatter-lights');
+    expect(card).not.toBeNull();
+    expect(screen.queryByRole('menu', { name: 'Task actions' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Task actions' }));
+
+    const menu = screen.getByRole('menu', { name: 'Task actions' });
+    expect(card?.contains(menu)).toBe(false);
+    expect(menu.parentElement).toBe(document.body);
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
   });
 });

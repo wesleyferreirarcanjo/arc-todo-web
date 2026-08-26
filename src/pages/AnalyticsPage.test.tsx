@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AnalyticsSummary } from '../types/analytics';
 
 const fetchAnalyticsSummary = vi.hoisted(() => vi.fn());
+const fetchAnalyticsBugFlags = vi.hoisted(() => vi.fn());
 const fetchOrganizations = vi.hoisted(() => vi.fn());
 const fetchProjects = vi.hoisted(() => vi.fn());
 
@@ -14,6 +15,7 @@ vi.mock('../lib/api/analytics', async () => {
   return {
     ...actual,
     fetchAnalyticsSummary,
+    fetchAnalyticsBugFlags,
   };
 });
 
@@ -119,6 +121,22 @@ describe('AnalyticsPage copy', () => {
     fetchOrganizations.mockResolvedValue([]);
     fetchProjects.mockResolvedValue([]);
     fetchAnalyticsSummary.mockResolvedValue(summary);
+    fetchAnalyticsBugFlags.mockResolvedValue({
+      items: [
+        {
+          id: 'f1',
+          taskId: 't1',
+          displayId: '#arc-296',
+          title: 'Corrigir Navigate a partir de All tasks (tela não carrega)',
+          primary: 'REAL_DEFECT',
+          secondary: ['regression', 'not_deployed'],
+          motivo: 'URL goes to /knowledge but the screen stays on All tasks',
+          evidence: 'image.png',
+          createdAt: '2026-08-18T16:08:00.000Z',
+          createdById: 'u1',
+        },
+      ],
+    });
 
     render(
       <MemoryRouter initialEntries={['/analytics']}>
@@ -147,5 +165,10 @@ describe('AnalyticsPage copy', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Right now' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Open bugs' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Grok bug flags' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Motivo' })).toBeInTheDocument();
+    expect(screen.getByText('#arc-296')).toBeInTheDocument();
+    expect(screen.getByText('REAL_DEFECT')).toBeInTheDocument();
+    expect(screen.getByText('regression')).toBeInTheDocument();
   });
 });

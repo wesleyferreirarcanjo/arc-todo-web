@@ -21,6 +21,7 @@ import { ErrorAlert } from '../components/ErrorAlert';
 import { AnalyticsIcon } from '../components/icons';
 import {
   ANALYTICS_PERIOD_OPTIONS,
+  fetchAnalyticsBugFlags,
   fetchAnalyticsSummary,
 } from '../lib/api/analytics';
 import { fetchOrganizations } from '../lib/api/organizations';
@@ -39,7 +40,7 @@ import {
   type AnalyticsPageFilters,
 } from '../lib/analytics/period';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import type { AnalyticsSummary } from '../types/analytics';
+import type { AnalyticsBugFlagDossier, AnalyticsSummary } from '../types/analytics';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
@@ -132,6 +133,7 @@ export function AnalyticsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [bugFlags, setBugFlags] = useState<AnalyticsBugFlagDossier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -190,12 +192,14 @@ export function AnalyticsPage() {
     if ('pending' in queryState) {
       setLoading(false);
       setSummary(null);
+      setBugFlags([]);
       setError(null);
       return;
     }
     if ('error' in queryState) {
       setLoading(false);
       setSummary(null);
+      setBugFlags([]);
       setError(queryState.error);
       return;
     }
@@ -206,13 +210,18 @@ export function AnalyticsPage() {
       setLoading(true);
       setError(null);
       try {
-        const next = await fetchAnalyticsSummary(request);
+        const [next, flags] = await Promise.all([
+          fetchAnalyticsSummary(request),
+          fetchAnalyticsBugFlags(request),
+        ]);
         if (!cancelled) {
           setSummary(next);
+          setBugFlags(flags.items);
         }
       } catch (err) {
         if (!cancelled) {
           setSummary(null);
+          setBugFlags([]);
           setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'analytics' }));
         }
       } finally {
@@ -678,6 +687,68 @@ export function AnalyticsPage() {
                           <td>
                             {durationOrEmpty(row.averageMsInTest, '—')}
                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </article>
+          </section>
+
+          <section className="analytics-flags" aria-label="Grok bug flags">
+            <header className="analytics-panel-head">
+              <AnalyticsClockChip clock="window" />
+              <h3>Grok bug flags</h3>
+              <AnalyticsMetricInfo label="Grok bug flags">
+                Latest Grok dossier per task in {windowName}. These flags are admin-only
+                and never show on the board or in task details.
+              </AnalyticsMetricInfo>
+            </header>
+            <article className="analytics-panel analytics-panel-wide">
+              {bugFlags.length === 0 ? (
+                <p className="status-message">No Grok bug-flag dossiers in this window yet.</p>
+              ) : (
+                <div className="analytics-table-wrap">
+                  <table className="analytics-table">
+                    <caption className="sr-only">
+                      Grok bug-flag dossiers for {windowName}
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Primary</th>
+                        <th scope="col">Secondary</th>
+                        <th scope="col">Motivo</th>
+                        <th scope="col">Evidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bugFlags.map((row) => (
+                        <tr key={row.id}>
+                          <th scope="row" className="analytics-flag-id">
+                            {row.displayId}
+                          </th>
+                          <td className="analytics-flag-title">{row.title}</td>
+                          <td>
+                            <span className="analytics-flag-chip">{row.primary}</span>
+                          </td>
+                          <td>
+                            {row.secondary.length === 0 ? (
+                              '—'
+                            ) : (
+                              <div className="analytics-flag-chips">
+                                {row.secondary.map((tag) => (
+                                  <span key={tag} className="analytics-flag-chip">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="analytics-flag-motivo">{row.motivo}</td>
+                          <td className="analytics-flag-evidence">{row.evidence || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
