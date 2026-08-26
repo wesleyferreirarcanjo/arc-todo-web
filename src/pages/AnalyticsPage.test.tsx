@@ -132,6 +132,8 @@ describe('AnalyticsPage copy', () => {
           secondary: ['regression', 'not_deployed'],
           motivo: 'URL goes to /knowledge but the screen stays on All tasks',
           evidence: 'image.png',
+          taskScore: 7,
+          flagScore: 9,
           createdAt: '2026-08-18T16:08:00.000Z',
           createdById: 'u1',
         },
@@ -167,6 +169,10 @@ describe('AnalyticsPage copy', () => {
     expect(screen.getByRole('columnheader', { name: 'Open bugs' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Grok bug flags' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Motivo' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Task score' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Flag score' })).toBeInTheDocument();
+    expect(screen.getByText('7/10')).toBeInTheDocument();
+    expect(screen.getByText('9/10')).toBeInTheDocument();
     expect(screen.getByText('#arc-296')).toBeInTheDocument();
     expect(screen.getByText('REAL_DEFECT')).toBeInTheDocument();
     expect(screen.getByText('regression')).toBeInTheDocument();

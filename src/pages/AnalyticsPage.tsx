@@ -701,8 +701,9 @@ export function AnalyticsPage() {
               <AnalyticsClockChip clock="window" />
               <h3>Grok bug flags</h3>
               <AnalyticsMetricInfo label="Grok bug flags">
-                Latest Grok dossier per task in {windowName}. These flags are admin-only
-                and never show on the board or in task details.
+                Latest Grok dossier per task in {windowName}. Task is a 1–10 rating of
+                the ticket; Flag is a 1–10 rating of the bug report. Admin-only — never
+                on the board or in task details.
               </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
@@ -720,6 +721,8 @@ export function AnalyticsPage() {
                         <th scope="col">Title</th>
                         <th scope="col">Primary</th>
                         <th scope="col">Secondary</th>
+                        <th scope="col">Task score</th>
+                        <th scope="col">Flag score</th>
                         <th scope="col">Motivo</th>
                         <th scope="col">Evidence</th>
                       </tr>
@@ -746,6 +749,12 @@ export function AnalyticsPage() {
                                 ))}
                               </div>
                             )}
+                          </td>
+                          <td className="analytics-flag-id">
+                            {row.taskScore == null ? '—' : `${row.taskScore}/10`}
+                          </td>
+                          <td className="analytics-flag-id">
+                            {row.flagScore == null ? '—' : `${row.flagScore}/10`}
                           </td>
                           <td className="analytics-flag-motivo">{row.motivo}</td>
                           <td className="analytics-flag-evidence">{row.evidence || '—'}</td>
