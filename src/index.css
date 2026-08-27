@@ -10612,6 +10612,7 @@ section.board-cycle-header {
 .analytics-flow,
 .analytics-timing,
 .analytics-people,
+.analytics-activity,
 .analytics-flags {
   display: flex;
   flex-direction: column;
@@ -10888,6 +10889,33 @@ section.board-cycle-header {
 .analytics-flag-evidence {
   max-width: 22rem;
   white-space: pre-wrap;
+}
+
+.analytics-last-when {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.analytics-last-relative {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-last-clock {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-last-summary {
+  max-width: 28rem;
+}
+
+.analytics-last-never .analytics-last-relative,
+.analytics-last-never th,
+.analytics-last-never td {
+  color: var(--text-muted);
 }
 
 .analytics-table thead tr:first-child th[colspan],

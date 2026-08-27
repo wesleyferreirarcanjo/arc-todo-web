@@ -23,6 +23,14 @@ export interface AnalyticsPersonRow {
   sampleSizeTestDwells: number;
 }
 
+export interface AnalyticsLastInteractionRow {
+  userId: string;
+  username: string;
+  lastInteractedAt: string | null;
+  action: string | null;
+  summary: string | null;
+}
+
 export interface AnalyticsGrowthMetric {
   current: number;
   previous: number | null;
@@ -103,6 +111,7 @@ export interface AnalyticsSummary {
   checklistCompleteTasks: number;
   checklistOpenBugs: number;
   byPerson: AnalyticsPersonRow[];
+  lastInteractions?: AnalyticsLastInteractionRow[];
   trend: AnalyticsTrend;
 }
 

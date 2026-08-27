@@ -107,6 +107,22 @@ const summary: AnalyticsSummary = {
       sampleSizeTestDwells: 0,
     },
   ],
+  lastInteractions: [
+    {
+      userId: 'u1',
+      username: 'wesley',
+      lastInteractedAt: '2026-08-27T10:00:00.000Z',
+      action: 'task.status_changed',
+      summary: 'Moved task "Navigate" from todo to in_progress',
+    },
+    {
+      userId: 'u2',
+      username: 'arthura',
+      lastInteractedAt: null,
+      action: null,
+      summary: null,
+    },
+  ],
   trend: {
     granularity: 'day',
     buckets: [
@@ -168,6 +184,10 @@ describe('AnalyticsPage copy', () => {
     expect(screen.getByRole('columnheader', { name: 'Right now' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Open bugs' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Grok bug flags' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Last interaction' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'What they did' })).toBeInTheDocument();
+    expect(screen.getByText('Never')).toBeInTheDocument();
+    expect(screen.getByText('Moved task "Navigate" from todo to in_progress')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Motivo' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Task score' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Flag score' })).toBeInTheDocument();

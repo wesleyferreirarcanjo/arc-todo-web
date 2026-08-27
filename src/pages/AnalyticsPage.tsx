@@ -28,6 +28,7 @@ import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import { dwellChartRows, statusChartRows, trendChartRows } from '../lib/analytics/chartData';
 import { formatAnalyticsDuration } from '../lib/analytics/formatDuration';
+import { formatAnalyticsRelativeTime } from '../lib/analytics/formatRelative';
 import {
   formatGrowthCopy,
   formatPeriodCaption,
@@ -50,6 +51,17 @@ const VERTICAL_Y_WIDTH = 108;
 
 function durationOrEmpty(ms: number | null, empty: string): string {
   return formatAnalyticsDuration(ms) || empty;
+}
+
+function formatLastInteractionClock(iso: string | null): string {
+  if (!iso) {
+    return '';
+  }
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) {
+    return '';
+  }
+  return at.toLocaleString();
 }
 
 type ChartTooltipRow = {
@@ -689,6 +701,71 @@ export function AnalyticsPage() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </article>
+          </section>
+
+          <section className="analytics-activity" aria-label="Last interaction">
+            <header className="analytics-panel-head">
+              <AnalyticsClockChip clock="now" />
+              <h3>Last interaction</h3>
+              <AnalyticsMetricInfo label="Last interaction">
+                Most recent recorded action per person on these boards — task create, edit,
+                move, or delete, plus knowledge changes. Login, comments, and chat are not
+                in this log. Org and project still apply; date chips do not.
+              </AnalyticsMetricInfo>
+            </header>
+            <article className="analytics-panel analytics-panel-wide">
+              {(summary.lastInteractions ?? []).length === 0 ? (
+                <p className="status-message">No people in this view yet.</p>
+              ) : (
+                <div className="analytics-table-wrap">
+                  <table className="analytics-table">
+                    <caption className="sr-only">
+                      Last recorded interaction per person on these boards
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Person</th>
+                        <th scope="col">Last interaction</th>
+                        <th scope="col">What they did</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(summary.lastInteractions ?? []).map((row) => {
+                        const relative = formatAnalyticsRelativeTime(row.lastInteractedAt);
+                        const clock = formatLastInteractionClock(row.lastInteractedAt);
+                        const never = !row.lastInteractedAt;
+                        return (
+                          <tr
+                            key={row.userId}
+                            className={never ? 'analytics-last-never' : undefined}
+                          >
+                            <th scope="row">{row.username}</th>
+                            <td>
+                              {never || !row.lastInteractedAt ? (
+                                <span className="analytics-last-relative">{relative}</span>
+                              ) : (
+                                <time
+                                  className="analytics-last-when"
+                                  dateTime={row.lastInteractedAt}
+                                >
+                                  <span className="analytics-last-relative">{relative}</span>
+                                  {clock ? (
+                                    <span className="analytics-last-clock">{clock}</span>
+                                  ) : null}
+                                </time>
+                              )}
+                            </td>
+                            <td className="analytics-last-summary">
+                              {row.summary || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
