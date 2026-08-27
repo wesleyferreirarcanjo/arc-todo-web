@@ -74,6 +74,13 @@ describe('board columns never paint a scrollbar', () => {
     expect(card).not.toContain('overflow: visible');
   });
 
+  it('lets a scatter-card action tooltip escape the card edge', () => {
+    const actionHover = ruleBlock(
+      '.task-card.has-accent.has-scatter-lights:has(\n    .task-card-action-btn:is(:hover, :focus-visible)\n  )',
+    );
+    expect(actionHover).toContain('overflow: visible');
+  });
+
   it('keeps scatter-card lights on hover and flees in layout percentages', () => {
     expect(css).toContain(':not(.has-scatter-lights)');
     expect(css).toContain('--scatter-flee');

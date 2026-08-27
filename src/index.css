@@ -3774,6 +3774,12 @@ textarea {
     color-mix(in srgb, var(--entity-accent, var(--accent-secondary)) 12%, transparent);
 }
 
+.task-card.has-accent.has-scatter-lights:has(
+    .task-card-action-btn:is(:hover, :focus-visible)
+  ) {
+  overflow: visible;
+}
+
 .task-card.has-accent.has-scatter-lights.is-in-progress-stage {
   --scatter-scale: 1.1;
   --scatter-light-opacity: 0.24;
