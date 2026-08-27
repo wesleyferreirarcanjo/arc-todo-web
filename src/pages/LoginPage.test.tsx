@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -59,6 +59,7 @@ describe('LoginPage SSO 401', () => {
   });
 
   afterEach(() => {
+    cleanup();
     document
       .querySelectorAll(`script[src="${GSI_SCRIPT_SRC}"]`)
       .forEach((node) => node.remove());
@@ -109,5 +110,22 @@ describe('LoginPage SSO 401', () => {
     await waitFor(() => {
       expect(host).not.toHaveStyle({ pointerEvents: 'none' });
     });
+  });
+
+  it('does not advertise the extension download', async () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Arc Todo' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Download for Chrome/Edge' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Download for Firefox' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Browser extension')).not.toBeInTheDocument();
   });
 });

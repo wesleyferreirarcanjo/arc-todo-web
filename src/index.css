@@ -9157,8 +9157,56 @@ section.board-cycle-header {
   padding: 0.55rem 0.6rem;
 }
 
-.qa-info-page .qa-info-form {
+.qa-info-page .qa-info-form,
+.qa-info-page .extension-download {
   max-width: 42rem;
+}
+
+.extension-download {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-blob);
+  background: var(--bg-surface);
+}
+
+.extension-download h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-section);
+  font-weight: 650;
+}
+
+.extension-download-version {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
+.extension-download-lede,
+.extension-download-firefox {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-body);
+}
+
+.extension-download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.extension-download-actions .btn {
+  margin-top: 0;
+}
+
+@media (hover: none) {
+  .extension-download-actions .btn {
+    min-height: 2.75rem;
+  }
 }
 
 .task-qa-checklist-help-title {

@@ -68,6 +68,8 @@ Redeploy the frontend whenever the API or chatbot public URL changes, or when `V
 
 - Coolify **v4.2+** deploy is **POST** `/api/v1/deploy?uuid=ifo33mi1s8efs8myb5g441vh&force=true`. GET fails. Cursor `user-coolify` `deploy` needs `@masonator/coolify-mcp` **2.19.4+** (reload the MCP session after upgrade).
 
+- Browser extension packages are static files in `public/extension/` (`chromium.zip`, `firefox.zip`, `version.json`). Copy them from `arc-todo-extension` after `npm run build` (`npm run copy:web` from that repo). Ship this web deploy together with the latest zips — there is no separate Coolify app for the files. The QA info page links them; `/login` does not.
+
 - Human login is Google SSO only (`AUTH_SSO_ONLY` on API). Ensure Google Console authorized JavaScript origins include this app's live URL scheme+host.
 - Knowledge attachment files are stored in MinIO by the API; the web app has no MinIO env vars.
 - Git source uses the Coolify deploy key (`private_key_uuid`: `lms2y9fjpybdznft4t7uf3td`).

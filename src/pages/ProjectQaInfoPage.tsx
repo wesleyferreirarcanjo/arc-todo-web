@@ -1,3 +1,4 @@
+import { BrowserExtensionDownload } from '../components/BrowserExtensionDownload';
 import { ProjectQaInfoForm } from '../components/ProjectQaInfoForm';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -41,6 +42,8 @@ export function ProjectQaInfoPage() {
           </Link>
         </div>
       </header>
+
+      <BrowserExtensionDownload />
 
       <ProjectQaInfoForm organizationId={orgId} projectId={projectId} />
     </div>

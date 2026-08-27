@@ -76,6 +76,7 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/extension\//],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         importScripts: ['push-handler.js'],
         // Main Excalidraw/mermaid chunk exceeds Workbox's 2 MiB default.
