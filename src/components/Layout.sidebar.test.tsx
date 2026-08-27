@@ -110,11 +110,26 @@ describe('Layout sidebar identity', () => {
     expect(labels).toContain('Analytics');
     expect(labels).toContain('Users');
     expect(labels.indexOf('Analytics')).toBeLessThan(labels.indexOf('Users'));
+    expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Analytics'));
   });
 
   it('hides Analytics from a project member', () => {
     renderLayout();
     expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
+  });
+
+  it('shows Download after Organizations for a project member', () => {
+    renderLayout();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toContain('Download');
+    expect(labels.indexOf('Organizations')).toBeLessThan(labels.indexOf('Download'));
+    expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
+      'href',
+      '/download',
+    );
   });
 });

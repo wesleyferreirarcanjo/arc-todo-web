@@ -9158,7 +9158,8 @@ section.board-cycle-header {
 }
 
 .qa-info-page .qa-info-form,
-.qa-info-page .extension-download {
+.qa-info-page .extension-download,
+.download-page .extension-download {
   max-width: 42rem;
 }
 

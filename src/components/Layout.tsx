@@ -36,6 +36,7 @@ import {
   StorageIcon,
   TasksIcon,
   AnalyticsIcon,
+  DownloadIcon,
   UsersIcon,
   WireframesIcon,
 } from './icons';
@@ -48,6 +49,7 @@ const primaryNav = [
   { to: '/names', label: 'Names', icon: NamesIcon },
   { to: '/people', label: 'People', icon: PeopleIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
+  { to: '/download', label: 'Download', icon: DownloadIcon, end: true as const },
 ] as const;
 
 export function Layout() {

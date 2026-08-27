@@ -21,6 +21,7 @@ import {
   Moon,
   PencilSimple,
   Plus,
+  PuzzlePiece,
   SignOut,
   Sun,
   Trash,
@@ -329,6 +330,7 @@ export const BackIcon = phosphor(ArrowLeft);
 export const FlaskIcon = phosphor(Flask);
 export const InfoIcon = phosphor(Info);
 export const InstallIcon = phosphor(DownloadSimple);
+export const DownloadIcon = phosphor(PuzzlePiece);
 export const BellIcon = phosphor(Bell);
 export const MoreVerticalIcon = phosphor(DotsThreeVertical);
 export const PencilIcon = phosphor(PencilSimple);

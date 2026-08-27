@@ -35,6 +35,7 @@ import {
   StorageIcon,
   SunIcon,
   AnalyticsIcon,
+  DownloadIcon,
   TasksIcon,
   UsersIcon,
   WireframesIcon,
@@ -306,6 +307,12 @@ export function MobileBoardFab() {
         label: 'Organizations',
         icon: <OrganizationsIcon />,
         onClick: () => go('/organizations'),
+      },
+      {
+        id: 'nav-download',
+        label: 'Download',
+        icon: <DownloadIcon />,
+        onClick: () => go('/download'),
       },
     ];
     if (isAdmin) {
