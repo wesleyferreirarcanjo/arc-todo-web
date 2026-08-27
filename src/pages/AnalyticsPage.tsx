@@ -710,12 +710,14 @@ export function AnalyticsPage() {
 
           <section className="analytics-activity" aria-label="Last interaction">
             <header className="analytics-panel-head">
-              <AnalyticsClockChip clock="now" />
+              <p className="analytics-scope">Both clocks</p>
               <h3>Last interaction</h3>
               <AnalyticsMetricInfo label="Last interaction">
-                Most recent recorded action per person on these boards — task create, edit,
-                move, or delete, plus knowledge changes. Login, comments, and chat are not
-                in this log. Org and project still apply; date chips do not.
+                Last seen is right now. Tasks and checklist are rolling Last 24 hours and Last
+                7 days — not the toolbar dates. Tasks are distinct cards the person created,
+                moved, edited, deleted, or checked. Checklist is newly checked Ver checklist
+                items. Older checks from before this log are not counted. Org and project
+                still apply.
               </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
@@ -725,13 +727,32 @@ export function AnalyticsPage() {
                 <div className="analytics-table-wrap">
                   <table className="analytics-table">
                     <caption className="sr-only">
-                      Last recorded interaction per person on these boards
+                      Last recorded interaction, plus tasks and checklist in the last 24 hours
+                      and last 7 days
                     </caption>
                     <thead>
                       <tr>
-                        <th scope="col">Person</th>
-                        <th scope="col">Last interaction</th>
-                        <th scope="col">What they did</th>
+                        <th scope="col" rowSpan={2}>
+                          Person
+                        </th>
+                        <th scope="col" rowSpan={2}>
+                          Last interaction
+                        </th>
+                        <th scope="colgroup" colSpan={2}>
+                          Last 24 hours
+                        </th>
+                        <th scope="colgroup" colSpan={2}>
+                          Last 7 days
+                        </th>
+                        <th scope="col" rowSpan={2}>
+                          What they did
+                        </th>
+                      </tr>
+                      <tr>
+                        <th scope="col">Tasks</th>
+                        <th scope="col">Checklist</th>
+                        <th scope="col">Tasks</th>
+                        <th scope="col">Checklist</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -759,6 +780,14 @@ export function AnalyticsPage() {
                                   ) : null}
                                 </time>
                               )}
+                            </td>
+                            <td className="analytics-last-count">{row.tasksLast24h ?? 0}</td>
+                            <td className="analytics-last-count">
+                              {row.checklistLast24h ?? 0}
+                            </td>
+                            <td className="analytics-last-count">{row.tasksLast7d ?? 0}</td>
+                            <td className="analytics-last-count">
+                              {row.checklistLast7d ?? 0}
                             </td>
                             <td className="analytics-last-summary">
                               {row.summary || '—'}

@@ -10912,6 +10912,11 @@ section.board-cycle-header {
   max-width: 28rem;
 }
 
+.analytics-last-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .analytics-last-never .analytics-last-relative,
 .analytics-last-never th,
 .analytics-last-never td {

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { AnalyticsSummary } from '../types/analytics';
@@ -114,6 +114,10 @@ const summary: AnalyticsSummary = {
       lastInteractedAt: '2026-08-27T10:00:00.000Z',
       action: 'task.status_changed',
       summary: 'Moved task "Navigate" from todo to in_progress',
+      tasksLast24h: 3,
+      checklistLast24h: 5,
+      tasksLast7d: 12,
+      checklistLast7d: 20,
     },
     {
       userId: 'u2',
@@ -121,6 +125,10 @@ const summary: AnalyticsSummary = {
       lastInteractedAt: null,
       action: null,
       summary: null,
+      tasksLast24h: 0,
+      checklistLast24h: 0,
+      tasksLast7d: 0,
+      checklistLast7d: 0,
     },
   ],
   trend: {
@@ -186,7 +194,18 @@ describe('AnalyticsPage copy', () => {
     expect(screen.getByRole('heading', { name: 'Grok bug flags' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Last interaction' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'What they did' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Last 24 hours' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Last 7 days' })).toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader', { name: 'Tasks' })).toHaveLength(2);
+    expect(screen.getAllByRole('columnheader', { name: 'Checklist' })).toHaveLength(2);
     expect(screen.getByText('Never')).toBeInTheDocument();
+    const lastTable = screen.getByRole('table', {
+      name: /Last recorded interaction/,
+    });
+    expect(within(lastTable).getByText('3')).toBeInTheDocument();
+    expect(within(lastTable).getByText('5')).toBeInTheDocument();
+    expect(within(lastTable).getByText('12')).toBeInTheDocument();
+    expect(within(lastTable).getByText('20')).toBeInTheDocument();
     expect(screen.getByText('Moved task "Navigate" from todo to in_progress')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Motivo' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Task score' })).toBeInTheDocument();
