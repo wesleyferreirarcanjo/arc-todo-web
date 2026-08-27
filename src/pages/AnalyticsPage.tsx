@@ -729,9 +729,9 @@ export function AnalyticsPage() {
               <AnalyticsMetricInfo label="Last interaction">
                 Last seen is right now. Tasks, checklist, and bug flags are rolling Last 24 hours
                 and Last 7 days — not the toolbar dates. Tasks are distinct cards the person
-                created, moved, edited, deleted, or checked. Checklist is newly checked Ver
-                checklist items (the check event, or “Checked N checklist” in the activity
-                summary). Bug flags are times they marked a task as Bug. Org and project still
+                created, moved, edited, deleted, or checked. Checklist is checked Ver items on
+                tasks they last saved (Updated or Checked) — column moves do not take that
+                credit. Bug flags are times they marked a task as Bug. Org and project still
                 apply.
               </AnalyticsMetricInfo>
             </header>
