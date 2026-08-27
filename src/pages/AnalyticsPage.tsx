@@ -64,6 +64,20 @@ function formatLastInteractionClock(iso: string | null): string {
   return at.toLocaleString();
 }
 
+function renderWhen(iso: string | null): ReactNode {
+  const relative = formatAnalyticsRelativeTime(iso);
+  const clock = formatLastInteractionClock(iso);
+  if (!iso) {
+    return <span className="analytics-last-relative">{relative}</span>;
+  }
+  return (
+    <time className="analytics-last-when" dateTime={iso}>
+      <span className="analytics-last-relative">{relative}</span>
+      {clock ? <span className="analytics-last-clock">{clock}</span> : null}
+    </time>
+  );
+}
+
 type ChartTooltipRow = {
   name?: string;
   value?: number | string;
@@ -713,11 +727,12 @@ export function AnalyticsPage() {
               <p className="analytics-scope">Both clocks</p>
               <h3>Last interaction</h3>
               <AnalyticsMetricInfo label="Last interaction">
-                Last seen is right now. Tasks and checklist are rolling Last 24 hours and Last
-                7 days — not the toolbar dates. Tasks are distinct cards the person created,
-                moved, edited, deleted, or checked. Checklist is newly checked Ver checklist
-                items. Older checks from before this log are not counted. Org and project
-                still apply.
+                Last seen is right now. Tasks, checklist, and bug flags are rolling Last 24 hours
+                and Last 7 days — not the toolbar dates. Tasks are distinct cards the person
+                created, moved, edited, deleted, or checked. Checklist is newly checked Ver
+                checklist items (the check event, or “Checked N checklist” in the activity
+                summary). Bug flags are times they marked a task as Bug. Org and project still
+                apply.
               </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
@@ -727,8 +742,8 @@ export function AnalyticsPage() {
                 <div className="analytics-table-wrap">
                   <table className="analytics-table">
                     <caption className="sr-only">
-                      Last recorded interaction, plus tasks and checklist in the last 24 hours
-                      and last 7 days
+                      Last recorded interaction, plus tasks, checklist, and bug flags in the last
+                      24 hours and last 7 days
                     </caption>
                     <thead>
                       <tr>
@@ -738,10 +753,10 @@ export function AnalyticsPage() {
                         <th scope="col" rowSpan={2}>
                           Last interaction
                         </th>
-                        <th scope="colgroup" colSpan={2}>
+                        <th scope="colgroup" colSpan={3}>
                           Last 24 hours
                         </th>
-                        <th scope="colgroup" colSpan={2}>
+                        <th scope="colgroup" colSpan={3}>
                           Last 7 days
                         </th>
                         <th scope="col" rowSpan={2}>
@@ -751,14 +766,14 @@ export function AnalyticsPage() {
                       <tr>
                         <th scope="col">Tasks</th>
                         <th scope="col">Checklist</th>
+                        <th scope="col">Bug flags</th>
                         <th scope="col">Tasks</th>
                         <th scope="col">Checklist</th>
+                        <th scope="col">Bug flags</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(summary.lastInteractions ?? []).map((row) => {
-                        const relative = formatAnalyticsRelativeTime(row.lastInteractedAt);
-                        const clock = formatLastInteractionClock(row.lastInteractedAt);
                         const never = !row.lastInteractedAt;
                         return (
                           <tr
@@ -766,29 +781,17 @@ export function AnalyticsPage() {
                             className={never ? 'analytics-last-never' : undefined}
                           >
                             <th scope="row">{row.username}</th>
-                            <td>
-                              {never || !row.lastInteractedAt ? (
-                                <span className="analytics-last-relative">{relative}</span>
-                              ) : (
-                                <time
-                                  className="analytics-last-when"
-                                  dateTime={row.lastInteractedAt}
-                                >
-                                  <span className="analytics-last-relative">{relative}</span>
-                                  {clock ? (
-                                    <span className="analytics-last-clock">{clock}</span>
-                                  ) : null}
-                                </time>
-                              )}
-                            </td>
+                            <td>{renderWhen(row.lastInteractedAt)}</td>
                             <td className="analytics-last-count">{row.tasksLast24h ?? 0}</td>
                             <td className="analytics-last-count">
                               {row.checklistLast24h ?? 0}
                             </td>
+                            <td className="analytics-last-count">{row.bugsLast24h ?? 0}</td>
                             <td className="analytics-last-count">{row.tasksLast7d ?? 0}</td>
                             <td className="analytics-last-count">
                               {row.checklistLast7d ?? 0}
                             </td>
+                            <td className="analytics-last-count">{row.bugsLast7d ?? 0}</td>
                             <td className="analytics-last-summary">
                               {row.summary || '—'}
                             </td>
@@ -807,9 +810,9 @@ export function AnalyticsPage() {
               <AnalyticsClockChip clock="window" />
               <h3>Grok bug flags</h3>
               <AnalyticsMetricInfo label="Grok bug flags">
-                Latest Grok dossier per task in {windowName}. Task is a 1–10 rating of
-                the ticket; Flag is a 1–10 rating of the bug report. Admin-only — never
-                on the board or in task details.
+                Latest Grok dossier per task in {windowName}, with when it was filed. Task is
+                a 1–10 rating of the ticket; Flag is a 1–10 rating of the bug report.
+                Admin-only — never on the board or in task details.
               </AnalyticsMetricInfo>
             </header>
             <article className="analytics-panel analytics-panel-wide">
@@ -819,11 +822,12 @@ export function AnalyticsPage() {
                 <div className="analytics-table-wrap">
                   <table className="analytics-table">
                     <caption className="sr-only">
-                      Grok bug-flag dossiers for {windowName}
+                      Grok bug-flag dossiers for {windowName}, including when each was filed
                     </caption>
                     <thead>
                       <tr>
                         <th scope="col">#</th>
+                        <th scope="col">When</th>
                         <th scope="col">Title</th>
                         <th scope="col">Primary</th>
                         <th scope="col">Secondary</th>
@@ -839,6 +843,7 @@ export function AnalyticsPage() {
                           <th scope="row" className="analytics-flag-id">
                             {row.displayId}
                           </th>
+                          <td>{renderWhen(row.createdAt)}</td>
                           <td className="analytics-flag-title">{row.title}</td>
                           <td>
                             <span className="analytics-flag-chip">{row.primary}</span>
