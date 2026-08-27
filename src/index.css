@@ -1368,14 +1368,36 @@ textarea:focus-visible {
   line-height: 1;
 }
 
+.board-chrome-filters-cluster {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.board-chrome-actions + .board-chrome-filters-cluster {
+  margin-left: auto;
+}
+
 .board-chrome-toolbar .board-quick-filters {
   flex: 0 0 auto;
   width: auto;
   padding: 0.22rem;
 }
 
-.board-chrome-actions + .board-quick-filters {
-  margin-left: auto;
+.board-qa-queue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.85rem;
+  padding: 0.15rem 0.5rem 0.15rem 0.65rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .board-chrome-toolbar + .board-filters {
@@ -1624,6 +1646,29 @@ textarea:focus-visible {
   gap: 0.85rem 1rem;
   align-items: center;
   padding: 0.75rem 1.15rem;
+}
+
+.task-list-header.has-select,
+.task-list-row.has-select {
+  grid-template-columns:
+    1.75rem 5.75rem minmax(0, 1.45fr) 7rem 5.75rem 7.25rem minmax(0, 1.1fr);
+}
+
+.task-list-col-select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-list-col-select input {
+  width: 0.95rem;
+  height: 0.95rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.task-list-row.is-qa-selected {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
 }
 
 .task-list-header {
@@ -6414,6 +6459,72 @@ textarea {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
     inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.task-card.is-qa-selected {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.task-card-select {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.55rem;
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.task-card-select input {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.task-card:has(.task-card-select) {
+  padding-left: 2.15rem;
+}
+
+.qa-queue-bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0.65rem 0 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.qa-queue-bulk-bar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.qa-queue-bulk-bar-hint {
+  color: var(--warning-text);
+  font-size: 0.8rem;
+}
+
+.qa-queue-bulk-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
 }
 
 .smart-copy-basket-tray {

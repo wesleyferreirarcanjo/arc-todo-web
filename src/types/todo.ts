@@ -45,6 +45,18 @@ export interface TaskEvidence {
   createdAt: string;
 }
 
+export interface TaskLog {
+  id: string;
+  taskId: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedById: string;
+  /** null = task-level session log; otherwise checklist item id (e.g. item-3). */
+  checklistItemId: string | null;
+  createdAt: string;
+}
+
 export interface SubtaskProgress {
   total: number;
   done: number;

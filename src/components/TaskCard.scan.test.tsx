@@ -45,6 +45,7 @@ vi.mock('../lib/api/todos', () => ({
   fetchTaskComments: vi.fn(async () => []),
   fetchTaskHistory: vi.fn(async () => []),
   fetchTaskEvidence: vi.fn(async () => []),
+  fetchTaskLogs: vi.fn(async () => []),
   createTaskComment: vi.fn(),
   deleteTaskComment: vi.fn(),
   updateTaskComment: vi.fn(),

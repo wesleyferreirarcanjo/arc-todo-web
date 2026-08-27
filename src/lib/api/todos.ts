@@ -6,6 +6,7 @@ import type {
   Task,
   TaskComment,
   TaskEvidence,
+  TaskLog,
   TaskHistoryEntry,
   TaskResolveResponse,
   TaskWithContext,
@@ -166,6 +167,16 @@ export function fetchTaskEvidence(
   );
 }
 
+export function fetchTaskLogs(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+): Promise<TaskLog[]> {
+  return apiRequest<TaskLog[]>(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/logs`,
+  );
+}
+
 export function uploadTaskEvidence(
   orgId: string,
   projectId: string,
@@ -192,6 +203,17 @@ export function downloadTaskEvidence(
 ): Promise<{ blob: Blob; filename: string }> {
   return apiDownload(
     `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/evidence/${evidenceId}/download`,
+  );
+}
+
+export function downloadTaskLog(
+  orgId: string,
+  projectId: string,
+  taskId: string,
+  logId: string,
+): Promise<{ blob: Blob; filename: string }> {
+  return apiDownload(
+    `/organizations/${orgId}/projects/${projectId}/tasks/${taskId}/logs/${logId}/download`,
   );
 }
 

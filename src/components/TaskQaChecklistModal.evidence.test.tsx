@@ -9,6 +9,7 @@ const updateProjectTask = vi.fn();
 
 vi.mock('../lib/api/todos', () => ({
   fetchTaskEvidence: vi.fn(async () => []),
+  fetchTaskLogs: vi.fn(async () => []),
   downloadTaskEvidence: vi.fn(async () => ({
     blob: new Blob(['png'], { type: 'image/png' }),
     filename: 'shot.png',

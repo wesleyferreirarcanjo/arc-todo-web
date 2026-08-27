@@ -4,7 +4,9 @@ import {
   createProjectTask,
   deleteTaskEvidence,
   downloadTaskEvidence,
+  downloadTaskLog,
   fetchTaskEvidence,
+  fetchTaskLogs,
   updateProjectTask,
   uploadTaskEvidence,
 } from '../lib/api/todos';
@@ -22,7 +24,7 @@ import {
   normalizeQaChecklistState,
   parseQaChecklistDocument,
 } from '../lib/tasks/taskQaChecklist';
-import type { Task, TaskEvidence } from '../types/todo';
+import type { Task, TaskEvidence, TaskLog } from '../types/todo';
 import { ErrorAlert } from './ErrorAlert';
 import { Modal } from './Modal';
 import { TaskBugHistoryModal } from './TaskBugHistoryModal';
@@ -83,7 +85,9 @@ export function TaskQaSection({
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [bugHistoryOpen, setBugHistoryOpen] = useState(false);
   const [evidence, setEvidence] = useState<TaskEvidence[]>([]);
+  const [logs, setLogs] = useState<TaskLog[]>([]);
   const [loadingEvidence, setLoadingEvidence] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [qaError, setQaError] = useState<string | null>(null);
   const [bugReason, setBugReason] = useState(task.bugReason ?? '');
@@ -122,12 +126,15 @@ export function TaskQaSection({
   useEffect(() => {
     if (isSubtask) {
       setEvidence([]);
+      setLogs([]);
       setLoadingEvidence(false);
+      setLoadingLogs(false);
       return;
     }
 
     let cancelled = false;
     setLoadingEvidence(true);
+    setLoadingLogs(true);
     setQaError(null);
 
     void fetchTaskEvidence(organizationId, projectId, task.id)
@@ -146,6 +153,25 @@ export function TaskQaSection({
       .finally(() => {
         if (!cancelled) {
           setLoadingEvidence(false);
+        }
+      });
+
+    void fetchTaskLogs(organizationId, projectId, task.id)
+      .then((rows) => {
+        if (!cancelled) {
+          setLogs(rows);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setQaError(
+            userMessage(error, WEB_ERROR.LOAD, { thing: 'session logs' }),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingLogs(false);
         }
       });
 
@@ -314,6 +340,25 @@ export function TaskQaSection({
     } catch (error: unknown) {
       setQaError(
         userMessage(error, WEB_ERROR.LOAD, { thing: 'this evidence' }),
+      );
+    }
+  }
+
+  async function handleOpenLog(item: TaskLog) {
+    setQaError(null);
+    try {
+      const { blob } = await downloadTaskLog(
+        organizationId,
+        projectId,
+        task.id,
+        item.id,
+      );
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error: unknown) {
+      setQaError(
+        userMessage(error, WEB_ERROR.LOAD, { thing: 'this session log' }),
       );
     }
   }
@@ -719,6 +764,41 @@ export function TaskQaSection({
                   </li>
                 );
               })}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {!isSubtask && (
+        <div className="task-qa-evidence">
+          <div className="task-qa-evidence-header">
+            <h5>Session logs</h5>
+          </div>
+          {loadingLogs ? (
+            <p className="task-details-muted">Loading session logs...</p>
+          ) : logs.length === 0 ? (
+            <p className="task-details-muted">No session logs uploaded yet.</p>
+          ) : (
+            <ul className="task-qa-evidence-list">
+              {logs.map((item) => (
+                <li key={item.id} className="task-qa-evidence-item">
+                  <button
+                    type="button"
+                    className="task-qa-evidence-link"
+                    onClick={() => void handleOpenLog(item)}
+                  >
+                    {item.originalFilename}
+                  </button>
+                  <span className="task-qa-evidence-meta">
+                    {formatBytes(item.sizeBytes)}
+                    {' · '}
+                    {new Date(item.createdAt).toLocaleString()}
+                    {item.checklistItemId
+                      ? ` · ${item.checklistItemId}`
+                      : ''}
+                  </span>
+                </li>
+              ))}
             </ul>
           )}
         </div>

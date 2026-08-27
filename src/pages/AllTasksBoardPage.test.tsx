@@ -7,6 +7,9 @@ import type { BoardCycle } from '../types/boardCycle';
 
 const mediaState = vi.hoisted(() => ({ mobile: false }));
 const fetchAllTasks = vi.hoisted(() => vi.fn(async () => []));
+const fetchQaQueue = vi.hoisted(() =>
+  vi.fn(async () => ({ projectId: null, organizationId: null, items: [] })),
+);
 const fetchCurrentBoardCycle = vi.hoisted(() => vi.fn());
 const fetchBoardCycleHistory = vi.hoisted(() =>
   vi.fn(async () => ({ cycles: [] })),
@@ -64,6 +67,14 @@ vi.mock('../lib/api/todos', () => ({
   updateProjectTask: vi.fn(),
 }));
 
+vi.mock('../lib/api/qaQueue', () => ({
+  fetchQaQueue,
+  addQaQueueItems: vi.fn(),
+  removeQaQueueItem: vi.fn(),
+  reorderQaQueue: vi.fn(),
+  clearQaQueue: vi.fn(),
+}));
+
 vi.mock('../lib/api/boardCycles', () => ({
   fetchCurrentBoardCycle,
   fetchBoardCycleHistory,
@@ -117,6 +128,11 @@ describe('AllTasksBoardPage chrome', () => {
     localStorage.clear();
     mediaState.mobile = false;
     fetchAllTasks.mockResolvedValue([]);
+    fetchQaQueue.mockResolvedValue({
+      projectId: null,
+      organizationId: null,
+      items: [],
+    });
     fetchCurrentBoardCycle.mockResolvedValue({
       cycle,
       tasks: [],
@@ -218,5 +234,39 @@ describe('AllTasksBoardPage chrome', () => {
     await waitFor(() => {
       expect(screen.getByText(/No closed cycles yet/i)).toBeInTheDocument();
     });
+  });
+
+  it('shows a Fila de QA count chip near All / My Tasks when the queue is not empty', async () => {
+    fetchQaQueue.mockResolvedValue({
+      projectId: 'proj-1',
+      organizationId: 'org-1',
+      items: [
+        {
+          id: 'q1',
+          taskId: 't1',
+          position: 0,
+          displayId: '#arc-1',
+          title: 'Queued',
+          status: 'qa_test',
+        },
+        {
+          id: 'q2',
+          taskId: 't2',
+          position: 1,
+          displayId: '#arc-2',
+          title: 'Queued two',
+          status: 'todo',
+        },
+      ],
+    });
+    renderBoard();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Fila de QA, 2 cards')).toBeInTheDocument();
+    });
+    const toolbar = document.querySelector('.board-chrome-toolbar');
+    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
+    expect(toolbar).toContainElement(screen.getByLabelText('Fila de QA, 2 cards'));
+    expect(screen.queryByLabelText('Fila de QA, 2 cards')).toHaveTextContent('2');
   });
 });
