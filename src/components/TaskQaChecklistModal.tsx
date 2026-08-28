@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createProjectTask,
   downloadTaskEvidence,
+  downloadTaskLog,
   fetchTaskEvidence,
+  fetchTaskLogs,
   updateProjectTask,
   uploadTaskEvidence,
 } from '../lib/api/todos';
@@ -11,6 +13,11 @@ import {
   clipboardMediaKind,
   extractClipboardImage,
 } from '../lib/tasks/clipboardImage';
+import {
+  parseSessionLogText,
+  readBlobText,
+  type SessionLogView,
+} from '../lib/tasks/sessionLogView';
 import {
   addChecklistItemImprovementTaskRef,
   buildChecklistTaskUpdate,
@@ -24,11 +31,12 @@ import {
   setChecklistItemBugged,
   updateChecklistItemBugNote,
 } from '../lib/tasks/taskQaChecklist';
-import type { QaChecklistState, Task, TaskEvidence } from '../types/todo';
+import type { QaChecklistState, Task, TaskEvidence, TaskLog } from '../types/todo';
 import { ConfirmDialog } from './ConfirmDialog';
 import { MarkdownContent } from './MarkdownContent';
 import { Modal } from './Modal';
 import { ProjectQaInfoForm } from './ProjectQaInfoForm';
+import { SessionLogInlineView } from './SessionLogInlineView';
 
 interface TaskQaChecklistModalProps {
   open: boolean;
@@ -179,7 +187,12 @@ export function TaskQaChecklistModal({
   });
   const [saving, setSaving] = useState(false);
   const [evidence, setEvidence] = useState<TaskEvidence[]>([]);
+  const [logs, setLogs] = useState<TaskLog[]>([]);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [openLogId, setOpenLogId] = useState<string | null>(null);
+  const [logView, setLogView] = useState<SessionLogView | null>(null);
+  const [loadingLogId, setLoadingLogId] = useState<string | null>(null);
+  const logViewRequestRef = useRef(0);
   const [reportingItemId, setReportingItemId] = useState<string | null>(null);
   const [reportMode, setReportMode] = useState<ReportMode | null>(null);
   const [reportTitle, setReportTitle] = useState('');
@@ -252,10 +265,30 @@ export function TaskQaChecklistModal({
         );
       });
 
+    void fetchTaskLogs(organizationId, projectId, task.id)
+      .then((rows) => {
+        if (cancelled) return;
+        setLogs(rows);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        onError?.(
+          userMessage(error, WEB_ERROR.LOAD, { thing: 'session logs' }),
+        );
+      });
+
     return () => {
       cancelled = true;
     };
   }, [open, organizationId, projectId, task.id, onEvidenceChange, onError]);
+
+  useEffect(() => {
+    if (open) return;
+    logViewRequestRef.current += 1;
+    setOpenLogId(null);
+    setLogView(null);
+    setLoadingLogId(null);
+  }, [open]);
 
   const itemEvidenceIds = useMemo(
     () =>
@@ -653,6 +686,67 @@ export function TaskQaChecklistModal({
     }
   }
 
+  async function handleOpenLog(item: TaskLog) {
+    try {
+      const { blob } = await downloadTaskLog(
+        organizationId,
+        projectId,
+        task.id,
+        item.id,
+      );
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error: unknown) {
+      onError?.(
+        userMessage(error, WEB_ERROR.LOAD, { thing: 'this session log' }),
+      );
+    }
+  }
+
+  async function handleToggleLogView(item: TaskLog) {
+    if (openLogId === item.id) {
+      logViewRequestRef.current += 1;
+      setOpenLogId(null);
+      setLogView(null);
+      setLoadingLogId(null);
+      return;
+    }
+
+    const requestId = logViewRequestRef.current + 1;
+    logViewRequestRef.current = requestId;
+    setOpenLogId(item.id);
+    setLogView(null);
+    setLoadingLogId(item.id);
+    try {
+      const { blob } = await downloadTaskLog(
+        organizationId,
+        projectId,
+        task.id,
+        item.id,
+      );
+      const text = await readBlobText(blob);
+      if (logViewRequestRef.current !== requestId) return;
+      setLogView(parseSessionLogText(text));
+    } catch (error: unknown) {
+      if (logViewRequestRef.current !== requestId) return;
+      onError?.(
+        userMessage(error, WEB_ERROR.LOAD, { thing: 'this session log' }),
+      );
+      setOpenLogId(null);
+      setLogView(null);
+    } finally {
+      if (logViewRequestRef.current === requestId) {
+        setLoadingLogId(null);
+      }
+    }
+  }
+
+  const taskLevelLogs = useMemo(
+    () => logs.filter((row) => !row.checklistItemId),
+    [logs],
+  );
+
   return (
     <>
     <Modal
@@ -699,6 +793,9 @@ export function TaskQaChecklistModal({
               const itemImprovements =
                 draftState.improvementItemTasks[item.id] ?? [];
               const itemEvidence = evidence.filter(
+                (row) => row.checklistItemId === item.id,
+              );
+              const itemLogs = logs.filter(
                 (row) => row.checklistItemId === item.id,
               );
               const isImprovementReport = reportMode === 'improvement';
@@ -860,6 +957,45 @@ export function TaskQaChecklistModal({
                                 ) : null}
                                 <span>{row.originalFilename}</span>
                               </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    {itemLogs.length > 0 && (
+                      <ul
+                        className="task-qa-checklist-item-logs"
+                        aria-label="Session logs"
+                      >
+                        {itemLogs.map((row) => {
+                          const expanded = openLogId === row.id;
+                          const loading = loadingLogId === row.id;
+                          return (
+                            <li key={row.id}>
+                              <div className="task-qa-checklist-log-row">
+                                <button
+                                  type="button"
+                                  className="task-qa-checklist-evidence-btn"
+                                  onClick={() => void handleOpenLog(row)}
+                                >
+                                  <span>{row.originalFilename}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => void handleToggleLogView(row)}
+                                >
+                                  {expanded ? 'Hide' : 'View'}
+                                </button>
+                              </div>
+                              {expanded && loading ? (
+                                <p className="task-details-muted task-qa-session-log-loading">
+                                  Loading session log...
+                                </p>
+                              ) : null}
+                              {expanded && !loading && logView ? (
+                                <SessionLogInlineView view={logView} />
+                              ) : null}
                             </li>
                           );
                         })}
@@ -1077,6 +1213,48 @@ export function TaskQaChecklistModal({
               );
             })}
           </ul>
+          {taskLevelLogs.length > 0 && (
+            <section
+              className="task-qa-checklist-task-logs"
+              aria-label="Session logs"
+            >
+              <h4 className="task-qa-checklist-help-title">Session logs</h4>
+              <ul className="task-qa-checklist-item-logs">
+                {taskLevelLogs.map((row) => {
+                  const expanded = openLogId === row.id;
+                  const loading = loadingLogId === row.id;
+                  return (
+                    <li key={row.id}>
+                      <div className="task-qa-checklist-log-row">
+                        <button
+                          type="button"
+                          className="task-qa-checklist-evidence-btn"
+                          onClick={() => void handleOpenLog(row)}
+                        >
+                          <span>{row.originalFilename}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => void handleToggleLogView(row)}
+                        >
+                          {expanded ? 'Hide' : 'View'}
+                        </button>
+                      </div>
+                      {expanded && loading ? (
+                        <p className="task-details-muted task-qa-session-log-loading">
+                          Loading session log...
+                        </p>
+                      ) : null}
+                      {expanded && !loading && logView ? (
+                        <SessionLogInlineView view={logView} />
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
           {saving && (
             <p className="task-details-muted" role="status">
               Salvando...

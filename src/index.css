@@ -9728,6 +9728,28 @@ section.board-cycle-header {
   gap: 0.4rem;
 }
 
+.task-qa-checklist-item-logs {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.task-qa-checklist-log-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.task-qa-checklist-task-logs {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
 .task-qa-checklist-evidence-btn {
   display: inline-flex;
   align-items: center;
