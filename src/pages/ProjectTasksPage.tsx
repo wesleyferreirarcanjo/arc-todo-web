@@ -12,12 +12,18 @@ import { fetchProjectKnowledgeAccess } from '../lib/api/knowledge';
 import { collectDescendantIds } from '../lib/tasks/taskTree';
 import { getProjectColor } from '../lib/color/entityColor';
 import { TaskBoard } from '../components/TaskBoard';
+import { QaQueueBulkBar } from '../components/QaQueueBulkBar';
+import { QaQueueCountChip } from '../components/QaQueueCountChip';
 import { TaskForm } from '../components/TaskForm';
+import { TaskQaMultiChecklistModal } from '../components/TaskQaMultiChecklistModal';
 import { TasksIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
+import { selectedTasksFromIds } from '../lib/qaQueue/selection';
+import { parseQaChecklistItems } from '../lib/tasks/taskQaChecklist';
 import type {
   CreateTaskInput,
   Task,
@@ -32,6 +38,29 @@ export function ProjectTasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(isAdmin);
+  const [checklistsOpen, setChecklistsOpen] = useState(false);
+  const {
+    queueCount,
+    selectedTaskIds,
+    selectedCount,
+    selectableCount,
+    allSelected,
+    mixedProjects,
+    sending,
+    sendError,
+    replaceOpen,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    sendSelected,
+    sendOne,
+    confirmReplace,
+    cancelReplace,
+  } = useQaQueueBoard(tasks);
+  const selectedTasks = selectedTasksFromIds(tasks, selectedTaskIds);
+  const selectedHaveChecklists = selectedTasks.some(
+    (task) => parseQaChecklistItems(task.testDescription).length > 0,
+  );
 
   const loadTasks = useCallback(async () => {
     if (!orgId || !projectId) return;
@@ -162,6 +191,7 @@ export function ProjectTasksPage() {
           >
             QA info
           </Link>
+          <QaQueueCountChip count={queueCount} />
           {hasKnowledgeAccess && (
             <Link
               to={`/organizations/${orgId}/projects/${projectId}/knowledge`}
@@ -178,6 +208,23 @@ export function ProjectTasksPage() {
         organizationId={orgId}
         projectId={projectId}
         defaultAssigneeId={currentProject?.defaultAssigneeId}
+      />
+
+      <QaQueueBulkBar
+        selectedCount={selectedCount}
+        selectableCount={selectableCount}
+        allSelected={allSelected}
+        mixedProjects={mixedProjects}
+        sending={sending}
+        sendError={sendError}
+        replaceOpen={replaceOpen}
+        checklistDisabled={!selectedHaveChecklists}
+        onSelectAll={selectAll}
+        onSend={sendSelected}
+        onOpenChecklists={() => setChecklistsOpen(true)}
+        onClear={clearSelection}
+        onConfirmReplace={confirmReplace}
+        onCancelReplace={cancelReplace}
       />
 
       {loading && <p className="status-message">Loading tasks...</p>}
@@ -200,12 +247,27 @@ export function ProjectTasksPage() {
           projectId={projectId}
           organizationName={currentOrganization?.name}
           projectName={currentProject?.name}
+          selectedTaskIds={selectedTaskIds}
+          onToggleSelect={toggleSelect}
+          onAddToQaQueue={sendOne}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onCreateSubtask={handleCreateSubtask}
           onSetParent={handleSetParent}
         />
       )}
+
+      <TaskQaMultiChecklistModal
+        open={checklistsOpen}
+        onClose={() => setChecklistsOpen(false)}
+        tasks={selectedTasks}
+        organizationId={orgId}
+        projectId={projectId}
+        accentColor={projectAccent}
+        onTaskChange={(updated) => {
+          void handleUpdate(updated.id, {}, updated);
+        }}
+      />
     </div>
   );
 }

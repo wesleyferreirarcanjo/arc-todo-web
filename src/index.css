@@ -9595,6 +9595,35 @@ section.board-cycle-header {
   max-height: min(92dvh, 920px);
 }
 
+.task-qa-multi-checklist-modal {
+  width: min(96vw, 52rem);
+  max-height: min(92dvh, 920px);
+}
+
+.task-qa-multi-checklist {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.task-qa-multi-task {
+  display: grid;
+  gap: 0.45rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-qa-multi-task:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.task-qa-multi-task-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .task-bug-history-modal {
   width: min(100%, 36rem);
 }
