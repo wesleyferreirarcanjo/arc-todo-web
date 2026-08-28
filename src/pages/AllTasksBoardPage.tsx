@@ -40,8 +40,6 @@ import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
 import { BoardFiltersControls } from '../components/BoardFiltersControls';
 import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
-import { QaQueueBulkBar } from '../components/QaQueueBulkBar';
-import { QaQueueCountChip } from '../components/QaQueueCountChip';
 import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
@@ -51,7 +49,6 @@ import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
-import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
 import type { BoardCycle, BoardCycleHistoryResponse } from '../types/boardCycle';
 import type {
   CreateTaskInput,
@@ -634,22 +631,6 @@ export function AllTasksBoardPage() {
 
   const visibleTasks = projectFocus ? sortedCycleTasks : sortedTasks;
   const sourceTaskCount = projectFocus ? cycleTasks.length : tasks.length;
-  const qaQueueTasks = projectFocus ? cycleTasks : tasks;
-  const {
-    queueCount,
-    selectedTaskIds,
-    selectedCount,
-    mixedProjects,
-    sending,
-    sendError,
-    replaceOpen,
-    toggleSelect,
-    clearSelection,
-    sendSelected,
-    sendOne,
-    confirmReplace,
-    cancelReplace,
-  } = useQaQueueBoard(qaQueueTasks);
 
   function handleSortFieldChange(value: string) {
     const field = value as TaskSortField;
@@ -793,7 +774,6 @@ export function AllTasksBoardPage() {
             value={quickFilter}
             onChange={handleQuickFilterChange}
           />
-          <QaQueueCountChip count={queueCount} />
         </div>
       </div>
       {chromePanel === 'filters' && !isMobileShell ? (
@@ -844,18 +824,6 @@ export function AllTasksBoardPage() {
         {renderFilterControls(false)}
       </MobileBoardFiltersOverlay>
 
-      <QaQueueBulkBar
-        selectedCount={selectedCount}
-        mixedProjects={mixedProjects}
-        sending={sending}
-        sendError={sendError}
-        replaceOpen={replaceOpen}
-        onSend={sendSelected}
-        onClear={clearSelection}
-        onConfirmReplace={confirmReplace}
-        onCancelReplace={cancelReplace}
-      />
-
       {hiddenColumns.length > 0 && !loading && (
         <p className="status-message board-columns-hidden-hint" role="status">
           {hiddenColumns.length} column{hiddenColumns.length === 1 ? '' : 's'} hidden
@@ -897,9 +865,6 @@ export function AllTasksBoardPage() {
             tasks={sortedCycleTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
-            onAddToQaQueue={sendOne}
             onToggleColumnVisibility={handleToggleColumnVisibility}
             accentColor={
               focusedProject
@@ -920,8 +885,6 @@ export function AllTasksBoardPage() {
           <TaskListView
             tasks={sortedCycleTasks}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
             onUpdateStatus={handleListStatusUpdate}
             resolveContext={
               organizationId && projectId
@@ -948,9 +911,6 @@ export function AllTasksBoardPage() {
             tasks={sortedTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
-            onAddToQaQueue={sendOne}
             onToggleColumnVisibility={handleToggleColumnVisibility}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
@@ -962,8 +922,6 @@ export function AllTasksBoardPage() {
           <TaskListView
             tasks={sortedTasks}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
             onUpdateStatus={handleListStatusUpdate}
           />
         )

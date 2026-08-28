@@ -221,10 +221,6 @@ interface TaskCardProps {
   isMoving?: boolean;
   draggingTaskId?: string;
   compact?: boolean;
-  selected?: boolean;
-  selectedTaskIds?: Set<string>;
-  onToggleSelect?: (taskId: string) => void;
-  onAddToQaQueue?: (taskId: string) => void;
   onUpdate: (id: string, input: Partial<UpdateTaskInput>, replaced?: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
@@ -262,10 +258,6 @@ export function TaskCard({
   isMoving = false,
   draggingTaskId,
   compact = false,
-  selected = false,
-  selectedTaskIds,
-  onToggleSelect,
-  onAddToQaQueue,
   onUpdate,
   onDelete,
   onCreateSubtask,
@@ -327,7 +319,6 @@ export function TaskCard({
   const scatterRafRef = useRef<number | null>(null);
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
 
-  const isSelected = selectedTaskIds?.has(task.id) ?? selected;
   const menusOpen = overlayMenu !== null;
   const actionMenuOpen = overlayMenu?.source === 'kebab';
   const isInteractionLocked =
@@ -989,21 +980,6 @@ export function TaskCard({
         </button>
       )}
 
-      {onAddToQaQueue && resolvedProjectId && (
-        <button
-          type="button"
-          role="menuitem"
-          className="task-action-menu-item"
-          onClick={() => {
-            closeActionMenus();
-            onAddToQaQueue(task.id);
-          }}
-        >
-          <QaBoardIcon className="task-menu-item-icon" />
-          Add to QA queue
-        </button>
-      )}
-
       {canAddSubtask && (
         <button
           type="button"
@@ -1068,7 +1044,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${isSelected ? ' is-qa-selected' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         data-task-id={task.id}
         data-display-id={task.displayId || undefined}
         data-task-title={task.title}
@@ -1116,21 +1092,6 @@ export function TaskCard({
             {task.displayId}
           </span>
         )}
-
-        {onToggleSelect ? (
-          <label
-            className="task-card-select"
-            onPointerDown={stopCardPointer}
-            onClick={stopCardPointer}
-          >
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onToggleSelect(task.id)}
-              aria-label={`Select ${task.displayId || task.title} for QA queue`}
-            />
-          </label>
-        ) : null}
 
         {(!isSubtask || isDetachedSubtask) && (
           <div className="task-context-badges">
@@ -1317,9 +1278,6 @@ export function TaskCard({
                 onDelete={onDelete}
                 onCreateSubtask={onCreateSubtask}
                 onSetParent={onSetParent}
-                selectedTaskIds={selectedTaskIds}
-                onToggleSelect={onToggleSelect}
-                onAddToQaQueue={onAddToQaQueue}
                 parentScatterStage={scatterStage}
               />
             ))}
