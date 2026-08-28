@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DownloadPage } from './DownloadPage';
 
@@ -19,7 +20,11 @@ describe('DownloadPage', () => {
   });
 
   it('shows Download heading, version, and both browser zips', async () => {
-    render(<DownloadPage />);
+    render(
+      <MemoryRouter>
+        <DownloadPage />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByRole('heading', { name: 'Download' })).toBeInTheDocument();
     expect(
@@ -32,5 +37,11 @@ describe('DownloadPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Version 0.1.0')).toBeInTheDocument();
     });
+    expect(
+      screen.getByRole('heading', { name: 'Evidence lab' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Open evidence lab' }),
+    ).toHaveAttribute('href', '/download/extension-lab');
   });
 });

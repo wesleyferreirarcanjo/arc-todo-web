@@ -132,4 +132,24 @@ describe('Layout sidebar identity', () => {
       '/download',
     );
   });
+
+  it('keeps Download current on the evidence lab', () => {
+    render(
+      <MemoryRouter initialEntries={['/download/extension-lab']}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/download" element={<div>Download</div>} />
+            <Route
+              path="/download/extension-lab"
+              element={<div>Evidence lab</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: 'Download' })).toHaveClass(
+      'sidebar-nav-link',
+      'active',
+    );
+  });
 });

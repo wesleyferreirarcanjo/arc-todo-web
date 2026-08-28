@@ -12,6 +12,7 @@ import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
 import { DiagramsHubPage } from './pages/DiagramsHubPage';
 import { DownloadPage } from './pages/DownloadPage';
+import { ExtensionLabPage } from './pages/ExtensionLabPage';
 import { GeneralKnowledgePage } from './pages/GeneralKnowledgePage';
 import { GeneralPersonKnowledgePage } from './pages/GeneralPersonKnowledgePage';
 import { GeneralPersonsPage } from './pages/GeneralPersonsPage';
@@ -83,6 +84,10 @@ export default function App() {
                 />
                 <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route path="/download" element={<DownloadPage />} />
+                <Route
+                  path="/download/extension-lab"
+                  element={<ExtensionLabPage />}
+                />
                 <Route element={<AdminRoute />}>
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />

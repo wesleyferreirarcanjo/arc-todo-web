@@ -1,10 +1,41 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { labStatusForUrl } from './src/lib/extensionLab';
+
+function sendLabStatus(
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void,
+) {
+  const status = labStatusForUrl(req.url ?? '');
+  if (status == null) {
+    next();
+    return;
+  }
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify({ lab: true, status }));
+}
+
+function extensionLabPlugin(): Plugin {
+  return {
+    name: 'arc-todo-extension-lab',
+    configureServer(server) {
+      server.middlewares.use(sendLabStatus);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(sendLabStatus);
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
+    extensionLabPlugin(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const css = readFileSync(
   resolve(dirname(fileURLToPath(import.meta.url)), '../index.css'),
   'utf8',
-);
+).replaceAll('\r\n', '\n');
 
 function ruleBlock(selector: string): string {
   const needle = `\n${selector} {`;

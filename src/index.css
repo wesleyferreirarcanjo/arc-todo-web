@@ -9382,6 +9382,181 @@ section.board-cycle-header {
   }
 }
 
+.download-page .extension-lab-entry {
+  max-width: 42rem;
+}
+
+.extension-lab-entry {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-blob-alt);
+  background: var(--bg-surface);
+}
+
+.extension-lab-entry h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-section);
+  font-weight: 650;
+}
+
+.extension-lab-page {
+  max-width: 42rem;
+}
+
+.extension-lab-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.extension-lab-toolbar .btn {
+  margin-top: 0;
+}
+
+.extension-lab-toolbar-note,
+.extension-lab-lede {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-body);
+  line-height: 1.5;
+}
+
+.extension-lab-toolbar-note {
+  flex: 1 1 16rem;
+}
+
+.extension-lab-group {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.extension-lab-group h3,
+.extension-lab-log h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-section);
+  font-weight: 650;
+}
+
+.extension-lab-probes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.extension-lab-probe {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.extension-lab-index {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--type-meta);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.extension-lab-probe-copy {
+  min-width: 0;
+}
+
+.extension-lab-probe-label {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 650;
+}
+
+.extension-lab-probe-expected {
+  margin: 0.1rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  line-height: 1.4;
+}
+
+.extension-lab-probe .btn {
+  margin-top: 0;
+}
+
+.extension-lab-log {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.extension-lab-tape {
+  list-style: none;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg-elevated);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.extension-lab-tape li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  column-gap: 0.65rem;
+  font-size: var(--type-meta);
+}
+
+.extension-lab-tape time {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.extension-lab-tape-label {
+  font-weight: 650;
+}
+
+.extension-lab-tape-expected {
+  grid-column: 2;
+  color: var(--text-muted);
+}
+
+.extension-lab-tape-empty {
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .extension-lab-probe {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+  }
+
+  .extension-lab-probe .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .extension-lab-tape li {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .extension-lab-tape-expected {
+    grid-column: 1;
+  }
+}
+
+@media (hover: none) {
+  .extension-lab-probe .btn,
+  .extension-lab-toolbar .btn {
+    min-height: 2.75rem;
+  }
+}
+
 .task-qa-checklist-help-title {
   margin: 0 0 0.55rem;
   font-size: 0.95rem;
