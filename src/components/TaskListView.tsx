@@ -189,6 +189,11 @@ export function TaskListView({
                 tabIndex={0}
                 aria-label={`Open task ${task.displayId}: ${task.title}`}
                 aria-busy={isMoving || undefined}
+                data-task-id={task.id}
+                data-display-id={task.displayId || undefined}
+                data-task-title={task.title}
+                data-organization-id={context?.organizationId}
+                data-project-id={context?.projectId}
                 onClick={() => handleRowActivate(task)}
                 onKeyDown={(event) => handleRowKeyDown(event, task)}
                 style={

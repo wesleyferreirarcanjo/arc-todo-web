@@ -1069,6 +1069,11 @@ export function TaskCard({
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
         className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${isSelected ? ' is-qa-selected' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        data-task-id={task.id}
+        data-display-id={task.displayId || undefined}
+        data-task-title={task.title}
+        data-organization-id={resolvedOrganizationId}
+        data-project-id={resolvedProjectId}
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}

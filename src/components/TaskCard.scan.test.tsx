@@ -140,7 +140,7 @@ describe('TaskCard scan-first actions', () => {
   });
 
   it('shows title, display id, and Smart copy on To Do without the business wall', () => {
-    renderCard('todo');
+    const { container } = renderCard('todo');
 
     expect(screen.getByText('Scan-first card')).toBeInTheDocument();
     expect(screen.getByTitle('#arc-1')).toHaveTextContent('#arc-1');
@@ -150,6 +150,14 @@ describe('TaskCard scan-first actions', () => {
     expect(screen.queryByText('To Do')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ver checklist/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/QA 0\/2/)).not.toBeInTheDocument();
+    const card = container.querySelector('.task-card');
+    expect(card?.getAttribute('data-task-id')).toBe(
+      '11111111-1111-1111-1111-111111111111',
+    );
+    expect(card?.getAttribute('data-display-id')).toBe('#arc-1');
+    expect(card?.getAttribute('data-task-title')).toBe('Scan-first card');
+    expect(card?.getAttribute('data-organization-id')).toBe('org-1');
+    expect(card?.getAttribute('data-project-id')).toBe('proj-1');
   });
 
   it('hides Unassigned and assignee from members', () => {
