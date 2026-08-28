@@ -9187,6 +9187,67 @@ section.board-cycle-header {
   font-size: 0.85rem;
 }
 
+.task-qa-session-log-loading {
+  flex: 1 1 100%;
+  margin: 0.15rem 0 0;
+}
+
+.task-qa-session-log-view {
+  flex: 1 1 100%;
+  max-height: 16rem;
+  overflow: auto;
+  margin: 0.15rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--bg-elevated);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.task-qa-session-log-view pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.task-qa-session-log-event {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.35rem 0.5rem;
+  align-items: start;
+  padding: 0.2rem 0;
+}
+
+.task-qa-session-log-event + .task-qa-session-log-event {
+  border-top: 1px solid var(--border);
+}
+
+.task-qa-session-log-ts,
+.task-qa-session-log-kind,
+.task-qa-session-log-level {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.task-qa-session-log-level.is-error {
+  color: var(--danger, var(--text));
+}
+
+.task-qa-session-log-body {
+  grid-column: 1 / -1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.task-qa-session-log-stack {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .task-qa-evidence-lightbox-modal {
   max-width: min(92vw, 56rem);
 }

@@ -17,6 +17,11 @@ import {
   type ClipboardMediaKind,
 } from '../lib/tasks/clipboardImage';
 import {
+  parseSessionLogText,
+  readBlobText,
+  type SessionLogView,
+} from '../lib/tasks/sessionLogView';
+import {
   addImprovementTaskRef,
   buildImprovementTaskDraft,
   computeQaChecklistProgress,
@@ -62,6 +67,58 @@ function isTypingTarget(el: EventTarget | null): boolean {
   );
 }
 
+function formatLogTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString();
+}
+
+function SessionLogInlineView({ view }: { view: SessionLogView }) {
+  if (view.mode === 'raw') {
+    return (
+      <div className="task-qa-session-log-view">
+        <pre>{view.text}</pre>
+      </div>
+    );
+  }
+
+  return (
+    <div className="task-qa-session-log-view">
+      {view.events.length === 0 ? (
+        <p className="task-details-muted">No capture events.</p>
+      ) : (
+        view.events.map((event, index) => (
+          <div key={`${event.ts}-${event.kind}-${index}`} className="task-qa-session-log-event">
+            <span className="task-qa-session-log-ts">{formatLogTime(event.ts)}</span>
+            <span className="task-qa-session-log-kind">{event.kind}</span>
+            {event.kind === 'console' ? (
+              <span
+                className={`task-qa-session-log-level${event.level === 'error' ? ' is-error' : ''}`}
+              >
+                {event.level}
+              </span>
+            ) : (
+              <span className="task-qa-session-log-level">
+                {event.method} {event.status ?? '—'}
+              </span>
+            )}
+            <div className="task-qa-session-log-body">
+              {event.kind === 'console' ? (
+                <>
+                  {event.message}
+                  {event.stack ? (
+                    <pre className="task-qa-session-log-stack">{event.stack}</pre>
+                  ) : null}
+                </>
+              ) : (
+                event.url
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 type PasteCueSource = 'bug-reason' | 'comment' | 'other';
 
 function detectPasteCueSource(el: EventTarget | null): PasteCueSource | null {
@@ -101,6 +158,10 @@ export function TaskQaSection({
   const [bugReasonPasteCue, setBugReasonPasteCue] =
     useState<ClipboardMediaKind | null>(null);
   const [evidencePasteFlash, setEvidencePasteFlash] = useState(false);
+  const [openLogId, setOpenLogId] = useState<string | null>(null);
+  const [logView, setLogView] = useState<SessionLogView | null>(null);
+  const [loadingLogId, setLoadingLogId] = useState<string | null>(null);
+  const logViewRequestRef = useRef(0);
 
   const checklistDocument = useMemo(
     () => parseQaChecklistDocument(task.testDescription),
@@ -129,6 +190,9 @@ export function TaskQaSection({
       setLogs([]);
       setLoadingEvidence(false);
       setLoadingLogs(false);
+      setOpenLogId(null);
+      setLogView(null);
+      setLoadingLogId(null);
       return;
     }
 
@@ -360,6 +424,45 @@ export function TaskQaSection({
       setQaError(
         userMessage(error, WEB_ERROR.LOAD, { thing: 'this session log' }),
       );
+    }
+  }
+
+  async function handleToggleLogView(item: TaskLog) {
+    if (openLogId === item.id) {
+      logViewRequestRef.current += 1;
+      setOpenLogId(null);
+      setLogView(null);
+      setLoadingLogId(null);
+      return;
+    }
+
+    const requestId = logViewRequestRef.current + 1;
+    logViewRequestRef.current = requestId;
+    setQaError(null);
+    setOpenLogId(item.id);
+    setLogView(null);
+    setLoadingLogId(item.id);
+    try {
+      const { blob } = await downloadTaskLog(
+        organizationId,
+        projectId,
+        task.id,
+        item.id,
+      );
+      const text = await readBlobText(blob);
+      if (logViewRequestRef.current !== requestId) return;
+      setLogView(parseSessionLogText(text));
+    } catch (error: unknown) {
+      if (logViewRequestRef.current !== requestId) return;
+      setQaError(
+        userMessage(error, WEB_ERROR.LOAD, { thing: 'this session log' }),
+      );
+      setOpenLogId(null);
+      setLogView(null);
+    } finally {
+      if (logViewRequestRef.current === requestId) {
+        setLoadingLogId(null);
+      }
     }
   }
 
@@ -780,25 +883,44 @@ export function TaskQaSection({
             <p className="task-details-muted">No session logs uploaded yet.</p>
           ) : (
             <ul className="task-qa-evidence-list">
-              {logs.map((item) => (
-                <li key={item.id} className="task-qa-evidence-item">
-                  <button
-                    type="button"
-                    className="task-qa-evidence-link"
-                    onClick={() => void handleOpenLog(item)}
-                  >
-                    {item.originalFilename}
-                  </button>
-                  <span className="task-qa-evidence-meta">
-                    {formatBytes(item.sizeBytes)}
-                    {' · '}
-                    {new Date(item.createdAt).toLocaleString()}
-                    {item.checklistItemId
-                      ? ` · ${item.checklistItemId}`
-                      : ''}
-                  </span>
-                </li>
-              ))}
+              {logs.map((item) => {
+                const expanded = openLogId === item.id;
+                const loading = loadingLogId === item.id;
+                return (
+                  <li key={item.id} className="task-qa-evidence-item">
+                    <button
+                      type="button"
+                      className="task-qa-evidence-link"
+                      onClick={() => void handleOpenLog(item)}
+                    >
+                      {item.originalFilename}
+                    </button>
+                    <span className="task-qa-evidence-meta">
+                      {formatBytes(item.sizeBytes)}
+                      {' · '}
+                      {new Date(item.createdAt).toLocaleString()}
+                      {item.checklistItemId
+                        ? ` · ${item.checklistItemId}`
+                        : ''}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => void handleToggleLogView(item)}
+                    >
+                      {expanded ? 'Hide' : 'View'}
+                    </button>
+                    {expanded && loading ? (
+                      <p className="task-details-muted task-qa-session-log-loading">
+                        Loading session log...
+                      </p>
+                    ) : null}
+                    {expanded && !loading && logView ? (
+                      <SessionLogInlineView view={logView} />
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
