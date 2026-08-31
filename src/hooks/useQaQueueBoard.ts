@@ -20,7 +20,8 @@ export function useQaQueueBoard(
   tasks: Array<{
     id: string;
     projectId: string;
-    subtasks?: Array<{ id: string; projectId: string }>;
+    parentTaskId?: string | null;
+    subtasks?: Array<{ id: string; projectId: string; parentTaskId?: string | null }>;
   }>,
 ) {
   const [queue, setQueue] = useState<QaQueueListResponse>(EMPTY_QUEUE);
@@ -115,7 +116,7 @@ export function useQaQueueBoard(
         }
         if (result.reason === 'mixed-projects') {
           setSendError(
-            'Select cards from one project to send to the QA queue.',
+            'Select tasks from one project to send to the QA queue.',
           );
           return;
         }

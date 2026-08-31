@@ -30,9 +30,6 @@ interface TaskBoardProps {
   tasks: Task[];
   hiddenColumns?: TaskStatus[];
   movingTaskIds?: Set<string>;
-  selectedTaskIds?: Set<string>;
-  onToggleSelect?: (taskId: string) => void;
-  onAddToQaQueue?: (taskId: string) => void;
   accentColor?: string;
   organizationId?: string;
   projectId?: string;
@@ -66,9 +63,6 @@ function TaskBoardInner({
   tasks,
   hiddenColumns = [],
   movingTaskIds,
-  selectedTaskIds,
-  onToggleSelect,
-  onAddToQaQueue,
   accentColor,
   organizationId,
   projectId,
@@ -212,9 +206,6 @@ function TaskBoardInner({
             isDragging={activeDragIds.has(task.id)}
             isMoving={movingTaskIds?.has(task.id)}
             draggingTaskId={activeTaskId ?? undefined}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={onToggleSelect}
-            onAddToQaQueue={onAddToQaQueue}
             chatContextScope={
               organizationId && projectId
                 ? { organizationId, projectId }
@@ -246,9 +237,6 @@ function TaskBoardInner({
           isDragging={activeDragIds.has(item.task.id)}
           isMoving={movingTaskIds?.has(item.task.id)}
           draggingTaskId={activeTaskId ?? undefined}
-          selectedTaskIds={selectedTaskIds}
-          onToggleSelect={onToggleSelect}
-          onAddToQaQueue={onAddToQaQueue}
           chatContextScope={
             organizationId && projectId
               ? { organizationId, projectId }

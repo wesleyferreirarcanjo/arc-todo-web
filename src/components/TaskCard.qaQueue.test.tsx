@@ -91,36 +91,31 @@ describe('TaskCard QA queue selection', () => {
     cleanup();
   });
 
-  it('toggles selection from a checkbox without opening details', () => {
-    const onToggleSelect = vi.fn();
+  it('does not put a QA-queue checkbox on the card', () => {
     render(
       <StatusMoveAnimationProvider>
         <TaskCard
           task={makeTask()}
           organizationId="org-1"
           projectId="proj-1"
-          selectedTaskIds={new Set()}
-          onToggleSelect={onToggleSelect}
           onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </StatusMoveAnimationProvider>,
     );
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select #arc-1 for QA queue' }));
-    expect(onToggleSelect).toHaveBeenCalledWith('11111111-1111-1111-1111-111111111111');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: /Select .* for QA queue/ }),
+    ).not.toBeInTheDocument();
   });
 
-  it('keeps Add to QA queue on Task actions and right-click', () => {
-    const onAddToQaQueue = vi.fn();
+  it('does not keep Add to QA queue on Task actions or right-click', () => {
     const { container } = render(
       <StatusMoveAnimationProvider>
         <TaskCard
           task={makeTask()}
           organizationId="org-1"
           projectId="proj-1"
-          onAddToQaQueue={onAddToQaQueue}
           onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
@@ -128,13 +123,13 @@ describe('TaskCard QA queue selection', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Task actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Add to QA queue' }));
-    expect(onAddToQaQueue).toHaveBeenCalledWith('11111111-1111-1111-1111-111111111111');
+    expect(screen.queryByRole('menuitem', { name: 'Add to QA queue' })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
 
     const card = container.querySelector('.task-card');
     expect(card).not.toBeNull();
     fireEvent.contextMenu(card!);
-    expect(screen.getByRole('menuitem', { name: 'Add to QA queue' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Add to QA queue' })).not.toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
   });
 });

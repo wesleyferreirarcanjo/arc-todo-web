@@ -41,19 +41,23 @@ export function canSendSelection(projectIds: readonly string[]): {
   return { ok: true };
 }
 
+export function parentTasksOnly<T extends { parentTaskId?: string | null }>(
+  tasks: readonly T[],
+): T[] {
+  return tasks.filter((task) => !task.parentTaskId);
+}
+
 export function flattenTaskProjectIds(
   tasks: Array<{
     id: string;
     projectId: string;
-    subtasks?: Array<{ id: string; projectId: string }>;
+    parentTaskId?: string | null;
+    subtasks?: Array<{ id: string; projectId: string; parentTaskId?: string | null }>;
   }>,
 ): Map<string, string> {
   const map = new Map<string, string>();
-  for (const task of tasks) {
+  for (const task of parentTasksOnly(tasks)) {
     map.set(task.id, task.projectId);
-    for (const subtask of task.subtasks ?? []) {
-      map.set(subtask.id, subtask.projectId);
-    }
   }
   return map;
 }
@@ -64,28 +68,13 @@ export function selectAllTaskIds(
   return new Set(projectIdByTaskId.keys());
 }
 
-export function collectTasksById<T extends { id: string; subtasks?: T[] }>(
-  tasks: T[],
-): Map<string, T> {
-  const map = new Map<string, T>();
-  for (const task of tasks) {
-    map.set(task.id, task);
-    for (const subtask of task.subtasks ?? []) {
-      map.set(subtask.id, subtask);
-    }
-  }
-  return map;
-}
-
-export function selectedTasksFromIds<T extends { id: string; subtasks?: T[] }>(
+export function selectedTasksFromIds<T extends { id: string; parentTaskId?: string | null }>(
   tasks: T[],
   selectedIds: ReadonlySet<string>,
 ): T[] {
-  const byId = collectTasksById(tasks);
   const selected: T[] = [];
-  for (const id of selectedIds) {
-    const task = byId.get(id);
-    if (task) selected.push(task);
+  for (const task of parentTasksOnly(tasks)) {
+    if (selectedIds.has(task.id)) selected.push(task);
   }
   return selected;
 }

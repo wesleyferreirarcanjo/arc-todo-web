@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canSendSelection,
   flattenTaskProjectIds,
+  parentTasksOnly,
   selectAllTaskIds,
   selectedTasksFromIds,
   toggleSelectedId,
@@ -39,7 +40,35 @@ describe('qa queue selection', () => {
     });
   });
 
-  it('flattens nested subtask project ids', () => {
+  it('keeps only parent tasks for the QA queue picker', () => {
+    expect(
+      parentTasksOnly([
+        { id: 'parent', parentTaskId: null },
+        { id: 'child', parentTaskId: 'parent' },
+      ]).map((task) => task.id),
+    ).toEqual(['parent']);
+  });
+
+  it('maps project ids for parent tasks only and ignores nested subtasks', () => {
+    const map = flattenTaskProjectIds([
+      {
+        id: 'parent',
+        projectId: 'proj-1',
+        parentTaskId: null,
+        subtasks: [{ id: 'nested', projectId: 'proj-1' }],
+      },
+      {
+        id: 'child',
+        projectId: 'proj-1',
+        parentTaskId: 'parent',
+      },
+    ]);
+    expect([...map.keys()]).toEqual(['parent']);
+    expect(map.get('nested')).toBeUndefined();
+    expect(map.get('child')).toBeUndefined();
+  });
+
+  it('selects every parent task id for the extension queue', () => {
     const map = flattenTaskProjectIds([
       {
         id: 'parent',
@@ -47,31 +76,20 @@ describe('qa queue selection', () => {
         subtasks: [{ id: 'child', projectId: 'proj-1' }],
       },
     ]);
-    expect(map.get('parent')).toBe('proj-1');
-    expect(map.get('child')).toBe('proj-1');
+    expect([...selectAllTaskIds(map)]).toEqual(['parent']);
   });
 
-  it('selects every flattened task id for the extension queue', () => {
-    const map = flattenTaskProjectIds([
-      {
-        id: 'parent',
-        projectId: 'proj-1',
-        subtasks: [{ id: 'child', projectId: 'proj-1' }],
-      },
-    ]);
-    expect([...selectAllTaskIds(map)].sort()).toEqual(['child', 'parent']);
-  });
-
-  it('resolves selected tasks including nested subtasks', () => {
+  it('resolves selected parent tasks and ignores nested subtask ids', () => {
     const selected = selectedTasksFromIds(
       [
         {
           id: 'parent',
-          subtasks: [{ id: 'child' }],
+          parentTaskId: null,
+          subtasks: [{ id: 'child', parentTaskId: 'parent' }],
         },
       ],
-      new Set(['child']),
+      new Set(['child', 'parent']),
     );
-    expect(selected.map((task) => task.id)).toEqual(['child']);
+    expect(selected.map((task) => task.id)).toEqual(['parent']);
   });
 });

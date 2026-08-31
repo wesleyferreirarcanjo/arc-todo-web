@@ -236,7 +236,7 @@ describe('AllTasksBoardPage chrome', () => {
     });
   });
 
-  it('shows a Fila de QA count chip near All / My Tasks when the queue is not empty', async () => {
+  it('shows a Fila de QA toggle near All / My Tasks', async () => {
     fetchQaQueue.mockResolvedValue({
       projectId: 'proj-1',
       organizationId: 'org-1',
@@ -262,15 +262,18 @@ describe('AllTasksBoardPage chrome', () => {
     renderBoard();
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Fila de QA, 2 cards')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Fila de QA, 2 cards' })).toBeInTheDocument();
     });
     const toolbar = document.querySelector('.board-chrome-toolbar');
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
-    expect(toolbar).toContainElement(screen.getByLabelText('Fila de QA, 2 cards'));
-    expect(screen.queryByLabelText('Fila de QA, 2 cards')).toHaveTextContent('2');
+    expect(toolbar).toContainElement(
+      screen.getByRole('button', { name: 'Fila de QA, 2 cards' }),
+    );
+    expect(screen.getByRole('button', { name: 'Fila de QA, 2 cards' })).toHaveTextContent('2');
+    expect(screen.queryByRole('button', { name: 'Select all' })).not.toBeInTheDocument();
   });
 
-  it('offers Select all to attach visible cards to the extension queue', async () => {
+  it('opens a parent-task picker under Fila de QA like Filters', async () => {
     fetchAllTasks.mockResolvedValue([
       {
         id: '11111111-1111-1111-1111-111111111111',
@@ -283,6 +286,7 @@ describe('AllTasksBoardPage chrome', () => {
         criticity: 'medium',
         dueDate: null,
         projectId: 'proj-1',
+        parentTaskId: null,
         taskNumber: 1,
         displayId: '#arc-1',
         category: 'other',
@@ -297,13 +301,69 @@ describe('AllTasksBoardPage chrome', () => {
           color: '#4862ce',
           acronym: 'arc',
         },
+        subtasks: [
+          {
+            id: '22222222-2222-2222-2222-222222222222',
+            title: 'Nested',
+            description: null,
+            status: 'todo',
+            criticity: 'medium',
+            dueDate: null,
+            projectId: 'proj-1',
+            parentTaskId: '11111111-1111-1111-1111-111111111111',
+            taskNumber: 2,
+            displayId: '#arc-2',
+            category: 'other',
+            metadata: {},
+            createdAt: '2026-08-01T00:00:00.000Z',
+            updatedAt: '2026-08-01T00:00:00.000Z',
+          },
+        ],
+      },
+      {
+        id: '22222222-2222-2222-2222-222222222222',
+        title: 'Nested',
+        description: null,
+        businessDescription: null,
+        planCodeDescription: null,
+        testDescription: null,
+        status: 'todo',
+        criticity: 'medium',
+        dueDate: null,
+        projectId: 'proj-1',
+        parentTaskId: '11111111-1111-1111-1111-111111111111',
+        taskNumber: 2,
+        displayId: '#arc-2',
+        category: 'other',
+        metadata: {},
+        createdAt: '2026-08-01T00:00:00.000Z',
+        updatedAt: '2026-08-01T00:00:00.000Z',
+        organization: { id: 'org-1', name: 'Personal', slug: 'personal' },
+        project: {
+          id: 'proj-1',
+          name: 'arc-todo',
+          organizationId: 'org-1',
+          color: '#4862ce',
+          acronym: 'arc',
+        },
       },
     ]);
+    const user = userEvent.setup();
     renderBoard();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Select all' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Fila de QA' })).toBeInTheDocument();
     });
+    expect(screen.queryByRole('button', { name: 'Select all' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fila de QA' }));
+
+    expect(screen.getByRole('region', { name: 'Fila de QA' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Select #arc-1 for QA queue' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Select #arc-2 for QA queue' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select all' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Enviar para fila de QA' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Ver checklists' })).toBeDisabled();
   });

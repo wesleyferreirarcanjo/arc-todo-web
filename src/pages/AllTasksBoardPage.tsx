@@ -53,7 +53,7 @@ import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContex
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
-import { selectedTasksFromIds } from '../lib/qaQueue/selection';
+import { selectedTasksFromIds, parentTasksOnly } from '../lib/qaQueue/selection';
 import { parseQaChecklistItems } from '../lib/tasks/taskQaChecklist';
 import type { BoardCycle, BoardCycleHistoryResponse } from '../types/boardCycle';
 import type {
@@ -76,7 +76,7 @@ function removeMovingTaskId(current: Set<string>, taskId: string): Set<string> {
   return next;
 }
 
-type BoardChromePanel = 'filters' | 'cycle' | 'history' | null;
+type BoardChromePanel = 'filters' | 'cycle' | 'history' | 'qa-queue' | null;
 
 function toggleBoardChrome(
   current: BoardChromePanel,
@@ -638,7 +638,10 @@ export function AllTasksBoardPage() {
 
   const visibleTasks = projectFocus ? sortedCycleTasks : sortedTasks;
   const sourceTaskCount = projectFocus ? cycleTasks.length : tasks.length;
-  const qaQueueTasks = projectFocus ? cycleTasks : tasks;
+  const qaQueueTasks = useMemo(
+    () => parentTasksOnly(visibleTasks),
+    [visibleTasks],
+  );
   const {
     queueCount,
     selectedTaskIds,
@@ -653,13 +656,24 @@ export function AllTasksBoardPage() {
     selectAll,
     clearSelection,
     sendSelected,
-    sendOne,
     confirmReplace,
     cancelReplace,
   } = useQaQueueBoard(qaQueueTasks);
   const selectedTasks = selectedTasksFromIds(qaQueueTasks, selectedTaskIds);
   const selectedHaveChecklists = selectedTasks.some(
     (task) => parseQaChecklistItems(task.testDescription).length > 0,
+  );
+  const qaQueuePickerTasks = useMemo(
+    () =>
+      qaQueueTasks.map((task) => ({
+        id: task.id,
+        displayId: task.displayId,
+        title: task.title,
+        projectName: isTaskWithContext(task)
+          ? task.project.name
+          : focusedProject?.name,
+      })),
+    [qaQueueTasks, focusedProject?.name],
   );
 
   function handleSortFieldChange(value: string) {
@@ -804,7 +818,14 @@ export function AllTasksBoardPage() {
             value={quickFilter}
             onChange={handleQuickFilterChange}
           />
-          <QaQueueCountChip count={queueCount} />
+          <QaQueueCountChip
+            count={queueCount}
+            expanded={chromePanel === 'qa-queue'}
+            onToggle={() => {
+              setFiltersOpen(false);
+              setChromePanel((current) => toggleBoardChrome(current, 'qa-queue'));
+            }}
+          />
         </div>
       </div>
       {chromePanel === 'filters' && !isMobileShell ? (
@@ -856,6 +877,9 @@ export function AllTasksBoardPage() {
       </MobileBoardFiltersOverlay>
 
       <QaQueueBulkBar
+        open={chromePanel === 'qa-queue'}
+        tasks={qaQueuePickerTasks}
+        selectedTaskIds={selectedTaskIds}
         selectedCount={selectedCount}
         selectableCount={selectableCount}
         allSelected={allSelected}
@@ -864,6 +888,7 @@ export function AllTasksBoardPage() {
         sendError={sendError}
         replaceOpen={replaceOpen}
         checklistDisabled={!selectedHaveChecklists}
+        onToggleSelect={toggleSelect}
         onSelectAll={selectAll}
         onSend={sendSelected}
         onOpenChecklists={() => setChecklistsOpen(true)}
@@ -913,9 +938,6 @@ export function AllTasksBoardPage() {
             tasks={sortedCycleTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
-            onAddToQaQueue={sendOne}
             onToggleColumnVisibility={handleToggleColumnVisibility}
             accentColor={
               focusedProject
@@ -936,8 +958,6 @@ export function AllTasksBoardPage() {
           <TaskListView
             tasks={sortedCycleTasks}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
             onUpdateStatus={handleListStatusUpdate}
             resolveContext={
               organizationId && projectId
@@ -964,9 +984,6 @@ export function AllTasksBoardPage() {
             tasks={sortedTasks}
             hiddenColumns={hiddenColumns}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
-            onAddToQaQueue={sendOne}
             onToggleColumnVisibility={handleToggleColumnVisibility}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
@@ -978,8 +995,6 @@ export function AllTasksBoardPage() {
           <TaskListView
             tasks={sortedTasks}
             movingTaskIds={movingTaskIds}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={toggleSelect}
             onUpdateStatus={handleListStatusUpdate}
           />
         )

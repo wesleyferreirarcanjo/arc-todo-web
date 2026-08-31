@@ -32,8 +32,6 @@ interface TaskListViewProps {
   tasks: Task[] | TaskWithContext[];
   accentColor?: string;
   movingTaskIds?: Set<string>;
-  selectedTaskIds?: Set<string>;
-  onToggleSelect?: (taskId: string) => void;
   resolveContext?: (task: Task | TaskWithContext) => TaskListContext | null;
   onUpdateStatus?: (
     task: Task | TaskWithContext,
@@ -46,8 +44,6 @@ export function TaskListView({
   tasks,
   accentColor,
   movingTaskIds,
-  selectedTaskIds,
-  onToggleSelect,
   resolveContext,
   onUpdateStatus,
   onEditTask,
@@ -144,15 +140,7 @@ export function TaskListView({
   return (
     <>
       <div className="task-list-view" role="table" aria-label="Tasks">
-        <div
-          className={`task-list-header${onToggleSelect ? ' has-select' : ''}`}
-          role="row"
-        >
-          {onToggleSelect ? (
-            <span className="task-list-col task-list-col-select" role="columnheader">
-              Select
-            </span>
-          ) : null}
+        <div className="task-list-header" role="row">
           <span className="task-list-col task-list-col-id" role="columnheader">
             ID
           </span>
@@ -177,13 +165,12 @@ export function TaskListView({
             const withContext = isTaskWithContext(task);
             const parentIndent = task.parentTaskId ? ' is-subtask' : '';
             const isMoving = movingTaskIds?.has(task.id);
-            const isSelected = selectedTaskIds?.has(task.id) ?? false;
             const context = getContext(task);
 
             return (
               <li
                 key={task.id}
-                className={`task-list-row${parentIndent}${isMoving ? ' is-moving' : ''}${isSelected ? ' is-qa-selected' : ''}${onToggleSelect ? ' has-select' : ''}`}
+                className={`task-list-row${parentIndent}${isMoving ? ' is-moving' : ''}`}
                 role="row"
                 tabIndex={0}
                 aria-label={`Open task ${task.displayId}: ${task.title}`}
@@ -205,22 +192,6 @@ export function TaskListView({
                       : undefined
                 }
               >
-                {onToggleSelect ? (
-                  <span
-                    className="task-list-col task-list-col-select"
-                    role="cell"
-                    data-label="Select"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => onToggleSelect(task.id)}
-                      aria-label={`Select ${task.displayId} for QA queue`}
-                    />
-                  </span>
-                ) : null}
                 <span
                   className="task-list-col task-list-col-id"
                   role="cell"

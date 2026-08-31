@@ -1,17 +1,36 @@
 interface QaQueueCountChipProps {
   count: number;
+  expanded: boolean;
+  panelId?: string;
+  onToggle: () => void;
 }
 
-export function QaQueueCountChip({ count }: QaQueueCountChipProps) {
-  if (count <= 0) return null;
+export function QaQueueCountChip({
+  count,
+  expanded,
+  panelId = 'board-qa-queue-panel',
+  onToggle,
+}: QaQueueCountChipProps) {
+  const label =
+    count > 0
+      ? `Fila de QA, ${count} ${count === 1 ? 'card' : 'cards'}`
+      : 'Fila de QA';
 
   return (
-    <span
-      className="board-qa-queue-chip"
-      aria-label={`Fila de QA, ${count} ${count === 1 ? 'card' : 'cards'}`}
+    <button
+      type="button"
+      className={`btn btn-secondary board-chrome-toggle${expanded ? ' is-open' : ''}`}
+      aria-label={label}
+      aria-expanded={expanded}
+      aria-controls={expanded ? panelId : undefined}
+      onClick={onToggle}
     >
       Fila de QA
-      <span className="board-chrome-count">{count}</span>
-    </span>
+      {count > 0 ? (
+        <span className="board-chrome-count" aria-hidden="true">
+          {count}
+        </span>
+      ) : null}
+    </button>
   );
 }

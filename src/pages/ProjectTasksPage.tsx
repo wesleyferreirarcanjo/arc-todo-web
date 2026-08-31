@@ -1,6 +1,6 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   createProjectTask,
@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
-import { selectedTasksFromIds } from '../lib/qaQueue/selection';
+import { selectedTasksFromIds, parentTasksOnly } from '../lib/qaQueue/selection';
 import { parseQaChecklistItems } from '../lib/tasks/taskQaChecklist';
 import type {
   CreateTaskInput,
@@ -39,6 +39,8 @@ export function ProjectTasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(isAdmin);
   const [checklistsOpen, setChecklistsOpen] = useState(false);
+  const [qaQueueOpen, setQaQueueOpen] = useState(false);
+  const qaQueueTasks = useMemo(() => parentTasksOnly(tasks), [tasks]);
   const {
     queueCount,
     selectedTaskIds,
@@ -53,13 +55,22 @@ export function ProjectTasksPage() {
     selectAll,
     clearSelection,
     sendSelected,
-    sendOne,
     confirmReplace,
     cancelReplace,
-  } = useQaQueueBoard(tasks);
-  const selectedTasks = selectedTasksFromIds(tasks, selectedTaskIds);
+  } = useQaQueueBoard(qaQueueTasks);
+  const selectedTasks = selectedTasksFromIds(qaQueueTasks, selectedTaskIds);
   const selectedHaveChecklists = selectedTasks.some(
     (task) => parseQaChecklistItems(task.testDescription).length > 0,
+  );
+  const qaQueuePickerTasks = useMemo(
+    () =>
+      qaQueueTasks.map((task) => ({
+        id: task.id,
+        displayId: task.displayId,
+        title: task.title,
+        projectName: currentProject?.name,
+      })),
+    [qaQueueTasks, currentProject?.name],
   );
 
   const loadTasks = useCallback(async () => {
@@ -191,7 +202,11 @@ export function ProjectTasksPage() {
           >
             QA info
           </Link>
-          <QaQueueCountChip count={queueCount} />
+          <QaQueueCountChip
+            count={queueCount}
+            expanded={qaQueueOpen}
+            onToggle={() => setQaQueueOpen((open) => !open)}
+          />
           {hasKnowledgeAccess && (
             <Link
               to={`/organizations/${orgId}/projects/${projectId}/knowledge`}
@@ -211,6 +226,9 @@ export function ProjectTasksPage() {
       />
 
       <QaQueueBulkBar
+        open={qaQueueOpen}
+        tasks={qaQueuePickerTasks}
+        selectedTaskIds={selectedTaskIds}
         selectedCount={selectedCount}
         selectableCount={selectableCount}
         allSelected={allSelected}
@@ -219,6 +237,7 @@ export function ProjectTasksPage() {
         sendError={sendError}
         replaceOpen={replaceOpen}
         checklistDisabled={!selectedHaveChecklists}
+        onToggleSelect={toggleSelect}
         onSelectAll={selectAll}
         onSend={sendSelected}
         onOpenChecklists={() => setChecklistsOpen(true)}
@@ -247,9 +266,6 @@ export function ProjectTasksPage() {
           projectId={projectId}
           organizationName={currentOrganization?.name}
           projectName={currentProject?.name}
-          selectedTaskIds={selectedTaskIds}
-          onToggleSelect={toggleSelect}
-          onAddToQaQueue={sendOne}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onCreateSubtask={handleCreateSubtask}

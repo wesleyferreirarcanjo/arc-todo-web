@@ -38,9 +38,6 @@ interface UnifiedTaskBoardProps {
   tasks: TaskWithContext[];
   hiddenColumns?: TaskStatus[];
   movingTaskIds?: Set<string>;
-  selectedTaskIds?: Set<string>;
-  onToggleSelect?: (taskId: string) => void;
-  onAddToQaQueue?: (taskId: string) => void;
   onUpdate: (
     task: TaskWithContext,
     input: Partial<UpdateTaskInput>,
@@ -82,9 +79,6 @@ function UnifiedTaskBoardInner({
   tasks,
   hiddenColumns = [],
   movingTaskIds,
-  selectedTaskIds,
-  onToggleSelect,
-  onAddToQaQueue,
   onUpdate,
   onDelete,
   onCreateSubtask,
@@ -266,9 +260,6 @@ function UnifiedTaskBoardInner({
             isDragging={activeDragIds.has(task.id)}
             isMoving={movingTaskIds?.has(task.id)}
             draggingTaskId={activeTaskId ?? undefined}
-            selectedTaskIds={selectedTaskIds}
-            onToggleSelect={onToggleSelect}
-            onAddToQaQueue={onAddToQaQueue}
             onUpdate={handleCardUpdate}
             onDelete={handleCardDelete}
             onCreateSubtask={
@@ -302,9 +293,6 @@ function UnifiedTaskBoardInner({
           isDragging={activeDragIds.has(item.task.id)}
           isMoving={movingTaskIds?.has(item.task.id)}
           draggingTaskId={activeTaskId ?? undefined}
-          selectedTaskIds={selectedTaskIds}
-          onToggleSelect={onToggleSelect}
-          onAddToQaQueue={onAddToQaQueue}
           onUpdate={handleCardUpdate}
           onDelete={handleCardDelete}
           onSetParent={onSetParent ? handleCardSetParent : undefined}
