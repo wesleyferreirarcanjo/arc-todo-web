@@ -15,15 +15,13 @@ import { TaskBoard } from '../components/TaskBoard';
 import { QaQueueBulkBar } from '../components/QaQueueBulkBar';
 import { QaQueueCountChip } from '../components/QaQueueCountChip';
 import { TaskForm } from '../components/TaskForm';
-import { TaskQaMultiChecklistModal } from '../components/TaskQaMultiChecklistModal';
 import { TasksIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
-import { selectedTasksFromIds, parentTasksOnly } from '../lib/qaQueue/selection';
-import { parseQaChecklistItems } from '../lib/tasks/taskQaChecklist';
+import { parentTasksOnly } from '../lib/qaQueue/selection';
 import type {
   CreateTaskInput,
   Task,
@@ -38,40 +36,25 @@ export function ProjectTasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(isAdmin);
-  const [checklistsOpen, setChecklistsOpen] = useState(false);
   const [qaQueueOpen, setQaQueueOpen] = useState(false);
   const qaQueueTasks = useMemo(() => parentTasksOnly(tasks), [tasks]);
   const {
+    queue,
     queueCount,
-    selectedTaskIds,
-    selectedCount,
-    selectableCount,
-    allSelected,
-    mixedProjects,
+    queuedTaskIds,
+    unqueuedCount,
+    mixedUnqueued,
     sending,
+    removingTaskId,
+    queueBusy,
     sendError,
     replaceOpen,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    sendSelected,
+    addAllUnqueued,
+    removeItem,
+    toggleQueueMembership,
     confirmReplace,
     cancelReplace,
   } = useQaQueueBoard(qaQueueTasks);
-  const selectedTasks = selectedTasksFromIds(qaQueueTasks, selectedTaskIds);
-  const selectedHaveChecklists = selectedTasks.some(
-    (task) => parseQaChecklistItems(task.testDescription).length > 0,
-  );
-  const qaQueuePickerTasks = useMemo(
-    () =>
-      qaQueueTasks.map((task) => ({
-        id: task.id,
-        displayId: task.displayId,
-        title: task.title,
-        projectName: currentProject?.name,
-      })),
-    [qaQueueTasks, currentProject?.name],
-  );
 
   const loadTasks = useCallback(async () => {
     if (!orgId || !projectId) return;
@@ -227,21 +210,19 @@ export function ProjectTasksPage() {
 
       <QaQueueBulkBar
         open={qaQueueOpen}
-        tasks={qaQueuePickerTasks}
-        selectedTaskIds={selectedTaskIds}
-        selectedCount={selectedCount}
-        selectableCount={selectableCount}
-        allSelected={allSelected}
-        mixedProjects={mixedProjects}
+        items={queue.items.map((item) => ({
+          taskId: item.taskId,
+          displayId: item.displayId,
+          title: item.title,
+        }))}
+        unqueuedCount={unqueuedCount}
+        mixedUnqueued={mixedUnqueued}
         sending={sending}
+        removingTaskId={removingTaskId}
         sendError={sendError}
         replaceOpen={replaceOpen}
-        checklistDisabled={!selectedHaveChecklists}
-        onToggleSelect={toggleSelect}
-        onSelectAll={selectAll}
-        onSend={sendSelected}
-        onOpenChecklists={() => setChecklistsOpen(true)}
-        onClear={clearSelection}
+        onAddAll={addAllUnqueued}
+        onRemove={(taskId) => void removeItem(taskId)}
         onConfirmReplace={confirmReplace}
         onCancelReplace={cancelReplace}
       />
@@ -270,20 +251,12 @@ export function ProjectTasksPage() {
           onDelete={handleDelete}
           onCreateSubtask={handleCreateSubtask}
           onSetParent={handleSetParent}
+          qaExtensionOpen={qaQueueOpen}
+          queuedTaskIds={queuedTaskIds}
+          queueBusy={queueBusy}
+          onToggleQaExtensionQueue={toggleQueueMembership}
         />
       )}
-
-      <TaskQaMultiChecklistModal
-        open={checklistsOpen}
-        onClose={() => setChecklistsOpen(false)}
-        tasks={selectedTasks}
-        organizationId={orgId}
-        projectId={projectId}
-        accentColor={projectAccent}
-        onTaskChange={(updated) => {
-          void handleUpdate(updated.id, {}, updated);
-        }}
-      />
     </div>
   );
 }

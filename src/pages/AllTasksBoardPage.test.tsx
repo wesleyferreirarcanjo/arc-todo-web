@@ -90,11 +90,15 @@ vi.mock('../components/TaskImportExportMenu', () => ({
 }));
 
 vi.mock('../components/UnifiedTaskBoard', () => ({
-  UnifiedTaskBoard: () => <div data-testid="unified-board" />,
+  UnifiedTaskBoard: ({ qaExtensionOpen }: { qaExtensionOpen?: boolean }) => (
+    <div data-testid="unified-board" data-qa-extension={qaExtensionOpen ? 'on' : 'off'} />
+  ),
 }));
 
 vi.mock('../components/TaskBoard', () => ({
-  TaskBoard: () => <div data-testid="task-board" />,
+  TaskBoard: ({ qaExtensionOpen }: { qaExtensionOpen?: boolean }) => (
+    <div data-testid="task-board" data-qa-extension={qaExtensionOpen ? 'on' : 'off'} />
+  ),
 }));
 
 import { AllTasksBoardPage } from './AllTasksBoardPage';
@@ -236,7 +240,7 @@ describe('AllTasksBoardPage chrome', () => {
     });
   });
 
-  it('shows a Fila de QA toggle near All / My Tasks', async () => {
+  it('shows a QA extension toggle near All / My Tasks', async () => {
     fetchQaQueue.mockResolvedValue({
       projectId: 'proj-1',
       organizationId: 'org-1',
@@ -262,18 +266,32 @@ describe('AllTasksBoardPage chrome', () => {
     renderBoard();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Fila de QA, 2 cards' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'QA extension, 2 cards' })).toBeInTheDocument();
     });
     const toolbar = document.querySelector('.board-chrome-toolbar');
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(toolbar).toContainElement(
-      screen.getByRole('button', { name: 'Fila de QA, 2 cards' }),
+      screen.getByRole('button', { name: 'QA extension, 2 cards' }),
     );
-    expect(screen.getByRole('button', { name: 'Fila de QA, 2 cards' })).toHaveTextContent('2');
-    expect(screen.queryByRole('button', { name: 'Select all' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'QA extension, 2 cards' })).toHaveTextContent('2');
+    expect(screen.queryByRole('button', { name: 'Add all parents' })).not.toBeInTheDocument();
   });
 
-  it('opens a parent-task picker under Fila de QA like Filters', async () => {
+  it('opens QA extension queue items and shows checklists on cards', async () => {
+    fetchQaQueue.mockResolvedValue({
+      projectId: 'proj-1',
+      organizationId: 'org-1',
+      items: [
+        {
+          id: 'q1',
+          taskId: '11111111-1111-1111-1111-111111111111',
+          position: 0,
+          displayId: '#arc-1',
+          title: 'Queued',
+          status: 'qa_test',
+        },
+      ],
+    });
     fetchAllTasks.mockResolvedValue([
       {
         id: '11111111-1111-1111-1111-111111111111',
@@ -352,19 +370,25 @@ describe('AllTasksBoardPage chrome', () => {
     renderBoard();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Fila de QA' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'QA extension, 1 card' })).toBeInTheDocument();
     });
-    expect(screen.queryByRole('button', { name: 'Select all' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add all parents' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('unified-board')).toHaveAttribute('data-qa-extension', 'off');
 
-    await user.click(screen.getByRole('button', { name: 'Fila de QA' }));
+    await user.click(screen.getByRole('button', { name: 'QA extension, 1 card' }));
 
-    expect(screen.getByRole('region', { name: 'Fila de QA' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Select #arc-1 for QA queue' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'QA extension' })).toBeInTheDocument();
+    expect(screen.getByText('Queued')).toBeInTheDocument();
     expect(
-      screen.queryByRole('checkbox', { name: 'Select #arc-2 for QA queue' }),
+      screen.getByRole('button', { name: 'Remove #arc-1 from QA extension' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Select #arc-1 for QA queue' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select all' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Enviar para fila de QA' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Ver checklists' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Ver checklists' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Enviar para fila de QA' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('unified-board')).toHaveAttribute('data-qa-extension', 'on');
   });
 });

@@ -54,6 +54,10 @@ interface UnifiedTaskBoardProps {
   ) => Promise<void>;
   onMoveError?: (taskId: string, error: unknown) => void;
   onToggleColumnVisibility?: (status: TaskStatus) => void;
+  qaExtensionOpen?: boolean;
+  queuedTaskIds?: ReadonlySet<string>;
+  queueBusy?: boolean;
+  onToggleQaExtensionQueue?: (taskId: string) => void;
 }
 
 function getDefaultFocusedStatus(
@@ -85,6 +89,10 @@ function UnifiedTaskBoardInner({
   onSetParent,
   onMoveError,
   onToggleColumnVisibility,
+  qaExtensionOpen = false,
+  queuedTaskIds,
+  queueBusy = false,
+  onToggleQaExtensionQueue,
 }: UnifiedTaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
   const { expandedColumns, expandColumn } = useExpandedBoardColumns();
@@ -267,6 +275,10 @@ function UnifiedTaskBoardInner({
             }
             onSetParent={onSetParent ? handleCardSetParent : undefined}
             parentCandidates={tasks}
+            qaExtensionOpen={qaExtensionOpen}
+            inQaExtensionQueue={queuedTaskIds?.has(task.id) ?? false}
+            queueBusy={queueBusy}
+            onToggleQaExtensionQueue={onToggleQaExtensionQueue}
           />
         );
       }

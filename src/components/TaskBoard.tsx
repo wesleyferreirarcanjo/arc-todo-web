@@ -41,6 +41,10 @@ interface TaskBoardProps {
   onSetParent?: (taskId: string, parentId: string | null) => Promise<void>;
   onMoveError?: (taskId: string, error: unknown) => void;
   onToggleColumnVisibility?: (status: TaskStatus) => void;
+  qaExtensionOpen?: boolean;
+  queuedTaskIds?: ReadonlySet<string>;
+  queueBusy?: boolean;
+  onToggleQaExtensionQueue?: (taskId: string) => void;
 }
 
 function getDefaultFocusedStatus(tasks: Task[], columns: StatusColumn[]): TaskStatus | null {
@@ -74,6 +78,10 @@ function TaskBoardInner({
   onSetParent,
   onMoveError,
   onToggleColumnVisibility,
+  qaExtensionOpen = false,
+  queuedTaskIds,
+  queueBusy = false,
+  onToggleQaExtensionQueue,
 }: TaskBoardProps) {
   const { markStatusMove } = useStatusMoveAnimation();
   const { expandedColumns, expandColumn } = useExpandedBoardColumns();
@@ -216,6 +224,10 @@ function TaskBoardInner({
             onCreateSubtask={onCreateSubtask}
             onSetParent={onSetParent}
             parentCandidates={tasks}
+            qaExtensionOpen={qaExtensionOpen}
+            inQaExtensionQueue={queuedTaskIds?.has(task.id) ?? false}
+            queueBusy={queueBusy}
+            onToggleQaExtensionQueue={onToggleQaExtensionQueue}
           />
         );
       }

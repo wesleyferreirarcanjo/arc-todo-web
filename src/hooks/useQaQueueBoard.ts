@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addQaQueueItems, fetchQaQueue } from '../lib/api/qaQueue';
+import {
+  addQaQueueItems,
+  fetchQaQueue,
+  removeQaQueueItem,
+} from '../lib/api/qaQueue';
 import { enqueueToQaQueue } from '../lib/qaQueue/enqueue';
 import {
   flattenTaskProjectIds,
-  selectAllTaskIds,
-  toggleSelectedId,
   uniqueProjectIdsForSelection,
 } from '../lib/qaQueue/selection';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
@@ -25,10 +27,8 @@ export function useQaQueueBoard(
   }>,
 ) {
   const [queue, setQueue] = useState<QaQueueListResponse>(EMPTY_QUEUE);
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
-    () => new Set(),
-  );
   const [sending, setSending] = useState(false);
+  const [removingTaskId, setRemovingTaskId] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [pendingTaskIds, setPendingTaskIds] = useState<string[]>([]);
@@ -38,16 +38,28 @@ export function useQaQueueBoard(
     [tasks],
   );
 
-  const selectedProjectIds = useMemo(
-    () => uniqueProjectIdsForSelection(selectedTaskIds, projectIdByTaskId),
-    [selectedTaskIds, projectIdByTaskId],
+  const queuedTaskIds = useMemo(
+    () => new Set(queue.items.map((item) => item.taskId)),
+    [queue.items],
   );
 
-  const mixedProjects = selectedProjectIds.length > 1;
+  const unqueuedTaskIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const id of projectIdByTaskId.keys()) {
+      if (!queuedTaskIds.has(id)) ids.push(id);
+    }
+    return ids;
+  }, [projectIdByTaskId, queuedTaskIds]);
+
+  const unqueuedProjectIds = useMemo(
+    () => uniqueProjectIdsForSelection(new Set(unqueuedTaskIds), projectIdByTaskId),
+    [unqueuedTaskIds, projectIdByTaskId],
+  );
+
+  const mixedUnqueued = unqueuedProjectIds.length > 1;
   const queueCount = queue.items.length;
-  const selectableCount = projectIdByTaskId.size;
-  const allSelected =
-    selectableCount > 0 && selectedTaskIds.size === selectableCount;
+  const unqueuedCount = unqueuedTaskIds.length;
+  const queueBusy = sending || removingTaskId !== null;
 
   const loadQueue = useCallback(async () => {
     try {
@@ -60,32 +72,6 @@ export function useQaQueueBoard(
   useEffect(() => {
     void loadQueue();
   }, [loadQueue]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedTaskIds(new Set());
-  }, []);
-
-  const toggleSelect = useCallback((taskId: string) => {
-    setSelectedTaskIds((current) => toggleSelectedId(current, taskId));
-  }, []);
-
-  const selectAll = useCallback(() => {
-    setSelectedTaskIds(selectAllTaskIds(projectIdByTaskId));
-  }, [projectIdByTaskId]);
-
-  useEffect(() => {
-    if (selectedTaskIds.size === 0) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      if (event.defaultPrevented) return;
-      if (document.querySelector('[role="dialog"], [role="menu"]')) return;
-      clearSelection();
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedTaskIds.size, clearSelection]);
 
   const sendTaskIds = useCallback(
     async (taskIds: string[], replaceProject = false) => {
@@ -104,7 +90,6 @@ export function useQaQueueBoard(
         });
         if (result.ok) {
           setQueue(result.queue);
-          clearSelection();
           setReplaceOpen(false);
           setPendingTaskIds([]);
           return;
@@ -116,32 +101,51 @@ export function useQaQueueBoard(
         }
         if (result.reason === 'mixed-projects') {
           setSendError(
-            'Select tasks from one project to send to the QA queue.',
+            'Select tasks from one project to send to the QA extension.',
           );
           return;
         }
         if (result.reason === 'error') {
           setSendError(
-            userMessage(result.error, WEB_ERROR.SAVE, { thing: 'the QA queue' }),
+            userMessage(result.error, WEB_ERROR.SAVE, { thing: 'the QA extension' }),
           );
         }
       } finally {
         setSending(false);
       }
     },
-    [projectIdByTaskId, clearSelection],
+    [projectIdByTaskId],
   );
 
-  const sendSelected = useCallback(() => {
-    if (selectedTaskIds.size === 0 || mixedProjects || sending) return;
-    void sendTaskIds([...selectedTaskIds]);
-  }, [selectedTaskIds, mixedProjects, sending, sendTaskIds]);
+  const addAllUnqueued = useCallback(() => {
+    if (unqueuedTaskIds.length === 0 || mixedUnqueued || sending) return;
+    void sendTaskIds(unqueuedTaskIds);
+  }, [unqueuedTaskIds, mixedUnqueued, sending, sendTaskIds]);
 
-  const sendOne = useCallback(
+  const removeItem = useCallback(async (taskId: string) => {
+    setRemovingTaskId(taskId);
+    setSendError(null);
+    try {
+      setQueue(await removeQaQueueItem(taskId));
+    } catch (error) {
+      setSendError(
+        userMessage(error, WEB_ERROR.SAVE, { thing: 'the QA extension' }),
+      );
+    } finally {
+      setRemovingTaskId(null);
+    }
+  }, []);
+
+  const toggleQueueMembership = useCallback(
     (taskId: string) => {
+      if (queueBusy) return;
+      if (queuedTaskIds.has(taskId)) {
+        void removeItem(taskId);
+        return;
+      }
       void sendTaskIds([taskId]);
     },
-    [sendTaskIds],
+    [queueBusy, queuedTaskIds, removeItem, sendTaskIds],
   );
 
   const confirmReplace = useCallback(() => {
@@ -157,19 +161,17 @@ export function useQaQueueBoard(
   return {
     queue,
     queueCount,
-    selectedTaskIds,
-    selectedCount: selectedTaskIds.size,
-    selectableCount,
-    allSelected,
-    mixedProjects,
+    queuedTaskIds,
+    unqueuedCount,
+    mixedUnqueued,
     sending,
+    removingTaskId,
+    queueBusy,
     sendError,
     replaceOpen,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    sendSelected,
-    sendOne,
+    addAllUnqueued,
+    removeItem,
+    toggleQueueMembership,
     confirmReplace,
     cancelReplace,
   };

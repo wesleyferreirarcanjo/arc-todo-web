@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../types/todo';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
@@ -105,6 +106,9 @@ describe('TaskCard QA queue selection', () => {
     );
 
     expect(
+      screen.queryByRole('checkbox', { name: /Add .* to QA extension/ }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.queryByRole('checkbox', { name: /Select .* for QA queue/ }),
     ).not.toBeInTheDocument();
   });
@@ -131,5 +135,68 @@ describe('TaskCard QA queue selection', () => {
     fireEvent.contextMenu(card!);
     expect(screen.queryByRole('menuitem', { name: 'Add to QA queue' })).not.toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  it('shows the checklist on the card when QA extension is open', async () => {
+    const onToggleQaExtensionQueue = vi.fn();
+    const onUpdate = vi.fn(async () => undefined);
+    const user = userEvent.setup();
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({
+            testDescription: '## O que verificar\n- [ ] Sign in\n- [ ] Open the board',
+          })}
+          organizationId="org-1"
+          projectId="proj-1"
+          qaExtensionOpen
+          onToggleQaExtensionQueue={onToggleQaExtensionQueue}
+          onUpdate={onUpdate}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Add #arc-1 to QA extension' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: 'Marcar Sign in como verificado' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: 'Marcar Open the board como verificado' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Add #arc-1 to QA extension' }));
+    expect(onToggleQaExtensionQueue).toHaveBeenCalledWith(
+      '11111111-1111-1111-1111-111111111111',
+    );
+  });
+
+  it('does not show the card checklist on nested subtasks', () => {
+    render(
+      <StatusMoveAnimationProvider>
+        <TaskCard
+          task={makeTask({
+            parentTaskId: 'parent-1',
+            testDescription: '## O que verificar\n- [ ] Nested step',
+          })}
+          isSubtask
+          organizationId="org-1"
+          projectId="proj-1"
+          qaExtensionOpen
+          onToggleQaExtensionQueue={vi.fn()}
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </StatusMoveAnimationProvider>,
+    );
+
+    expect(
+      screen.queryByRole('checkbox', { name: 'Add #arc-1 to QA extension' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Marcar Nested step como verificado' }),
+    ).not.toBeInTheDocument();
   });
 });

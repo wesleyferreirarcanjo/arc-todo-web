@@ -37,6 +37,7 @@ import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
 import { ConfirmDialog } from './ConfirmDialog';
+import { TaskCardQaExtension } from './TaskCardQaExtension';
 import { EntityScatterLights } from './EntityScatterLights';
 import { IosHapticHit } from './IosHapticHit';
 import { Modal } from './Modal';
@@ -222,6 +223,10 @@ interface TaskCardProps {
   draggingTaskId?: string;
   compact?: boolean;
   selected?: boolean;
+  qaExtensionOpen?: boolean;
+  inQaExtensionQueue?: boolean;
+  queueBusy?: boolean;
+  onToggleQaExtensionQueue?: (taskId: string) => void;
   onUpdate: (id: string, input: Partial<UpdateTaskInput>, replaced?: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
@@ -260,6 +265,10 @@ export function TaskCard({
   draggingTaskId,
   compact = false,
   selected = false,
+  qaExtensionOpen = false,
+  inQaExtensionQueue = false,
+  queueBusy = false,
+  onToggleQaExtensionQueue,
   onUpdate,
   onDelete,
   onCreateSubtask,
@@ -321,7 +330,8 @@ export function TaskCard({
   const scatterRafRef = useRef<number | null>(null);
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
 
-  const isSelected = selected;
+  const showQaExtension = qaExtensionOpen && !isSubtask;
+  const isSelected = selected || (showQaExtension && inQaExtensionQueue);
   const menusOpen = overlayMenu !== null;
   const actionMenuOpen = overlayMenu?.source === 'kebab';
   const isInteractionLocked =
@@ -1047,7 +1057,7 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${isSelected ? ' is-qa-selected' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${isSelected ? ' is-qa-selected' : ''}${showQaExtension ? ' has-qa-extension' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         data-task-id={task.id}
         data-display-id={task.displayId || undefined}
         data-task-title={task.title}
@@ -1223,6 +1233,16 @@ export function TaskCard({
             </div>
           )}
         </motion.div>
+
+        {showQaExtension && onToggleQaExtensionQueue ? (
+          <TaskCardQaExtension
+            task={task}
+            inQueue={inQaExtensionQueue}
+            queueBusy={queueBusy}
+            onToggleQueue={() => onToggleQaExtensionQueue(task.id)}
+            onUpdate={onUpdate}
+          />
+        ) : null}
 
         {(!isSubtask || isDetachedSubtask) && chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">

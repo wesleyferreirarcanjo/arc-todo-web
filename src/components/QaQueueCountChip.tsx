@@ -13,8 +13,8 @@ export function QaQueueCountChip({
 }: QaQueueCountChipProps) {
   const label =
     count > 0
-      ? `Fila de QA, ${count} ${count === 1 ? 'card' : 'cards'}`
-      : 'Fila de QA';
+      ? `QA extension, ${count} ${count === 1 ? 'card' : 'cards'}`
+      : 'QA extension';
 
   return (
     <button
@@ -25,7 +25,7 @@ export function QaQueueCountChip({
       aria-controls={expanded ? panelId : undefined}
       onClick={onToggle}
     >
-      Fila de QA
+      QA extension
       {count > 0 ? (
         <span className="board-chrome-count" aria-hidden="true">
           {count}

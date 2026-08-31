@@ -46,15 +46,13 @@ import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverl
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
-import { TaskQaMultiChecklistModal } from '../components/TaskQaMultiChecklistModal';
 import { TasksIcon } from '../components/icons';
 import { useAuth } from '../context/AuthContext';
 import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
-import { selectedTasksFromIds, parentTasksOnly } from '../lib/qaQueue/selection';
-import { parseQaChecklistItems } from '../lib/tasks/taskQaChecklist';
+import { parentTasksOnly } from '../lib/qaQueue/selection';
 import type { BoardCycle, BoardCycleHistoryResponse } from '../types/boardCycle';
 import type {
   CreateTaskInput,
@@ -130,8 +128,6 @@ export function AllTasksBoardPage() {
     projectName?: string;
     subtasks: Task[];
   } | null>(null);
-  const [checklistsOpen, setChecklistsOpen] = useState(false);
-
   const organizationId = searchParams.get('organizationId') ?? undefined;
   const projectId = searchParams.get('projectId') ?? undefined;
   const taskParam = searchParams.get('task') ?? undefined;
@@ -643,38 +639,23 @@ export function AllTasksBoardPage() {
     [visibleTasks],
   );
   const {
+    queue,
     queueCount,
-    selectedTaskIds,
-    selectedCount,
-    selectableCount,
-    allSelected,
-    mixedProjects,
+    queuedTaskIds,
+    unqueuedCount,
+    mixedUnqueued,
     sending,
+    removingTaskId,
+    queueBusy,
     sendError,
     replaceOpen,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    sendSelected,
+    addAllUnqueued,
+    removeItem,
+    toggleQueueMembership,
     confirmReplace,
     cancelReplace,
   } = useQaQueueBoard(qaQueueTasks);
-  const selectedTasks = selectedTasksFromIds(qaQueueTasks, selectedTaskIds);
-  const selectedHaveChecklists = selectedTasks.some(
-    (task) => parseQaChecklistItems(task.testDescription).length > 0,
-  );
-  const qaQueuePickerTasks = useMemo(
-    () =>
-      qaQueueTasks.map((task) => ({
-        id: task.id,
-        displayId: task.displayId,
-        title: task.title,
-        projectName: isTaskWithContext(task)
-          ? task.project.name
-          : focusedProject?.name,
-      })),
-    [qaQueueTasks, focusedProject?.name],
-  );
+  const qaExtensionOpen = chromePanel === 'qa-queue';
 
   function handleSortFieldChange(value: string) {
     const field = value as TaskSortField;
@@ -877,22 +858,20 @@ export function AllTasksBoardPage() {
       </MobileBoardFiltersOverlay>
 
       <QaQueueBulkBar
-        open={chromePanel === 'qa-queue'}
-        tasks={qaQueuePickerTasks}
-        selectedTaskIds={selectedTaskIds}
-        selectedCount={selectedCount}
-        selectableCount={selectableCount}
-        allSelected={allSelected}
-        mixedProjects={mixedProjects}
+        open={qaExtensionOpen}
+        items={queue.items.map((item) => ({
+          taskId: item.taskId,
+          displayId: item.displayId,
+          title: item.title,
+        }))}
+        unqueuedCount={unqueuedCount}
+        mixedUnqueued={mixedUnqueued}
         sending={sending}
+        removingTaskId={removingTaskId}
         sendError={sendError}
         replaceOpen={replaceOpen}
-        checklistDisabled={!selectedHaveChecklists}
-        onToggleSelect={toggleSelect}
-        onSelectAll={selectAll}
-        onSend={sendSelected}
-        onOpenChecklists={() => setChecklistsOpen(true)}
-        onClear={clearSelection}
+        onAddAll={addAllUnqueued}
+        onRemove={(taskId) => void removeItem(taskId)}
         onConfirmReplace={confirmReplace}
         onCancelReplace={cancelReplace}
       />
@@ -953,6 +932,10 @@ export function AllTasksBoardPage() {
             onCreateSubtask={handleCycleCreateSubtask}
             onSetParent={handleCycleSetParent}
             onMoveError={handleMoveError}
+            qaExtensionOpen={qaExtensionOpen}
+            queuedTaskIds={queuedTaskIds}
+            queueBusy={queueBusy}
+            onToggleQaExtensionQueue={toggleQueueMembership}
           />
         ) : (
           <TaskListView
@@ -990,6 +973,10 @@ export function AllTasksBoardPage() {
             onCreateSubtask={handleCreateSubtask}
             onSetParent={handleSetParent}
             onMoveError={handleMoveError}
+            qaExtensionOpen={qaExtensionOpen}
+            queuedTaskIds={queuedTaskIds}
+            queueBusy={queueBusy}
+            onToggleQaExtensionQueue={toggleQueueMembership}
           />
         ) : (
           <TaskListView
@@ -999,26 +986,6 @@ export function AllTasksBoardPage() {
           />
         )
       )}
-
-      <TaskQaMultiChecklistModal
-        open={checklistsOpen}
-        onClose={() => setChecklistsOpen(false)}
-        tasks={selectedTasks}
-        organizationId={organizationId ?? ''}
-        projectId={projectId ?? ''}
-        accentColor={
-          focusedProject
-            ? getProjectColor(focusedProject)
-            : undefined
-        }
-        onTaskChange={() => {
-          if (projectFocus) {
-            void loadProjectCycle({ silent: true });
-            return;
-          }
-          void loadTasks({ silent: true });
-        }}
-      />
 
       {deepLinkTask ? (
         <TaskDetailsModal
