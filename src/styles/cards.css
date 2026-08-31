@@ -1,0 +1,579 @@
+/* cards.css — imported from src/index.css; keep cascade order. */
+
+.entity-card {
+  position: relative;
+  text-align: left;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-blob);
+  padding: 1.15rem 1.35rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.entity-card.project-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.entity-card-main {
+  position: relative;
+  flex: 1;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 1.15rem 0 1.15rem 1.35rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.entity-card.management-card.has-accent,
+.task-card.has-accent,
+.modal.has-accent,
+.sidebar.has-accent {
+  --entity-rail-card-color: color-mix(
+    in srgb,
+    var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),
+    var(--border-strong)
+  );
+  --entity-corner-glow: 9px -7px 16px -10px
+    color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent-secondary)) var(--entity-corner-glow-mix),
+      transparent
+    );
+  --entity-rail-glow: -3px 0 8px -1px
+      color-mix(
+        in srgb,
+        var(--entity-accent, var(--accent-secondary)) var(--entity-rail-glow-out-mix),
+        transparent
+      ),
+    inset 4px 0 8px -3px
+      color-mix(
+        in srgb,
+        var(--entity-accent, var(--accent-secondary)) var(--entity-rail-glow-in-mix),
+        transparent
+      );
+}
+
+.entity-card.management-card.has-accent,
+.task-card.has-accent,
+.modal.has-accent {
+  border-left: var(--entity-rail-card-width) solid var(--entity-rail-card-color);
+}
+
+.entity-card.management-card.has-accent {
+  overflow: visible;
+  box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
+.entity-card.management-card.has-accent:hover,
+.task-card.has-accent:hover,
+.task-card.has-accent.has-menu-open,
+.task-card.has-accent:focus-within {
+  border-left-color: var(--entity-rail-card-color);
+}
+
+.entity-card.management-card.has-accent:hover {
+  box-shadow: var(--shadow-card), var(--entity-corner-glow), var(--entity-rail-glow);
+}
+
+.entity-card.management-card.has-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 13rem 11rem at 100% 0%,
+    var(--entity-accent, var(--accent-secondary)),
+    transparent 70%
+  );
+  opacity: var(--entity-corner-opacity);
+}
+
+.entity-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.project-color-edit {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem 0 0;
+  margin: 0;
+}
+
+.entity-card h3 {
+  position: relative;
+  font-size: var(--type-card);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.entity-meta,
+.entity-description {
+  position: relative;
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: var(--type-body);
+  line-height: 1.5;
+}
+
+.entity-card.management-card {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1rem 1.15rem;
+}
+
+.entity-card.management-card:hover {
+  transform: none;
+}
+
+.entity-card.management-card.is-editing {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lift);
+}
+
+.entity-scope-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 0.65rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entity-scope-badge-project,
+.entity-scope-badge-org {
+  border-color: color-mix(in srgb, var(--entity-accent, var(--border)) 55%, var(--border));
+  color: var(--text-primary);
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-surface)
+  );
+}
+
+.entity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.entity-color-swatch {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.entity-color-swatch-lg {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
+}
+
+.entity-meta-muted {
+  font-style: italic;
+}
+
+.entity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.entity-actions .btn {
+  margin-top: 0;
+}
+
+.entity-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.entity-edit label {
+  width: 100%;
+}
+
+.entity-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.entity-edit-actions .btn-primary {
+  margin-top: 0;
+}
+
+.people-page.page-shell {
+  gap: 1.5rem;
+}
+
+.people-page .page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 48rem;
+}
+
+.people-page .page-subtitle {
+  max-width: 42rem;
+  line-height: 1.55;
+}
+
+.people-page-summary,
+.people-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.people-page-summary span,
+.people-list-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  margin: 0;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-surface));
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.people-page-links {
+  margin-top: 0.1rem;
+}
+
+.people-create-section,
+.people-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.people-list-header {
+  justify-content: space-between;
+}
+
+.people-list-header h3,
+.person-form-header h2 {
+  font-size: var(--type-section);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.people-state-card {
+  padding: 1.25rem 1.35rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.people-state-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.people-state-detail,
+.person-form-description {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.person-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.person-form-actions .btn-primary {
+  margin-top: 0;
+}
+
+.people-page .entity-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+.person-card {
+  padding: 0;
+}
+
+.person-card .entity-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: 100%;
+  min-height: 100%;
+  padding: 1.25rem 1.35rem;
+}
+
+.person-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.person-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.6rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-soft);
+}
+
+.person-card-identity {
+  min-width: 0;
+}
+
+.person-card-identity h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.person-card-scope {
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.person-card-details {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.person-card-detail {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+
+.person-card-detail span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.person-card-notes {
+  margin-top: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.person-card-knowledge-link {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  color: var(--link);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.organizations-page.page-shell {
+  gap: 1.5rem;
+}
+
+.organizations-create-section,
+.organizations-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.organizations-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.organizations-list-header h3 {
+  font-size: var(--type-section);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.organizations-list-count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.organizations-state-card {
+  padding: 1.25rem 1.35rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.organizations-state-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.organizations-state-detail {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.organization-form-header h2 {
+  font-size: var(--type-section);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.organization-form-description {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.organization-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.organization-form-actions .btn-primary {
+  margin-top: 0;
+}
+
+.organizations-page .entity-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+.organization-card-header {
+  align-items: center;
+}
+
+.organization-card-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.organization-card-identity h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-slug {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.organization-slug-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.organization-slug code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: color-mix(
+    in srgb,
+    var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),
+    var(--bg-elevated)
+  );
+  border: 1px solid color-mix(in srgb, var(--entity-accent, var(--border)) 45%, var(--border));
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.45rem;
+}
+
+@media (min-width: 960px) {
+  .organizations-page.page-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 1.5rem;
+  }
+
+  .organizations-page .page-header {
+    grid-column: 1 / -1;
+  }
+
+  .organizations-create-section {
+    position: sticky;
+    top: 1.5rem;
+  }
+}

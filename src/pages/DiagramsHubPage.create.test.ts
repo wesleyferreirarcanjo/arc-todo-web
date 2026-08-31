@@ -2,10 +2,11 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readAppCss } from '../test/readAppCss';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(resolve(here, 'DiagramsHubPage.tsx'), 'utf8');
-const css = readFileSync(resolve(here, '../index.css'), 'utf8');
+const css = readAppCss();
 
 describe('diagrams hub New diagram (#arc-270)', () => {
   it('exposes hub create like Wireframes (org + project + name)', () => {

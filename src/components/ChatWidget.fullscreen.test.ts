@@ -1,12 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readAppCss } from '../test/readAppCss';
 
-const css = readFileSync(
-  resolve(dirname(fileURLToPath(import.meta.url)), '../index.css'),
-  'utf8',
-);
+const css = readAppCss();
 
 describe('mobile chat fullscreen CSS (#arc-271)', () => {
   it('pins the open mobile chat root to the viewport at ≤1023px', () => {
