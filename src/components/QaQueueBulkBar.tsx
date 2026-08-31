@@ -52,8 +52,9 @@ export function QaQueueBulkBar({
           <p className="qa-queue-bulk-bar-copy">
             <strong>QA extension</strong>
             <span className="qa-queue-bulk-bar-note">
-              Add parent cards to the browser extension. Checklists show on the
-              cards while this panel is open.
+              Click a parent card to add it. The board shows titles only; cards
+              already in this list stay hidden. Tasks that leave QA Test drop
+              out automatically.
             </span>
             {mixedUnqueued ? (
               <span className="qa-queue-bulk-bar-hint" role="status">

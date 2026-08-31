@@ -9,6 +9,7 @@ import type {
   UpdateTaskInput,
 } from '../types/todo';
 import { getProjectColor } from '../lib/color/entityColor';
+import { qaExtensionVisibleTasks } from '../lib/qaQueue/selection';
 import { attachSubtasks, collectDescendantIds, listBoardColumnItems, type BoardColumnItem } from '../lib/tasks/taskTree';
 import {
   getHiddenBoardColumnCount,
@@ -112,10 +113,17 @@ function UnifiedTaskBoardInner({
     getDefaultFocusedStatus(tasks, columns),
   );
 
-  const boardTasks = useMemo(() => attachSubtasks(tasks), [tasks]);
+  const sourceTasks = useMemo(
+    () =>
+      qaExtensionOpen
+        ? qaExtensionVisibleTasks(tasks, queuedTaskIds ?? new Set())
+        : tasks,
+    [qaExtensionOpen, queuedTaskIds, tasks],
+  );
+  const boardTasks = useMemo(() => attachSubtasks(sourceTasks), [sourceTasks]);
   const taskById = useMemo(
-    () => new Map(tasks.map((task) => [task.id, task])),
-    [tasks],
+    () => new Map(sourceTasks.map((task) => [task.id, task])),
+    [sourceTasks],
   );
 
   const statusCounts = useMemo(() => {
@@ -141,8 +149,8 @@ function UnifiedTaskBoardInner({
     if (focusedStatus && columns.some((column) => column.status === focusedStatus)) {
       return;
     }
-    setFocusedStatus(getDefaultFocusedStatus(tasks, columns));
-  }, [columns, focusedStatus, tasks]);
+    setFocusedStatus(getDefaultFocusedStatus(sourceTasks, columns));
+  }, [columns, focusedStatus, sourceTasks]);
 
   useEffect(() => {
     if (isMobileBoard) {
@@ -171,8 +179,8 @@ function UnifiedTaskBoardInner({
   );
 
   const getTaskIdsToMove = useCallback(
-    (taskId: string) => collectDescendantIds(tasks, taskId),
-    [tasks],
+    (taskId: string) => collectDescendantIds(sourceTasks, taskId),
+    [sourceTasks],
   );
 
   // Nested TaskCards reuse these handlers; always resolve by clicked id (not the parent closure).
@@ -244,7 +252,7 @@ function UnifiedTaskBoardInner({
   const visibleColumns = isMobileBoard
     ? columns.filter((column) => column.status === activeStatus)
     : columns;
-  const cardDraggable = !isMobileBoard;
+  const cardDraggable = !isMobileBoard && !qaExtensionOpen;
 
   function renderColumnCards(
     visibleItems: BoardColumnItem<TaskWithContext>[],
@@ -274,7 +282,7 @@ function UnifiedTaskBoardInner({
               onCreateSubtask ? handleCardCreateSubtask : undefined
             }
             onSetParent={onSetParent ? handleCardSetParent : undefined}
-            parentCandidates={tasks}
+            parentCandidates={sourceTasks}
             qaExtensionOpen={qaExtensionOpen}
             inQaExtensionQueue={queuedTaskIds?.has(task.id) ?? false}
             queueBusy={queueBusy}
@@ -308,7 +316,7 @@ function UnifiedTaskBoardInner({
           onUpdate={handleCardUpdate}
           onDelete={handleCardDelete}
           onSetParent={onSetParent ? handleCardSetParent : undefined}
-          parentCandidates={tasks}
+            parentCandidates={sourceTasks}
         />
       );
     });

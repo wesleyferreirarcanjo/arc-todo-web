@@ -3,6 +3,7 @@ import {
   canSendSelection,
   flattenTaskProjectIds,
   parentTasksOnly,
+  qaExtensionVisibleTasks,
   selectAllTaskIds,
   selectedTasksFromIds,
   toggleSelectedId,
@@ -47,6 +48,19 @@ describe('qa queue selection', () => {
         { id: 'child', parentTaskId: 'parent' },
       ]).map((task) => task.id),
     ).toEqual(['parent']);
+  });
+
+  it('hides queued parents and nested subtasks from the QA extension board', () => {
+    expect(
+      qaExtensionVisibleTasks(
+        [
+          { id: 'queued', parentTaskId: null },
+          { id: 'open', parentTaskId: null },
+          { id: 'child', parentTaskId: 'open' },
+        ],
+        new Set(['queued']),
+      ).map((task) => task.id),
+    ).toEqual(['open']);
   });
 
   it('maps project ids for parent tasks only and ignores nested subtasks', () => {

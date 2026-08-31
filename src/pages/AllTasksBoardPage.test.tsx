@@ -163,6 +163,10 @@ describe('AllTasksBoardPage chrome', () => {
     expect(actions).toBeInTheDocument();
     expect(tabs).toBeInTheDocument();
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'QA extension' }));
+    expect(screen.getByRole('button', { name: 'Filters' }).nextElementSibling).toBe(
+      screen.getByRole('button', { name: 'QA extension' }),
+    );
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'My Tasks' }));
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'Due Today' }));
@@ -189,9 +193,11 @@ describe('AllTasksBoardPage chrome', () => {
 
     const toolbar = document.querySelector('.board-chrome-toolbar');
     const tabs = document.querySelector('.board-chrome-toolbar .board-view-toggle');
+    const actions = document.querySelector('.board-chrome-actions');
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
-    expect(document.querySelector('.board-chrome-actions')).not.toBeInTheDocument();
+    expect(actions).toBeInTheDocument();
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'QA extension' }));
     expect(screen.queryByRole('button', { name: 'Filters' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Weekly cycle' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sprint history' })).not.toBeInTheDocument();
@@ -212,6 +218,10 @@ describe('AllTasksBoardPage chrome', () => {
     expect(actions).toBeInTheDocument();
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'QA extension' }));
+    expect(screen.getByRole('button', { name: 'Filters' }).nextElementSibling).toBe(
+      screen.getByRole('button', { name: 'QA extension' }),
+    );
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Weekly cycle' }));
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Sprint history' }));
     expect(tabs).not.toContainElement(screen.getByRole('button', { name: 'Filters' }));
@@ -240,7 +250,7 @@ describe('AllTasksBoardPage chrome', () => {
     });
   });
 
-  it('shows a QA extension toggle near All / My Tasks', async () => {
+  it('puts the QA extension toggle immediately after Filters', async () => {
     fetchQaQueue.mockResolvedValue({
       projectId: 'proj-1',
       organizationId: 'org-1',
@@ -268,16 +278,16 @@ describe('AllTasksBoardPage chrome', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'QA extension, 2 cards' })).toBeInTheDocument();
     });
-    const toolbar = document.querySelector('.board-chrome-toolbar');
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
-    expect(toolbar).toContainElement(
-      screen.getByRole('button', { name: 'QA extension, 2 cards' }),
-    );
-    expect(screen.getByRole('button', { name: 'QA extension, 2 cards' })).toHaveTextContent('2');
+    const actions = document.querySelector('.board-chrome-actions');
+    const qa = screen.getByRole('button', { name: 'QA extension, 2 cards' });
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
+    expect(actions).toContainElement(qa);
+    expect(screen.getByRole('button', { name: 'Filters' }).nextElementSibling).toBe(qa);
+    expect(qa).toHaveTextContent('2');
     expect(screen.queryByRole('button', { name: 'Add all parents' })).not.toBeInTheDocument();
   });
 
-  it('opens QA extension queue items and shows checklists on cards', async () => {
+  it('opens QA extension queue titles without card checklists', async () => {
     fetchQaQueue.mockResolvedValue({
       projectId: 'proj-1',
       organizationId: 'org-1',

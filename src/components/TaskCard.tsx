@@ -37,7 +37,6 @@ import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { DURATION_BASE } from '../lib/motion/variants';
 import { useStatusMoveAnimation } from '../lib/motion/StatusMoveAnimationContext';
 import { ConfirmDialog } from './ConfirmDialog';
-import { TaskCardQaExtension } from './TaskCardQaExtension';
 import { EntityScatterLights } from './EntityScatterLights';
 import { IosHapticHit } from './IosHapticHit';
 import { Modal } from './Modal';
@@ -331,7 +330,7 @@ export function TaskCard({
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
 
   const showQaExtension = qaExtensionOpen && !isSubtask;
-  const isSelected = selected || (showQaExtension && inQaExtensionQueue);
+  const isSelected = selected;
   const menusOpen = overlayMenu !== null;
   const actionMenuOpen = overlayMenu?.source === 'kebab';
   const isInteractionLocked =
@@ -344,7 +343,7 @@ export function TaskCard({
   const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
   const resolvedProjectId = projectId ?? chatContextScope?.projectId;
   const canOpenDetails = Boolean(resolvedOrganizationId && resolvedProjectId);
-  const isDraggable = draggable && !isInteractionLocked;
+  const isDraggable = draggable && !isInteractionLocked && !showQaExtension;
 
   const {
     attributes,
@@ -446,7 +445,7 @@ export function TaskCard({
   }
 
   function handleCardDoubleClick(event: ReactMouseEvent<HTMLElement>) {
-    if (!canOpenDetails) {
+    if (showQaExtension || !canOpenDetails) {
       return;
     }
 
@@ -622,8 +621,25 @@ export function TaskCard({
     }
   }
 
+  function handleQaExtensionCardClick(event: ReactMouseEvent<HTMLElement>) {
+    if (!showQaExtension || !onToggleQaExtensionQueue || queueBusy || inQaExtensionQueue) {
+      return;
+    }
+    const target = event.target as HTMLElement;
+    if (
+      target.closest(
+        'button, a, input, select, textarea, label, [role="menu"], .task-card-actions, .task-card-copy-actions, .task-card-context-menu',
+      )
+    ) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleQaExtensionQueue(task.id);
+  }
+
   function handleSwipePointerDown(event: ReactPointerEvent<HTMLElement>) {
-    if (!isMobileBoard || isInteractionLocked || isDraggable) return;
+    if (!isMobileBoard || isInteractionLocked || isDraggable || showQaExtension) return;
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
     if (target.closest('button, a, input, select, textarea, [role="menuitem"]')) {
@@ -865,7 +881,7 @@ export function TaskCard({
       ? checklistProgress
       : null;
   const showQaStage =
-    Boolean(qaProgress) && (!isSubtask || isDetachedSubtask);
+    Boolean(qaProgress) && (!isSubtask || isDetachedSubtask) && !showQaExtension;
   const qaProgressRatio =
     qaProgress && qaProgress.total > 0
       ? Math.min(Math.max(qaProgress.done / qaProgress.total, 0), 1)
@@ -902,7 +918,9 @@ export function TaskCard({
   } as CSSProperties | undefined;
 
   const showAsDragging = isDragging || isDndDragging;
-  const showChatHint = Boolean((!isSubtask || isDetachedSubtask) && chatContextTask);
+  const showChatHint = Boolean(
+    !showQaExtension && (!isSubtask || isDetachedSubtask) && chatContextTask,
+  );
   const showSmartCopy =
     isSmartCopyStatus(task.status) &&
     Boolean(resolvedOrganizationId && resolvedProjectId);
@@ -912,12 +930,19 @@ export function TaskCard({
   const showDoneHold =
     task.status === 'done' && (!isSubtask || isDetachedSubtask);
   const showCornerActions =
+    !showQaExtension &&
     (!isSubtask || isDetachedSubtask) &&
     (Boolean(qaProgress) || showSmartCopy || showDoneHold);
   const showParentSubtaskMeta =
-    !compact && !isSubtask && (Boolean(subtaskProgress) || detachedSubtaskCount > 0);
+    !showQaExtension &&
+    !compact &&
+    !isSubtask &&
+    (Boolean(subtaskProgress) || detachedSubtaskCount > 0);
   const showSubtaskSection =
-    !compact && !isSubtask && (nestedSubtasks.length > 0 || showParentSubtaskMeta);
+    !showQaExtension &&
+    !compact &&
+    !isSubtask &&
+    (nestedSubtasks.length > 0 || showParentSubtaskMeta);
   const scatterStage: ScatterStage | null = (() => {
     if (!accentColor || (isSubtask && !isDetachedSubtask)) {
       return null;
@@ -1063,6 +1088,11 @@ export function TaskCard({
         data-task-title={task.title}
         data-organization-id={resolvedOrganizationId}
         data-project-id={resolvedProjectId}
+        aria-label={
+          showQaExtension
+            ? `Add ${task.displayId || task.title} to QA extension`
+            : undefined
+        }
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -1081,6 +1111,7 @@ export function TaskCard({
           default: base,
         }}
         onDoubleClick={handleCardDoubleClick}
+        onClick={handleQaExtensionCardClick}
         onContextMenu={handleCardContextMenu}
         {...draggableProps}
         onPointerMove={handleCardPointerMove}
@@ -1218,7 +1249,7 @@ export function TaskCard({
             )}
           </div>
 
-          {!isSubtask && compact && resolvedSubtasks.length > 0 && (
+          {!isSubtask && compact && !showQaExtension && resolvedSubtasks.length > 0 && (
             <p className="task-subtask-summary">
               {resolvedSubtasks.length} subtask{resolvedSubtasks.length === 1 ? '' : 's'}
               {detachedSubtaskCount > 0
@@ -1227,24 +1258,14 @@ export function TaskCard({
             </p>
           )}
 
-          {!compact && (!isSubtask || isDetachedSubtask) && task.dueDate && (
+          {!compact && !showQaExtension && (!isSubtask || isDetachedSubtask) && task.dueDate && (
             <div className="task-meta">
               <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             </div>
           )}
         </motion.div>
 
-        {showQaExtension && onToggleQaExtensionQueue ? (
-          <TaskCardQaExtension
-            task={task}
-            inQueue={inQaExtensionQueue}
-            queueBusy={queueBusy}
-            onToggleQueue={() => onToggleQaExtensionQueue(task.id)}
-            onUpdate={onUpdate}
-          />
-        ) : null}
-
-        {(!isSubtask || isDetachedSubtask) && chatContextTask ? (
+        {(!isSubtask || isDetachedSubtask) && !showQaExtension && chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">
             Ctrl+click insert reference · Shift+click remove
           </span>

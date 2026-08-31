@@ -47,6 +47,13 @@ export function parentTasksOnly<T extends { parentTaskId?: string | null }>(
   return tasks.filter((task) => !task.parentTaskId);
 }
 
+export function qaExtensionVisibleTasks<T extends { id: string; parentTaskId?: string | null }>(
+  tasks: readonly T[],
+  queuedTaskIds: ReadonlySet<string>,
+): T[] {
+  return parentTasksOnly(tasks).filter((task) => !queuedTaskIds.has(task.id));
+}
+
 export function flattenTaskProjectIds(
   tasks: Array<{
     id: string;

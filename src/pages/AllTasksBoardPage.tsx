@@ -678,7 +678,7 @@ export function AllTasksBoardPage() {
   const showFiltersButton = !isMobileShell;
   const showCycleButton = Boolean(projectFocus && activeCycle && autoClosesOn);
   const showHistoryButton = projectFocus;
-  const showChromeActions = showFiltersButton || showCycleButton || showHistoryButton;
+  const showChromeActions = true;
 
   const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
 
@@ -770,6 +770,14 @@ export function AllTasksBoardPage() {
                 ) : null}
               </button>
             ) : null}
+            <QaQueueCountChip
+              count={queueCount}
+              expanded={chromePanel === 'qa-queue'}
+              onToggle={() => {
+                setFiltersOpen(false);
+                setChromePanel((current) => toggleBoardChrome(current, 'qa-queue'));
+              }}
+            />
             {showCycleButton ? (
               <button
                 type="button"
@@ -798,14 +806,6 @@ export function AllTasksBoardPage() {
           <BoardQuickFilterChips
             value={quickFilter}
             onChange={handleQuickFilterChange}
-          />
-          <QaQueueCountChip
-            count={queueCount}
-            expanded={chromePanel === 'qa-queue'}
-            onToggle={() => {
-              setFiltersOpen(false);
-              setChromePanel((current) => toggleBoardChrome(current, 'qa-queue'));
-            }}
           />
         </div>
       </div>

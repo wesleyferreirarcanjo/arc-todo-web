@@ -137,9 +137,8 @@ describe('TaskCard QA queue selection', () => {
     expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
   });
 
-  it('shows the checklist on the card when QA extension is open', async () => {
+  it('shows the title only and adds the whole card on click when QA extension is open', async () => {
     const onToggleQaExtensionQueue = vi.fn();
-    const onUpdate = vi.fn(async () => undefined);
     const user = userEvent.setup();
     render(
       <StatusMoveAnimationProvider>
@@ -151,29 +150,32 @@ describe('TaskCard QA queue selection', () => {
           projectId="proj-1"
           qaExtensionOpen
           onToggleQaExtensionQueue={onToggleQaExtensionQueue}
-          onUpdate={onUpdate}
+          onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </StatusMoveAnimationProvider>,
     );
 
+    expect(screen.getByText('QA pick card')).toBeInTheDocument();
     expect(
-      screen.getByRole('checkbox', { name: 'Add #arc-1 to QA extension' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('checkbox', { name: 'Add #arc-1 to QA extension' }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('checkbox', { name: 'Marcar Sign in como verificado' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('checkbox', { name: 'Marcar Sign in como verificado' }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('checkbox', { name: 'Marcar Open the board como verificado' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('checkbox', { name: 'Marcar Open the board como verificado' }),
+    ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('checkbox', { name: 'Add #arc-1 to QA extension' }));
+    await user.click(screen.getByLabelText('Add #arc-1 to QA extension'));
     expect(onToggleQaExtensionQueue).toHaveBeenCalledWith(
       '11111111-1111-1111-1111-111111111111',
     );
   });
 
-  it('does not show the card checklist on nested subtasks', () => {
+  it('does not add nested subtasks by click in QA extension view', async () => {
+    const onToggleQaExtensionQueue = vi.fn();
+    const user = userEvent.setup();
     render(
       <StatusMoveAnimationProvider>
         <TaskCard
@@ -185,7 +187,7 @@ describe('TaskCard QA queue selection', () => {
           organizationId="org-1"
           projectId="proj-1"
           qaExtensionOpen
-          onToggleQaExtensionQueue={vi.fn()}
+          onToggleQaExtensionQueue={onToggleQaExtensionQueue}
           onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
@@ -193,10 +195,13 @@ describe('TaskCard QA queue selection', () => {
     );
 
     expect(
-      screen.queryByRole('checkbox', { name: 'Add #arc-1 to QA extension' }),
+      screen.queryByLabelText('Add #arc-1 to QA extension'),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('checkbox', { name: 'Marcar Nested step como verificado' }),
     ).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('QA pick card'));
+    expect(onToggleQaExtensionQueue).not.toHaveBeenCalled();
   });
 });
