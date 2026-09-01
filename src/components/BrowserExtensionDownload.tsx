@@ -32,8 +32,9 @@ export function BrowserExtensionDownload() {
       <h3 id="extension-download-heading">Browser extension</h3>
       {version ? <p className="extension-download-version">Version {version}</p> : null}
       <p className="extension-download-lede">
-        Unzip the Chrome/Edge package, then load the folder at chrome://extensions
-        (or edge://extensions): Developer mode → Load unpacked.
+        Unzip the Chrome/Edge package once, then load the folder at chrome://extensions
+        (or edge://extensions): Developer mode → Load unpacked. Later versions: open the
+        side panel and use Atualizar (pick that unzipped folder the first time).
       </p>
       <div className="extension-download-actions">
         <a className="btn btn-primary" href={CHROMIUM_HREF} download>

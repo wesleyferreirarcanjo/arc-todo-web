@@ -34,6 +34,10 @@ describe('BrowserExtensionDownload', () => {
     expect(firefox).toHaveAttribute('download');
 
     expect(
+      screen.getByText(/Atualizar/),
+    ).toHaveTextContent(/pick that unzipped folder the first time/i);
+
+    expect(
       screen.getByText(/about:debugging/i),
     ).toHaveTextContent(
       'No Firefox, abra about:debugging, Este Firefox, Carregar extensão temporária, e escolha o arquivo. A extensão some ao fechar o Firefox até haver uma versão assinada.',
