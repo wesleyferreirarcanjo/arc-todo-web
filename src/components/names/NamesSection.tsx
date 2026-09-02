@@ -31,6 +31,8 @@ export function NamesSection(props: {
   onCheckName: (name?: string) => void;
   onSuggestNames: () => void;
   onGenerateFamilies: () => void;
+  readinessHint: string | null;
+  emptyCopy: string;
   onPreview: (candidateId: string) => void;
   onUpdateCandidate: (candidate: NameCandidate) => void;
   onExplore: (candidate: NameCandidate) => void;
@@ -76,10 +78,18 @@ export function NamesSection(props: {
           type="button"
           className="btn btn-primary"
           disabled={props.busy === 'suggest'}
+          aria-describedby={
+            props.readinessHint ? 'names-suggest-hint' : undefined
+          }
           onClick={() => void props.onSuggestNames()}
         >
           Suggest names
         </button>
+        {props.readinessHint ? (
+          <small id="names-suggest-hint" className="names-suggest-hint">
+            {props.readinessHint}
+          </small>
+        ) : null}
         <button
           type="button"
           className="btn btn-secondary"
@@ -161,9 +171,7 @@ export function NamesSection(props: {
         </div>
       </details>
       {wave.length === 0 ? (
-        <p className="names-empty">
-          Type a name to check it, or Suggest names from the sentence above.
-        </p>
+        <p className="names-empty">{props.emptyCopy}</p>
       ) : (
         <CandidateFunnelTable
           candidates={wave}
@@ -177,7 +185,7 @@ export function NamesSection(props: {
         />
       )}
       {rejectedCount > 0 && (
-        <p className="diagram-card-meta">
+        <p className="names-meta">
           {rejectedCount === 1
             ? '1 rejected name is hidden from this wave.'
             : `${rejectedCount} rejected names are hidden from this wave.`}

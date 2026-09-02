@@ -1,0 +1,186 @@
+/* names-card.css — imported from src/index.css; keep cascade order. */
+.names-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-page);
+  overflow: hidden;
+}
+
+.names-card-verdict {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.names-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.names-card-head .btn-sm {
+  flex-shrink: 0;
+}
+
+.names-card-weakest {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.names-card-formula {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.names-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.85rem;
+}
+
+.names-card-links .names-text-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.names-card-links .names-text-link:hover {
+  text-decoration: underline;
+}
+
+.names-card-group {
+  display: grid;
+  gap: 0.55rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+}
+
+.names-card-group > h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.names-card-judgment {
+  border-style: dashed;
+  padding: 0.65rem 0.7rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-surface) 70%, var(--bg-page));
+}
+
+.names-card-evidence-body,
+.names-card-block {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.names-card-more {
+  border-top: 1px solid var(--border);
+  padding-top: 0.35rem;
+}
+
+.names-card-more > summary {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.names-card-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.names-card-more[open] > summary {
+  margin-bottom: 0.55rem;
+  color: var(--text-primary);
+}
+
+.names-brand-grid,
+.names-extensions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.names-brand-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+.names-kept {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.names-kept h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.names-endings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.names-ending {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.08rem 0.38rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.names-ending.is-unknown {
+  border-style: dashed;
+}
+
+.names-signal-strip .evidence-ledger-row {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.7fr);
+}
+
+.names-signal-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.names-signal-heading .names-brief-label,
+.names-signal-heading .names-disclaimer {
+  flex: 1;
+  margin: 0;
+}
+
+.names-judgment {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.names-recheck-status {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}

@@ -5,6 +5,7 @@
 @import './styles/overlays.css';
 @import './styles/cards.css';
 @import './styles/login-controls.css';
+@import './styles/rating-scale.css';
 @import './styles/board.css';
 @import './styles/knowledge.css';
 @import './styles/markdown-chat.css';
@@ -12,6 +13,9 @@
 @import './styles/qa.css';
 @import './styles/extension.css';
 @import './styles/diagrams.css';
-@import './styles/names.css';
+@import './styles/names-session.css';
+@import './styles/names-funnel.css';
+@import './styles/names-card.css';
+@import './styles/names-feedback.css';
 @import './styles/seo.css';
 @import './styles/analytics.css';

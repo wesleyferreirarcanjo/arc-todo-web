@@ -1,234 +1,334 @@
-import { type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useState } from 'react';
 import {
   closeNameFeedbackRound,
   startNameFeedbackRound,
   upsertNameFeedback,
 } from '../../lib/api/names';
-import type { ProjectNameSession } from '../../types/name-session';
+import type {
+  FeedbackMine,
+  ProjectNameSession,
+} from '../../types/name-session';
+import { RatingScale } from '../RatingScale';
+
+type FeedbackDraft = {
+  firstImpression: string;
+  rememberedSpelling: string;
+  perceivedPurpose: string;
+  easyToSay: number;
+  memorable: number;
+  fitsProduct: number;
+  concern: string;
+};
+
+type StoredFeedback = {
+  pick: string[];
+  drafts: Record<string, FeedbackDraft>;
+  activeId: string | null;
+};
+
+const STORAGE_PREFIX = 'arc-todo-names-feedback:';
+
+function storageKey(sessionId: string) {
+  return `${STORAGE_PREFIX}${sessionId}`;
+}
+
+function emptyDraft(mine?: FeedbackMine): FeedbackDraft {
+  return {
+    firstImpression: mine?.firstImpression ?? '',
+    rememberedSpelling: mine?.rememberedSpelling ?? '',
+    perceivedPurpose: mine?.perceivedPurpose ?? '',
+    easyToSay: mine?.ratings?.easyToSay ?? 3,
+    memorable: mine?.ratings?.memorable ?? 3,
+    fitsProduct: mine?.ratings?.fitsProduct ?? 3,
+    concern: mine?.concern ?? '',
+  };
+}
+
+function readStored(sessionId: string): StoredFeedback {
+  try {
+    const raw = sessionStorage.getItem(storageKey(sessionId));
+    if (!raw) {
+      return { pick: [], drafts: {}, activeId: null };
+    }
+    const parsed = JSON.parse(raw) as StoredFeedback;
+    return {
+      pick: Array.isArray(parsed.pick) ? parsed.pick : [],
+      drafts:
+        parsed.drafts && typeof parsed.drafts === 'object' ? parsed.drafts : {},
+      activeId: typeof parsed.activeId === 'string' ? parsed.activeId : null,
+    };
+  } catch {
+    return { pick: [], drafts: {}, activeId: null };
+  }
+}
+
+function writeStored(sessionId: string, stored: StoredFeedback) {
+  try {
+    sessionStorage.setItem(storageKey(sessionId), JSON.stringify(stored));
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function peopleAnswered(count: number) {
+  return count === 1 ? '1 person answered' : `${count} people answered`;
+}
 
 export function FeedbackSection(props: {
   session: ProjectNameSession;
   orgId: string;
   projectId: string;
   sessionId: string;
-  userId?: string;
-  pick: string[];
-  setPick: (ids: string[]) => void;
-  draft: Record<string, {
-    firstImpression: string;
-    rememberedSpelling: string;
-    perceivedPurpose: string;
-    easyToSay: number;
-    memorable: number;
-    fitsProduct: number;
-    concern: string;
-  }>;
-  setDraft: Dispatch<
-    SetStateAction<
-      Record<
-        string,
-        {
-          firstImpression: string;
-          rememberedSpelling: string;
-          perceivedPurpose: string;
-          easyToSay: number;
-          memorable: number;
-          fitsProduct: number;
-          concern: string;
-        }
-      >
-    >
-  >;
   onSession: (session: ProjectNameSession) => void;
   onNotice: (value: string | null) => void;
 }) {
   const open = props.session.feedback.find((round) => round.status === 'open');
   const closed = props.session.feedback.filter((round) => round.status === 'closed');
+  const orderedIds = open
+    ? open.order.length
+      ? open.order
+      : open.candidateIds
+    : [];
+
+  const [pick, setPick] = useState<string[]>(
+    () => readStored(props.sessionId).pick,
+  );
+  const [drafts, setDrafts] = useState<Record<string, FeedbackDraft>>(
+    () => readStored(props.sessionId).drafts,
+  );
+  const [activeId, setActiveId] = useState<string | null>(
+    () => readStored(props.sessionId).activeId,
+  );
+
+  useEffect(() => {
+    writeStored(props.sessionId, { pick, drafts, activeId });
+  }, [props.sessionId, pick, drafts, activeId]);
+
+  const currentId =
+    activeId && orderedIds.includes(activeId)
+      ? activeId
+      : (orderedIds.find(
+          (id) => !open?.mine.some((row) => row.candidateId === id),
+        ) ??
+        orderedIds[0] ??
+        null);
+  const currentIndex = currentId ? orderedIds.indexOf(currentId) : 0;
+  const currentMine = currentId
+    ? open?.mine.find((row) => row.candidateId === currentId)
+    : undefined;
+  const currentCandidate = currentId
+    ? props.session.candidates.find((item) => item.id === currentId)
+    : undefined;
+  const currentDraft = currentId
+    ? (drafts[currentId] ?? emptyDraft(currentMine))
+    : null;
+  const submitted = Boolean(currentMine);
+
+  function patchDraft(id: string, patch: Partial<FeedbackDraft>) {
+    const mine = open?.mine.find((row) => row.candidateId === id);
+    setDrafts((prev) => ({
+      ...prev,
+      [id]: { ...(prev[id] ?? emptyDraft(mine)), ...patch },
+    }));
+  }
 
   return (
-    <section className="names-panel">
+    <section className="names-panel names-feedback">
       <h3>Feedback round</h3>
       {props.session.canManageFeedback && !open && (
         <>
+          <p className="names-feedback-lead">
+            Start a round so project members who are not doing the naming work
+            can give a first impression of 2 to 5 names.
+          </p>
           <p>Select 2 to 5 names.</p>
-          <div className="names-inline">
-            {props.session.candidates.map((item) => (
-              <label key={item.id}>
-                <input
-                  type="checkbox"
-                  checked={props.pick.includes(item.id)}
-                  onChange={(event) => {
-                    const next = event.target.checked
-                      ? [...props.pick, item.id].slice(0, 5)
-                      : props.pick.filter((id) => id !== item.id);
-                    props.setPick(next);
-                  }}
-                />{' '}
-                {item.name}
-              </label>
-            ))}
-          </div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={async () => {
-              if (props.pick.length < 2) {
-                props.onNotice('Pick at least two names.');
-                return;
-              }
-              const updated = await startNameFeedbackRound(
-                props.orgId,
-                props.projectId,
-                props.sessionId,
-                props.pick,
-              );
-              props.onSession(updated);
-            }}
+          <div
+            className="choice-group names-feedback-pick"
+            role="group"
+            aria-label="Names to include"
           >
-            Start Feedback round
-          </button>
+            {props.session.candidates.map((item) => {
+              const selected = pick.includes(item.id);
+              return (
+                <label
+                  key={item.id}
+                  className={`choice-group-option${selected ? ' is-selected' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={(event) => {
+                      const next = event.target.checked
+                        ? [...pick, item.id].slice(0, 5)
+                        : pick.filter((id) => id !== item.id);
+                      setPick(next);
+                    }}
+                  />
+                  {item.name}
+                </label>
+              );
+            })}
+          </div>
+          <div className="names-inline">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={async () => {
+                if (pick.length < 2) {
+                  props.onNotice('Pick at least two names.');
+                  return;
+                }
+                const updated = await startNameFeedbackRound(
+                  props.orgId,
+                  props.projectId,
+                  props.sessionId,
+                  pick,
+                );
+                props.onSession(updated);
+              }}
+            >
+              Start Feedback round
+            </button>
+            {pick.length < 2 ? (
+              <p className="names-feedback-hint">Pick at least two names.</p>
+            ) : null}
+          </div>
         </>
       )}
-      {open && (
+      {open && currentId && (
         <>
-          {(open.order.length ? open.order : open.candidateIds).map((id) => {
-            const candidate = props.session.candidates.find((item) => item.id === id);
-            const mine = open.mine.find((row) => row.candidateId === id);
-            const draft = props.draft[id] ?? {
-              firstImpression: mine?.firstImpression ?? '',
-              rememberedSpelling: mine?.rememberedSpelling ?? '',
-              perceivedPurpose: mine?.perceivedPurpose ?? '',
-              easyToSay: mine?.ratings?.easyToSay ?? 3,
-              memorable: mine?.ratings?.memorable ?? 3,
-              fitsProduct: mine?.ratings?.fitsProduct ?? 3,
-              concern: mine?.concern ?? '',
-            };
-            return (
-              <article key={id} className="names-card">
-                <h4>{candidate?.name ?? 'Name'}</h4>
-                <label className="form-field">
-                  <span>First impression</span>
-                  <input
-                    value={draft.firstImpression}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, firstImpression: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>What do you think it does?</span>
-                  <input
-                    value={draft.perceivedPurpose}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, perceivedPurpose: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>Spelling you remember</span>
-                  <input
-                    value={draft.rememberedSpelling}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, rememberedSpelling: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>Easy to say/type</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={draft.easyToSay}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, easyToSay: Number(event.target.value) },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>Memorable</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={draft.memorable}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, memorable: Number(event.target.value) },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>Fits the product</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={draft.fitsProduct}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, fitsProduct: Number(event.target.value) },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  <span>Optional concern</span>
-                  <input
-                    value={draft.concern}
-                    onChange={(event) =>
-                      props.setDraft((prev) => ({
-                        ...prev,
-                        [id]: { ...draft, concern: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={async () => {
-                    const updated = await upsertNameFeedback(
-                      props.orgId,
-                      props.projectId,
-                      props.sessionId,
-                      open.id,
-                      {
-                        candidateId: id,
-                        firstImpression: draft.firstImpression,
-                        rememberedSpelling: draft.rememberedSpelling,
-                        perceivedPurpose: draft.perceivedPurpose,
-                        ratings: {
-                          easyToSay: draft.easyToSay,
-                          memorable: draft.memorable,
-                          fitsProduct: draft.fitsProduct,
-                        },
-                        concern: draft.concern,
+          <p className="names-feedback-lead">
+            This round asks people who are not doing the naming work for a first
+            impression. There are {orderedIds.length} names. Answer one at a
+            time.
+          </p>
+          <div className="names-feedback-stepper">
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={currentIndex <= 0}
+              onClick={() => setActiveId(orderedIds[currentIndex - 1] ?? null)}
+            >
+              Previous name
+            </button>
+            <span className="names-feedback-step">
+              Name {currentIndex + 1} of {orderedIds.length}
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={currentIndex >= orderedIds.length - 1}
+              onClick={() => setActiveId(orderedIds[currentIndex + 1] ?? null)}
+            >
+              Next name
+            </button>
+          </div>
+          {currentDraft && currentId ? (
+            <article
+              className="names-card"
+              aria-labelledby={`feedback-${currentId}`}
+            >
+              <h4 id={`feedback-${currentId}`}>
+                {currentCandidate?.name ?? 'Name'}
+              </h4>
+              {submitted ? (
+                <p className="names-feedback-status" role="status">
+                  Response saved. You can send it again if you change your
+                  answers.
+                </p>
+              ) : null}
+              <label className="form-field">
+                <span>First impression</span>
+                <input
+                  value={currentDraft.firstImpression}
+                  onChange={(event) =>
+                    patchDraft(currentId, {
+                      firstImpression: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label className="form-field">
+                <span>What do you think it does?</span>
+                <input
+                  value={currentDraft.perceivedPurpose}
+                  onChange={(event) =>
+                    patchDraft(currentId, {
+                      perceivedPurpose: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label className="form-field">
+                <span>Spelling you remember</span>
+                <input
+                  value={currentDraft.rememberedSpelling}
+                  onChange={(event) =>
+                    patchDraft(currentId, {
+                      rememberedSpelling: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <RatingScale
+                label="Easy to say/type"
+                value={currentDraft.easyToSay}
+                onChange={(value) =>
+                  patchDraft(currentId, { easyToSay: value })
+                }
+              />
+              <RatingScale
+                label="Memorable"
+                value={currentDraft.memorable}
+                onChange={(value) =>
+                  patchDraft(currentId, { memorable: value })
+                }
+              />
+              <RatingScale
+                label="Fits the product"
+                value={currentDraft.fitsProduct}
+                onChange={(value) =>
+                  patchDraft(currentId, { fitsProduct: value })
+                }
+              />
+              <label className="form-field">
+                <span>Optional concern</span>
+                <input
+                  value={currentDraft.concern}
+                  onChange={(event) =>
+                    patchDraft(currentId, { concern: event.target.value })
+                  }
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  const updated = await upsertNameFeedback(
+                    props.orgId,
+                    props.projectId,
+                    props.sessionId,
+                    open.id,
+                    {
+                      candidateId: currentId,
+                      firstImpression: currentDraft.firstImpression,
+                      rememberedSpelling: currentDraft.rememberedSpelling,
+                      perceivedPurpose: currentDraft.perceivedPurpose,
+                      ratings: {
+                        easyToSay: currentDraft.easyToSay,
+                        memorable: currentDraft.memorable,
+                        fitsProduct: currentDraft.fitsProduct,
                       },
-                    );
-                    props.onSession(updated);
-                  }}
-                >
-                  Save response
-                </button>
-              </article>
-            );
-          })}
+                      concern: currentDraft.concern,
+                    },
+                  );
+                  props.onSession(updated);
+                }}
+              >
+                {submitted ? 'Update response' : 'Save response'}
+              </button>
+            </article>
+          ) : null}
           {props.session.canManageFeedback && (
             <button
               type="button"
@@ -248,21 +348,70 @@ export function FeedbackSection(props: {
           )}
         </>
       )}
-      {closed.map((round) => (
-        <div key={round.id}>
-          <h4>Results</h4>
-          <p>Participants: {round.aggregate?.participantCount ?? 0}</p>
-          {Object.entries(round.aggregate?.byCandidate ?? {}).map(([id, agg]) => {
-            const candidate = props.session.candidates.find((item) => item.id === id);
-            return (
-              <p key={id}>
-                {candidate?.name}: easy {agg.easyToSay ?? '—'}, memorable {agg.memorable ?? '—'},
-                fit {agg.fitsProduct ?? '—'}; concerns: {agg.repeatedConcerns.join(', ') || 'none'}
-              </p>
-            );
-          })}
-        </div>
-      ))}
+      {closed.map((round) => {
+        const byCandidate = round.aggregate?.byCandidate ?? {};
+        const resultIds = (round.order.length
+          ? round.order
+          : round.candidateIds
+        ).filter((id) => byCandidate[id]);
+        for (const id of Object.keys(byCandidate)) {
+          if (!resultIds.includes(id)) {
+            resultIds.push(id);
+          }
+        }
+        return (
+          <div key={round.id} className="names-feedback-results">
+            <h4>Results</h4>
+            {resultIds.map((id) => {
+              const agg = byCandidate[id];
+              if (!agg) {
+                return null;
+              }
+              const candidate = props.session.candidates.find(
+                (item) => item.id === id,
+              );
+              return (
+                <article
+                  key={id}
+                  className="names-card names-feedback-result"
+                  aria-labelledby={`feedback-result-${id}`}
+                >
+                  <h5 id={`feedback-result-${id}`}>
+                    {candidate?.name ?? 'Name'}
+                  </h5>
+                  <p className="names-feedback-count">
+                    {peopleAnswered(round.aggregate?.participantCount ?? 0)}
+                  </p>
+                  <dl className="names-feedback-averages">
+                    <div>
+                      <dt>Easy to say/type</dt>
+                      <dd>{agg.easyToSay ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Memorable</dt>
+                      <dd>{agg.memorable ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Fits the product</dt>
+                      <dd>{agg.fitsProduct ?? '—'}</dd>
+                    </div>
+                  </dl>
+                  <h6>Repeated concerns</h6>
+                  {agg.repeatedConcerns.length === 0 ? (
+                    <p className="names-feedback-none">None</p>
+                  ) : (
+                    <ul className="names-feedback-concerns">
+                      {agg.repeatedConcerns.map((concern) => (
+                        <li key={concern}>{concern}</li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        );
+      })}
     </section>
   );
 }

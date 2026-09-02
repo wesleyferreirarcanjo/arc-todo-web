@@ -1,0 +1,90 @@
+/* rating-scale.css — imported from src/index.css; keep cascade order. */
+.rating-scale {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.rating-scale-label {
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  font-weight: 600;
+}
+
+.rating-scale-description {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  font-weight: 500;
+}
+
+.rating-scale-group {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.2rem;
+  padding: 0.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg-page);
+}
+
+.rating-scale-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-height-sm);
+  margin: 0;
+  padding: 0.2rem;
+  border-radius: var(--radius-control-alt);
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.rating-scale-option input {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.rating-scale-value {
+  pointer-events: none;
+}
+
+.rating-scale-option.is-filled {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.rating-scale-option.is-selected {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  font-weight: 700;
+}
+
+.rating-scale-option:has(:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (hover: none) {
+  .rating-scale-option {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating-scale-option {
+    transition: none;
+  }
+}

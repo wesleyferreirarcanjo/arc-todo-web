@@ -24,7 +24,11 @@ export type FunnelRow = {
   candidate: NameCandidate;
   pillars: CandidatePillarScore;
   status: FunnelStatus;
-  weakest: { key: Exclude<FunnelSortKey, 'name' | 'total'>; label: string };
+  weakest: {
+    key: Exclude<FunnelSortKey, 'name' | 'total'>;
+    label: string;
+    reason: string;
+  };
 };
 
 const PILLAR_KEYS = ['domain', 'organic', 'spoken', 'taste'] as const;
@@ -78,12 +82,24 @@ export function weakestSignal(pillars: CandidatePillarScore): FunnelRow['weakest
   }));
   const unknown = entries.find((item) => item.unresolved);
   if (unknown) {
-    return { key: unknown.key, label: `${titleCase(unknown.key)} Unknown` };
+    return {
+      key: unknown.key,
+      label: `${titleCase(unknown.key)} Unknown`,
+      reason: pillarReason(pillars[unknown.key]),
+    };
   }
   const lowest = entries.reduce((best, item) =>
     item.value < best.value ? item : best,
   );
-  return { key: lowest.key, label: `${titleCase(lowest.key)} ${lowest.value}` };
+  return {
+    key: lowest.key,
+    label: `${titleCase(lowest.key)} ${lowest.value}`,
+    reason: pillarReason(pillars[lowest.key]),
+  };
+}
+
+function pillarReason(pillar: ScorePillar): string {
+  return pillar.notes[0] ?? (pillar.unresolved ? 'unresolved (not a pass)' : '');
 }
 
 export function buildFunnelRow(

@@ -1,0 +1,220 @@
+/* names-funnel.css — imported from src/index.css; keep cascade order. */
+.names-funnel .is-unresolved {
+  color: var(--text-muted);
+  font-style: normal;
+  border-style: dashed;
+}
+
+.names-funnel-wrap {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.names-funnel-wrap:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.names-funnel-progress,
+.names-funnel-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.names-funnel {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  font-size: 0.8rem;
+}
+
+.names-funnel th,
+.names-funnel td {
+  padding: 0.4rem 0.35rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.names-funnel thead th {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.names-funnel thead button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.names-funnel-colhead {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.names-funnel-col-info {
+  display: inline-flex;
+}
+
+.names-funnel .analytics-metric-info {
+  margin-left: 0;
+}
+
+.names-funnel .analytics-metric-info-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.names-funnel-formula {
+  margin: 0 0 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.names-funnel-detail td {
+  padding-top: 0.55rem;
+  padding-bottom: 0.65rem;
+  vertical-align: top;
+}
+
+.names-funnel tbody tr.is-selected {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-page));
+}
+
+.names-funnel tbody tr.is-checking {
+  opacity: 0.82;
+}
+
+.names-funnel-name {
+  display: block;
+  font-weight: 700;
+}
+
+.names-funnel-weak,
+.names-funnel-label {
+  display: none;
+}
+
+.names-funnel-actions {
+  white-space: nowrap;
+}
+
+.names-funnel-actions .btn-sm {
+  margin-top: 0;
+}
+
+.names-funnel-actions .btn-sm + .btn-sm {
+  margin-left: 0.3rem;
+}
+@media (max-width: 640px) {
+  .names-funnel thead {
+    display: none;
+  }
+
+  .names-funnel,
+  .names-funnel tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .names-funnel tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    width: 100%;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .names-funnel th,
+  .names-funnel td {
+    padding: 0;
+    border: 0;
+    width: auto;
+  }
+
+  .names-funnel tbody th {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .names-funnel-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .names-funnel-total {
+    flex: 0 0 auto;
+    font-weight: 700;
+  }
+
+  .names-funnel-actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .names-funnel-signal,
+  .names-funnel-status {
+    display: none;
+  }
+
+  .names-funnel-weak {
+    display: inline-block;
+    flex: 0 1 auto;
+    max-width: 9.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .names-funnel tbody tr.is-expanded .names-funnel-signal {
+    display: flex;
+    flex: 1 1 100%;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .names-funnel tbody tr.is-expanded .names-funnel-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-weight: 600;
+  }
+
+  .names-funnel tbody tr.names-funnel-detail {
+    display: block;
+    width: 100%;
+  }
+
+  .names-funnel-detail td {
+    display: block;
+    width: 100%;
+  }
+}

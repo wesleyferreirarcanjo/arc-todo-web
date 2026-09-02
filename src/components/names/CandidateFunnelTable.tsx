@@ -1,13 +1,18 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { Fragment, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import type { EvidenceLedgerRow } from '../EvidenceLedger';
+import { EvidenceLedger } from '../EvidenceLedger';
+import { AnalyticsMetricInfo } from '../analytics/AnalyticsMetricInfo';
 import { normalizeNameKey } from '../../lib/names/catalog';
 import {
   buildFunnelRow,
   pillarCell,
   sortFunnelRows,
   spokenCell,
+  type FunnelRow,
   type FunnelSortDir,
   type FunnelSortKey,
 } from '../../lib/names/funnel';
+import { SIGNAL_COPY } from '../../lib/names/signalCopy';
 import type { NameCandidate } from '../../types/name-session';
 
 const SORT_LABELS: Record<FunnelSortKey, string> = {
@@ -18,6 +23,63 @@ const SORT_LABELS: Record<FunnelSortKey, string> = {
   taste: 'Taste',
   total: 'Total',
 };
+
+const COLUMN_INFO_KEYS = ['domain', 'organic', 'spoken', 'taste', 'total'] as const;
+type ColumnInfoKey = (typeof COLUMN_INFO_KEYS)[number];
+
+function isColumnInfoKey(key: FunnelSortKey): key is ColumnInfoKey {
+  return key !== 'name';
+}
+
+function stopInfoKeys(event: KeyboardEvent<HTMLElement>) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.stopPropagation();
+  }
+}
+
+function stopInfoClick(event: MouseEvent<HTMLElement>) {
+  event.stopPropagation();
+}
+
+function ColumnInfo({ id }: { id: ColumnInfoKey }) {
+  const copy = SIGNAL_COPY[id];
+  return (
+    <span
+      className="names-funnel-col-info"
+      onClick={stopInfoClick}
+      onKeyDown={stopInfoKeys}
+    >
+      <AnalyticsMetricInfo label={copy.name}>
+        <p>{copy.source}</p>
+        <p>{copy.howToRead}</p>
+        <p>{copy.honestLimit}</p>
+        <p>{copy.rules.join(' · ')}</p>
+      </AnalyticsMetricInfo>
+    </span>
+  );
+}
+
+function expandedLedgerRows(row: FunnelRow): EvidenceLedgerRow[] {
+  return (['domain', 'organic', 'spoken', 'taste'] as const).flatMap((key) => {
+    const pillar = row.pillars[key];
+    const copy = SIGNAL_COPY[key];
+    return pillar.notes.map((note) => ({
+      claim: copy.name,
+      source: copy.source,
+      confidence: note,
+      unknown: pillar.unresolved,
+    }));
+  });
+}
+
+function UnresolvedCue() {
+  return (
+    <>
+      <span className="names-unknown-mark" aria-hidden="true" />
+      <span className="sr-only">Unresolved</span>
+    </>
+  );
+}
 
 export function CandidateFunnelTable(props: {
   candidates: NameCandidate[];
@@ -77,6 +139,7 @@ export function CandidateFunnelTable(props: {
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement | null;
     if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+    if (target?.closest('.analytics-metric-info-pop')) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       moveFocus(1);
@@ -139,9 +202,12 @@ export function CandidateFunnelTable(props: {
                   key === 'name' ? undefined : 'names-funnel-signal'
                 }
               >
-                <button type="button" onClick={() => toggleSort(key)}>
-                  {SORT_LABELS[key]}
-                </button>
+                <span className="names-funnel-colhead">
+                  <button type="button" onClick={() => toggleSort(key)}>
+                    {SORT_LABELS[key]}
+                  </button>
+                  {isColumnInfoKey(key) ? <ColumnInfo id={key} /> : null}
+                </span>
               </th>
             ))}
             <th scope="col">Status</th>
@@ -158,83 +224,116 @@ export function CandidateFunnelTable(props: {
             const blind = props.isBlind(candidate.id);
             const kept = props.shortlistIds.includes(candidate.id);
             return (
-              <tr
-                key={candidate.id}
-                className={[
-                  selected ? 'is-selected' : '',
-                  expanded ? 'is-expanded' : '',
-                  status === 'Checking' ? 'is-checking' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => {
-                  setFocusedId(candidate.id);
-                  setExpandedId((prev) =>
-                    prev === candidate.id ? null : candidate.id,
-                  );
-                }}
-              >
-                <th scope="row">
-                  <span className="names-funnel-name">{candidate.name}</span>
-                  <span className="names-funnel-weak">{weakest.label}</span>
-                </th>
-                <td
-                  className={`names-funnel-signal ${pillars.domain.unresolved ? 'is-unresolved' : ''}`}
-                  data-unresolved={pillars.domain.unresolved ? 'true' : 'false'}
+              <Fragment key={candidate.id}>
+                <tr
+                  className={[
+                    selected ? 'is-selected' : '',
+                    expanded ? 'is-expanded' : '',
+                    status === 'Checking' ? 'is-checking' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => {
+                    setFocusedId(candidate.id);
+                    setExpandedId((prev) =>
+                      prev === candidate.id ? null : candidate.id,
+                    );
+                  }}
                 >
-                  <span className="names-funnel-label">Domain</span>
-                  {pillarCell(pillars.domain)}
-                </td>
-                <td
-                  className={`names-funnel-signal ${pillars.organic.unresolved ? 'is-unresolved' : ''}`}
-                  data-unresolved={pillars.organic.unresolved ? 'true' : 'false'}
-                >
-                  <span className="names-funnel-label">Organic</span>
-                  {pillarCell(pillars.organic)}
-                </td>
-                <td className="names-funnel-signal">
-                  <span className="names-funnel-label">Spoken</span>
-                  {spokenCell(pillars)}
-                </td>
-                <td className="names-funnel-signal">
-                  <span className="names-funnel-label">Taste</span>
-                  {pillarCell(pillars.taste)}
-                </td>
-                <td className="names-funnel-total">
-                  <span className="names-funnel-label">Total</span>
-                  {pillars.total}
-                </td>
-                <td className="names-funnel-status">{status}</td>
-                <td className="names-funnel-actions">
-                  {blind ? (
-                    <span>Answer in Feedback first.</span>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        aria-pressed={kept}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          props.onKeep(candidate.id);
-                        }}
-                      >
-                        Keep
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          props.onReject(candidate.id);
-                        }}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
+                  <th scope="row">
+                    <span className="names-funnel-name">{candidate.name}</span>
+                    <span className="names-funnel-weak">
+                      {weakest.reason
+                        ? `${weakest.label} · ${weakest.reason}`
+                        : weakest.label}
+                    </span>
+                  </th>
+                  <td
+                    className={`names-funnel-signal ${pillars.domain.unresolved ? 'is-unresolved' : ''}`}
+                    data-unresolved={pillars.domain.unresolved ? 'true' : 'false'}
+                  >
+                    <span className="names-funnel-label">
+                      Domain
+                      <ColumnInfo id="domain" />
+                    </span>
+                    {pillars.domain.unresolved ? <UnresolvedCue /> : null}
+                    {pillarCell(pillars.domain)}
+                  </td>
+                  <td
+                    className={`names-funnel-signal ${pillars.organic.unresolved ? 'is-unresolved' : ''}`}
+                    data-unresolved={pillars.organic.unresolved ? 'true' : 'false'}
+                  >
+                    <span className="names-funnel-label">
+                      Organic
+                      <ColumnInfo id="organic" />
+                    </span>
+                    {pillars.organic.unresolved ? <UnresolvedCue /> : null}
+                    {pillarCell(pillars.organic)}
+                  </td>
+                  <td className="names-funnel-signal">
+                    <span className="names-funnel-label">
+                      Spoken
+                      <ColumnInfo id="spoken" />
+                    </span>
+                    {spokenCell(pillars)}
+                  </td>
+                  <td className="names-funnel-signal">
+                    <span className="names-funnel-label">
+                      Taste
+                      <ColumnInfo id="taste" />
+                    </span>
+                    {pillarCell(pillars.taste)}
+                  </td>
+                  <td className="names-funnel-total">
+                    <span className="names-funnel-label">
+                      Total
+                      <ColumnInfo id="total" />
+                    </span>
+                    {pillars.total}
+                  </td>
+                  <td className="names-funnel-status">{status}</td>
+                  <td className="names-funnel-actions">
+                    {blind ? (
+                      <span>Answer in Feedback first.</span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          aria-pressed={kept}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            props.onKeep(candidate.id);
+                          }}
+                        >
+                          Keep
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            props.onReject(candidate.id);
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+                {expanded ? (
+                  <tr className="names-funnel-detail">
+                    <td colSpan={8}>
+                      <p className="names-funnel-formula">{pillars.formula}</p>
+                      <EvidenceLedger
+                        caption={`${weakest.label} · ${weakest.reason}`}
+                        rows={expandedLedgerRows(row)}
+                      />
+                    </td>
+                  </tr>
+                ) : null}
+              </Fragment>
             );
           })}
         </tbody>

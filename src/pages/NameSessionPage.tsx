@@ -1,5 +1,8 @@
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { InfoPopover } from '../components/InfoPopover';
 import { CompareSection } from '../components/names/CompareSection';
+import { DecisionRail } from '../components/names/DecisionRail';
 import { DetailsSection } from '../components/names/DetailsSection';
 import { FeedbackSection } from '../components/names/FeedbackSection';
 import { MessagingSection } from '../components/names/MessagingSection';
@@ -8,7 +11,6 @@ import { PreviewSection } from '../components/names/PreviewSection';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import { ChatApiError, sendChatMessage } from '../lib/api/chat';
@@ -76,13 +78,32 @@ const SECTION_LABELS: Record<(typeof SECTIONS)[number], string> = {
   details: 'Details',
 };
 
+const PRODUCT_SENTENCE_EXAMPLE = 'A private task board for a small team.';
+const PRODUCT_SENTENCE_HELP =
+  'Example: A private task board for a small team. Suggest names reads this sentence.';
+const SUGGEST_READINESS_HINT =
+  'Suggest names needs this sentence first. You can still check a name.';
+const SUGGEST_REQUIRED_NOTICE =
+  'Add one sentence about what it does, then Suggest names. You can still check a name.';
+const NAMES_EMPTY_COPY =
+  'Suggest names will offer about twelve names, with checks streaming in. Keep or Reject each row. You can also type a name to check it.';
+const PREVIEW_EMPTY_COPY =
+  'Check a name on Names, then preview it here.';
+const COMPARE_EMPTY_COPY =
+  'Keep a name on Names, then compare it here.';
+const FEEDBACK_EMPTY_COPY =
+  'Keep at least two names on Names, then start a round here.';
+const BRIEF_SAVED_MS = 2000;
+
 export function NameSessionPage() {
   const { orgId, projectId, sessionId } = useParams();
   const { currentProject } = useWorkspace();
-  const { user } = useAuth();
   const [session, setSession] = useState<ProjectNameSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
+  const [briefSaved, setBriefSaved] = useState(false);
+  const briefSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [section, setSection] = useState<(typeof SECTIONS)[number]>('names');
   const productFieldRef = useRef<HTMLTextAreaElement>(null);
@@ -106,16 +127,8 @@ export function NameSessionPage() {
   const [previewDark, setPreviewDark] = useState(false);
   const [previewCandidateId, setPreviewCandidateId] = useState<string | null>(null);
   const [customExtension, setCustomExtension] = useState('Studio');
-  const [feedbackPick, setFeedbackPick] = useState<string[]>([]);
-  const [draft, setDraft] = useState<Record<string, {
-    firstImpression: string;
-    rememberedSpelling: string;
-    perceivedPurpose: string;
-    easyToSay: number;
-    memorable: number;
-    fitsProduct: number;
-    concern: string;
-  }>>({});
+  const [exploreTarget, setExploreTarget] = useState<NameCandidate | null>(null);
+  const [exploreBusy, setExploreBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!orgId || !projectId || !sessionId) return;
@@ -141,6 +154,12 @@ export function NameSessionPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    return () => {
+      if (briefSavedTimerRef.current) clearTimeout(briefSavedTimerRef.current);
+    };
+  }, []);
 
   const desc: ProductDescription = session?.productDescription ?? {};
   const activeLane = session?.lanes?.[session.lanes.length - 1] ?? null;
@@ -169,11 +188,22 @@ export function NameSessionPage() {
     if (!session) return false;
     setBusy('canvas');
     setNotice(null);
+    setBriefSaved(false);
     try {
       await patch({ productDescription: desc, brief: session.brief });
+      setError(null);
+      setErrorCode(undefined);
+      setBriefSaved(true);
+      if (briefSavedTimerRef.current) clearTimeout(briefSavedTimerRef.current);
+      briefSavedTimerRef.current = setTimeout(() => {
+        setBriefSaved(false);
+        briefSavedTimerRef.current = null;
+      }, BRIEF_SAVED_MS);
       return true;
     } catch (err) {
+      setBriefSaved(false);
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the description' }));
+      setErrorCode(WEB_ERROR.SAVE);
       return false;
     } finally {
       setBusy(null);
@@ -344,7 +374,7 @@ export function NameSessionPage() {
 
   async function requireProductThen(action: () => Promise<void>) {
     if (!canvasHasProduct(desc)) {
-      setNotice('Add one sentence about what it does, then Suggest names. You can still check a name.');
+      setNotice(SUGGEST_REQUIRED_NOTICE);
       productFieldRef.current?.focus();
       return;
     }
@@ -492,52 +522,73 @@ export function NameSessionPage() {
     await patch({ lanes: [...(session.lanes ?? []), lane] });
   }
 
-  async function handleExplore(candidate: NameCandidate) {
-    if (!orgId || !projectId || !sessionId) return;
-    const variants = exploreVariations(candidate.name);
-    if (!variants.length) return;
-    const accepted = window.confirm(
-      `Add variation "${variants[0]}" from ${candidate.name}? Checks start empty.`,
-    );
-    if (!accepted) return;
-    await addNameCandidates(
-      orgId,
-      projectId,
-      sessionId,
-      [
-        {
-          name: variants[0],
-          family: candidate.family ?? undefined,
-          laneId: candidate.laneId ?? undefined,
-          rationale: `Variation of ${candidate.name}`,
-        },
-      ],
-      'human',
-    );
-    const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-    const next = latest.candidates.map((item) =>
-      normalizeNameKey(item.name) === normalizeNameKey(variants[0])
-        ? {
-            ...item,
-            derivedFromCandidateId: candidate.id,
-            domainChecks: [],
-            brandChecks: [],
-            domainHistory: [],
-            organicCompetition: null,
-            handleChecks: [],
-            googleQueryUrl: googleQueryUrl(item.name),
-          }
-        : item,
-    );
-    await updateProjectNameSession(orgId, projectId, sessionId, {
-      candidates: next,
-    }).then(setSession);
+  function requestExplore(candidate: NameCandidate) {
+    if (!exploreVariations(candidate.name).length) return;
+    setExploreTarget(candidate);
   }
 
+  async function confirmExplore() {
+    if (!orgId || !projectId || !sessionId || !exploreTarget) return;
+    const variants = exploreVariations(exploreTarget.name);
+    if (!variants.length) {
+      setExploreTarget(null);
+      return;
+    }
+    setExploreBusy(true);
+    try {
+      await addNameCandidates(
+        orgId,
+        projectId,
+        sessionId,
+        [
+          {
+            name: variants[0],
+            family: exploreTarget.family ?? undefined,
+            laneId: exploreTarget.laneId ?? undefined,
+            rationale: `Variation of ${exploreTarget.name}`,
+          },
+        ],
+        'human',
+      );
+      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+      const next = latest.candidates.map((item) =>
+        normalizeNameKey(item.name) === normalizeNameKey(variants[0])
+          ? {
+              ...item,
+              derivedFromCandidateId: exploreTarget.id,
+              domainChecks: [],
+              brandChecks: [],
+              domainHistory: [],
+              organicCompetition: null,
+              handleChecks: [],
+              googleQueryUrl: googleQueryUrl(item.name),
+            }
+          : item,
+      );
+      await updateProjectNameSession(orgId, projectId, sessionId, {
+        candidates: next,
+      }).then(setSession);
+      setExploreTarget(null);
+    } finally {
+      setExploreBusy(false);
+    }
+  }
+
+  const checkedCandidates =
+    session?.candidates.filter((item) => (item.domainChecks?.length ?? 0) > 0) ??
+    [];
   const previewCandidate =
     session?.candidates.find((item) => item.id === previewCandidateId) ??
-    session?.candidates[0] ??
+    checkedCandidates[0] ??
     null;
+  const exploreVariants = exploreTarget
+    ? exploreVariations(exploreTarget.name)
+    : [];
+  const keptCount = session?.shortlistIds.length ?? 0;
+  const feedbackReady =
+    (session?.feedback.length ?? 0) > 0 ||
+    (session?.candidates.filter((item) => item.status !== 'rejected').length ?? 0) >=
+      2;
 
   if (!orgId || !projectId || !sessionId) {
     return <Navigate to="/names" replace />;
@@ -580,7 +631,7 @@ export function NameSessionPage() {
         </div>
       </header>
       {loading && <p className="status-message">Loading session...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
       {notice && <div className="alert">{notice}</div>}
       {session && (
         <>
@@ -588,18 +639,25 @@ export function NameSessionPage() {
             <div className="names-quick-brief-row">
               <label className="form-field">
                 <span>What does it do?</span>
+                <small className="names-brief-example">{PRODUCT_SENTENCE_HELP}</small>
                 <textarea
                   ref={productFieldRef}
                   rows={2}
                   value={desc.whatItIs ?? ''}
-                  placeholder="A private task board for a small team."
+                  placeholder={PRODUCT_SENTENCE_EXAMPLE}
                   onChange={(event) => setDesc('whatItIs', event.target.value)}
                   onBlur={() => void saveBrief()}
                 />
               </label>
-              <label className="form-field">
-                <span>Kind of name</span>
+              <div className="form-field">
+                <span className="names-brief-label-row">
+                  <label htmlFor="names-kind-of-name">Kind of name</label>
+                  <InfoPopover label="Kind of name">
+                    <p>{profile.hint}</p>
+                  </InfoPopover>
+                </span>
                 <select
+                  id="names-kind-of-name"
                   value={
                     (session.namingGoal as NamingGoal) || DEFAULT_NAMING_GOAL
                   }
@@ -613,7 +671,7 @@ export function NameSessionPage() {
                     </option>
                   ))}
                 </select>
-              </label>
+              </div>
             </div>
             {session.namingGoal === 'internal_codename' && (
               <div className="names-brief-codename">
@@ -647,13 +705,18 @@ export function NameSessionPage() {
               >
                 Add more details
               </button>
-              {!canvasHasProduct(desc) && (
-                <small>Needed for Suggest names. Checking a name does not require it.</small>
+              {briefSaved && (
+                <span className="names-brief-saved" role="status">
+                  Saved
+                </span>
               )}
             </div>
           </section>
 
-          <nav className="names-stepper" aria-label="Session sections">
+          <div className="names-desk">
+            <DecisionRail session={session} />
+            <div className="names-desk-main">
+          <nav className="names-desk-tabs" aria-label="Session context">
             {SECTIONS.map((id) => (
               <button
                 key={id}
@@ -691,12 +754,16 @@ export function NameSessionPage() {
               onCheckName={(name) => void handleCheckName(name)}
               onSuggestNames={() => void handleSuggestNames()}
               onGenerateFamilies={() => void handleGenerateFamilies()}
+              readinessHint={
+                canvasHasProduct(desc) ? null : SUGGEST_READINESS_HINT
+              }
+              emptyCopy={NAMES_EMPTY_COPY}
               onPreview={(candidateId) => {
                 setPreviewCandidateId(candidateId);
                 setSection('preview');
               }}
               onUpdateCandidate={(next) => void updateCandidate(next.id, () => next)}
-              onExplore={(candidate) => void handleExplore(candidate)}
+              onExplore={(candidate) => void requestExplore(candidate)}
               onKeep={(id) => void handleKeep(id)}
               onReject={(id) => void handleReject(id)}
               onBusy={setBusy}
@@ -710,6 +777,7 @@ export function NameSessionPage() {
               wide={previewWide}
               dark={previewDark}
               customExtension={customExtension}
+              productDescription={desc}
               onWide={setPreviewWide}
               onDark={setPreviewDark}
               onCustom={setCustomExtension}
@@ -717,7 +785,7 @@ export function NameSessionPage() {
             />
           )}
           {section === 'preview' && !previewCandidate && (
-            <p className="names-empty">Check a name first, then preview it here.</p>
+            <p className="names-empty">{PREVIEW_EMPTY_COPY}</p>
           )}
 
           {section === 'messaging' && (
@@ -730,7 +798,7 @@ export function NameSessionPage() {
             />
           )}
 
-          {section === 'compare' && (
+          {section === 'compare' && keptCount > 0 && (
             <CompareSection
               session={session}
               orgId={orgId}
@@ -740,21 +808,22 @@ export function NameSessionPage() {
               onNotice={setNotice}
             />
           )}
+          {section === 'compare' && keptCount === 0 && (
+            <p className="names-empty">{COMPARE_EMPTY_COPY}</p>
+          )}
 
-          {section === 'feedback' && (
+          {section === 'feedback' && feedbackReady && (
             <FeedbackSection
               session={session}
               orgId={orgId}
               projectId={projectId}
               sessionId={sessionId}
-              userId={user?.id}
-              pick={feedbackPick}
-              setPick={setFeedbackPick}
-              draft={draft}
-              setDraft={setDraft}
               onSession={setSession}
               onNotice={setNotice}
             />
+          )}
+          {section === 'feedback' && !feedbackReady && (
+            <p className="names-empty">{FEEDBACK_EMPTY_COPY}</p>
           )}
 
           {section === 'details' && (
@@ -773,8 +842,21 @@ export function NameSessionPage() {
               onStartLane={() => void startLane()}
             />
           )}
+            </div>
+          </div>
         </>
       )}
+      <ConfirmDialog
+        open={Boolean(exploreTarget) && exploreVariants.length > 0}
+        title="Explore variations"
+        description={`Add variation "${exploreVariants[0] ?? ''}" from ${exploreTarget?.name ?? 'this name'}? Checks start empty.`}
+        confirmLabel="Add variation"
+        loading={exploreBusy}
+        onConfirm={() => void confirmExplore()}
+        onCancel={() => {
+          if (!exploreBusy) setExploreTarget(null);
+        }}
+      />
     </div>
   );
 }

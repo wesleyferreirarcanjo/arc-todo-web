@@ -1,0 +1,81 @@
+/* names-feedback.css — imported from src/index.css; keep cascade order. */
+.names-feedback {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.names-feedback-lead,
+.names-feedback-hint,
+.names-feedback-none,
+.names-feedback-count {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 42rem;
+}
+
+.names-feedback-hint {
+  font-size: 0.8rem;
+}
+
+.names-feedback-pick {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.names-feedback-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.names-feedback-step,
+.names-feedback-status {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.names-feedback-results {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.names-feedback-result h5,
+.names-feedback-result h6 {
+  margin: 0;
+}
+
+.names-feedback-averages {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.names-feedback-averages > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.names-feedback-averages dt {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.names-feedback-averages dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.names-feedback-concerns {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+@media (hover: none) {
+  .names-feedback-stepper .btn-sm {
+    min-height: 2.75rem;
+  }
+}

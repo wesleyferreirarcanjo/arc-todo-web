@@ -50,7 +50,11 @@ describe('funnel rows', () => {
       resolving: false,
     });
     expect(row.pillars.domain.unresolved).toBe(true);
-    expect(row.weakest).toEqual({ key: 'domain', label: 'Domain Unknown' });
+    expect(row.weakest).toEqual({
+      key: 'domain',
+      label: 'Domain Unknown',
+      reason: 'unresolved domain (contributes 0; not a pass)',
+    });
   });
 
   it('shows Portuguese and English separately in the spoken cell', () => {
