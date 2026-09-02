@@ -14,6 +14,12 @@ export type NamingGoal =
   | 'campaign';
 export type BrandResult = 'clear' | 'collision' | 'unknown';
 export type HistoryStatus = 'history_found' | 'no_history_found' | 'unknown';
+export type IncumbencyGrade =
+  | 'dormant'
+  | 'lightly_active'
+  | 'clearly_active'
+  | 'unknown';
+export type ParkingSignal = 'parked' | 'content' | 'unknown';
 
 export interface ProductDescription {
   whatItIs?: string;
@@ -119,6 +125,12 @@ export interface CandidateRatings {
   memorable?: number;
 }
 
+export interface ComIncumbency {
+  grade: IncumbencyGrade;
+  parking: ParkingSignal;
+  gradedAt: string;
+}
+
 export interface NameCandidate {
   id: string;
   name: string;
@@ -134,6 +146,8 @@ export interface NameCandidate {
   googleQueryUrl: string;
   brandChecks?: BrandCheck[];
   domainHistory?: DomainHistory[];
+  takenEndingCount?: number;
+  comIncumbency?: ComIncumbency | null;
   visualConcerns?: VisualConcerns;
   messaging?: NameMessaging;
   languageChecks?: LanguageChecks;

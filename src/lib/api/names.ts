@@ -88,6 +88,18 @@ export function checkNameCandidate(
   );
 }
 
+export function checkNameCandidatesBatch(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  names: string[],
+): Promise<{ candidates: NameCandidate[] }> {
+  return apiRequest<{ candidates: NameCandidate[] }>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/check-batch`,
+    { method: 'POST', body: { names } },
+  );
+}
+
 export function checkNameHistory(
   orgId: string,
   projectId: string,
