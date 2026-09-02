@@ -1,6 +1,7 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { ChatApiError, sendChatMessage } from '../../lib/api/chat';
 import {
+  checkNameHandles,
   checkNameHistory,
   fetchProjectNameSession,
 } from '../../lib/api/names';
@@ -13,14 +14,15 @@ import {
   normalizeNameKey,
 } from '../../lib/names/catalog';
 import { languagePrompt } from '../../lib/names/prompts';
-import { nameQuality } from '../../lib/names/score';
+import { spokenClarity, spokenFlagLabel } from '../../lib/names/pronunciation';
+import { candidateScore, nameQuality, pillarDisplay } from '../../lib/names/score';
 import type {
   BrandResult,
   FeedbackRoundView,
   NameCandidate,
   ProjectNameSession,
 } from '../../types/name-session';
-import { availabilityLabel, historyLabel, sourceLabel } from './labels';
+import { availabilityLabel, handlePlatformLabel, historyLabel, organicLabel, sourceLabel, spokenBandLabel } from './labels';
 
 export function NamesSection(props: {
   session: ProjectNameSession;
@@ -203,6 +205,13 @@ function CandidateCard(props: {
 }) {
   const { candidate, isBlind } = props;
   const quality = nameQuality(candidate.name);
+  const spoken = spokenClarity(candidate.name, {
+    heardSpelling: candidate.pronunciation?.heardSpelling,
+    kept: props.session.shortlistIds.includes(candidate.id),
+  });
+  const pillars = candidateScore(candidate, props.session.namingGoal, {
+    kept: props.session.shortlistIds.includes(candidate.id),
+  });
   const [brandNote, setBrandNote] = useState('');
   const [heard, setHeard] = useState(candidate.pronunciation?.heardSpelling ?? '');
   const [notes, setNotes] = useState(candidate.notes ?? '');
@@ -245,6 +254,25 @@ function CandidateCard(props: {
         ))}
         {!candidate.domainChecks?.length && <span className="names-pill">Unchecked</span>}
       </div>
+      <div className="names-tlds">
+        <span
+          className={`names-pill ${pillars.domain.unresolved ? 'names-pill-unknown' : ''}`}
+        >
+          Domain {pillarDisplay(pillars.domain)}
+        </span>
+        <span
+          className={`names-pill names-pill-${candidate.organicCompetition?.status ?? 'unknown'}`}
+        >
+          Organic {pillarDisplay(pillars.organic)}
+        </span>
+        <span className={`names-pill names-pill-${spoken.pt.band}`}>
+          PT {spoken.pt.score} {spokenBandLabel(spoken.pt.band)}
+        </span>
+        <span className={`names-pill names-pill-${spoken.en.band}`}>
+          EN {spoken.en.score} {spokenBandLabel(spoken.en.band)}
+        </span>
+        <span className="names-pill">Total {pillars.total}</span>
+      </div>
       <div className="names-card-links">
         <a
           href={candidate.googleQueryUrl || googleQueryUrl(candidate.name)}
@@ -266,10 +294,26 @@ function CandidateCard(props: {
       <details className="names-card-more">
         <summary>More checks</summary>
         <p className="diagram-card-meta">
-          {quality.charCount} chars · ~{quality.syllablesApprox} syllables
+          {quality.charCount} chars · PT ~{spoken.pt.syllables} syllables · EN ~
+          {spoken.en.syllables} syllables
           {quality.hyphen ? ' · hyphen' : ''}
           {quality.digit ? ' · digit' : ''}
-          {quality.ambiguous ? ' · ambiguous letters' : ''}
+        </p>
+        <p className="page-subtitle">
+          Spoken clarity — Portuguese and English are scored separately, not as
+          one verdict.
+        </p>
+        <p>
+          Portuguese: {spoken.pt.score}/5 {spokenBandLabel(spoken.pt.band)}
+          {spoken.pt.flags.length
+            ? ` · ${spoken.pt.flags.map(spokenFlagLabel).join('; ')}`
+            : ''}
+        </p>
+        <p>
+          English: {spoken.en.score}/5 {spokenBandLabel(spoken.en.band)}
+          {spoken.en.flags.length
+            ? ` · ${spoken.en.flags.map(spokenFlagLabel).join('; ')}`
+            : ''}
         </p>
         <div className="names-card-links">
           <button type="button" onClick={props.onExplore}>
@@ -318,6 +362,61 @@ function CandidateCard(props: {
         {(candidate.brandChecks ?? []).some((item) => item.result === 'collision') && (
           <div className="alert">Exact collision recorded. This is not legal clearance.</div>
         )}
+        <p className="page-subtitle">
+          Organic competition — not trademark, language, or ranking clearance.
+        </p>
+        <p>
+          {organicLabel(candidate.organicCompetition?.status)}
+          {candidate.organicCompetition?.autocomplete.status
+            ? ` · autocomplete ${candidate.organicCompetition.autocomplete.status.replace(/_/g, ' ')}`
+            : ''}
+          {(candidate.domainHistory ?? [])[0]?.status
+            ? ` · history ${historyLabel((candidate.domainHistory ?? [])[0]?.status)}`
+            : ''}
+        </p>
+        {props.session.shortlistIds.includes(candidate.id) ? (
+          <>
+            <p className="names-brief-label">Social handles</p>
+            {(candidate.handleChecks ?? []).length === 0 && (
+              <p className="diagram-card-meta">Not checked yet.</p>
+            )}
+            {(candidate.handleChecks ?? []).map((item) => (
+              <p key={item.platform}>
+                <a href={item.profileUrl} target="_blank" rel="noreferrer">
+                  {handlePlatformLabel(item.platform)}
+                </a>
+                {': '}
+                {availabilityLabel(item.availability)}
+              </p>
+            ))}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={props.busy === 'handles'}
+              onClick={async () => {
+                props.onBusy('handles');
+                try {
+                  await checkNameHandles(
+                    props.orgId,
+                    props.projectId,
+                    props.sessionId,
+                    candidate.name,
+                  );
+                  const latest = await fetchProjectNameSession(
+                    props.orgId,
+                    props.projectId,
+                    props.sessionId,
+                  );
+                  props.onSession(latest);
+                } finally {
+                  props.onBusy(null);
+                }
+              }}
+            >
+              Recheck handles
+            </button>
+          </>
+        ) : null}
         <p className="names-brief-label">Domain history</p>
         {(candidate.domainHistory ?? []).map((item) => (
           <p key={item.host}>
@@ -395,6 +494,12 @@ function CandidateCard(props: {
           >
             Save heard spelling
           </button>
+          {spoken.pt.flags.includes('heard_mismatch') && (
+            <span>
+              Heard spelling does not match — strongest negative for this kept
+              name.
+            </span>
+          )}
         </div>
         <p className="page-subtitle">Check language — AI-assisted, verify with a native speaker</p>
         <div className="names-inline">

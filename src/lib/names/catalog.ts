@@ -16,6 +16,7 @@ export const NAMING_GOAL_OPTIONS: Array<{
   label: string;
   domainRequired: boolean;
   brandRequired: boolean;
+  takenComCost: number;
   hint: string;
 }> = [
   {
@@ -23,6 +24,7 @@ export const NAMING_GOAL_OPTIONS: Array<{
     label: 'Public product/app',
     domainRequired: true,
     brandRequired: true,
+    takenComCost: 2,
     hint: 'Needs a usable domain and brand collision checks before it looks ready.',
   },
   {
@@ -30,13 +32,15 @@ export const NAMING_GOAL_OPTIONS: Array<{
     label: 'Company/organization',
     domainRequired: true,
     brandRequired: true,
-    hint: 'Treat as a public brand: domain + trademark-source checks stay visible.',
+    takenComCost: 4,
+    hint: 'Treat as a public brand: domain + trademark-source checks stay visible. A taken .com costs more than for a product.',
   },
   {
     id: 'feature',
     label: 'Feature/module',
     domainRequired: false,
     brandRequired: false,
+    takenComCost: 0,
     hint: 'Package and developer-ecosystem collisions matter more than a free .com.',
   },
   {
@@ -44,6 +48,7 @@ export const NAMING_GOAL_OPTIONS: Array<{
     label: 'API/developer tool',
     domainRequired: false,
     brandRequired: false,
+    takenComCost: 0,
     hint: 'Check npm, GitHub, and docs phrasing. Domain is optional.',
   },
   {
@@ -51,6 +56,7 @@ export const NAMING_GOAL_OPTIONS: Array<{
     label: 'Internal codename',
     domainRequired: false,
     brandRequired: false,
+    takenComCost: 0,
     hint: 'A taken .com does not penalize a codename. Favor clarity and a theme.',
   },
   {
@@ -58,6 +64,7 @@ export const NAMING_GOAL_OPTIONS: Array<{
     label: 'Campaign/project',
     domainRequired: false,
     brandRequired: false,
+    takenComCost: 0,
     hint: 'Search/social collisions are useful; recommendation stays manual.',
   },
 ];

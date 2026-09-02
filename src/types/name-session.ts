@@ -131,6 +131,35 @@ export interface ComIncumbency {
   gradedAt: string;
 }
 
+export type AutocompleteStatus = 'established' | 'no_hit' | 'unknown';
+export type OrganicStatus = 'crowded' | 'quiet' | 'unknown';
+export type HandlePlatform =
+  | 'instagram'
+  | 'facebook'
+  | 'tiktok'
+  | 'youtube'
+  | 'x';
+
+export interface AutocompleteEvidence {
+  status: AutocompleteStatus;
+  suggestions: string[];
+  checkedAt: string;
+}
+
+export interface OrganicCompetition {
+  status: OrganicStatus;
+  autocomplete: AutocompleteEvidence;
+  checkedAt: string;
+}
+
+export interface HandleCheck {
+  platform: HandlePlatform;
+  handle: string;
+  profileUrl: string;
+  availability: Availability;
+  checkedAt: string;
+}
+
 export interface NameCandidate {
   id: string;
   name: string;
@@ -148,6 +177,8 @@ export interface NameCandidate {
   domainHistory?: DomainHistory[];
   takenEndingCount?: number;
   comIncumbency?: ComIncumbency | null;
+  organicCompetition?: OrganicCompetition | null;
+  handleChecks?: HandleCheck[];
   visualConcerns?: VisualConcerns;
   messaging?: NameMessaging;
   languageChecks?: LanguageChecks;

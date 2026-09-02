@@ -31,6 +31,8 @@ export function emptyCandidate(name: string): Partial<import('../../types/name-s
     googleQueryUrl: '',
     brandChecks: [],
     domainHistory: [],
+    organicCompetition: null,
+    handleChecks: [],
     visualConcerns: { flags: [], note: '' },
     messaging: {},
     languageChecks: { aiAssisted: null, manual: [] },

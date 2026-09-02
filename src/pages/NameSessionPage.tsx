@@ -428,6 +428,8 @@ export function NameSessionPage() {
             domainChecks: [],
             brandChecks: [],
             domainHistory: [],
+            organicCompetition: null,
+            handleChecks: [],
             googleQueryUrl: googleQueryUrl(item.name),
           }
         : item,

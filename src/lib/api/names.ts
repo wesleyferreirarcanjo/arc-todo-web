@@ -112,6 +112,18 @@ export function checkNameHistory(
   );
 }
 
+export function checkNameHandles(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  name: string,
+): Promise<NameCandidate> {
+  return apiRequest<NameCandidate>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/check-handles`,
+    { method: 'POST', body: { name } },
+  );
+}
+
 export function addNameCandidates(
   orgId: string,
   projectId: string,

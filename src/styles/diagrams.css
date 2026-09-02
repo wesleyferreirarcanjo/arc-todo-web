@@ -896,6 +896,26 @@
   color: var(--danger-text);
 }
 
+.names-pill-crowded {
+  color: var(--danger-text);
+}
+
+.names-pill-quiet {
+  color: var(--text-muted);
+}
+
+.names-pill-clean {
+  color: var(--text-muted);
+}
+
+.names-pill-awkward {
+  color: var(--warning-text);
+}
+
+.names-pill-hard {
+  color: var(--danger-text);
+}
+
 .names-brand-row {
   display: flex;
   gap: 0.4rem;

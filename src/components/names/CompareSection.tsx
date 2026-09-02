@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import {
+  checkNameHandles,
+  fetchProjectNameSession,
   recommendNameCandidate,
   updateProjectNameSession,
 } from '../../lib/api/names';
 import { buildDecisionReport } from '../../lib/names/report';
-import { candidateScore } from '../../lib/names/score';
+import { spokenClarity } from '../../lib/names/pronunciation';
+import { candidateScore, pillarDisplay } from '../../lib/names/score';
 import type { ProjectNameSession } from '../../types/name-session';
-import { availabilityLabel } from './labels';
+import { availabilityLabel, organicLabel, spokenBandLabel } from './labels';
 
 export function CompareSection(props: {
   session: ProjectNameSession;
@@ -22,16 +25,23 @@ export function CompareSection(props: {
   const shortlist = props.session.candidates.filter((item) =>
     props.session.shortlistIds.includes(item.id),
   );
-  const scores = shortlist.map((item) => ({
-    item,
-    score: candidateScore(item, props.session.namingGoal),
-  }));
+  const scores = shortlist
+    .map((item) => ({
+      item,
+      score: candidateScore(item, props.session.namingGoal, { kept: true }),
+      spoken: spokenClarity(item.name, {
+        heardSpelling: item.pronunciation?.heardSpelling,
+        kept: true,
+      }),
+    }))
+    .sort((a, b) => b.score.total - a.score.total);
   const top = Math.max(0, ...scores.map((row) => row.score.total));
 
   async function toggle(id: string) {
-    const ids = props.session.shortlistIds.includes(id)
-      ? props.session.shortlistIds.filter((item) => item !== id)
-      : [...props.session.shortlistIds, id].slice(0, 5);
+    const adding = !props.session.shortlistIds.includes(id);
+    const ids = adding
+      ? [...props.session.shortlistIds, id].slice(0, 5)
+      : props.session.shortlistIds.filter((item) => item !== id);
     const updated = await updateProjectNameSession(
       props.orgId,
       props.projectId,
@@ -39,6 +49,23 @@ export function CompareSection(props: {
       { shortlistIds: ids },
     );
     props.onSession(updated);
+    if (adding && ids.includes(id)) {
+      const kept = updated.candidates.find((item) => item.id === id);
+      if (kept) {
+        await checkNameHandles(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+          kept.name,
+        );
+        const latest = await fetchProjectNameSession(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+        );
+        props.onSession(latest);
+      }
+    }
   }
 
   return (
@@ -57,10 +84,17 @@ export function CompareSection(props: {
         ))}
       </div>
       <div className="names-compare-grid">
-        {scores.map(({ item, score }) => (
+        {scores.map(({ item, score, spoken }) => (
           <article key={item.id} className="names-card">
             <h4>{item.name}</h4>
-            <p>Score {score.total}</p>
+            <p>Score {score.total} (sort only)</p>
+            <p>
+              Domain: {pillarDisplay(score.domain)}
+              {' · '}
+              Organic: {pillarDisplay(score.organic)}
+              {' · '}
+              Taste: {score.taste.value}
+            </p>
             {(['brandFit', 'easyToSay', 'memorable'] as const).map((key) => (
               <label key={key} className="form-field">
                 <span>
@@ -98,6 +132,26 @@ export function CompareSection(props: {
             ))}
             <p>Domain: {(item.domainChecks ?? []).map((check) => `${check.tld}=${availabilityLabel(check.availability)}`).join(', ') || '—'}</p>
             <p>
+              Organic: {organicLabel(item.organicCompetition?.status)} (not
+              clearance)
+            </p>
+            <p>
+              Portuguese spoken: {spoken.pt.score}/5{' '}
+              {spokenBandLabel(spoken.pt.band)}
+            </p>
+            <p>
+              English spoken: {spoken.en.score}/5{' '}
+              {spokenBandLabel(spoken.en.band)}
+            </p>
+            {(item.handleChecks ?? []).length > 0 && (
+              <p>
+                Handles:{' '}
+                {(item.handleChecks ?? [])
+                  .map((check) => `${check.platform}=${availabilityLabel(check.availability)}`)
+                  .join(', ')}
+              </p>
+            )}
+            <p>
               Unknown:{' '}
               {[
                 ...(item.domainChecks ?? [])
@@ -128,9 +182,10 @@ export function CompareSection(props: {
       </button>
       {showFormula && (
         <p>
-          Total = Brand fit + Easy to say/type + Memorable (1–5 each) plus documented
-          evidence adjustments. Unknown checks are not a pass. AI does not invent the
-          number. A lower-scoring name can still win with a decision note.
+          Four pillars: domain, organic, spoken (Portuguese and English stay
+          separate), and your ratings. Total is sort order only — unknown
+          evidence reads as Unknown, not a pass. A lower-scoring name can still
+          win with a decision note. AI does not invent the number.
         </p>
       )}
       <label className="form-field">
