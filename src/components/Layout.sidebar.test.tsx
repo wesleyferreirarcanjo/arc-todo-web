@@ -119,6 +119,18 @@ describe('Layout sidebar identity', () => {
     expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
   });
 
+  it('shows SEO after Names for a project member', () => {
+    renderLayout();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toContain('SEO');
+    expect(labels.indexOf('Names')).toBeLessThan(labels.indexOf('SEO'));
+    expect(labels.indexOf('SEO')).toBeLessThan(labels.indexOf('People'));
+    expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
+  });
+
   it('shows Download after Organizations for a project member', () => {
     renderLayout();
     const nav = screen.getByRole('navigation', { name: 'Main navigation' });

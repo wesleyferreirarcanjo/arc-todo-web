@@ -36,6 +36,10 @@ import { WireframesHubPage } from './pages/WireframesHubPage';
 import { NamesHubPage } from './pages/NamesHubPage';
 import { ProjectNamesPage } from './pages/ProjectNamesPage';
 import { NameSessionPage } from './pages/NameSessionPage';
+import { SeoHubPage } from './pages/SeoHubPage';
+import { ProjectSeoPage } from './pages/ProjectSeoPage';
+import { SeoSitePage } from './pages/SeoSitePage';
+import { SeoSettingsPage } from './pages/SeoSettingsPage';
 import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
 import { ProjectQaInfoPage } from './pages/ProjectQaInfoPage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
@@ -77,6 +81,7 @@ export default function App() {
                 <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/wireframes" element={<WireframesHubPage />} />
                 <Route path="/names" element={<NamesHubPage />} />
+                <Route path="/seo" element={<SeoHubPage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />
                 <Route
                   path="/people/:personId/knowledge"
@@ -106,6 +111,10 @@ export default function App() {
                   <Route
                     path="/settings/storage"
                     element={<StorageSettingsPage />}
+                  />
+                  <Route
+                    path="/settings/seo"
+                    element={<SeoSettingsPage />}
                   />
                   <Route
                     path="/settings/rag/settings"
@@ -175,6 +184,14 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/names/:sessionId"
                   element={<NameSessionPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/seo"
+                  element={<ProjectSeoPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/seo/:siteId"
+                  element={<SeoSitePage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
               </Route>

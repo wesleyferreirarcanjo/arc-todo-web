@@ -27,6 +27,7 @@ import {
   MoonIcon,
   NamesIcon,
   NavigateIcon,
+  SeoIcon,
   NewTaskIcon,
   OrganizationsIcon,
   PeopleIcon,
@@ -297,6 +298,12 @@ export function MobileBoardFab() {
         onClick: () => go('/names'),
       },
       {
+        id: 'nav-seo',
+        label: 'SEO',
+        icon: <SeoIcon />,
+        onClick: () => go('/seo'),
+      },
+      {
         id: 'nav-people',
         label: 'People',
         icon: <PeopleIcon />,
@@ -374,6 +381,15 @@ export function MobileBoardFab() {
         onClick: () => {
           setMenuOpen(false);
           navigate('/settings/storage');
+        },
+      },
+      {
+        id: 'settings-seo',
+        label: 'SEO',
+        icon: <SeoIcon />,
+        onClick: () => {
+          setMenuOpen(false);
+          navigate('/settings/seo');
         },
       },
       {

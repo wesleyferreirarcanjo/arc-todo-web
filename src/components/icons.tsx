@@ -194,6 +194,17 @@ export function NamesIcon({ className = 'arc-icon' }: ArcIconProps) {
   );
 }
 
+export function SeoIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <circle {...mass} cx="11" cy="11" r="6.2" />
+      <circle cx="11" cy="11" r="6.2" />
+      <path d="M15.4 15.4 20.2 20.2" />
+      <path d="M8.4 11h5.2M11 8.4v5.2" />
+    </DuotoneIcon>
+  );
+}
+
 export function PeopleIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>

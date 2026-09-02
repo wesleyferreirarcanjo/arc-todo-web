@@ -77,6 +77,7 @@ const MESSAGES: Record<string, string> = {
     "Couldn't reach Arc Todo right now. Check your connection and try again.",
   'ERR-ARC-AUTH-07':
     'No Arc Todo user is assigned to this Google account. Ask an administrator to add your email, then try again.',
+  'ERR-ARC-SEO-01': 'Enter a site address to continue.',
 };
 
 function interpolate(template: string, vars?: { thing?: string }): string {

@@ -1,0 +1,72 @@
+/* seo.css — imported from src/index.css; keep cascade order. */
+
+.seo-site-page {
+  width: min(100%, 52rem);
+  margin-inline: auto;
+}
+
+.seo-audit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.seo-table-wrap {
+  overflow-x: auto;
+}
+
+.seo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.seo-table th,
+.seo-table td {
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.seo-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.seo-robots {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+}
+
+.seo-metrics {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.seo-empty-tab {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+}
+
+.seo-settings-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 22rem;
+}
+
+@media (max-width: 640px) {
+  .seo-table th:nth-child(n + 4),
+  .seo-table td:nth-child(n + 4) {
+    display: none;
+  }
+}

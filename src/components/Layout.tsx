@@ -31,6 +31,7 @@ import {
   McpIcon,
   NamesIcon,
   OrganizationsIcon,
+  SeoIcon,
   PeopleIcon,
   RagIcon,
   StorageIcon,
@@ -47,6 +48,7 @@ const primaryNav = [
   { to: '/diagrams', label: 'Diagrams', icon: DiagramsIcon },
   { to: '/wireframes', label: 'Wireframes', icon: WireframesIcon },
   { to: '/names', label: 'Names', icon: NamesIcon },
+  { to: '/seo', label: 'SEO', icon: SeoIcon },
   { to: '/people', label: 'People', icon: PeopleIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
   { to: '/download', label: 'Download', icon: DownloadIcon },
@@ -224,7 +226,17 @@ export function Layout() {
                       /\/projects\/[^/]+\/names(?:\/|$)/.test(
                         location.pathname,
                       ));
-                  return isActive || diagramsActive || wireframesActive || namesActive
+                  const seoActive =
+                    to === '/seo' &&
+                    (location.pathname === '/seo' ||
+                      /\/projects\/[^/]+\/seo(?:\/|$)/.test(
+                        location.pathname,
+                      ));
+                  return isActive ||
+                    diagramsActive ||
+                    wireframesActive ||
+                    namesActive ||
+                    seoActive
                     ? 'sidebar-nav-link active'
                     : 'sidebar-nav-link';
                 }}
@@ -341,6 +353,19 @@ export function Layout() {
                   >
                     <StorageIcon className="sidebar-menu-item-icon" />
                     Storage
+                  </NavLink>
+                  <NavLink
+                    to="/settings/seo"
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'sidebar-settings-menu-item active'
+                        : 'sidebar-settings-menu-item'
+                    }
+                    onClick={closeSettingsMenu}
+                  >
+                    <SeoIcon className="sidebar-menu-item-icon" />
+                    SEO
                   </NavLink>
                   <p className="sidebar-settings-category">RAG</p>
                   <button
