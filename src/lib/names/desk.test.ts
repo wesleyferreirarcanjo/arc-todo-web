@@ -86,9 +86,10 @@ describe('deskUnresolvedRows', () => {
         candidates: [candidate({ id: 'rift', name: 'Rift', domainChecks: [] })],
       }),
     );
-    const domain = rows.find((row) => row.claim.includes('Domain'));
+    const domain = rows.find((row) => row.source === 'Domain');
     expect(domain).toMatchObject({
-      source: 'DNS/RDAP',
+      claim: 'Rift',
+      source: 'Domain',
       confidence: 'Unknown',
       unknown: true,
     });

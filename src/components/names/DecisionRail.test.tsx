@@ -54,8 +54,9 @@ describe('DecisionRail', () => {
     );
     expect(screen.getByRole('complementary', { name: 'Decision desk' })).toBeInTheDocument();
     expect(screen.getByText('No pick yet')).toBeInTheDocument();
-    expect(screen.getByText('Rift')).toBeInTheDocument();
-    expect(screen.getByText(/Rift · Domain/)).toBeInTheDocument();
-    expect(screen.getByText('DNS/RDAP')).toBeInTheDocument();
+    expect(screen.getByText('You pick — totals do not.')).toBeInTheDocument();
+    expect(screen.getAllByText('Rift').length).toBeGreaterThan(0);
+    expect(screen.getByText('Domain')).toBeInTheDocument();
+    expect(screen.queryByText('DNS/RDAP')).not.toBeInTheDocument();
   });
 });

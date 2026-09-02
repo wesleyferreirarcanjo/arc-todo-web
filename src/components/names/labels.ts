@@ -36,3 +36,10 @@ export function sourceLabel(sources: string[] | undefined): string {
   if (!sources?.length) return 'human';
   return sources.join(', ');
 }
+
+export function formatCheckedAt(value: string | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}

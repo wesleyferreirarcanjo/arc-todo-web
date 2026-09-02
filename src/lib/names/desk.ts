@@ -64,8 +64,8 @@ function unresolvedRow(
 ): DeskUnresolvedRow {
   const copy = SIGNAL_COPY[id];
   return {
-    claim: `${name} · ${copy.name}`,
-    source: copy.source,
+    claim: name,
+    source: copy.name,
     confidence: 'Unknown',
     unknown: true,
   };

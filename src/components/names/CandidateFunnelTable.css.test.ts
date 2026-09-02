@@ -27,7 +27,7 @@ describe('Names funnel table CSS', () => {
   it('marks unresolved cells with a dashed edge, not italics', () => {
     const rule = ruleBlock('.names-funnel .is-unresolved');
     expect(rule).toContain('font-style: normal');
-    expect(rule).toContain('border-style: dashed');
+    expect(rule).toContain('border: 1px dashed');
     expect(rule).not.toContain('font-style: italic');
   });
 });

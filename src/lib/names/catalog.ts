@@ -2,11 +2,11 @@ import type { NamingGoal } from '../../types/name-session';
 
 export const NAME_FAMILIES = [
   { id: 'descriptive', label: 'Descriptive' },
-  { id: 'suggestive', label: 'Suggestive/evocative' },
-  { id: 'invented', label: 'Invented/brandable' },
-  { id: 'compound', label: 'Compound words' },
-  { id: 'metaphor', label: 'Metaphor/symbol' },
-  { id: 'codename', label: 'Short codename/theme' },
+  { id: 'suggestive', label: 'Suggestive' },
+  { id: 'invented', label: 'Invented' },
+  { id: 'compound', label: 'Compound' },
+  { id: 'metaphor', label: 'Metaphor' },
+  { id: 'codename', label: 'Codename' },
 ] as const;
 
 export const DEFAULT_NAMING_GOAL: NamingGoal = 'public_product';

@@ -53,7 +53,7 @@ describe('funnel rows', () => {
     expect(row.weakest).toEqual({
       key: 'domain',
       label: 'Domain Unknown',
-      reason: 'unresolved domain (contributes 0; not a pass)',
+      reason: 'Unresolved — not a pass',
     });
   });
 

@@ -637,10 +637,15 @@ export function NameSessionPage() {
         <>
           <section className="names-quick-brief">
             <div className="names-quick-brief-row">
-              <label className="form-field">
-                <span>What does it do?</span>
-                <small className="names-brief-example">{PRODUCT_SENTENCE_HELP}</small>
+              <div className="form-field">
+                <span className="names-brief-label-row">
+                  <label htmlFor="names-what-it-does">What does it do?</label>
+                  <InfoPopover label="What does it do?">
+                    <p>{PRODUCT_SENTENCE_HELP}</p>
+                  </InfoPopover>
+                </span>
                 <textarea
+                  id="names-what-it-does"
                   ref={productFieldRef}
                   rows={2}
                   value={desc.whatItIs ?? ''}
@@ -648,7 +653,7 @@ export function NameSessionPage() {
                   onChange={(event) => setDesc('whatItIs', event.target.value)}
                   onBlur={() => void saveBrief()}
                 />
-              </label>
+              </div>
               <div className="form-field">
                 <span className="names-brief-label-row">
                   <label htmlFor="names-kind-of-name">Kind of name</label>

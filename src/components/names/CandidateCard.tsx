@@ -8,6 +8,7 @@ import { weakestSignal } from '../../lib/names/funnel';
 import { candidateScore, pillarDisplay } from '../../lib/names/score';
 import { SIGNAL_COPY } from '../../lib/names/signalCopy';
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
+import { NamesScoreStrip } from './NamesScoreStrip';
 import { availabilityLabel, sourceLabel } from './labels';
 import { AutomatedEvidence } from './AutomatedEvidence';
 import { BrandFootprintBlock } from './BrandFootprintBlock';
@@ -67,7 +68,7 @@ export function CandidateCard(props: {
           Weakest: {weakest.label}
           {weakest.reason ? ` · ${weakest.reason}` : ''}
         </p>
-        <p className="names-card-formula">{pillars.formula}</p>
+        <NamesScoreStrip pillars={pillars} />
         <div className="names-endings">
           {(candidate.domainChecks ?? []).map((check) => (
             <span
@@ -141,10 +142,10 @@ export function CandidateCard(props: {
         >
           Images
         </a>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={props.onPreview}>
+        <button type="button" className="names-text-link" onClick={props.onPreview}>
           Preview in context
         </button>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={props.onExplore}>
+        <button type="button" className="names-text-link" onClick={props.onExplore}>
           Explore variations
         </button>
       </div>
@@ -166,9 +167,6 @@ export function CandidateCard(props: {
         aria-labelledby={judgmentId}
       >
         <h4 id={judgmentId}>What you must judge</h4>
-        <p className="names-meta">
-          These answers stay Unknown until you record them.
-        </p>
         <BrandFootprintBlock candidate={candidate} onUpdate={props.onUpdate} />
         <LanguageJudgmentBlock
           candidate={candidate}

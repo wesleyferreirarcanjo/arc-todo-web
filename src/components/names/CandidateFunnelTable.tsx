@@ -13,6 +13,7 @@ import {
   type FunnelSortKey,
 } from '../../lib/names/funnel';
 import { SIGNAL_COPY } from '../../lib/names/signalCopy';
+import { NamesScoreStrip } from './NamesScoreStrip';
 import type { NameCandidate } from '../../types/name-session';
 
 const SORT_LABELS: Record<FunnelSortKey, string> = {
@@ -183,9 +184,10 @@ export function CandidateFunnelTable(props: {
             : `${props.resolvingCount} of this wave still resolving`}
         </p>
       )}
-      <p className="names-funnel-hint">
-        K keep · R reject · arrows select · Enter opens signals on a phone
-      </p>
+      <details className="names-funnel-hint">
+        <summary>Shortcuts</summary>
+        K keep · R reject · arrows select · Enter expands
+      </details>
       <table className="names-funnel">
         <caption className="sr-only">
           Sortable name candidates with domain, organic, spoken, and taste
@@ -297,17 +299,18 @@ export function CandidateFunnelTable(props: {
                       <span>Answer in Feedback first.</span>
                     ) : (
                       <>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          aria-pressed={kept}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            props.onKeep(candidate.id);
-                          }}
-                        >
-                          Keep
-                        </button>
+                        {kept ? null : (
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              props.onKeep(candidate.id);
+                            }}
+                          >
+                            Keep
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="btn btn-secondary btn-sm"
@@ -325,7 +328,7 @@ export function CandidateFunnelTable(props: {
                 {expanded ? (
                   <tr className="names-funnel-detail">
                     <td colSpan={8}>
-                      <p className="names-funnel-formula">{pillars.formula}</p>
+                      <NamesScoreStrip pillars={pillars} />
                       <EvidenceLedger
                         caption={`${weakest.label} · ${weakest.reason}`}
                         rows={expandedLedgerRows(row)}

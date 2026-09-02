@@ -103,7 +103,6 @@ export function NamesSection(props: {
         <summary>
           <span>
             <strong>Generate more</strong>
-            <small>Families, filters, and AI possibilities</small>
           </span>
         </summary>
         <div className="names-description-details-body">

@@ -184,13 +184,13 @@ describe('CandidateFunnelTable', () => {
     expect(onReject).toHaveBeenCalledWith('ready');
   });
 
-  it('shows the total formula and pillar notes on the expanded row', async () => {
+  it('shows compact pillar scores and notes on the expanded row', async () => {
     const user = userEvent.setup();
     render(
       <CandidateFunnelTable
         candidates={[candidate({ id: 'open', name: 'Rift', domainChecks: [] })]}
         namingGoal="public_product"
-        shortlistIds={[]}
+        shortlistIds={['open']}
         resolvingKeys={[]}
         resolvingCount={0}
         isBlind={() => false}
@@ -199,13 +199,15 @@ describe('CandidateFunnelTable', () => {
       />,
     );
 
+    const riftRow = screen.getByRole('row', { name: /Rift/ });
+    expect(within(riftRow).queryByRole('button', { name: 'Keep' })).not.toBeInTheDocument();
+    expect(within(riftRow).getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+
     screen.getByLabelText('Name candidates').focus();
     expect(screen.queryByText(/Highest total is not auto-picked/i)).not.toBeInTheDocument();
     await user.keyboard('{Enter}');
-    expect(screen.getByText(/sort only/i)).toBeInTheDocument();
-    expect(screen.getByText(/Highest total is not auto-picked/i)).toBeInTheDocument();
-    expect(
-      screen.getAllByText(/unresolved domain \(contributes 0; not a pass\)/i).length,
-    ).toBeGreaterThan(1);
+    expect(screen.getByRole('list', { name: 'Score' })).toBeInTheDocument();
+    expect(screen.queryByText(/Highest total is not auto-picked/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Unresolved — not a pass/i).length).toBeGreaterThan(0);
   });
 });

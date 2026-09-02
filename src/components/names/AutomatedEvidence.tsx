@@ -4,6 +4,7 @@ import {
   checkNameHistory,
   fetchProjectNameSession,
 } from '../../lib/api/names';
+import { VISUAL_FLAGS } from '../../lib/names/catalog';
 import { nameQuality } from '../../lib/names/score';
 import { spokenClarity, spokenFlagLabel } from '../../lib/names/pronunciation';
 import type {
@@ -14,6 +15,7 @@ import type {
 } from '../../types/name-session';
 import {
   availabilityLabel,
+  formatCheckedAt,
   handlePlatformLabel,
   historyLabel,
   organicLabel,
@@ -174,7 +176,8 @@ export function AutomatedEvidence(props: {
       <h5 className="names-brief-label">Domain history</h5>
       {(candidate.domainHistory ?? []).map((item) => (
         <p key={item.host}>
-          {item.host}: {historyLabel(item.status)} · {item.checkedAt}
+          {item.host}: {historyLabel(item.status)}
+          {item.checkedAt ? ` · ${formatCheckedAt(item.checkedAt)}` : ''}
           {' · '}
           <a className="names-text-link" href={item.googleSiteUrl} target="_blank" rel="noreferrer">
             site: search
@@ -227,7 +230,13 @@ export function AutomatedEvidence(props: {
         <div className="names-card-block">
           <NamesSignalHeading id="visual" />
           <p>
-            {visualFlags.join(', ')}
+            {visualFlags
+              .map(
+                (flag) =>
+                  VISUAL_FLAGS.find((item) => item.id === flag)?.label ??
+                  flag.replace(/_/g, ' '),
+              )
+              .join(', ')}
             {candidate.visualConcerns?.note ? ` · ${candidate.visualConcerns.note}` : ''}
           </p>
         </div>

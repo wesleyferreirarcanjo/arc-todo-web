@@ -1,7 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { candidateScore } from '../../lib/names/score';
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
 
 const updateProjectNameSession = vi.hoisted(() => vi.fn());
@@ -182,10 +181,10 @@ describe('CompareSection', () => {
     expect(screen.getAllByText('No visual concerns recorded').length).toBeGreaterThan(0);
   });
 
-  it('shows the score explanation from score.ts', () => {
+  it('shows a compact score strip instead of a formula paragraph', () => {
     renderCompare();
-    const formula = candidateScore(wave, 'public_product', { kept: true }).formula;
-    expect(screen.getByText(formula)).toBeInTheDocument();
+    expect(screen.getAllByRole('list', { name: 'Score' }).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Highest total is not auto-picked/)).not.toBeInTheDocument();
   });
 
   it('does not write to the API when a rating changes', async () => {

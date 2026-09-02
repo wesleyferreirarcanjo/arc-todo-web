@@ -17,6 +17,7 @@ import { deskStanding } from '../../lib/names/desk';
 import { spokenClarity } from '../../lib/names/pronunciation';
 import { buildDecisionReport } from '../../lib/names/report';
 import { candidateScore } from '../../lib/names/score';
+import { NamesScoreStrip } from './NamesScoreStrip';
 import { SIGNAL_COPY } from '../../lib/names/signalCopy';
 import type {
   CandidateRatings,
@@ -393,8 +394,9 @@ export function CompareSection(props: {
       ) : (
         <>
           <div className="names-signal-heading">
-            <p className="names-disclaimer">{SIGNAL_COPY.total.howToRead}</p>
+            <h4 className="names-brief-label">Scores</h4>
             <InfoPopover label={SIGNAL_COPY.total.name}>
+              <p>{SIGNAL_COPY.total.howToRead}</p>
               <p>{SIGNAL_COPY.total.source}</p>
               <p>{SIGNAL_COPY.total.honestLimit}</p>
               <p>{SIGNAL_COPY.total.rules.join(' · ')}</p>
@@ -411,8 +413,7 @@ export function CompareSection(props: {
                   aria-labelledby={`compare-${item.id}`}
                 >
                   <h4 id={`compare-${item.id}`}>{item.name}</h4>
-                  <p>Score {score.total} (sort only)</p>
-                  <p className="names-meta">{score.formula}</p>
+                  <NamesScoreStrip pillars={score} />
                   {RATING_FIELDS.map((field) => (
                     <RatingScale
                       key={field.key}
@@ -444,8 +445,8 @@ export function CompareSection(props: {
           <section className="names-compare-decision">
             <h3>Decision</h3>
             <p className="names-meta">
-              Highest total is not auto-picked. Write a reason before recommending
-              a name that is not the highest score.
+              Write a reason before recommending a name that is not the highest
+              score.
             </p>
             <label className="form-field">
               <span>Decision note</span>

@@ -87,13 +87,15 @@ describe('CandidateCard verdict, evidence, judgment', () => {
     renderCard(candidate());
 
     const weakest = screen.getByText(/Weakest: Domain Unknown/);
-    expect(weakest).toHaveTextContent('unresolved domain');
+    expect(weakest).toHaveTextContent('Unresolved — not a pass');
     const judgment = screen.getByRole('heading', { name: 'What you must judge' });
     expect(
       weakest.compareDocumentPosition(judgment) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'What we found' })).toBeInTheDocument();
-    expect(screen.getByText(/Highest total is not auto-picked/)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Score' })).toBeInTheDocument();
+    expect(screen.queryByText(/Highest total is not auto-picked/)).toBeNull();
+    expect(screen.queryByText(/These answers stay Unknown/)).toBeNull();
     expect(screen.queryByText(/pass\/fail/i)).toBeNull();
   });
 

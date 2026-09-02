@@ -34,4 +34,11 @@ describe('Names hub session row CSS (#arc-474)', () => {
     expect(css).toContain('.names-session-row-actions .btn-sm');
     expect(css).toContain('min-height: 2.75rem');
   });
+
+  it('bounds hub rows to a content column with even radius', () => {
+    const wrap = ruleBlock('.names-session-list-wrap');
+    expect(wrap).toContain('48rem');
+    const row = ruleBlock('.names-session-row');
+    expect(row).toContain('border-radius: var(--radius-md)');
+  });
 });

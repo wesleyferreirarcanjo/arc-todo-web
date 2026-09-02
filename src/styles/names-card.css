@@ -1,10 +1,10 @@
 /* names-card.css — imported from src/index.css; keep cascade order. */
 .names-card {
   display: grid;
-  gap: 0.55rem;
-  padding: 0.85rem 0.95rem;
+  gap: 0.7rem;
+  padding: 0.95rem 1.05rem 1.05rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--bg-page);
   overflow: hidden;
 }
@@ -32,11 +32,46 @@
   font-weight: 600;
 }
 
-.names-card-formula {
+.names-score-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.names-score-strip li {
+  display: grid;
+  gap: 0.02rem;
+  min-width: 4.4rem;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+}
+
+.names-score-strip li.is-unknown {
+  border: 1px dashed var(--border);
+}
+
+.names-score-strip span {
   color: var(--text-muted);
-  font-size: 0.8rem;
-  line-height: 1.45;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.names-score-strip strong {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.names-score-total {
+  border-color: var(--border-strong);
+}
+
+.names-card-formula {
+  display: none;
 }
 
 .names-card-links {
@@ -44,6 +79,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.3rem 0.85rem;
+}
+
+.names-card-links .btn-sm,
+.names-card-head .btn-sm,
+.names-card-evidence-body > .btn,
+.names-card-block .btn-sm {
+  width: auto;
+  justify-self: start;
 }
 
 .names-card-links .names-text-link {
@@ -78,9 +121,9 @@
 }
 
 .names-card-judgment {
-  border-style: dashed;
+  border: 1px dashed var(--border);
   padding: 0.65rem 0.7rem 0.75rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--bg-surface) 70%, var(--bg-page));
 }
 
@@ -115,7 +158,32 @@
   color: var(--text-primary);
 }
 
-.names-brand-grid,
+.names-brand-grid {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.names-brand-kind {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.names-brand-kind > h6 {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.names-brand-kind > details > summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .names-extensions {
   display: flex;
   flex-wrap: wrap;
@@ -123,9 +191,20 @@
 }
 
 .names-brand-row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 10.5rem) minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.names-brand-row .choice-group {
   display: flex;
-  gap: 0.4rem;
-  align-items: flex-start;
+  width: 100%;
+}
+
+.names-brand-row .choice-group-option {
+  flex: 1 1 0;
+  justify-content: center;
 }
 .names-kept {
   display: grid;
@@ -155,7 +234,7 @@
 }
 
 .names-ending.is-unknown {
-  border-style: dashed;
+  border: 1px dashed var(--border);
 }
 
 .names-signal-strip .evidence-ledger-row {

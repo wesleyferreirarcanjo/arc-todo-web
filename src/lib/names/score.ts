@@ -51,12 +51,6 @@ export function candidateScore(
   const spoken = spokenPillar(candidate, opts?.kept === true);
   const taste = tastePillar(candidate);
   const total = domain.value + organic.value + spoken.value + taste.value;
-  const notes = [
-    ...domain.notes,
-    ...organic.notes,
-    ...spoken.notes,
-    ...taste.notes,
-  ];
   return {
     domain,
     organic,
@@ -66,9 +60,7 @@ export function candidateScore(
     evidence: domain.value + organic.value + spoken.value,
     total,
     formula:
-      `Domain ${pillarDisplay(domain)} + Organic ${pillarDisplay(organic)} + Spoken ${pillarDisplay(spoken)} + Taste ${taste.value} = ${total} (sort only). ` +
-      (notes.join('; ') || 'No evidence notes.') +
-      ' Highest total is not auto-picked.',
+      `Domain ${pillarDisplay(domain)} + Organic ${pillarDisplay(organic)} + Spoken ${pillarDisplay(spoken)} + Taste ${taste.value} = ${total}`,
   };
 }
 
@@ -105,7 +97,7 @@ function domainPillar(
     (comUnknown && available.length === 0);
 
   if (unresolved) {
-    notes.push('unresolved domain (contributes 0; not a pass)');
+    notes.push('Unresolved — not a pass');
     return { value: 0, unresolved: true, notes };
   }
 
@@ -129,7 +121,7 @@ function domainPillar(
     if (com?.availability === 'taken') {
       cost += profile.takenComCost;
       if (profile.takenComCost) {
-        notes.push(`taken .com −${profile.takenComCost} (${profile.id})`);
+        notes.push(`taken .com −${profile.takenComCost} (${profile.label})`);
       }
       const grade = candidate.comIncumbency?.grade ?? 'unknown';
       const incumbency = INCUMBENCY_COST[grade] ?? 0;
@@ -137,7 +129,7 @@ function domainPillar(
         notes.push('unresolved .com incumbency (no credit, no extra cut)');
       } else if (incumbency) {
         cost += incumbency;
-        notes.push(`incumbency ${grade} −${incumbency}`);
+        notes.push(`incumbency ${grade.replace(/_/g, ' ')} −${incumbency}`);
       }
     }
     const extraTaken = Math.min(
@@ -187,7 +179,7 @@ function organicPillar(
     value = 2;
     notes.push('organic crowded');
   } else {
-    notes.push('unresolved organic (contributes 0; not a pass)');
+    notes.push('Unresolved — not a pass');
   }
   if (collision) {
     value = Math.max(0, value - 2);

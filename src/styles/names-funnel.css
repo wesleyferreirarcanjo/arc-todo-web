@@ -2,7 +2,9 @@
 .names-funnel .is-unresolved {
   color: var(--text-muted);
   font-style: normal;
-  border-style: dashed;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--text-muted) 7%, transparent);
 }
 
 .names-funnel-wrap {
@@ -17,16 +19,32 @@
   outline-offset: 2px;
 }
 
-.names-funnel-progress,
+.names-funnel-progress {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 .names-funnel-hint {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.8rem;
 }
 
+.names-funnel-hint > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.names-funnel-hint > summary::-webkit-details-marker {
+  display: none;
+}
+
 .names-funnel {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: auto;
   font-size: 0.8rem;
 }
@@ -80,10 +98,7 @@
 }
 
 .names-funnel-formula {
-  margin: 0 0 0.4rem;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
+  display: none;
 }
 
 .names-funnel-detail td {
@@ -110,12 +125,19 @@
   display: none;
 }
 
+.names-funnel-total {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .names-funnel-actions {
+  width: 1%;
   white-space: nowrap;
 }
 
 .names-funnel-actions .btn-sm {
   margin-top: 0;
+  width: auto;
 }
 
 .names-funnel-actions .btn-sm + .btn-sm {

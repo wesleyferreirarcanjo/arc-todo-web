@@ -196,11 +196,12 @@ describe('candidateScore pillars', () => {
     expect(hit.spoken.value).toBe(base.spoken.value - 1);
   });
 
-  it('does not auto-pick a winner in the formula', () => {
+  it('does not claim a winner in the formula', () => {
     const scored = candidateScore(
       candidate({ domainChecks: COM_IO.freeCom }),
       'public_product',
     );
-    expect(scored.formula).toMatch(/not auto-picked/i);
+    expect(scored.formula).toMatch(/^Domain /);
+    expect(scored.formula).not.toMatch(/winner|recommend|auto-pick/i);
   });
 });

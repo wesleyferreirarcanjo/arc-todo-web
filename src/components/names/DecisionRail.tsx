@@ -14,7 +14,7 @@ export function DecisionRail({ session }: { session: ProjectNameSession }) {
         <h3>Standing pick</h3>
         <p className="names-desk-rail-name">{pickLabel}</p>
         <p className="names-meta">
-          Human choice. Highest total is not auto-picked.
+          You pick — totals do not.
         </p>
       </section>
       <section className="names-desk-rail-block">
