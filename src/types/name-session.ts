@@ -33,7 +33,6 @@ export interface ProductDescription {
   competitors?: string;
   includeWords?: string;
   excludeWords?: string;
-  preferredTlds?: string;
   preferredLength?: string;
   oneLine?: string;
   short?: string;

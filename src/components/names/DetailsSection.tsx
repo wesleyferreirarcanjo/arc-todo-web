@@ -27,7 +27,6 @@ const DESCRIPTION_CONTEXT_GROUPS = [
       ['competitors', 'Competitors or names to avoid'],
       ['includeWords', 'Words to include'],
       ['excludeWords', 'Words to exclude'],
-      ['preferredTlds', 'Preferred domain endings'],
       ['preferredLength', 'Preferred name length'],
     ],
   },

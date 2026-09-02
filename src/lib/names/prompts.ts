@@ -1,4 +1,5 @@
 import type { ProductDescription } from '../../types/name-session';
+import { WAVE_SIZE } from './wave';
 
 const ADDITIONAL_CONTEXT_FIELDS = [
   'problem',
@@ -11,7 +12,6 @@ const ADDITIONAL_CONTEXT_FIELDS = [
   'competitors',
   'includeWords',
   'excludeWords',
-  'preferredTlds',
   'preferredLength',
 ] as const satisfies readonly (keyof ProductDescription)[];
 
@@ -51,7 +51,6 @@ export function formatCanvas(desc: ProductDescription | undefined): string {
     d.competitors && `Avoid/competitors: ${d.competitors}`,
     d.includeWords && `Include: ${d.includeWords}`,
     d.excludeWords && `Exclude: ${d.excludeWords}`,
-    d.preferredTlds && `Preferred domains: ${d.preferredTlds}`,
     d.preferredLength && `Preferred length: ${d.preferredLength}`,
     d.oneLine && `One-line: ${d.oneLine}`,
     d.short && `Short: ${d.short}`,
@@ -61,12 +60,15 @@ export function formatCanvas(desc: ProductDescription | undefined): string {
     .join('\n');
 }
 
-export function suggestNamesPrompt(desc: ProductDescription, extra = ''): string {
-  return `Suggest up to 8 short product names (god-name style: distinctive, easy to spell, not generic category words like todo/task/app). Prefer names that could own an exact-match Google query and a clean domain.
+export function suggestNamesPrompt(
+  desc: ProductDescription,
+  opts?: { extra?: string; avoid?: string[] },
+): string {
+  return `Suggest about ${WAVE_SIZE} short product names (god-name style: distinctive, easy to spell, not generic category words like todo/task/app). Prefer names that could own an exact-match Google query and a clean domain.
 Product context:
 ${formatCanvas(desc)}
-${extra}
-
+${opts?.extra ?? ''}
+${avoidClause(opts?.avoid)}
 Reply with a tight bullet list of names only, one name per line, no explanations.`;
 }
 
@@ -74,12 +76,14 @@ export function generateFamiliesPrompt(
   desc: ProductDescription,
   families: string[],
   goal: string,
+  opts?: { avoid?: string[] },
 ): string {
-  return `Generate name possibilities as JSON only. At most 3 candidates per selected family. Each item: {"name","family","rationale","sourceWords"}.
+  return `Generate name possibilities as JSON only. Aim for about ${WAVE_SIZE} names total, at most 4 candidates per selected family. Each item: {"name","family","rationale","sourceWords"}.
 Families: ${families.join(', ')}
 Naming goal: ${goal}
 Product:
 ${formatCanvas(desc)}
+${avoidClause(opts?.avoid)}
 Do not dump a single untagged list. Avoid generic words (todo, task, app).`;
 }
 
@@ -100,6 +104,11 @@ ${formatCanvas(desc)}`;
 export function languagePrompt(name: string, languages: string[]): string {
   return `For the invented brand name "${name}", list possible meanings, awkward pronunciations, or offensive/confusing readings in: ${languages.join(', ')}.
 This is a helper only — a native speaker must verify. Return short bullets.`;
+}
+
+function avoidClause(avoid: string[] | undefined): string {
+  if (!avoid?.length) return '';
+  return `Do not suggest any of these names already used in this session: ${avoid.join(', ')}.\n`;
 }
 
 export function parseJsonBlock(text: string): unknown | null {
@@ -125,7 +134,7 @@ export function parseJsonBlock(text: string): unknown | null {
   }
 }
 
-export function parseNameLines(text: string, cap = 8): string[] {
+export function parseNameLines(text: string, cap = WAVE_SIZE): string[] {
   const names: string[] = [];
   const seen = new Set<string>();
   for (const line of text.split(/\r?\n/)) {

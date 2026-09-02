@@ -278,7 +278,8 @@ textarea {
   .sidebar-settings-trigger,
   .sidebar-settings-menu-item,
   .names-stepper button,
-  .names-card-more > summary {
+  .names-card-more > summary,
+  .names-funnel-actions .btn-sm {
     min-height: 2.75rem;
   }
 

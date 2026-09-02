@@ -15,9 +15,20 @@ import { ChatApiError, sendChatMessage } from '../lib/api/chat';
 import {
   addNameCandidates,
   checkNameCandidate,
+  checkNameCandidatesBatch,
+  checkNameHandles,
   fetchProjectNameSession,
   updateProjectNameSession,
 } from '../lib/api/names';
+import { mergeCheckedCandidate } from '../lib/names/funnel';
+import {
+  capFamilyWave,
+  dropAvoidedNames,
+  mergeCheckedCandidates,
+  runNameWave,
+  sessionAvoidList,
+  WAVE_SIZE,
+} from '../lib/names/wave';
 import {
   CODENAME_THEMES,
   DEFAULT_NAMING_GOAL,
@@ -80,6 +91,7 @@ export function NameSessionPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [typedName, setTypedName] = useState('');
+  const [resolvingKeys, setResolvingKeys] = useState<string[]>([]);
   const [families, setFamilies] = useState<string[]>([
     'descriptive',
     'suggestive',
@@ -214,33 +226,34 @@ export function NameSessionPage() {
     if (!orgId || !projectId || !sessionId || !session) return;
     const trimmed = name.trim();
     if (!trimmed) return;
+    const key = normalizeNameKey(trimmed);
     const existing = session.candidates.find(
-      (item) => normalizeNameKey(item.name) === normalizeNameKey(trimmed),
+      (item) => normalizeNameKey(item.name) === key,
     );
+    setResolvingKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
     if (existing && source === 'human') {
       setBusy('check');
       try {
         const checked = await checkNameCandidate(orgId, projectId, sessionId, trimmed);
-        const merged = session.candidates.map((item) =>
-          normalizeNameKey(item.name) === normalizeNameKey(trimmed)
-            ? {
-                ...item,
-                ...checked,
-                sources: [
-                  ...new Set<CandidateSource>([
-                    ...(item.sources ?? []),
-                    'human',
-                  ]),
-                ],
-                domainChecks: checked.domainChecks,
-              }
-            : item,
+        const merged = mergeCheckedCandidate(
+          session.candidates.map((item) =>
+            normalizeNameKey(item.name) === key
+              ? {
+                  ...item,
+                  sources: [
+                    ...new Set<CandidateSource>([...(item.sources ?? []), 'human']),
+                  ],
+                }
+              : item,
+          ),
+          checked,
         );
         const updated = await patch({ candidates: merged });
         if (updated) setTypedName('');
       } catch (err) {
         setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
       } finally {
+        setResolvingKeys((prev) => prev.filter((item) => item !== key));
         setBusy(null);
       }
       return;
@@ -255,14 +268,12 @@ export function NameSessionPage() {
           [{ name: trimmed, laneId: activeLane?.id, family: undefined }],
           source,
         );
+        const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+        setSession(latest);
       }
       const checked = await checkNameCandidate(orgId, projectId, sessionId, trimmed);
       const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-      const merged = latest.candidates.map((item) =>
-        item.id === checked.id || normalizeNameKey(item.name) === normalizeNameKey(trimmed)
-          ? { ...item, ...checked }
-          : item,
-      );
+      const merged = mergeCheckedCandidate(latest.candidates, checked);
       const updated = await updateProjectNameSession(orgId, projectId, sessionId, {
         candidates: merged,
       });
@@ -271,7 +282,63 @@ export function NameSessionPage() {
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
     } finally {
+      setResolvingKeys((prev) => prev.filter((item) => item !== key));
       setBusy(null);
+    }
+  }
+
+  async function runWaveChecks(
+    names: string[],
+    rows?: Array<{
+      name: string;
+      family?: string;
+      laneId?: string;
+      rationale?: string;
+    }>,
+  ) {
+    if (!orgId || !projectId || !sessionId || !names.length) return;
+    const keys = names.map((name) => normalizeNameKey(name));
+    setResolvingKeys((prev) => [...new Set([...prev, ...keys])]);
+    try {
+      await runNameWave({
+        names,
+        add: async (waveNames) => {
+          await addNameCandidates(
+            orgId,
+            projectId,
+            sessionId,
+            rows ?? waveNames.map((name) => ({ name, laneId: activeLane?.id })),
+            'chatbot',
+          );
+          const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+          setSession(latest);
+        },
+        checkBatch: async (waveNames) => {
+          try {
+            const { candidates } = await checkNameCandidatesBatch(
+              orgId,
+              projectId,
+              sessionId,
+              waveNames,
+            );
+            setSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    candidates: mergeCheckedCandidates(prev.candidates, candidates),
+                  }
+                : prev,
+            );
+            return candidates;
+          } catch {
+            return [];
+          }
+        },
+      });
+      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+      setSession(latest);
+    } finally {
+      setResolvingKeys((prev) => prev.filter((item) => !keys.includes(item)));
     }
   }
 
@@ -286,27 +353,23 @@ export function NameSessionPage() {
 
   async function handleSuggestNames() {
     await requireProductThen(async () => {
-      if (!orgId || !projectId || !sessionId) return;
+      if (!orgId || !projectId || !sessionId || !session) return;
       setBusy('suggest');
       setNotice(null);
       try {
+        const avoid = sessionAvoidList(session.candidates);
         const reply = await sendChatMessage({
-          messages: [{ role: 'user', content: suggestNamesPrompt(desc) }],
+          messages: [
+            { role: 'user', content: suggestNamesPrompt(desc, { avoid }) },
+          ],
           organizationId: orgId,
           projectId,
         });
-        const names = parseNameLines(reply.message, 8);
-        for (const name of names) {
-          await addNameCandidates(
-            orgId,
-            projectId,
-            sessionId,
-            [{ name, laneId: activeLane?.id }],
-            'chatbot',
-          );
-          await checkNameCandidate(orgId, projectId, sessionId, name);
-        }
-        await load();
+        const names = dropAvoidedNames(
+          parseNameLines(reply.message, WAVE_SIZE),
+          avoid,
+        );
+        await runWaveChecks(names);
       } catch (err) {
         setNotice(err instanceof ChatApiError ? err.message : 'Suggest names failed.');
       } finally {
@@ -331,6 +394,7 @@ export function NameSessionPage() {
                   (id) => NAME_FAMILIES.find((item) => item.id === id)?.label ?? id,
                 ),
                 profile.label,
+                { avoid: sessionAvoidList(session.candidates) },
               ),
             },
           ],
@@ -344,26 +408,23 @@ export function NameSessionPage() {
         const rows = Array.isArray(parsed)
           ? parsed
           : parsed?.candidates ?? [];
-        const byFamily = new Map<string, typeof rows>();
-        for (const row of rows) {
-          const family = String(row.family ?? 'invented');
-          const list = byFamily.get(family) ?? [];
-          if (list.length < 3) list.push(row);
-          byFamily.set(family, list);
-        }
-        const payload = [...byFamily.values()]
-          .flat()
-          .filter((row) => row.name)
+        const avoid = sessionAvoidList(session.candidates);
+        const payload = capFamilyWave(rows)
           .map((row) => ({
             name: String(row.name),
             family: String(row.family ?? ''),
             laneId: activeLane?.id,
             rationale: row.rationale,
-          }));
-        if (payload.length) {
-          await addNameCandidates(orgId, projectId, sessionId, payload, 'chatbot');
-          await load();
-        }
+          }))
+          .filter((row) => dropAvoidedNames([row.name], avoid).length > 0);
+        const names = dropAvoidedNames(
+          payload.map((row) => row.name),
+          avoid,
+        );
+        await runWaveChecks(
+          names,
+          payload.filter((row) => names.includes(row.name)),
+        );
       } catch (err) {
         setNotice(err instanceof ChatApiError ? err.message : 'Generate possibilities failed.');
       } finally {
@@ -384,6 +445,40 @@ export function NameSessionPage() {
     await replaceCandidates(
       session.candidates.map((item) => (item.id === id ? updater(item) : item)),
     );
+  }
+
+  async function handleKeep(id: string) {
+    if (!orgId || !projectId || !sessionId || !session) return;
+    const already = session.shortlistIds.includes(id);
+    const ids = already
+      ? session.shortlistIds.filter((item) => item !== id)
+      : [...session.shortlistIds, id];
+    const updated = await updateProjectNameSession(orgId, projectId, sessionId, {
+      shortlistIds: ids,
+    });
+    setSession(updated);
+    if (!already) {
+      const kept = updated.candidates.find((item) => item.id === id);
+      if (kept) {
+        try {
+          await checkNameHandles(orgId, projectId, sessionId, kept.name);
+        } catch {
+          // Handle probes stay unknown when they fail (BR-NAME-19).
+        }
+        const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+        setSession(latest);
+      }
+    }
+  }
+
+  async function handleReject(id: string) {
+    if (!session) return;
+    await patch({
+      candidates: session.candidates.map((item) =>
+        item.id === id ? { ...item, status: 'rejected' } : item,
+      ),
+      shortlistIds: session.shortlistIds.filter((item) => item !== id),
+    });
   }
 
   async function startLane() {
@@ -590,6 +685,7 @@ export function NameSessionPage() {
               filterSource={filterSource}
               onFilterSource={setFilterSource}
               visibleCandidates={visibleCandidates}
+              resolvingKeys={resolvingKeys}
               isBlind={Boolean(isBlind)}
               openRound={openRound}
               onCheckName={(name) => void handleCheckName(name)}
@@ -601,6 +697,8 @@ export function NameSessionPage() {
               }}
               onUpdateCandidate={(next) => void updateCandidate(next.id, () => next)}
               onExplore={(candidate) => void handleExplore(candidate)}
+              onKeep={(id) => void handleKeep(id)}
+              onReject={(id) => void handleReject(id)}
               onBusy={setBusy}
               onSession={setSession}
             />
