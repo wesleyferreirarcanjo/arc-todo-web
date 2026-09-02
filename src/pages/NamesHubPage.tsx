@@ -1,11 +1,12 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { NamesIcon } from '../components/icons';
+import { NameSessionRow } from '../components/names/NameSessionRow';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api/client';
 import {
@@ -37,18 +38,6 @@ const SORT_OPTIONS: { value: NameSort; label: string }[] = [
   { value: 'title_asc', label: 'Title (A-Z)' },
   { value: 'title_desc', label: 'Title (Z-A)' },
 ];
-
-function formatUpdatedAt(value: string): string {
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return value;
-  }
-}
-
-function formatBadgeLabel(label: string): string {
-  return label.length > 18 ? `${label.slice(0, 18)}...` : label;
-}
 
 export function NamesHubPage() {
   const navigate = useNavigate();
@@ -290,7 +279,7 @@ export function NamesHubPage() {
   }
 
   return (
-    <div className="page-shell diagrams-hub-page">
+    <div className="page-shell names-hub-page">
       <header className="page-header page-header-with-actions">
         <div>
           <h2>Names</h2>
@@ -343,7 +332,7 @@ export function NamesHubPage() {
 
       {!loading && !error && items.length > 0 && (
         <>
-          <div className="board-filters diagrams-hub-filters">
+          <div className="board-filters names-hub-filters">
             <label className="board-filter-field board-filter-search">
               Search
               <input
@@ -358,6 +347,7 @@ export function NamesHubPage() {
               Organization
               <Select
                 value={orgFilter}
+                placeholder="All organizations"
                 onChange={(value) => {
                   setOrgFilter(value);
                   setProjectFilter('');
@@ -375,6 +365,7 @@ export function NamesHubPage() {
               Project
               <Select
                 value={projectFilter}
+                placeholder="All projects"
                 onChange={setProjectFilter}
                 options={[
                   { value: '', label: 'All projects' },
@@ -410,64 +401,31 @@ export function NamesHubPage() {
               </button>
             </div>
           ) : (
-            <ul className="diagrams-grid">
-              {visibleItems.map((item) => {
-                const path = `/organizations/${item.org.id}/projects/${item.project.id}/names/${item.session.id}`;
-                const accent = getProjectColor(item.project);
-                return (
-                  <li
+            <div className="names-session-list-wrap">
+              <ul className="names-session-list">
+                {visibleItems.map((item) => (
+                  <NameSessionRow
                     key={item.session.id}
-                    className="diagram-card entity-card has-accent"
-                    style={{ '--entity-accent': accent } as CSSProperties}
-                  >
-                    <div className="diagram-card-body">
-                      <div className="diagram-card-badges">
-                        <span className="task-badge task-badge-org" title={item.org.name}>
-                          {formatBadgeLabel(item.org.name)}
-                        </span>
-                        <span
-                          className="task-badge task-badge-project"
-                          title={item.project.name}
-                          style={{ '--entity-accent': accent } as CSSProperties}
-                        >
-                          {formatBadgeLabel(item.project.name)}
-                        </span>
-                      </div>
-                      <h3 className="diagram-card-title">
-                        <Link to={path}>{item.session.title}</Link>
-                      </h3>
-                      <p className="diagram-card-meta">
-                        {item.session.recommendedName
-                          ? `Recommended: ${item.session.recommendedName}`
-                          : 'No recommendation yet'}
-                        {' · '}
-                        Updated {formatUpdatedAt(item.session.updatedAt)}
-                      </p>
-                      <div className="diagram-card-actions">
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            setRenameTarget(item);
-                            setRenameTitle(item.session.title);
-                            setRenameError(null);
-                          }}
-                        >
-                          Rename
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    title={item.session.title}
+                    href={`/organizations/${item.org.id}/projects/${item.project.id}/names/${item.session.id}`}
+                    recommendedName={item.session.recommendedName}
+                    updatedAt={item.session.updatedAt}
+                    namingGoal={item.session.namingGoal}
+                    accent={getProjectColor(item.project)}
+                    badges={[
+                      { label: item.org.name, kind: 'org' },
+                      { label: item.project.name, kind: 'project' },
+                    ]}
+                    onRename={() => {
+                      setRenameTarget(item);
+                      setRenameTitle(item.session.title);
+                      setRenameError(null);
+                    }}
+                    onDelete={() => setDeleteTarget(item)}
+                  />
+                ))}
+              </ul>
+            </div>
           )}
         </>
       )}
@@ -478,96 +436,98 @@ export function NamesHubPage() {
         title="New name session"
         titleId="new-name-session-title"
       >
-        <div className="form-field">
-          <span>Organization</span>
-          <Select
-            value={createOrgId}
-            onChange={(value) => {
-              setCreateOrgId(value);
-              setCreateProjectId('');
-            }}
-            options={[
-              { value: '', label: 'Select organization' },
-              ...organizations.map((org) => ({ value: org.id, label: org.name })),
-            ]}
-          />
-        </div>
-        {!isAdmin && (
+        <div className="names-create-form">
           <div className="form-field">
-            <span>Project</span>
+            <span>Organization</span>
             <Select
-              value={createProjectId}
-              onChange={setCreateProjectId}
-              disabled={!createOrgId}
+              value={createOrgId}
+              onChange={(value) => {
+                setCreateOrgId(value);
+                setCreateProjectId('');
+              }}
               options={[
-                { value: '', label: 'Select project' },
-                ...createProjectOptions.map((project) => ({
-                  value: project.id,
-                  label: project.name,
-                })),
+                { value: '', label: 'Select organization' },
+                ...organizations.map((org) => ({ value: org.id, label: org.name })),
               ]}
             />
           </div>
-        )}
-        <label className="form-field">
-          <span>Working name</span>
-          <input
-            type="text"
-            value={newTitle}
-            onChange={(event) => setNewTitle(event.target.value)}
-            placeholder="e.g. project-g"
-            autoFocus
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                void handleCreate();
-              }
-            }}
-          />
-        </label>
-        <label className="form-field">
-          <span>What does it do?</span>
-          <textarea
-            rows={2}
-            value={whatItIs}
-            onChange={(event) => setWhatItIs(event.target.value)}
-            placeholder="A private task board for a small team."
-          />
-        </label>
-        <div className="form-field">
-          <span>Kind of name</span>
-          <Select
-            value={createGoal}
-            onChange={(value) => setCreateGoal(value as NamingGoal)}
-            options={NAMING_GOAL_OPTIONS.map((option) => ({
-              value: option.id,
-              label: option.label,
-            }))}
-          />
-        </div>
-        <p className="page-subtitle">
-          {isAdmin
-            ? 'Enough to start checking names. Extra context can wait. This also creates a project with the working name.'
-            : 'Enough to start checking names. Extra context can wait. Stored on the selected project.'}
-        </p>
-        {createError && <ErrorAlert>{createError}</ErrorAlert>}
-        <div className="knowledge-actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={creating}
-            onClick={() => void handleCreate()}
-          >
-            {creating ? 'Creating...' : 'Create'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={creating}
-            onClick={() => setCreateOpen(false)}
-          >
-            Cancel
-          </button>
+          {!isAdmin && (
+            <div className="form-field">
+              <span>Project</span>
+              <Select
+                value={createProjectId}
+                onChange={setCreateProjectId}
+                disabled={!createOrgId}
+                options={[
+                  { value: '', label: 'Select project' },
+                  ...createProjectOptions.map((project) => ({
+                    value: project.id,
+                    label: project.name,
+                  })),
+                ]}
+              />
+            </div>
+          )}
+          <label className="form-field">
+            <span>Working name</span>
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(event) => setNewTitle(event.target.value)}
+              placeholder="e.g. project-g"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void handleCreate();
+                }
+              }}
+            />
+          </label>
+          <label className="form-field">
+            <span>What does it do?</span>
+            <textarea
+              rows={2}
+              value={whatItIs}
+              onChange={(event) => setWhatItIs(event.target.value)}
+              placeholder="A private task board for a small team."
+            />
+          </label>
+          <div className="form-field">
+            <span>Kind of name</span>
+            <Select
+              value={createGoal}
+              onChange={(value) => setCreateGoal(value as NamingGoal)}
+              options={NAMING_GOAL_OPTIONS.map((option) => ({
+                value: option.id,
+                label: option.label,
+              }))}
+            />
+          </div>
+          <p className="page-subtitle">
+            {isAdmin
+              ? 'Enough to start checking names. Extra context can wait. This also creates a project with the working name.'
+              : 'Enough to start checking names. Extra context can wait. Stored on the selected project.'}
+          </p>
+          {createError && <ErrorAlert>{createError}</ErrorAlert>}
+          <div className="knowledge-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={creating}
+              onClick={() => void handleCreate()}
+            >
+              {creating ? 'Creating...' : 'Create'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={creating}
+              onClick={() => setCreateOpen(false)}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </Modal>
 

@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { NamesIcon } from '../components/icons';
+import { NameSessionRow } from '../components/names/NameSessionRow';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
@@ -22,13 +23,12 @@ import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-sessio
 
 type NameSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
 
-function formatUpdatedAt(value: string): string {
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return value;
-  }
-}
+const SORT_OPTIONS: { value: NameSort; label: string }[] = [
+  { value: 'updated_desc', label: 'Recently updated' },
+  { value: 'updated_asc', label: 'Least recently updated' },
+  { value: 'title_asc', label: 'Title (A-Z)' },
+  { value: 'title_desc', label: 'Title (Z-A)' },
+];
 
 export function ProjectNamesPage() {
   const { orgId, projectId } = useParams();
@@ -96,6 +96,14 @@ export function ProjectNamesPage() {
     });
   }, [sessions, searchQuery, sort]);
 
+  function openCreate() {
+    setCreateOpen(true);
+    setNewTitle('');
+    setWhatItIs('');
+    setCreateGoal(DEFAULT_NAMING_GOAL);
+    setCreateError(null);
+  }
+
   async function handleCreate() {
     if (!orgId || !projectId) return;
     const title = newTitle.trim();
@@ -116,6 +124,52 @@ export function ProjectNamesPage() {
       setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming session' }));
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleRename() {
+    if (!orgId || !projectId || !renameTarget) return;
+    const title = renameTitle.trim();
+    if (!title) {
+      setRenameError(catalogMessage(WEB_ERROR.VAL_SESSION));
+      return;
+    }
+    setRenaming(true);
+    setRenameError(null);
+    try {
+      const updated = await updateProjectNameSession(
+        orgId,
+        projectId,
+        renameTarget.id,
+        { title },
+      );
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === updated.id
+            ? { ...session, title: updated.title, updatedAt: updated.updatedAt }
+            : session,
+        ),
+      );
+      setRenameTarget(null);
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this session' }));
+    } finally {
+      setRenaming(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!orgId || !projectId || !deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteProjectNameSession(orgId, projectId, deleteTarget.id);
+      setSessions((prev) => prev.filter((session) => session.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this session' }));
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -143,7 +197,7 @@ export function ProjectNamesPage() {
 
   return (
     <div
-      className="page-shell diagrams-page"
+      className="page-shell names-list-page"
       style={
         currentProject
           ? ({ '--entity-accent': getProjectColor(currentProject) } as CSSProperties)
@@ -172,19 +226,11 @@ export function ProjectNamesPage() {
             </Link>
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => {
-            setCreateOpen(true);
-            setNewTitle('');
-            setWhatItIs('');
-            setCreateGoal(DEFAULT_NAMING_GOAL);
-            setCreateError(null);
-          }}
-        >
-          New name session
-        </button>
+        {!loading && !error && (
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            New name session
+          </button>
+        )}
       </header>
 
       {loading && <p className="status-message">Loading name sessions...</p>}
@@ -201,13 +247,7 @@ export function ProjectNamesPage() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => {
-              setCreateOpen(true);
-              setNewTitle('');
-              setWhatItIs('');
-              setCreateGoal(DEFAULT_NAMING_GOAL);
-              setCreateError(null);
-            }}
+            onClick={openCreate}
           >
             New name session
           </button>
@@ -215,13 +255,15 @@ export function ProjectNamesPage() {
       )}
 
       {!loading && !error && sessions.length > 0 && (
-        <div className="board-filters diagrams-filters">
+        <div className="board-filters names-list-filters">
           <label className="board-filter-field board-filter-search">
             Search
             <input
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Filter by title"
+              aria-label="Filter name sessions by title"
             />
           </label>
           <label className="board-filter-field">
@@ -229,12 +271,7 @@ export function ProjectNamesPage() {
             <Select
               value={sort}
               onChange={(value) => setSort(value as NameSort)}
-              options={[
-                { value: 'updated_desc', label: 'Recently updated' },
-                { value: 'updated_asc', label: 'Least recently updated' },
-                { value: 'title_asc', label: 'Title (A-Z)' },
-                { value: 'title_desc', label: 'Title (Z-A)' },
-              ]}
+              options={SORT_OPTIONS}
             />
           </label>
         </div>
@@ -254,48 +291,29 @@ export function ProjectNamesPage() {
       )}
 
       {!loading && !error && visible.length > 0 && (
-        <ul className="diagrams-grid">
-          {visible.map((session) => (
-            <li key={session.id} className="diagram-card entity-card">
-              <div className="diagram-card-body">
-                <h3 className="diagram-card-title">
-                  <Link
-                    to={`/organizations/${orgId}/projects/${projectId}/names/${session.id}`}
-                  >
-                    {session.title}
-                  </Link>
-                </h3>
-                <p className="diagram-card-meta">
-                  {session.recommendedName
-                    ? `Recommended: ${session.recommendedName}`
-                    : 'No recommendation yet'}
-                  {' · '}
-                  Updated {formatUpdatedAt(session.updatedAt)}
-                </p>
-                <div className="diagram-card-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setRenameTarget(session);
-                      setRenameTitle(session.title);
-                      setRenameError(null);
-                    }}
-                  >
-                    Rename
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={() => setDeleteTarget(session)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="names-session-list-wrap">
+          <ul className="names-session-list">
+            {visible.map((session) => (
+              <NameSessionRow
+                key={session.id}
+                title={session.title}
+                href={`/organizations/${orgId}/projects/${projectId}/names/${session.id}`}
+                recommendedName={session.recommendedName}
+                updatedAt={session.updatedAt}
+                namingGoal={session.namingGoal}
+                accent={
+                  currentProject ? getProjectColor(currentProject) : undefined
+                }
+                onRename={() => {
+                  setRenameTarget(session);
+                  setRenameTitle(session.title);
+                  setRenameError(null);
+                }}
+                onDelete={() => setDeleteTarget(session)}
+              />
+            ))}
+          </ul>
+        </div>
       )}
 
       <Modal
@@ -303,64 +321,67 @@ export function ProjectNamesPage() {
         onClose={() => (creating ? undefined : setCreateOpen(false))}
         title="New name session"
         titleId="new-project-name-session-title"
+        accentColor={currentProject ? getProjectColor(currentProject) : undefined}
       >
-        <label className="form-field">
-          <span>Name</span>
-          <input
-            type="text"
-            value={newTitle}
-            onChange={(event) => setNewTitle(event.target.value)}
-            placeholder="e.g. project-g"
-            autoFocus
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                void handleCreate();
-              }
-            }}
-          />
-        </label>
-        <label className="form-field">
-          <span>What does it do?</span>
-          <textarea
-            rows={2}
-            value={whatItIs}
-            onChange={(event) => setWhatItIs(event.target.value)}
-            placeholder="A private task board for a small team."
-          />
-        </label>
-        <div className="form-field">
-          <span>Kind of name</span>
-          <Select
-            value={createGoal}
-            onChange={(value) => setCreateGoal(value as NamingGoal)}
-            options={NAMING_GOAL_OPTIONS.map((option) => ({
-              value: option.id,
-              label: option.label,
-            }))}
-          />
-        </div>
-        <p className="page-subtitle">
-          Enough to start checking names. Extra context can wait.
-        </p>
-        {createError && <ErrorAlert>{createError}</ErrorAlert>}
-        <div className="knowledge-actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={creating}
-            onClick={() => void handleCreate()}
-          >
-            {creating ? 'Creating...' : 'Create'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={creating}
-            onClick={() => setCreateOpen(false)}
-          >
-            Cancel
-          </button>
+        <div className="names-create-form">
+          <label className="form-field">
+            <span>Name</span>
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(event) => setNewTitle(event.target.value)}
+              placeholder="e.g. project-g"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void handleCreate();
+                }
+              }}
+            />
+          </label>
+          <label className="form-field">
+            <span>What does it do?</span>
+            <textarea
+              rows={2}
+              value={whatItIs}
+              onChange={(event) => setWhatItIs(event.target.value)}
+              placeholder="A private task board for a small team."
+            />
+          </label>
+          <div className="form-field">
+            <span>Kind of name</span>
+            <Select
+              value={createGoal}
+              onChange={(value) => setCreateGoal(value as NamingGoal)}
+              options={NAMING_GOAL_OPTIONS.map((option) => ({
+                value: option.id,
+                label: option.label,
+              }))}
+            />
+          </div>
+          <p className="page-subtitle">
+            Enough to start checking names. Extra context can wait.
+          </p>
+          {createError && <ErrorAlert>{createError}</ErrorAlert>}
+          <div className="knowledge-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={creating}
+              onClick={() => void handleCreate()}
+            >
+              {creating ? 'Creating...' : 'Create'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={creating}
+              onClick={() => setCreateOpen(false)}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </Modal>
 
@@ -369,6 +390,7 @@ export function ProjectNamesPage() {
         onClose={() => (renaming ? undefined : setRenameTarget(null))}
         title="Rename session"
         titleId="rename-project-name-session-title"
+        accentColor={currentProject ? getProjectColor(currentProject) : undefined}
       >
         <label className="form-field">
           <span>Name</span>
@@ -376,6 +398,7 @@ export function ProjectNamesPage() {
             type="text"
             value={renameTitle}
             onChange={(event) => setRenameTitle(event.target.value)}
+            autoFocus
           />
         </label>
         {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
@@ -384,41 +407,14 @@ export function ProjectNamesPage() {
             type="button"
             className="btn btn-primary"
             disabled={renaming}
-            onClick={async () => {
-              if (!orgId || !projectId || !renameTarget) return;
-              const title = renameTitle.trim();
-              if (!title) {
-                setRenameError(catalogMessage(WEB_ERROR.VAL_SESSION));
-                return;
-              }
-              setRenaming(true);
-              try {
-                const updated = await updateProjectNameSession(
-                  orgId,
-                  projectId,
-                  renameTarget.id,
-                  { title },
-                );
-                setSessions((prev) =>
-                  prev.map((session) =>
-                    session.id === updated.id
-                      ? { ...session, title: updated.title, updatedAt: updated.updatedAt }
-                      : session,
-                  ),
-                );
-                setRenameTarget(null);
-              } catch (err) {
-                setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this session' }));
-              } finally {
-                setRenaming(false);
-              }
-            }}
+            onClick={() => void handleRename()}
           >
-            Save
+            {renaming ? 'Saving...' : 'Save'}
           </button>
           <button
             type="button"
             className="btn btn-secondary"
+            disabled={renaming}
             onClick={() => setRenameTarget(null)}
           >
             Cancel
@@ -429,24 +425,11 @@ export function ProjectNamesPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete session"
-        description={`Delete "${deleteTarget?.title ?? 'this session'}"?`}
+        description={`Delete "${deleteTarget?.title ?? 'this session'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={async () => {
-          if (!orgId || !projectId || !deleteTarget) return;
-          setDeleting(true);
-          try {
-            await deleteProjectNameSession(orgId, projectId, deleteTarget.id);
-            setSessions((prev) => prev.filter((session) => session.id !== deleteTarget.id));
-            setDeleteTarget(null);
-          } catch (err) {
-            setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this session' }));
-            setDeleteTarget(null);
-          } finally {
-            setDeleting(false);
-          }
-        }}
+        onConfirm={() => void handleDelete()}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
