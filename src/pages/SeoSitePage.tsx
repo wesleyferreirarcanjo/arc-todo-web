@@ -2,6 +2,7 @@ import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { SeoKeywordsResearch } from '../components/seo/SeoKeywordsResearch';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
@@ -32,6 +33,14 @@ const TAB_LABELS: Record<(typeof TABS)[number], string> = {
   competitors: 'Competitors',
   ai: 'AI visibility',
 };
+
+const KEYWORD_SEGMENTS = ['research', 'gsc'] as const;
+
+const KEYWORD_SEGMENT_LABELS: Record<(typeof KEYWORD_SEGMENTS)[number], string> =
+  {
+    research: 'Research',
+    gsc: 'Search Console',
+  };
 
 function categoryScore(
   categories: Record<string, unknown>,
@@ -120,6 +129,8 @@ export function SeoSitePage() {
   const [keywords, setKeywords] = useState<SeoGscRow[]>([]);
   const [pages, setPages] = useState<SeoGscRow[]>([]);
   const [tab, setTab] = useState<(typeof TABS)[number]>('audit');
+  const [keywordSegment, setKeywordSegment] =
+    useState<(typeof KEYWORD_SEGMENTS)[number]>('research');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -194,10 +205,13 @@ export function SeoSitePage() {
   }, [orgId, projectId, siteId, site?.gscConnected]);
 
   useEffect(() => {
-    if (tab === 'keywords' || tab === 'rank') {
+    if (
+      (tab === 'keywords' && keywordSegment === 'gsc') ||
+      tab === 'rank'
+    ) {
       void loadGsc();
     }
-  }, [tab, loadGsc]);
+  }, [tab, keywordSegment, loadGsc]);
 
   async function handleRunAudit() {
     if (!orgId || !projectId || !siteId) return;
@@ -415,16 +429,45 @@ export function SeoSitePage() {
 
           {tab === 'keywords' && (
             <section className="names-panel">
-              {gscError && <ErrorAlert>{gscError}</ErrorAlert>}
-              {!site.gscConnected ? (
-                <GscConnectPrompt connecting={connecting} onConnect={() => void handleConnect()} />
-              ) : gscLoading ? (
-                <p className="status-message">Loading Search Console queries...</p>
-              ) : (
-                <GscTable
-                  rows={keywords}
-                  empty="No Search Console queries in this range yet."
+              <nav className="names-stepper" aria-label="Keywords">
+                {KEYWORD_SEGMENTS.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={keywordSegment === id ? 'is-current' : undefined}
+                    aria-current={keywordSegment === id ? 'true' : undefined}
+                    onClick={() => setKeywordSegment(id)}
+                  >
+                    {KEYWORD_SEGMENT_LABELS[id]}
+                  </button>
+                ))}
+              </nav>
+              {keywordSegment === 'research' ? (
+                <SeoKeywordsResearch
+                  orgId={orgId}
+                  projectId={projectId}
+                  siteId={siteId}
+                  siteTitle={site.title || site.hostname}
                 />
+              ) : (
+                <>
+                  {gscError && <ErrorAlert>{gscError}</ErrorAlert>}
+                  {!site.gscConnected ? (
+                    <GscConnectPrompt
+                      connecting={connecting}
+                      onConnect={() => void handleConnect()}
+                    />
+                  ) : gscLoading ? (
+                    <p className="status-message">
+                      Loading Search Console queries...
+                    </p>
+                  ) : (
+                    <GscTable
+                      rows={keywords}
+                      empty="No Search Console queries in this range yet."
+                    />
+                  )}
+                </>
               )}
             </section>
           )}

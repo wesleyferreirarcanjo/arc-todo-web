@@ -19,8 +19,11 @@ describe('Names hub session row CSS (#arc-474)', () => {
   });
 
   it('collapses each row to one line at the 640px phone breakpoint', () => {
-    expect(css).toContain('@media (max-width: 640px)');
-    const phone = css.slice(css.lastIndexOf('@media (max-width: 640px)'));
+    const phoneStart = css.indexOf(
+      '@media (max-width: 640px) {\n  .names-session-list {',
+    );
+    expect(phoneStart).toBeGreaterThan(-1);
+    const phone = css.slice(phoneStart, phoneStart + 2500);
     expect(phone).toContain('.names-session-row');
     expect(phone).toContain('flex-wrap: nowrap');
     expect(phone).toContain('.names-session-row-subtitle');

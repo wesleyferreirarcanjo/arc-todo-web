@@ -100,6 +100,28 @@ export function fetchSeoKeywords(
   );
 }
 
+export function fetchSeoOfferings(
+  orgId: string,
+  projectId: string,
+  siteId: string,
+): Promise<{ offerings: string[] }> {
+  return apiRequest<{ offerings: string[] }>(
+    `${seoBasePath(orgId, projectId)}/${siteId}/offerings`,
+  );
+}
+
+export function saveSeoOfferings(
+  orgId: string,
+  projectId: string,
+  siteId: string,
+  offerings: string[],
+): Promise<{ offerings: string[] }> {
+  return apiRequest<{ offerings: string[] }>(
+    `${seoBasePath(orgId, projectId)}/${siteId}/offerings`,
+    { method: 'PUT', body: { offerings } },
+  );
+}
+
 export function fetchSeoSettings(): Promise<SeoSettings> {
   return apiRequest<SeoSettings>('/seo-settings');
 }
