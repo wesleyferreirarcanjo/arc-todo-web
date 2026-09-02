@@ -33,7 +33,6 @@ export function NamesSection(props: {
   onGenerateFamilies: () => void;
   readinessHint: string | null;
   emptyCopy: string;
-  onPreview: (candidateId: string) => void;
   onUpdateCandidate: (candidate: NameCandidate) => void;
   onExplore: (candidate: NameCandidate) => void;
   onKeep: (candidateId: string) => void;
@@ -207,7 +206,6 @@ export function NamesSection(props: {
                   onBusy={props.onBusy}
                   onSession={props.onSession}
                   onCheck={() => void props.onCheckName(candidate.name)}
-                  onPreview={() => props.onPreview(candidate.id)}
                   onUpdate={(next) => props.onUpdateCandidate(next)}
                   onExplore={() => props.onExplore(candidate)}
                   onReject={() => props.onReject(candidate.id)}

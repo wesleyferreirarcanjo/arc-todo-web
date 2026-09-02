@@ -72,7 +72,6 @@ const READINESS_HINT =
   'Suggest names needs this sentence first. You can still check a name.';
 const EMPTY_CLICK_NOTICE =
   'Add one sentence about what it does, then Suggest names. You can still check a name.';
-const PREVIEW_EMPTY = 'Check a name on Names, then preview it here.';
 const COMPARE_EMPTY = 'Keep a name on Names, then compare it here.';
 const FEEDBACK_EMPTY =
   'Keep at least two names on Names, then start a round here.';
@@ -132,7 +131,7 @@ describe('NameSessionPage brief readiness', () => {
     expect(screen.queryByText(READINESS_HINT)).toBeNull();
   });
 
-  it('names the next action on not-ready Preview, Compare, and Feedback tabs', async () => {
+  it('names the next action on not-ready Compare and Feedback tabs', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -140,8 +139,7 @@ describe('NameSessionPage brief readiness', () => {
       expect(screen.getByRole('button', { name: 'Suggest names' })).toBeTruthy();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Preview' }));
-    expect(screen.getByText(PREVIEW_EMPTY)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Compare' }));
     expect(screen.getByText(COMPARE_EMPTY)).toBeTruthy();

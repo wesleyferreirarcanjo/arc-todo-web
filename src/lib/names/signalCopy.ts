@@ -86,9 +86,9 @@ export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
   },
   visual: {
     name: 'Visual',
-    source: 'Preview flags',
+    source: 'Appearance flags',
     howToRead:
-      'Truncation, weak initials, and similar flags are appearance notes from Preview.',
+      'Truncation, weak initials, and similar flags are appearance notes, not domain or trademark failures.',
     honestLimit:
       'Visual concerns are not domain or trademark failures.',
     rules: ['BR-NAME-04'],

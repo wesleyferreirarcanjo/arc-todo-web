@@ -27,7 +27,6 @@ export function CandidateCard(props: {
   onBusy: (value: string | null) => void;
   onSession: (session: ProjectNameSession) => void;
   onCheck: () => void;
-  onPreview: () => void;
   onUpdate: (candidate: NameCandidate) => void;
   onExplore: () => void;
   onReject: () => void;
@@ -142,9 +141,6 @@ export function CandidateCard(props: {
         >
           Images
         </a>
-        <button type="button" className="names-text-link" onClick={props.onPreview}>
-          Preview in context
-        </button>
         <button type="button" className="names-text-link" onClick={props.onExplore}>
           Explore variations
         </button>

@@ -7,7 +7,6 @@ import { DetailsSection } from '../components/names/DetailsSection';
 import { FeedbackSection } from '../components/names/FeedbackSection';
 import { MessagingSection } from '../components/names/MessagingSection';
 import { NamesSection } from '../components/names/NamesSection';
-import { PreviewSection } from '../components/names/PreviewSection';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
@@ -62,7 +61,6 @@ import type {
 
 const SECTIONS = [
   'names',
-  'preview',
   'messaging',
   'compare',
   'feedback',
@@ -71,7 +69,6 @@ const SECTIONS = [
 
 const SECTION_LABELS: Record<(typeof SECTIONS)[number], string> = {
   names: 'Names',
-  preview: 'Preview',
   messaging: 'Messaging',
   compare: 'Compare',
   feedback: 'Feedback',
@@ -87,8 +84,6 @@ const SUGGEST_REQUIRED_NOTICE =
   'Add one sentence about what it does, then Suggest names. You can still check a name.';
 const NAMES_EMPTY_COPY =
   'Suggest names will offer about twelve names, with checks streaming in. Keep or Reject each row. You can also type a name to check it.';
-const PREVIEW_EMPTY_COPY =
-  'Check a name on Names, then preview it here.';
 const COMPARE_EMPTY_COPY =
   'Keep a name on Names, then compare it here.';
 const FEEDBACK_EMPTY_COPY =
@@ -123,10 +118,6 @@ export function NameSessionPage() {
   const [filterFamily, setFilterFamily] = useState('');
   const [filterSource, setFilterSource] = useState('');
   const [filterLane, setFilterLane] = useState('');
-  const [previewWide, setPreviewWide] = useState(true);
-  const [previewDark, setPreviewDark] = useState(false);
-  const [previewCandidateId, setPreviewCandidateId] = useState<string | null>(null);
-  const [customExtension, setCustomExtension] = useState('Studio');
   const [exploreTarget, setExploreTarget] = useState<NameCandidate | null>(null);
   const [exploreBusy, setExploreBusy] = useState(false);
 
@@ -574,13 +565,6 @@ export function NameSessionPage() {
     }
   }
 
-  const checkedCandidates =
-    session?.candidates.filter((item) => (item.domainChecks?.length ?? 0) > 0) ??
-    [];
-  const previewCandidate =
-    session?.candidates.find((item) => item.id === previewCandidateId) ??
-    checkedCandidates[0] ??
-    null;
   const exploreVariants = exploreTarget
     ? exploreVariations(exploreTarget.name)
     : [];
@@ -763,10 +747,6 @@ export function NameSessionPage() {
                 canvasHasProduct(desc) ? null : SUGGEST_READINESS_HINT
               }
               emptyCopy={NAMES_EMPTY_COPY}
-              onPreview={(candidateId) => {
-                setPreviewCandidateId(candidateId);
-                setSection('preview');
-              }}
               onUpdateCandidate={(next) => void updateCandidate(next.id, () => next)}
               onExplore={(candidate) => void requestExplore(candidate)}
               onKeep={(id) => void handleKeep(id)}
@@ -774,23 +754,6 @@ export function NameSessionPage() {
               onBusy={setBusy}
               onSession={setSession}
             />
-          )}
-
-          {section === 'preview' && previewCandidate && (
-            <PreviewSection
-              candidate={previewCandidate}
-              wide={previewWide}
-              dark={previewDark}
-              customExtension={customExtension}
-              productDescription={desc}
-              onWide={setPreviewWide}
-              onDark={setPreviewDark}
-              onCustom={setCustomExtension}
-              onSave={(next) => void updateCandidate(previewCandidate.id, () => next)}
-            />
-          )}
-          {section === 'preview' && !previewCandidate && (
-            <p className="names-empty">{PREVIEW_EMPTY_COPY}</p>
           )}
 
           {section === 'messaging' && (

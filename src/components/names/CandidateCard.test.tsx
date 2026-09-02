@@ -74,7 +74,6 @@ function renderCard(
       onBusy={() => undefined}
       onSession={() => undefined}
       onCheck={() => undefined}
-      onPreview={() => undefined}
       onUpdate={onUpdate}
       onExplore={() => undefined}
       onReject={() => undefined}
@@ -94,6 +93,7 @@ describe('CandidateCard verdict, evidence, judgment', () => {
     ).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'What we found' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Score' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Preview in context' })).toBeNull();
     expect(screen.queryByText(/Highest total is not auto-picked/)).toBeNull();
     expect(screen.queryByText(/These answers stay Unknown/)).toBeNull();
     expect(screen.queryByText(/pass\/fail/i)).toBeNull();
