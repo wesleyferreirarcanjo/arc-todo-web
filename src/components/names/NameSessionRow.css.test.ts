@@ -56,6 +56,13 @@ describe('Names hub session row CSS (#arc-474)', () => {
     );
   });
 
+  it('lets the names hub use the full content width', () => {
+    const rule = ruleBlock('.names-hub-page');
+    expect(rule).toContain('width: 100%');
+    expect(rule).not.toContain('86rem');
+    expect(rule).not.toContain('48rem');
+  });
+
   it('widens the names inspector instead of a 640px island', () => {
     const rule = ruleBlock('.names-inspector-modal');
     expect(rule).toMatch(/min\(/);

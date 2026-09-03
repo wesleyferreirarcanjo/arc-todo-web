@@ -319,6 +319,9 @@ export function ExploreMode(props: {
   }
 
   const remaining = Math.max(0, deck.length - Math.min(index, deck.length));
+  const openBatch = (session.batches ?? []).some(
+    (batch) => batch.status === 'open',
+  );
   const variations = current
     ? exploreVariations(current.name).filter(
         (name) =>
@@ -330,6 +333,17 @@ export function ExploreMode(props: {
 
   return (
     <div className="names-explore-layout">
+      <BatchProgress
+        position={deck.length === 0 ? 0 : Math.min(index + 1, deck.length)}
+        total={deck.length}
+        remaining={remaining}
+        championName={champion}
+        canManage={session.canManageFeedback}
+        unbatchedCount={waiting.length}
+        hasOpenBatch={openBatch}
+        starting={startingBatch}
+        onStartBatch={() => void startBatch()}
+      />
       <div className="names-explore-main">
         {error ? <ErrorAlert>{error}</ErrorAlert> : null}
         {exhausted ? (
@@ -357,6 +371,7 @@ export function ExploreMode(props: {
             <CandidateDeck stacked={index < deck.length - 1}>
               <CandidateDeckCard
                 candidate={current}
+                namingGoal={session.namingGoal}
                 position={index + 1}
                 total={deck.length}
                 speechUnsupported={speechUnsupported}
@@ -376,27 +391,6 @@ export function ExploreMode(props: {
           <p className="names-empty">No names in this batch yet.</p>
         )}
       </div>
-      <aside className="names-explore-aside">
-        <BatchProgress
-          position={deck.length === 0 ? 0 : Math.min(index + 1, deck.length)}
-          total={deck.length}
-          remaining={remaining}
-          championName={champion}
-          canManage={session.canManageFeedback}
-          unbatchedCount={waiting.length}
-          starting={startingBatch}
-          onStartBatch={() => void startBatch()}
-        />
-        <section className="names-quick-keys" aria-label="Quick keys">
-          <h3>Quick keys</h3>
-          <ul>
-            <li>← Pass</li>
-            <li>↑ Like</li>
-            <li>→ Love</li>
-            <li>H Hear it</li>
-          </ul>
-        </section>
-      </aside>
       <VariationPicker
         open={variationOpen}
         sourceName={current?.name ?? ''}

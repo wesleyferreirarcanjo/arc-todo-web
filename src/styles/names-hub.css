@@ -1,8 +1,8 @@
 /* names-hub.css — imported from src/index.css; hub and session-list surfaces. */
 .names-hub-page {
   width: 100%;
-  max-width: 86rem;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
 }
 
 .names-create-form {

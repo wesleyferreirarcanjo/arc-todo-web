@@ -25,7 +25,7 @@ vi.mock('../../lib/api/names', () => ({
 }));
 
 import { ExploreMode } from './ExploreMode';
-import { webFitLine } from './CandidateDeckCard';
+import { deckDnsLines, webFitLine } from './CandidateDeckCard';
 
 function candidate(partial: Partial<NameCandidate> = {}): NameCandidate {
   return {
@@ -252,7 +252,7 @@ describe('ExploreMode', () => {
     });
   });
 
-  it('does not bind Space to Hear it, and lists H on the Quick keys panel', async () => {
+  it('does not bind Space to Hear it, and still hears on H without a Quick keys panel', async () => {
     const user = userEvent.setup();
     const speak = vi.fn();
     class FakeUtterance {
@@ -272,7 +272,8 @@ describe('ExploreMode', () => {
     });
     render(<Harness initial={session()} />);
 
-    expect(screen.getByText('H Hear it')).toBeTruthy();
+    expect(screen.queryByLabelText('Quick keys')).toBeNull();
+    expect(screen.queryByText('H Hear it')).toBeNull();
     expect(screen.queryByText(/space/i)).toBeNull();
     fireEvent.keyDown(window, { key: ' ', code: 'Space' });
     expect(speak).not.toHaveBeenCalled();
@@ -324,12 +325,12 @@ describe('ExploreMode', () => {
     );
   });
 
-  it('hides Start batch for a non-manager', () => {
+  it('hides Start a new batch for a non-manager', () => {
     render(<Harness initial={session({ canManageFeedback: false })} />);
-    expect(screen.queryByRole('button', { name: 'Start batch' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start a new batch' })).toBeNull();
   });
 
-  it('disables Start batch below 10 unbatched names', () => {
+  it('disables Start a new batch below 10 unbatched names', () => {
     render(
       <Harness
         initial={session({
@@ -341,7 +342,7 @@ describe('ExploreMode', () => {
         })}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Start batch' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Start a new batch' })).toBeDisabled();
     expect(
       screen.getByText('Add at least 10 new names before starting a batch.'),
     ).toBeTruthy();
@@ -387,13 +388,103 @@ describe('ExploreMode', () => {
     ).toBe(false);
   });
 
-  it('puts reaction controls above the side cards in DOM order', () => {
-    render(<Harness initial={session()} />);
-    const reactions = document.querySelector('.names-reaction-controls');
-    const aside = document.querySelector('.names-explore-aside');
-    expect(reactions && aside).toBeTruthy();
+  it('shows the name description, taken DNS, and overall score on the deck card', () => {
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate({
+              rationale: 'Short enough to say once.',
+              ratings: { overall: 8 },
+              domainChecks: [
+                {
+                  host: 'nova.com',
+                  tld: 'com',
+                  dnsStatus: 'taken',
+                  rdapStatus: 'taken',
+                  availability: 'taken',
+                  checkedAt: '2026-09-03T00:00:00.000Z',
+                },
+              ],
+            }),
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText('Short enough to say once.')).toBeTruthy();
+    expect(screen.getByText('.com Taken')).toBeTruthy();
+    expect(screen.getByLabelText('Score')).toBeTruthy();
+    expect(screen.getByText(/Domain .+ = /)).toBeTruthy();
     expect(
-      reactions!.compareDocumentPosition(aside!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      deckDnsLines(
+        candidate({
+          domainChecks: [
+            {
+              host: 'nova.com',
+              tld: 'com',
+              dnsStatus: 'unknown',
+              rdapStatus: 'unknown',
+              availability: 'unknown',
+              checkedAt: '2026-09-03T00:00:00.000Z',
+            },
+          ],
+        }),
+      )
+        .find((line) => line.tld === 'com')
+        ?.text,
+    ).toBe('.com Unknown');
+  });
+
+  it('disables Start a new batch while a batch is already open', () => {
+    const waiting = Array.from({ length: 10 }, (_, i) =>
+      candidate({ id: `wait-${i}`, name: `Wait${i}` }),
+    );
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate({ id: 'nova', name: 'Nova', batchNumber: 1 }),
+            ...waiting,
+          ],
+          batches: [
+            {
+              number: 1,
+              candidateIds: ['nova'],
+              status: 'open',
+              winnerCandidateId: null,
+              decisionNote: null,
+              roundId: null,
+              createdAt: '2026-09-03T00:00:00.000Z',
+              decidedAt: null,
+              finalistCandidateIds: [],
+            },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Start a new batch' })).toBeDisabled();
+    expect(
+      screen.getByText(
+        'A batch is already open. Crown its winner before starting another.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('enables Start a new batch for 10 unbatched names', () => {
+    const waiting = Array.from({ length: 10 }, (_, i) =>
+      candidate({ id: `wait-${i}`, name: `Wait${i}` }),
+    );
+    render(<Harness initial={session({ candidates: waiting })} />);
+    expect(screen.getByRole('button', { name: 'Start a new batch' })).toBeEnabled();
+  });
+
+  it('puts Start a new batch above the deck in DOM order', () => {
+    render(<Harness initial={session()} />);
+    const batch = document.querySelector('.names-batch-progress-block');
+    const deck = document.querySelector('.names-deck');
+    expect(batch && deck).toBeTruthy();
+    expect(
+      batch!.compareDocumentPosition(deck!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 });

@@ -1,5 +1,7 @@
 const START_BATCH_HINT =
   'Add at least 10 new names before starting a batch.';
+const OPEN_BATCH_HINT =
+  'A batch is already open. Crown its winner before starting another.';
 
 export function BatchProgress(props: {
   position: number;
@@ -8,11 +10,18 @@ export function BatchProgress(props: {
   championName: string | null;
   canManage: boolean;
   unbatchedCount: number;
+  hasOpenBatch: boolean;
   starting?: boolean;
   onStartBatch: () => void;
 }) {
   const ratio = props.total > 0 ? Math.min(1, props.position / props.total) : 0;
-  const canStart = props.unbatchedCount >= 10;
+  const canStart =
+    !props.hasOpenBatch && props.unbatchedCount >= 10 && !props.starting;
+  const hint = props.hasOpenBatch
+    ? OPEN_BATCH_HINT
+    : props.unbatchedCount < 10
+      ? START_BATCH_HINT
+      : null;
 
   return (
     <div className="names-batch-progress-block">
@@ -39,12 +48,12 @@ export function BatchProgress(props: {
           <button
             type="button"
             className="btn btn-secondary"
-            disabled={!canStart || props.starting}
+            disabled={!canStart}
             onClick={props.onStartBatch}
           >
-            Start batch
+            Start a new batch
           </button>
-          {!canStart ? <p>{START_BATCH_HINT}</p> : null}
+          {hint ? <p>{hint}</p> : null}
         </div>
       ) : null}
     </div>

@@ -393,7 +393,7 @@ describe('NameSessionPage Explore', () => {
     expect(checkNameHandles).not.toHaveBeenCalled();
   });
 
-  it('hides Start batch for a non-manager and disables it below 10 names', async () => {
+  it('hides Start a new batch for a non-manager and disables it below 10 names', async () => {
     fetchProjectNameSession.mockResolvedValue({
       ...emptySession,
       canManageFeedback: false,
@@ -403,7 +403,7 @@ describe('NameSessionPage Explore', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
     });
-    expect(screen.queryByRole('button', { name: 'Start batch' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start a new batch' })).toBeNull();
 
     cleanup();
     fetchProjectNameSession.mockResolvedValue({
@@ -413,9 +413,9 @@ describe('NameSessionPage Explore', () => {
     });
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start batch' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Start a new batch' })).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: 'Start batch' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Start a new batch' })).toBeDisabled();
     expect(
       screen.getByText('Add at least 10 new names before starting a batch.'),
     ).toBeTruthy();
