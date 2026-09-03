@@ -79,7 +79,7 @@ describe('Layout sidebar identity', () => {
     expect(sidebar).not.toHaveClass('has-accent');
   });
 
-  it('uses the project color on the blob rail when a project is focused', () => {
+  it('stays graphite when a project page is open', () => {
     workspace.currentOrgId = 'org-1';
     workspace.currentProjectId = 'proj-1';
     workspace.currentOrganization = {
@@ -96,8 +96,9 @@ describe('Layout sidebar identity', () => {
     renderLayout();
     const sidebar = screen.getByRole('navigation', { name: 'Main navigation' })
       .closest('aside');
-    expect(sidebar).toHaveClass('has-accent');
-    expect(sidebar).toHaveStyle({ '--entity-accent': '#4a7c59' });
+    expect(sidebar).toHaveClass('sidebar');
+    expect(sidebar).not.toHaveClass('has-accent');
+    expect(sidebar).not.toHaveStyle({ '--entity-accent': '#4a7c59' });
   });
 
   it('shows Analytics before Users for an administrator', () => {

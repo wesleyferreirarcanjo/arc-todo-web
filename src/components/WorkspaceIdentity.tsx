@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { entityAccentStyle, useWorkspaceAccent } from './WorkspaceChrome';
+import { useWorkspaceAccent } from './WorkspaceChrome';
 
 export function WorkspaceIdentity({ collapsed }: { collapsed: boolean }) {
-  const { color, orgId, projectId, orgName, projectName } = useWorkspaceAccent();
+  const { orgId, projectId, orgName, projectName } = useWorkspaceAccent();
 
   if (!orgId) {
     return null;
@@ -17,7 +17,6 @@ export function WorkspaceIdentity({ collapsed }: { collapsed: boolean }) {
     <Link
       to={href}
       className={`sidebar-workspace${collapsed ? ' is-collapsed' : ''}`}
-      style={entityAccentStyle(color)}
       aria-label={label}
       data-tooltip={collapsed ? label : undefined}
     >

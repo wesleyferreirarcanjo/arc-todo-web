@@ -33,7 +33,7 @@ describe('WorkspaceIdentity', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows org name and color when inside an organization', () => {
+  it('shows org name when inside an organization', () => {
     workspace.currentOrgId = 'org-1';
     workspace.currentOrganization = {
       id: 'org-1',
@@ -49,7 +49,7 @@ describe('WorkspaceIdentity', () => {
 
     const link = screen.getByRole('link', { name: 'Personal' });
     expect(link).toHaveAttribute('href', '/organizations/org-1');
-    expect(link).toHaveStyle({ '--entity-accent': '#c45c26' });
+    expect(link).not.toHaveStyle({ '--entity-accent': '#c45c26' });
     expect(screen.queryByText('Projects')).not.toBeInTheDocument();
   });
 
@@ -79,6 +79,6 @@ describe('WorkspaceIdentity', () => {
       '/organizations/org-1/projects/proj-1',
     );
     expect(link).toHaveAttribute('data-tooltip', 'Personal · arc-todo');
-    expect(link).toHaveStyle({ '--entity-accent': '#4a7c59' });
+    expect(link).not.toHaveStyle({ '--entity-accent': '#4a7c59' });
   });
 });

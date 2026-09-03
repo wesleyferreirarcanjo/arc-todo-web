@@ -1,11 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { brandMarkFaviconHref } from '../lib/brand/brandMark';
-import {
-  getOrganizationColor,
-  getProjectColor,
-} from '../lib/color/entityColor';
 
 const DEFAULT_TITLE = 'Arc Todo';
 const FAVICON_REL = 'icon';
@@ -75,18 +70,11 @@ export function useDocumentChrome(): void {
   const orgName = organization?.name ?? null;
 
   const title = buildTitle(projectName, orgName, Boolean(projectId));
-  const faviconHref = projectId
-    ? brandMarkFaviconHref(getProjectColor(project ?? { id: projectId }))
-    : orgId
-      ? brandMarkFaviconHref(
-          getOrganizationColor(organization ?? { id: orgId }),
-        )
-      : MARK_FAVICON_HREF;
 
   useEffect(() => {
     document.title = title;
-    ensureFaviconLink().href = faviconHref;
-  }, [title, faviconHref]);
+    ensureFaviconLink().href = MARK_FAVICON_HREF;
+  }, [title]);
 
   useEffect(() => {
     return () => {

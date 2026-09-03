@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react';
+import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { ThemeToggle } from './ThemeToggle';
 import { WorkspaceIdentity } from './WorkspaceIdentity';
-import { entityAccentStyle, useWorkspaceAccent } from './WorkspaceChrome';
 import { PwaControls } from './PwaControls';
 import { OfflineBanner } from './OfflineBanner';
 import { ChatProvider } from '../context/ChatContext';
@@ -19,7 +18,6 @@ import {
 import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { isBoardShellPath } from '../lib/board/boardShellPath';
-import { contrastInk } from '../lib/brand/brandMark';
 import {
   BrandMarkIcon,
   ChatbotIcon,
@@ -57,7 +55,6 @@ const primaryNav = [
 export function Layout() {
   useDocumentChrome();
   const { logout, isAdmin } = useAuth();
-  const { color: workspaceColor } = useWorkspaceAccent();
   const location = useLocation();
   const settingsRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -166,29 +163,16 @@ export function Layout() {
       <div className="app-body">
         <aside
           ref={sidebarRef}
-          className={`sidebar${collapsed ? ' is-collapsed' : ''}${
-            workspaceColor ? ' has-accent' : ''
-          }`}
-          style={entityAccentStyle(workspaceColor)}
+          className={`sidebar${collapsed ? ' is-collapsed' : ''}`}
         >
           <div className="sidebar-header">
             <button
               type="button"
-              className={`sidebar-toggle${collapsed ? ' is-collapsed' : ' is-expanded'}${
-                collapsed && workspaceColor ? ' is-entity-mark' : ''
-              }`}
+              className={`sidebar-toggle${collapsed ? ' is-collapsed' : ' is-expanded'}`}
               aria-expanded={!collapsed}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               data-tooltip={collapsed ? 'Expand sidebar' : undefined}
               onClick={toggleSidebar}
-              style={
-                collapsed && workspaceColor
-                  ? ({
-                      ...entityAccentStyle(workspaceColor),
-                      '--mark-ink': contrastInk(workspaceColor),
-                    } as CSSProperties)
-                  : undefined
-              }
             >
               {collapsed ? (
                 <BrandMarkIcon className="sidebar-toggle-icon sidebar-toggle-mark" />
