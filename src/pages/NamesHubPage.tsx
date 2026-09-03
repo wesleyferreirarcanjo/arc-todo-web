@@ -17,6 +17,7 @@ import {
   updateProjectNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
+import { hubOrgProjectFiltersVisible } from '../lib/names/hubList';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { createProject, fetchProjects } from '../lib/api/projects';
 import { DEFAULT_PROJECT_COLOR, getProjectColor } from '../lib/color/entityColor';
@@ -145,6 +146,14 @@ export function NamesHubPage() {
     });
     return sorted;
   }, [items, orgFilter, projectFilter, searchQuery, sort]);
+
+  const { org: showOrgFilter, project: showProjectFilter } = useMemo(
+    () =>
+      hubOrgProjectFiltersVisible(
+        items.map((item) => ({ orgId: item.org.id, projectId: item.project.id })),
+      ),
+    [items],
+  );
 
   const canCreate = isAdmin
     ? organizations.length > 0
@@ -343,8 +352,7 @@ export function NamesHubPage() {
                 aria-label="Filter name sessions by title"
               />
             </label>
-            {items.length > 10 ? (
-              <>
+            {showOrgFilter ? (
                 <label className="board-filter-field">
                   Organization
                   <Select
@@ -363,6 +371,8 @@ export function NamesHubPage() {
                     ]}
                   />
                 </label>
+            ) : null}
+            {showProjectFilter ? (
                 <label className="board-filter-field">
                   Project
                   <Select
@@ -378,7 +388,6 @@ export function NamesHubPage() {
                     ]}
                   />
                 </label>
-              </>
             ) : null}
             <label className="board-filter-field">
               Sort by
@@ -413,6 +422,7 @@ export function NamesHubPage() {
                     title={item.session.title}
                     href={`/organizations/${item.org.id}/projects/${item.project.id}/names/${item.session.id}`}
                     recommendedName={item.session.recommendedName}
+                    candidateCount={item.session.candidateCount}
                     updatedAt={item.session.updatedAt}
                     namingGoal={item.session.namingGoal}
                     accent={getProjectColor(item.project)}

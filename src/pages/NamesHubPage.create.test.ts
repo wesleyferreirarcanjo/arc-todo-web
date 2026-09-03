@@ -25,6 +25,13 @@ describe('Names hub and project list create (#arc-474)', () => {
     expect(hub).toContain("Creating a new product workspace is admin-only");
   });
 
+  it('shows org/project filters only when they discriminate, never after a session count', () => {
+    expect(hub).toContain('hubOrgProjectFiltersVisible');
+    expect(hub).toContain('showOrgFilter');
+    expect(hub).toContain('showProjectFilter');
+    expect(hub).not.toContain('items.length > 10');
+  });
+
   it('keeps project-list create as session name with the same optional fields', () => {
     expect(list).toContain('New name session');
     expect(list).toContain('>Name</span>');

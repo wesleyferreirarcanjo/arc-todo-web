@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import type { CSSProperties } from 'react';
+import { sessionHubSubtitle } from '../../lib/names/hubList';
 import { MoreVerticalIcon } from '../icons';
 
 export function formatSessionUpdatedAt(value: string): string {
@@ -35,6 +36,7 @@ export function NameSessionRow(props: {
   title: string;
   href: string;
   recommendedName: string | null;
+  candidateCount: number;
   updatedAt: string;
   namingGoal?: string | null;
   accent?: string;
@@ -43,7 +45,10 @@ export function NameSessionRow(props: {
   onDelete: () => void;
 }) {
   const updated = formatSessionUpdatedAt(props.updatedAt);
-  const recommended = props.recommendedName?.trim() || null;
+  const subtitle = sessionHubSubtitle({
+    candidateCount: props.candidateCount,
+    recommendedName: props.recommendedName,
+  });
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -102,7 +107,7 @@ export function NameSessionRow(props: {
         )}
         <h3 className="names-session-row-title">{props.title}</h3>
         <p className="names-session-row-subtitle">
-          {recommended ? `Recommended: ${recommended}` : 'No recommendation yet'}
+          {subtitle}
         </p>
       </Link>
       <div className="names-session-row-actions">

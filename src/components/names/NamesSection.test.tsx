@@ -53,55 +53,60 @@ const session: ProjectNameSession = {
   feedback: [],
 };
 
-describe('NamesSection density', () => {
-  it('makes check-name the hero and does not stack kept cards', async () => {
+describe('NamesSection', () => {
+  it('uses one add field plus Smart copy and does not revive Suggest names', async () => {
     const user = userEvent.setup();
     const onCheckName = vi.fn();
     render(
       <NamesSection
         session={session}
-        orgId="o"
-        projectId="p"
-        sessionId="s"
         typedName=""
         onTypedName={() => undefined}
         busy={null}
-        families={[]}
-        onFamilies={() => undefined}
-        filterLane=""
-        onFilterLane={() => undefined}
-        filterFamily=""
-        onFilterFamily={() => undefined}
-        filterSource=""
-        onFilterSource={() => undefined}
-        visibleCandidates={[item]}
         resolvingKeys={[]}
         isBlind={false}
         openRound={undefined}
+        emptyCopy="Needs AI"
         onCheckName={onCheckName}
-        onSuggestNames={() => undefined}
-        onGenerateFamilies={() => undefined}
-        readinessHint={null}
-        emptyCopy="empty"
-        onUpdateCandidate={() => undefined}
-        onExplore={() => undefined}
+        onSmartCopy={() => undefined}
+        onPastePacket={() => undefined}
         onKeep={() => undefined}
         onReject={() => undefined}
-        onBusy={() => undefined}
-        onSession={() => undefined}
-        lastCheckedId="kept"
-        expandedId={null}
-        onExpandedId={() => undefined}
+        onPick={() => undefined}
+        onOpen={() => undefined}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Check this name' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Suggest names' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Try variations of this name' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Kept' })).toBeNull();
-    expect(screen.getByLabelText('Name candidates')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check this name' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Suggest names' })).toBeNull();
+    expect(screen.queryByText('Generate more')).toBeNull();
+    expect(screen.getByLabelText('Name candidates')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Check this name' }));
     expect(onCheckName).toHaveBeenCalled();
+  });
+
+  it('shows Needs AI when the session has no names', () => {
+    render(
+      <NamesSection
+        session={{ ...session, candidates: [], shortlistIds: [] }}
+        typedName=""
+        onTypedName={() => undefined}
+        busy={null}
+        resolvingKeys={[]}
+        isBlind={false}
+        openRound={undefined}
+        emptyCopy="Needs AI"
+        onCheckName={() => undefined}
+        onSmartCopy={() => undefined}
+        onPastePacket={() => undefined}
+        onKeep={() => undefined}
+        onReject={() => undefined}
+        onPick={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    expect(screen.getByText('Needs AI')).toBeTruthy();
   });
 });

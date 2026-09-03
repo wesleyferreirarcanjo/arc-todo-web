@@ -8,7 +8,6 @@ import type {
   FeedbackMine,
   ProjectNameSession,
 } from '../../types/name-session';
-import { RatingScale } from '../RatingScale';
 
 type FeedbackDraft = {
   firstImpression: string;
@@ -147,7 +146,13 @@ export function FeedbackSection(props: {
             role="group"
             aria-label="Names to include"
           >
-            {props.session.candidates.map((item) => {
+            {props.session.candidates
+              .filter(
+                (item) =>
+                  props.session.shortlistIds.includes(item.id) &&
+                  item.status !== 'rejected',
+              )
+              .map((item) => {
               const selected = pick.includes(item.id);
               return (
                 <label
@@ -249,49 +254,6 @@ export function FeedbackSection(props: {
                 />
               </label>
               <label className="form-field">
-                <span>What do you think it does?</span>
-                <input
-                  value={currentDraft.perceivedPurpose}
-                  onChange={(event) =>
-                    patchDraft(currentId, {
-                      perceivedPurpose: event.target.value,
-                    })
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>Spelling you remember</span>
-                <input
-                  value={currentDraft.rememberedSpelling}
-                  onChange={(event) =>
-                    patchDraft(currentId, {
-                      rememberedSpelling: event.target.value,
-                    })
-                  }
-                />
-              </label>
-              <RatingScale
-                label="Easy to say/type"
-                value={currentDraft.easyToSay}
-                onChange={(value) =>
-                  patchDraft(currentId, { easyToSay: value })
-                }
-              />
-              <RatingScale
-                label="Memorable"
-                value={currentDraft.memorable}
-                onChange={(value) =>
-                  patchDraft(currentId, { memorable: value })
-                }
-              />
-              <RatingScale
-                label="Fits the product"
-                value={currentDraft.fitsProduct}
-                onChange={(value) =>
-                  patchDraft(currentId, { fitsProduct: value })
-                }
-              />
-              <label className="form-field">
                 <span>Optional concern</span>
                 <input
                   value={currentDraft.concern}
@@ -312,13 +274,6 @@ export function FeedbackSection(props: {
                     {
                       candidateId: currentId,
                       firstImpression: currentDraft.firstImpression,
-                      rememberedSpelling: currentDraft.rememberedSpelling,
-                      perceivedPurpose: currentDraft.perceivedPurpose,
-                      ratings: {
-                        easyToSay: currentDraft.easyToSay,
-                        memorable: currentDraft.memorable,
-                        fitsProduct: currentDraft.fitsProduct,
-                      },
                       concern: currentDraft.concern,
                     },
                   );
@@ -382,20 +337,6 @@ export function FeedbackSection(props: {
                   <p className="names-feedback-count">
                     {peopleAnswered(round.aggregate?.participantCount ?? 0)}
                   </p>
-                  <dl className="names-feedback-averages">
-                    <div>
-                      <dt>Easy to say/type</dt>
-                      <dd>{agg.easyToSay ?? '—'}</dd>
-                    </div>
-                    <div>
-                      <dt>Memorable</dt>
-                      <dd>{agg.memorable ?? '—'}</dd>
-                    </div>
-                    <div>
-                      <dt>Fits the product</dt>
-                      <dd>{agg.fitsProduct ?? '—'}</dd>
-                    </div>
-                  </dl>
                   <h6>Repeated concerns</h6>
                   {agg.repeatedConcerns.length === 0 ? (
                     <p className="names-feedback-none">None</p>

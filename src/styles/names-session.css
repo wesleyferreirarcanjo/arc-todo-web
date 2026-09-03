@@ -114,6 +114,44 @@
   font-size: 0.8rem;
 }
 
+.names-brief-line {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--type-meta);
+  text-align: left;
+  cursor: pointer;
+}
+
+.names-brief-line:hover,
+.names-brief-line:focus-visible {
+  color: var(--text-primary);
+}
+
+.names-shortlist-name {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.names-shortlist-name:hover,
+.names-shortlist-name:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
 .names-brief-example {
   display: block;
   margin: 0.2rem 0 0.45rem;
@@ -336,8 +374,9 @@
 
 .names-composer-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .names-composer-hero input {
@@ -346,14 +385,10 @@
   font-size: 1.12rem;
 }
 
-.names-composer-hero .btn-primary {
+.names-composer-hero .btn-primary,
+.names-composer-hero .btn-secondary {
   min-height: 3rem;
   margin-top: 0;
-}
-
-.names-composer-hero .btn-secondary,
-.names-composer-hero .names-suggest-hint {
-  grid-column: 1 / -1;
 }
 
 .names-check-result {
@@ -538,12 +573,12 @@
 
 .names-hub-filters,
 .names-list-filters {
-  width: min(100%, 48rem);
+  width: 100%;
   margin-bottom: 1.25rem;
 }
 
 .names-session-list-wrap {
-  width: min(100%, 48rem);
+  width: 100%;
   min-width: 0;
   overflow-x: hidden;
 }

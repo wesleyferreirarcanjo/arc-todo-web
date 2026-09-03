@@ -1,57 +1,30 @@
-import { type Dispatch, type SetStateAction } from 'react';
-import { NAME_FAMILIES } from '../../lib/names/catalog';
-import { keptVerdict } from '../../lib/names/funnel';
-import type {
-  FeedbackRoundView,
-  NameCandidate,
-  ProjectNameSession,
-} from '../../types/name-session';
-import { CandidateCard } from './CandidateCard';
-import { CandidateFunnelTable } from './CandidateFunnelTable';
+import type { FeedbackRoundView, ProjectNameSession } from '../../types/name-session';
+import { CandidateShortlistTable } from './CandidateShortlistTable';
 
 export function NamesSection(props: {
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
-  sessionId: string;
   typedName: string;
   onTypedName: (value: string) => void;
   busy: string | null;
-  families: string[];
-  onFamilies: Dispatch<SetStateAction<string[]>>;
-  filterLane: string;
-  onFilterLane: (value: string) => void;
-  filterFamily: string;
-  onFilterFamily: (value: string) => void;
-  filterSource: string;
-  onFilterSource: (value: string) => void;
-  visibleCandidates: NameCandidate[];
   resolvingKeys: string[];
   isBlind: boolean;
   openRound: FeedbackRoundView | undefined;
-  onCheckName: (name?: string) => void;
-  onSuggestNames: () => void;
-  onGenerateFamilies: () => void;
-  readinessHint: string | null;
   emptyCopy: string;
-  onUpdateCandidate: (candidate: NameCandidate) => void;
-  onExplore: (candidate: NameCandidate) => void;
+  onCheckName: (name?: string) => void;
+  onSmartCopy: () => void;
+  onPastePacket: (text: string) => void;
   onKeep: (candidateId: string) => void;
   onReject: (candidateId: string) => void;
-  onBusy: (value: string | null) => void;
-  onSession: (session: ProjectNameSession) => void;
-  lastCheckedId: string | null;
-  expandedId: string | null;
-  onExpandedId: (id: string | null) => void;
+  onPick: (candidateId: string) => void;
+  onOpen: (candidateId: string) => void;
 }) {
   const { session } = props;
-  const wave = props.visibleCandidates.filter(
+  const wave = session.candidates.filter(
     (candidate) => candidate.status !== 'rejected',
   );
-  const rejectedCount = props.visibleCandidates.filter(
+  const rejectedCount = session.candidates.filter(
     (candidate) => candidate.status === 'rejected',
   ).length;
-  const checked = wave.find((candidate) => candidate.id === props.lastCheckedId) ?? null;
 
   function isBlind(candidateId: string) {
     return Boolean(
@@ -61,13 +34,18 @@ export function NamesSection(props: {
 
   return (
     <section className="names-panel">
-      <h3>Names</h3>
       <div className="names-composer names-composer-hero">
         <input
           value={props.typedName}
-          placeholder="Type a name"
-          aria-label="Name"
+          placeholder="Type a name or paste suggestions"
+          aria-label="Name or pasted suggestions"
           onChange={(event) => props.onTypedName(event.target.value)}
+          onPaste={(event) => {
+            const text = event.clipboardData.getData('text');
+            if (!text.includes('\n') && !/^NAMES\b/im.test(text.trim())) return;
+            event.preventDefault();
+            props.onPastePacket(text);
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault();
@@ -86,139 +64,33 @@ export function NamesSection(props: {
         <button
           type="button"
           className="btn btn-secondary"
-          disabled={props.busy === 'suggest'}
-          aria-describedby={
-            props.readinessHint ? 'names-suggest-hint' : undefined
-          }
-          onClick={() => void props.onSuggestNames()}
+          disabled={props.busy === 'copy'}
+          onClick={() => void props.onSmartCopy()}
         >
-          Suggest names
+          Smart copy
         </button>
-        {props.readinessHint ? (
-          <small id="names-suggest-hint" className="names-suggest-hint">
-            {props.readinessHint}
-          </small>
-        ) : null}
       </div>
-      {checked ? (
-        <article className="names-check-result">
-          <strong>{checked.name}</strong>
-          <p>{keptVerdict(checked, session.namingGoal)}</p>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => props.onExplore(checked)}
-          >
-            Try variations of this name
-          </button>
-        </article>
-      ) : null}
-      <details className="names-description-details">
-        <summary>
-          <span>
-            <strong>Generate more</strong>
-          </span>
-        </summary>
-        <div className="names-description-details-body">
-          <fieldset className="names-families">
-            <legend>Name families</legend>
-            {NAME_FAMILIES.map((family) => (
-              <label key={family.id} className="names-chip">
-                <input
-                  type="checkbox"
-                  checked={props.families.includes(family.id)}
-                  onChange={(event) =>
-                    props.onFamilies((prev) =>
-                      event.target.checked
-                        ? [...prev, family.id]
-                        : prev.filter((id) => id !== family.id),
-                    )
-                  }
-                />
-                {family.label}
-              </label>
-            ))}
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              disabled={props.busy === 'families'}
-              onClick={() => void props.onGenerateFamilies()}
-            >
-              Generate possibilities
-            </button>
-          </fieldset>
-          {(session.candidates.length > 3 || (session.lanes ?? []).length > 0) && (
-            <div className="names-filters">
-              {(session.lanes ?? []).length > 0 && (
-                <select value={props.filterLane} onChange={(event) => props.onFilterLane(event.target.value)}>
-                  <option value="">All lanes</option>
-                  {(session.lanes ?? []).map((lane) => (
-                    <option key={lane.id} value={lane.id}>
-                      {lane.title}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <select
-                value={props.filterFamily}
-                onChange={(event) => props.onFilterFamily(event.target.value)}
-              >
-                <option value="">All families</option>
-                {NAME_FAMILIES.map((family) => (
-                  <option key={family.id} value={family.id}>
-                    {family.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={props.filterSource}
-                onChange={(event) => props.onFilterSource(event.target.value)}
-              >
-                <option value="">All sources</option>
-                <option value="human">human</option>
-                <option value="chatbot">chatbot</option>
-                <option value="mcp">mcp</option>
-              </select>
-            </div>
-          )}
-        </div>
-      </details>
       {wave.length === 0 ? (
         <p className="names-empty">{props.emptyCopy}</p>
       ) : (
-        <CandidateFunnelTable
+        <CandidateShortlistTable
           candidates={wave}
           namingGoal={session.namingGoal}
           shortlistIds={session.shortlistIds}
+          recommendedCandidateId={session.recommendedCandidateId}
           resolvingKeys={props.resolvingKeys}
-          resolvingCount={props.resolvingKeys.length}
           isBlind={isBlind}
           onKeep={props.onKeep}
           onReject={props.onReject}
-          expandedId={props.expandedId}
-          onExpandedId={props.onExpandedId}
-          renderDetail={(candidate) => (
-            <CandidateCard
-              candidate={candidate}
-              session={session}
-              orgId={props.orgId}
-              projectId={props.projectId}
-              sessionId={props.sessionId}
-              isBlind={isBlind(candidate.id)}
-              busy={props.busy}
-              onBusy={props.onBusy}
-              onSession={props.onSession}
-              onUpdate={(next) => props.onUpdateCandidate(next)}
-              onReject={() => props.onReject(candidate.id)}
-            />
-          )}
+          onPick={props.onPick}
+          onOpen={props.onOpen}
         />
       )}
       {rejectedCount > 0 && (
         <p className="names-meta">
           {rejectedCount === 1
-            ? '1 rejected name is hidden from this wave.'
-            : `${rejectedCount} rejected names are hidden from this wave.`}
+            ? '1 rejected name is hidden from this list.'
+            : `${rejectedCount} rejected names are hidden from this list.`}
         </p>
       )}
     </section>

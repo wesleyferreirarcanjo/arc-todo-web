@@ -225,6 +225,7 @@ export interface ProjectNameSessionSummary {
   title: string;
   namingGoal: NamingGoal | string | null;
   recommendedName: string | null;
+  candidateCount: number;
   createdAt: string;
   updatedAt: string;
 }

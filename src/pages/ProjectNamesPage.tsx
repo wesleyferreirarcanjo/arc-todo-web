@@ -299,6 +299,7 @@ export function ProjectNamesPage() {
                 title={session.title}
                 href={`/organizations/${orgId}/projects/${projectId}/names/${session.id}`}
                 recommendedName={session.recommendedName}
+                candidateCount={session.candidateCount}
                 updatedAt={session.updatedAt}
                 namingGoal={session.namingGoal}
                 accent={

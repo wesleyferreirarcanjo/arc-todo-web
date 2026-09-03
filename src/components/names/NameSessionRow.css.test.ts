@@ -36,9 +36,10 @@ describe('Names hub session row CSS (#arc-474)', () => {
     expect(rule).toContain('height: 2.75rem');
   });
 
-  it('bounds hub rows to a content column with even radius', () => {
+  it('lets hub rows use the content width with even radius', () => {
     const wrap = ruleBlock('.names-session-list-wrap');
-    expect(wrap).toContain('48rem');
+    expect(wrap).toContain('width: 100%');
+    expect(wrap).not.toContain('48rem');
     const row = ruleBlock('.names-session-row');
     expect(row).toContain('border-radius: var(--radius-md)');
   });

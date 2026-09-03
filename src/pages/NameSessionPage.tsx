@@ -1,95 +1,60 @@
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
-import { InfoPopover } from '../components/InfoPopover';
 import { CompareSection } from '../components/names/CompareSection';
-import { DecisionRail } from '../components/names/DecisionRail';
-import { DetailsSection } from '../components/names/DetailsSection';
 import { FeedbackSection } from '../components/names/FeedbackSection';
-import { MessagingSection } from '../components/names/MessagingSection';
 import { NamesSection } from '../components/names/NamesSection';
+import { CandidateCard } from '../components/names/CandidateCard';
+import { Modal } from '../components/Modal';
+import { Select } from '../components/Select';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
-import { ChatApiError, sendChatMessage } from '../lib/api/chat';
 import {
   addNameCandidates,
   checkNameCandidate,
   checkNameCandidatesBatch,
   checkNameHandles,
   fetchProjectNameSession,
+  recommendNameCandidate,
   updateProjectNameSession,
 } from '../lib/api/names';
 import { mergeCheckedCandidate } from '../lib/names/funnel';
 import {
-  capFamilyWave,
-  dropAvoidedNames,
   mergeCheckedCandidates,
   runNameWave,
-  sessionAvoidList,
-  WAVE_SIZE,
 } from '../lib/names/wave';
 import {
-  NAME_FAMILIES,
+  DEFAULT_NAMING_GOAL,
+  NAMING_GOAL_OPTIONS,
   goalProfile,
-  googleQueryUrl,
   normalizeNameKey,
 } from '../lib/names/catalog';
+import { canvasHasProduct } from '../lib/names/prompts';
 import {
-  buildDescriptionPrompt,
-  canvasHasProduct,
-  generateFamiliesPrompt,
-  hasAdditionalCanvasContext,
-  hasGeneratedCanvasCopy,
-  parseJsonBlock,
-  parseNameLines,
-  suggestNamesPrompt,
-} from '../lib/names/prompts';
-import { exploreVariations } from '../lib/names/variations';
+  buildNamesSmartCopyPrompt,
+  looksLikeNamesPacket,
+  parseNamesSmartCopy,
+} from '../lib/names/smartCopy';
 import type {
   NameCandidate,
-  NameLane,
   NamingGoal,
   ProductDescription,
   ProjectNameSession,
   CandidateSource,
 } from '../types/name-session';
 
-const SECTIONS = [
-  'names',
-  'messaging',
-  'compare',
-  'feedback',
-  'details',
-] as const;
-
-const SECTION_LABELS: Record<(typeof SECTIONS)[number], string> = {
-  names: 'Names',
-  messaging: 'Messaging',
-  compare: 'Compare',
-  feedback: 'Feedback',
-  details: 'Details',
-};
-
-const PRODUCT_SENTENCE_EXAMPLE = 'A private task board for a small team.';
-const PRODUCT_SENTENCE_HELP =
-  'Example: A private task board for a small team. Suggest names reads this sentence.';
-const SUGGEST_READINESS_HINT =
-  'Suggest names needs this sentence first. You can still check a name.';
-const SUGGEST_REQUIRED_NOTICE =
-  'Add one sentence about what it does, then Suggest names. You can still check a name.';
-const NAMES_EMPTY_COPY =
-  'Suggest names will offer about twelve names, with checks streaming in. Keep or Reject each row. You can also type a name to check it.';
-const COMPARE_EMPTY_COPY =
-  'Keep a name on Names, then compare it here.';
-const FEEDBACK_EMPTY_COPY =
-  'Keep at least two names on Names, then start a round here.';
+const NEEDS_AI_COPY =
+  'Needs AI. Copy the brief with Smart copy, paste suggestions, or type a name.';
+const SMART_COPY_GATE =
+  'Add one sentence about what it does, then use Smart copy. You can still check a name.';
+const PASTE_GATE =
+  'Add one sentence about what it does, then paste suggestions. You can still check a name.';
 const BRIEF_SAVED_MS = 2000;
+
+type InspectorView = 'checks' | 'compare' | 'feedback';
 
 export function NameSessionPage() {
   const { orgId, projectId, sessionId } = useParams();
-  const { currentProject } = useWorkspace();
   const [session, setSession] = useState<ProjectNameSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,28 +62,13 @@ export function NameSessionPage() {
   const [briefSaved, setBriefSaved] = useState(false);
   const briefSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [forbidden, setForbidden] = useState(false);
-  const [section, setSection] = useState<(typeof SECTIONS)[number]>('names');
-  const productFieldRef = useRef<HTMLTextAreaElement>(null);
-  const [moreContextOpen, setMoreContextOpen] = useState(false);
-  const [generatedCopyOpen, setGeneratedCopyOpen] = useState(false);
+  const [briefEditing, setBriefEditing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [typedName, setTypedName] = useState('');
   const [resolvingKeys, setResolvingKeys] = useState<string[]>([]);
-  const [families, setFamilies] = useState<string[]>([
-    'descriptive',
-    'suggestive',
-    'invented',
-  ]);
-  const [codenameTheme, setCodenameTheme] = useState('astronomy');
-  const [forbiddenWords, setForbiddenWords] = useState('');
-  const [filterFamily, setFilterFamily] = useState('');
-  const [filterSource, setFilterSource] = useState('');
-  const [filterLane, setFilterLane] = useState('');
-  const [exploreTarget, setExploreTarget] = useState<NameCandidate | null>(null);
-  const [exploreBusy, setExploreBusy] = useState(false);
-  const [lastCheckedId, setLastCheckedId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [inspectorId, setInspectorId] = useState<string | null>(null);
+  const [inspectorView, setInspectorView] = useState<InspectorView>('checks');
 
   const load = useCallback(async () => {
     if (!orgId || !projectId || !sessionId) return;
@@ -126,10 +76,7 @@ export function NameSessionPage() {
     setError(null);
     setForbidden(false);
     try {
-      const data = await fetchProjectNameSession(orgId, projectId, sessionId);
-      setSession(data);
-      setMoreContextOpen(hasAdditionalCanvasContext(data.productDescription));
-      setGeneratedCopyOpen(hasGeneratedCanvasCopy(data.productDescription));
+      setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
     } catch (err) {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
@@ -152,20 +99,10 @@ export function NameSessionPage() {
   }, []);
 
   const desc: ProductDescription = session?.productDescription ?? {};
-  const activeLane = session?.lanes?.[session.lanes.length - 1] ?? null;
-  const profile = goalProfile(session?.namingGoal);
-
-  const visibleCandidates = useMemo(() => {
-    if (!session) return [];
-    return session.candidates.filter((candidate) => {
-      if (filterFamily && candidate.family !== filterFamily) return false;
-      if (filterSource && !(candidate.sources ?? []).includes(filterSource as never)) {
-        return false;
-      }
-      if (filterLane && candidate.laneId !== filterLane) return false;
-      return true;
-    });
-  }, [session, filterFamily, filterSource, filterLane]);
+  const pickName = session?.recommendedCandidateId
+    ? session.candidates.find((item) => item.id === session.recommendedCandidateId)
+        ?.name
+    : null;
 
   async function patch(input: Parameters<typeof updateProjectNameSession>[3]) {
     if (!orgId || !projectId || !sessionId) return null;
@@ -180,10 +117,16 @@ export function NameSessionPage() {
     setNotice(null);
     setBriefSaved(false);
     try {
-      await patch({ productDescription: desc, brief: session.brief });
+      await patch({
+        title: session.title,
+        namingGoal: session.namingGoal,
+        productDescription: desc,
+        brief: session.brief,
+      });
       setError(null);
       setErrorCode(undefined);
       setBriefSaved(true);
+      setBriefEditing(false);
       if (briefSavedTimerRef.current) clearTimeout(briefSavedTimerRef.current);
       briefSavedTimerRef.current = setTimeout(() => {
         setBriefSaved(false);
@@ -192,7 +135,7 @@ export function NameSessionPage() {
       return true;
     } catch (err) {
       setBriefSaved(false);
-      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the description' }));
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the brief' }));
       setErrorCode(WEB_ERROR.SAVE);
       return false;
     } finally {
@@ -208,40 +151,6 @@ export function NameSessionPage() {
     });
   }
 
-  async function handleBuildDescription() {
-    if (!orgId || !projectId || !session) return;
-    if (!canvasHasProduct(desc)) {
-      setNotice('Add one sentence about what it does before using Build description.');
-      return;
-    }
-    if ((desc.oneLine || desc.short || desc.full) &&
-      !window.confirm('Replace the one-line, short, and full descriptions? Canvas answers stay the same.')) {
-      return;
-    }
-    setBusy('build');
-    setNotice(null);
-    try {
-      const reply = await sendChatMessage({
-        messages: [{ role: 'user', content: buildDescriptionPrompt(desc) }],
-        organizationId: orgId,
-        projectId,
-      });
-      const parsed = parseJsonBlock(reply.message) as ProductDescription | null;
-      const next = {
-        ...desc,
-        oneLine: parsed?.oneLine ?? desc.oneLine,
-        short: parsed?.short ?? desc.short,
-        full: parsed?.full ?? desc.full,
-      };
-      await patch({ productDescription: next });
-      setGeneratedCopyOpen(true);
-    } catch (err) {
-      setNotice(err instanceof ChatApiError ? err.message : 'Build description failed.');
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function handleCheckName(name = typedName, source: 'human' | 'chatbot' = 'human') {
     if (!orgId || !projectId || !sessionId || !session) return;
     const trimmed = name.trim();
@@ -251,9 +160,9 @@ export function NameSessionPage() {
       (item) => normalizeNameKey(item.name) === key,
     );
     setResolvingKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
-    if (existing && source === 'human') {
-      setBusy('check');
-      try {
+    setBusy('check');
+    try {
+      if (existing && source === 'human') {
         const checked = await checkNameCandidate(orgId, projectId, sessionId, trimmed);
         const merged = mergeCheckedCandidate(
           session.candidates.map((item) =>
@@ -269,36 +178,17 @@ export function NameSessionPage() {
           checked,
         );
         const updated = await patch({ candidates: merged });
-        if (updated) {
-          setTypedName('');
-          const found = updated.candidates.find(
-            (item) => normalizeNameKey(item.name) === key,
-          );
-          if (found) {
-            setLastCheckedId(found.id);
-            setExpandedId(found.id);
-          }
-        }
-      } catch (err) {
-        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
-      } finally {
-        setResolvingKeys((prev) => prev.filter((item) => item !== key));
-        setBusy(null);
+        if (updated) setTypedName('');
+        return;
       }
-      return;
-    }
-    setBusy('check');
-    try {
       if (!existing) {
         await addNameCandidates(
           orgId,
           projectId,
           sessionId,
-          [{ name: trimmed, laneId: activeLane?.id, family: undefined }],
+          [{ name: trimmed }],
           source,
         );
-        const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-        setSession(latest);
       }
       const checked = await checkNameCandidate(orgId, projectId, sessionId, trimmed);
       const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
@@ -308,13 +198,6 @@ export function NameSessionPage() {
       });
       setSession(updated);
       setTypedName('');
-      const found = updated.candidates.find(
-        (item) => normalizeNameKey(item.name) === key,
-      );
-      if (found) {
-        setLastCheckedId(found.id);
-        setExpandedId(found.id);
-      }
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
     } finally {
@@ -323,18 +206,11 @@ export function NameSessionPage() {
     }
   }
 
-  async function runWaveChecks(
-    names: string[],
-    rows?: Array<{
-      name: string;
-      family?: string;
-      laneId?: string;
-      rationale?: string;
-    }>,
-  ) {
+  async function runWaveChecks(names: string[]) {
     if (!orgId || !projectId || !sessionId || !names.length) return;
     const keys = names.map((name) => normalizeNameKey(name));
     setResolvingKeys((prev) => [...new Set([...prev, ...keys])]);
+    setBusy('check');
     try {
       await runNameWave({
         names,
@@ -343,134 +219,86 @@ export function NameSessionPage() {
             orgId,
             projectId,
             sessionId,
-            rows ?? waveNames.map((name) => ({ name, laneId: activeLane?.id })),
-            'chatbot',
+            waveNames.map((name) => ({ name })),
+            'human',
           );
-          const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-          setSession(latest);
+          setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
         },
         checkBatch: async (waveNames) => {
-          try {
-            const { candidates } = await checkNameCandidatesBatch(
-              orgId,
-              projectId,
-              sessionId,
-              waveNames,
-            );
-            setSession((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    candidates: mergeCheckedCandidates(prev.candidates, candidates),
-                  }
-                : prev,
-            );
-            return candidates;
-          } catch {
-            return [];
-          }
+          const { candidates } = await checkNameCandidatesBatch(
+            orgId,
+            projectId,
+            sessionId,
+            waveNames,
+          );
+          setSession((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  candidates: mergeCheckedCandidates(prev.candidates, candidates),
+                }
+              : prev,
+          );
+          return candidates;
         },
       });
-      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-      setSession(latest);
+      setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
+      setTypedName('');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'these name checks' }));
     } finally {
       setResolvingKeys((prev) => prev.filter((item) => !keys.includes(item)));
+      setBusy(null);
     }
   }
 
-  async function requireProductThen(action: () => Promise<void>) {
+  async function handlePastePacket(text: string) {
+    if (!session) return;
     if (!canvasHasProduct(desc)) {
-      setNotice(SUGGEST_REQUIRED_NOTICE);
-      productFieldRef.current?.focus();
+      setNotice(PASTE_GATE);
       return;
     }
-    await action();
+    const parsed = parseNamesSmartCopy(text);
+    if (!parsed.ok) {
+      setNotice(parsed.error);
+      return;
+    }
+    setNotice(null);
+    await runWaveChecks(parsed.names);
   }
 
-  async function handleSuggestNames() {
-    await requireProductThen(async () => {
-      if (!orgId || !projectId || !sessionId || !session) return;
-      setBusy('suggest');
-      setNotice(null);
-      try {
-        const avoid = sessionAvoidList(session.candidates);
-        const reply = await sendChatMessage({
-          messages: [
-            { role: 'user', content: suggestNamesPrompt(desc, { avoid }) },
-          ],
-          organizationId: orgId,
-          projectId,
-        });
-        const names = dropAvoidedNames(
-          parseNameLines(reply.message, WAVE_SIZE),
-          avoid,
-        );
-        await runWaveChecks(names);
-      } catch (err) {
-        setNotice(err instanceof ChatApiError ? err.message : 'Suggest names failed.');
-      } finally {
-        setBusy(null);
-      }
-    });
+  async function handleAddField() {
+    const text = typedName;
+    if (!text.trim()) return;
+    if (looksLikeNamesPacket(text) || text.includes('\n')) {
+      await handlePastePacket(text);
+      return;
+    }
+    await handleCheckName(text);
   }
 
-  async function handleGenerateFamilies() {
-    await requireProductThen(async () => {
-      if (!orgId || !projectId || !sessionId || !session) return;
-      setBusy('families');
-      setNotice(null);
-      try {
-        const reply = await sendChatMessage({
-          messages: [
-            {
-              role: 'user',
-              content: generateFamiliesPrompt(
-                desc,
-                families.map(
-                  (id) => NAME_FAMILIES.find((item) => item.id === id)?.label ?? id,
-                ),
-                profile.label,
-                { avoid: sessionAvoidList(session.candidates) },
-              ),
-            },
-          ],
-          organizationId: orgId,
-          projectId,
-        });
-        const parsed = parseJsonBlock(reply.message) as
-          | { name?: string; family?: string; rationale?: string }[]
-          | { candidates?: { name?: string; family?: string; rationale?: string }[] }
-          | null;
-        const rows = Array.isArray(parsed)
-          ? parsed
-          : parsed?.candidates ?? [];
-        const avoid = sessionAvoidList(session.candidates);
-        const payload = capFamilyWave(rows)
-          .map((row) => ({
-            name: String(row.name),
-            family: String(row.family ?? ''),
-            laneId: activeLane?.id,
-            rationale: row.rationale,
-          }))
-          .filter((row) => dropAvoidedNames([row.name], avoid).length > 0);
-        const names = dropAvoidedNames(
-          payload.map((row) => row.name),
-          avoid,
-        );
-        await runWaveChecks(
-          names,
-          payload.filter((row) => names.includes(row.name)),
-        );
-      } catch (err) {
-        setNotice(err instanceof ChatApiError ? err.message : 'Generate possibilities failed.');
-      } finally {
-        setBusy(null);
-      }
-    });
-  }
-
-  async function replaceCandidates(next: NameCandidate[]) {
-    await patch({ candidates: next });
+  async function handleSmartCopy() {
+    if (!session) return;
+    if (!canvasHasProduct(desc)) {
+      setNotice(SMART_COPY_GATE);
+      return;
+    }
+    setBusy('copy');
+    try {
+      await navigator.clipboard.writeText(
+        buildNamesSmartCopyPrompt({
+          title: session.title,
+          whatItIs: desc.whatItIs,
+          namingGoal: session.namingGoal,
+          candidates: session.candidates,
+        }),
+      );
+      setNotice('Smart copy is on the clipboard.');
+    } catch {
+      setNotice('Could not copy the brief.');
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function updateCandidate(
@@ -478,9 +306,11 @@ export function NameSessionPage() {
     updater: (candidate: NameCandidate) => NameCandidate,
   ) {
     if (!session) return;
-    await replaceCandidates(
-      session.candidates.map((item) => (item.id === id ? updater(item) : item)),
-    );
+    await patch({
+      candidates: session.candidates.map((item) =>
+        item.id === id ? updater(item) : item,
+      ),
+    });
   }
 
   async function handleKeep(id: string) {
@@ -501,8 +331,7 @@ export function NameSessionPage() {
         } catch {
           // Handle probes stay unknown when they fail (BR-NAME-19).
         }
-        const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-        setSession(latest);
+        setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
       }
     }
   }
@@ -515,79 +344,21 @@ export function NameSessionPage() {
       ),
       shortlistIds: session.shortlistIds.filter((item) => item !== id),
     });
+    if (inspectorId === id) setInspectorId(null);
   }
 
-  async function startLane() {
-    if (!session) return;
-    const lane: NameLane = {
-      id: crypto.randomUUID(),
-      title: `${profile.label} lane`,
-      namingGoal: (session.namingGoal as NamingGoal) ?? null,
-      createdAt: new Date().toISOString(),
-    };
-    await patch({ lanes: [...(session.lanes ?? []), lane] });
-  }
-
-  function requestExplore(candidate: NameCandidate) {
-    if (!exploreVariations(candidate.name).length) return;
-    setExploreTarget(candidate);
-  }
-
-  async function confirmExplore() {
-    if (!orgId || !projectId || !sessionId || !exploreTarget) return;
-    const variants = exploreVariations(exploreTarget.name);
-    if (!variants.length) {
-      setExploreTarget(null);
-      return;
-    }
-    setExploreBusy(true);
+  async function handlePick(id: string) {
+    if (!orgId || !projectId || !sessionId) return;
+    setBusy('pick');
     try {
-      await addNameCandidates(
-        orgId,
-        projectId,
-        sessionId,
-        [
-          {
-            name: variants[0],
-            family: exploreTarget.family ?? undefined,
-            laneId: exploreTarget.laneId ?? undefined,
-            rationale: `Variation of ${exploreTarget.name}`,
-          },
-        ],
-        'human',
-      );
-      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
-      const next = latest.candidates.map((item) =>
-        normalizeNameKey(item.name) === normalizeNameKey(variants[0])
-          ? {
-              ...item,
-              derivedFromCandidateId: exploreTarget.id,
-              domainChecks: [],
-              brandChecks: [],
-              domainHistory: [],
-              organicCompetition: null,
-              handleChecks: [],
-              googleQueryUrl: googleQueryUrl(item.name),
-            }
-          : item,
-      );
-      await updateProjectNameSession(orgId, projectId, sessionId, {
-        candidates: next,
-      }).then(setSession);
-      setExploreTarget(null);
+      const updated = await recommendNameCandidate(orgId, projectId, sessionId, id);
+      setSession(updated);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this pick' }));
     } finally {
-      setExploreBusy(false);
+      setBusy(null);
     }
   }
-
-  const exploreVariants = exploreTarget
-    ? exploreVariations(exploreTarget.name)
-    : [];
-  const keptCount = session?.shortlistIds.length ?? 0;
-  const feedbackReady =
-    (session?.feedback.length ?? 0) > 0 ||
-    (session?.candidates.filter((item) => item.status !== 'rejected').length ?? 0) >=
-      2;
 
   if (!orgId || !projectId || !sessionId) {
     return <Navigate to="/names" replace />;
@@ -608,6 +379,17 @@ export function NameSessionPage() {
     openRound?.candidateIds.some(
       (id) => !openRound.mine.some((row) => row.candidateId === id),
     );
+  const inspector = inspectorId
+    ? session?.candidates.find((item) => item.id === inspectorId) ?? null
+    : null;
+  const briefLine = session
+    ? [session.title, desc.whatItIs?.trim(), goalProfile(session.namingGoal).label]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
+  const keptCount = session?.shortlistIds.length ?? 0;
+  const feedbackReady =
+    (session?.feedback.length ?? 0) > 0 || keptCount >= 2;
 
   return (
     <div className="page-shell names-session-page">
@@ -615,10 +397,76 @@ export function NameSessionPage() {
         <div>
           <h2>{session?.title ?? 'Name session'}</h2>
           <p className="page-subtitle">
-            {currentProject?.name ?? 'Project'}
-            {session?.recommendedCandidateId &&
-              ` · Recommended: ${session.candidates.find((item) => item.id === session.recommendedCandidateId)?.name ?? ''}`}
+            {pickName ? `Your pick: ${pickName}` : ''}
           </p>
+          {session && !briefEditing && (
+            <button
+              type="button"
+              className="names-brief-line"
+              onClick={() => setBriefEditing(true)}
+            >
+              {briefLine || 'Add a one-line brief'}
+            </button>
+          )}
+          {session && briefEditing && (
+            <section className="names-quick-brief">
+              <label className="form-field">
+                <span>Working name</span>
+                <input
+                  value={session.title}
+                  onChange={(event) =>
+                    setSession({ ...session, title: event.target.value })
+                  }
+                />
+              </label>
+              <label className="form-field">
+                <span>What does it do?</span>
+                <textarea
+                  rows={2}
+                  value={desc.whatItIs ?? ''}
+                  onChange={(event) => setDesc('whatItIs', event.target.value)}
+                />
+              </label>
+              <div className="form-field">
+                <span>Kind of name</span>
+                <Select
+                  value={(session.namingGoal as NamingGoal) ?? DEFAULT_NAMING_GOAL}
+                  onChange={(value) =>
+                    setSession({
+                      ...session,
+                      namingGoal: value as NamingGoal,
+                    })
+                  }
+                  options={NAMING_GOAL_OPTIONS.map((option) => ({
+                    value: option.id,
+                    label: option.label,
+                  }))}
+                />
+              </div>
+              <div className="names-quick-brief-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  disabled={busy === 'canvas'}
+                  onClick={() => void saveBrief()}
+                >
+                  Save brief
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setBriefEditing(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </section>
+          )}
+          {briefSaved && (
+            <span className="names-brief-saved" role="status">
+              Saved
+            </span>
+          )}
           <div className="page-links">
             <Link
               to={`/organizations/${orgId}/projects/${projectId}/names`}
@@ -633,127 +481,65 @@ export function NameSessionPage() {
       {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
       {notice && <div className="alert">{notice}</div>}
       {session && (
-        <>
-          <section className="names-quick-brief">
-            <div className="names-quick-brief-row">
-              <div className="form-field">
-                <span className="names-brief-label-row">
-                  <label htmlFor="names-what-it-does">What does it do?</label>
-                  <InfoPopover label="What does it do?">
-                    <p>{PRODUCT_SENTENCE_HELP}</p>
-                  </InfoPopover>
-                </span>
-                <textarea
-                  id="names-what-it-does"
-                  ref={productFieldRef}
-                  rows={2}
-                  value={desc.whatItIs ?? ''}
-                  placeholder={PRODUCT_SENTENCE_EXAMPLE}
-                  onChange={(event) => setDesc('whatItIs', event.target.value)}
-                  onBlur={() => void saveBrief()}
-                />
-              </div>
-            </div>
-            <div className="names-quick-brief-actions">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setSection('details')}
-              >
-                Add more details
-              </button>
-              {briefSaved && (
-                <span className="names-brief-saved" role="status">
-                  Saved
-                </span>
-              )}
-            </div>
-          </section>
-
-          <div className="names-desk">
-            <DecisionRail
-              session={session}
-              onFocusName={(candidateId) => {
-                setSection('names');
-                setExpandedId(candidateId);
-                window.requestAnimationFrame(() => {
-                  document
-                    .getElementById(`names-candidate-${candidateId}`)
-                    ?.scrollIntoView({ block: 'nearest' });
-                });
-              }}
-            />
-            <div className="names-desk-main">
-          <nav className="names-desk-tabs" aria-label="Session context">
-            {SECTIONS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className={[
-                  section === id ? 'is-current' : '',
-                  id === 'names' ? 'is-primary' : 'is-secondary',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                aria-current={section === id ? 'true' : undefined}
-                onClick={() => setSection(id)}
-              >
-                {SECTION_LABELS[id]}
-              </button>
-            ))}
-          </nav>
-
-          {section === 'names' && (
-            <NamesSection
-              session={session}
-              orgId={orgId}
-              projectId={projectId}
-              sessionId={sessionId}
-              typedName={typedName}
-              onTypedName={setTypedName}
-              busy={busy}
-              families={families}
-              onFamilies={setFamilies}
-              filterLane={filterLane}
-              onFilterLane={setFilterLane}
-              filterFamily={filterFamily}
-              onFilterFamily={setFilterFamily}
-              filterSource={filterSource}
-              onFilterSource={setFilterSource}
-              visibleCandidates={visibleCandidates}
-              resolvingKeys={resolvingKeys}
-              isBlind={Boolean(isBlind)}
-              openRound={openRound}
-              onCheckName={(name) => void handleCheckName(name)}
-              onSuggestNames={() => void handleSuggestNames()}
-              onGenerateFamilies={() => void handleGenerateFamilies()}
-              readinessHint={
-                canvasHasProduct(desc) ? null : SUGGEST_READINESS_HINT
-              }
-              emptyCopy={NAMES_EMPTY_COPY}
-              onUpdateCandidate={(next) => void updateCandidate(next.id, () => next)}
-              onExplore={(candidate) => void requestExplore(candidate)}
-              onKeep={(id) => void handleKeep(id)}
-              onReject={(id) => void handleReject(id)}
-              onBusy={setBusy}
-              onSession={setSession}
-              lastCheckedId={lastCheckedId}
-              expandedId={expandedId}
-              onExpandedId={setExpandedId}
-            />
-          )}
-
-          {section === 'messaging' && (
-            <MessagingSection
-              session={session}
-              orgId={orgId}
-              projectId={projectId}
-              onSave={(next) => void replaceCandidates(next)}
-              onNotice={setNotice}
-            />
-          )}
-
-          {section === 'compare' && keptCount > 0 && (
+        <NamesSection
+          session={session}
+          typedName={typedName}
+          onTypedName={setTypedName}
+          busy={busy}
+          resolvingKeys={resolvingKeys}
+          isBlind={Boolean(isBlind)}
+          openRound={openRound}
+          emptyCopy={NEEDS_AI_COPY}
+          onCheckName={() => void handleAddField()}
+          onSmartCopy={() => void handleSmartCopy()}
+          onPastePacket={(text) => void handlePastePacket(text)}
+          onKeep={(id) => void handleKeep(id)}
+          onReject={(id) => void handleReject(id)}
+          onPick={(id) => void handlePick(id)}
+          onOpen={(id) => {
+            setInspectorId(id);
+            setInspectorView('checks');
+          }}
+        />
+      )}
+      <Modal
+        open={Boolean(inspector)}
+        onClose={() => setInspectorId(null)}
+        title={inspector?.name ?? 'Name'}
+        titleId="names-inspector-title"
+      >
+        <nav className="names-desk-tabs" aria-label="Name views">
+          {(['checks', 'compare', 'feedback'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              className={inspectorView === id ? 'is-current is-primary' : 'is-secondary'}
+              aria-current={inspectorView === id ? 'true' : undefined}
+              onClick={() => setInspectorView(id)}
+            >
+              {id === 'checks' ? 'Checks' : id === 'compare' ? 'Compare' : 'Feedback'}
+            </button>
+          ))}
+        </nav>
+        {inspectorView === 'checks' && inspector && session && (
+          <CandidateCard
+            candidate={inspector}
+            session={session}
+            orgId={orgId}
+            projectId={projectId}
+            sessionId={sessionId}
+            isBlind={Boolean(
+              isBlind && openRound?.candidateIds.includes(inspector.id),
+            )}
+            busy={busy}
+            onBusy={setBusy}
+            onSession={setSession}
+            onUpdate={(next) => void updateCandidate(next.id, () => next)}
+            onReject={() => void handleReject(inspector.id)}
+          />
+        )}
+        {inspectorView === 'compare' && session && (
+          keptCount > 0 ? (
             <CompareSection
               session={session}
               orgId={orgId}
@@ -762,12 +548,12 @@ export function NameSessionPage() {
               onSession={setSession}
               onNotice={setNotice}
             />
-          )}
-          {section === 'compare' && keptCount === 0 && (
-            <p className="names-empty">{COMPARE_EMPTY_COPY}</p>
-          )}
-
-          {section === 'feedback' && feedbackReady && (
+          ) : (
+            <p className="names-empty">Keep a name, then compare it here.</p>
+          )
+        )}
+        {inspectorView === 'feedback' && session && (
+          feedbackReady ? (
             <FeedbackSection
               session={session}
               orgId={orgId}
@@ -776,47 +562,13 @@ export function NameSessionPage() {
               onSession={setSession}
               onNotice={setNotice}
             />
-          )}
-          {section === 'feedback' && !feedbackReady && (
-            <p className="names-empty">{FEEDBACK_EMPTY_COPY}</p>
-          )}
-
-          {section === 'details' && (
-            <DetailsSection
-              session={session}
-              desc={desc}
-              busy={busy}
-              moreContextOpen={moreContextOpen}
-              generatedCopyOpen={generatedCopyOpen}
-              onMoreContextOpen={setMoreContextOpen}
-              onGeneratedCopyOpen={setGeneratedCopyOpen}
-              onBuildDescription={() => void handleBuildDescription()}
-              onBriefChange={(value) => setSession({ ...session, brief: value })}
-              onSaveBrief={() => void saveBrief()}
-              onDesc={setDesc}
-              onStartLane={() => void startLane()}
-              onNamingGoal={(value) => void patch({ namingGoal: value })}
-              codenameTheme={codenameTheme}
-              onCodenameTheme={setCodenameTheme}
-              forbiddenWords={forbiddenWords}
-              onForbiddenWords={setForbiddenWords}
-            />
-          )}
-            </div>
-          </div>
-        </>
-      )}
-      <ConfirmDialog
-        open={Boolean(exploreTarget) && exploreVariants.length > 0}
-        title="Try variations of this name"
-        description={`Add variation "${exploreVariants[0] ?? ''}" from ${exploreTarget?.name ?? 'this name'}? Checks start empty.`}
-        confirmLabel="Add variation"
-        loading={exploreBusy}
-        onConfirm={() => void confirmExplore()}
-        onCancel={() => {
-          if (!exploreBusy) setExploreTarget(null);
-        }}
-      />
+          ) : (
+            <p className="names-empty">
+              Keep at least two names, then start a round here.
+            </p>
+          )
+        )}
+      </Modal>
     </div>
   );
 }

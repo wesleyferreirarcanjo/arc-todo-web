@@ -17,6 +17,7 @@ function renderRow(props: Partial<ComponentProps<typeof NameSessionRow>> = {}) {
           title="Project G"
           href="/organizations/o/projects/p/names/s"
           recommendedName="Arc Todo"
+          candidateCount={2}
           updatedAt="2026-09-02T12:00:00.000Z"
           namingGoal="public_product"
           onRename={onRename}
@@ -30,22 +31,27 @@ function renderRow(props: Partial<ComponentProps<typeof NameSessionRow>> = {}) {
 }
 
 describe('NameSessionRow', () => {
-  it('makes the whole card a link and shows recommended progress', () => {
+  it('makes the whole card a link and shows the human pick', () => {
     renderRow();
     const link = screen.getByRole('link', { name: /Project G/ });
     expect(link).toHaveAttribute(
       'href',
       '/organizations/o/projects/p/names/s',
     );
-    expect(link).toHaveTextContent('Recommended: Arc Todo');
+    expect(link).toHaveTextContent('Your pick: Arc Todo');
     expect(screen.queryByText(/Public product\/app/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
 
-  it('falls back when there is no recommendation yet', () => {
-    renderRow({ recommendedName: null });
-    expect(screen.getByText('No recommendation yet')).toBeTruthy();
+  it('shows Needs AI when the session has no names yet', () => {
+    renderRow({ recommendedName: null, candidateCount: 0 });
+    expect(screen.getByText('Needs AI')).toBeTruthy();
+  });
+
+  it('falls back when names exist but there is no pick', () => {
+    renderRow({ recommendedName: null, candidateCount: 1 });
+    expect(screen.getByText('No pick yet')).toBeTruthy();
   });
 
   it('keeps rename and delete behind the kebab menu', async () => {

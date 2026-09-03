@@ -68,14 +68,6 @@ const emptySession: ProjectNameSession = {
   feedback: [],
 };
 
-const READINESS_HINT =
-  'Suggest names needs this sentence first. You can still check a name.';
-const EMPTY_CLICK_NOTICE =
-  'Add one sentence about what it does, then Suggest names. You can still check a name.';
-const COMPARE_EMPTY = 'Keep a name on Names, then compare it here.';
-const FEEDBACK_EMPTY =
-  'Keep at least two names on Names, then start a round here.';
-
 function renderPage() {
   return render(
     <MemoryRouter
@@ -93,7 +85,7 @@ function renderPage() {
   );
 }
 
-describe('NameSessionPage brief readiness', () => {
+describe('NameSessionPage shortlist chrome', () => {
   afterEach(() => {
     cleanup();
   });
@@ -110,54 +102,78 @@ describe('NameSessionPage brief readiness', () => {
     }));
   });
 
-  it('shows the readiness hint until the sentence is filled, and still notices an empty Suggest names click', async () => {
+  it('shows Needs AI and Smart copy, and hides Suggest names, rail, and old tabs', async () => {
     const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Suggest names' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
     });
 
-    expect(screen.getByText(READINESS_HINT)).toBeTruthy();
+    expect(screen.getByText(/Needs AI/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Suggest names' })).toBeNull();
+    expect(screen.queryByText('Generate more')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Messaging' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Details' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add more details' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Standing pick' })).toBeNull();
 
-    await user.click(screen.getByRole('button', { name: 'Suggest names' }));
-    expect(screen.getByText(EMPTY_CLICK_NOTICE)).toBeTruthy();
-
-    await user.type(
-      screen.getByRole('textbox', { name: /What does it do/ }),
-      'A private task board for a small team.',
-    );
-
-    expect(screen.queryByText(READINESS_HINT)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Smart copy' }));
+    expect(
+      screen.getByText(
+        'Add one sentence about what it does, then use Smart copy. You can still check a name.',
+      ),
+    ).toBeTruthy();
   });
 
-  it('names the next action on not-ready Compare and Feedback tabs', async () => {
+  it('lets a click on the brief edit working name, what it does, and kind of name', async () => {
     const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Suggest names' })).toBeTruthy();
-    });
-
-    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Compare' }));
-    expect(screen.getByText(COMPARE_EMPTY)).toBeTruthy();
-
-    await user.click(screen.getByRole('button', { name: 'Feedback' }));
-    expect(screen.getByText(FEEDBACK_EMPTY)).toBeTruthy();
-  });
-
-  it('keeps kind of name behind Add more details, not in the session header', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Check this name' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /Project G/ })).toBeTruthy();
     });
 
     expect(screen.queryByLabelText('Kind of name')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Add more details' }));
-    expect(screen.getByLabelText('Kind of name')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /Project G/ }));
+    expect(screen.getByLabelText('Working name')).toBeTruthy();
+    expect(screen.getByLabelText('What does it do?')).toBeTruthy();
+    expect(screen.getByText('Kind of name')).toBeTruthy();
+  });
+
+  it('opens Checks, Compare, and Feedback in a modal from a name', async () => {
+    const user = userEvent.setup();
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      candidates: [
+        {
+          id: 'nova',
+          name: 'Nova',
+          status: 'active',
+          sources: ['human'],
+          domainChecks: [],
+          googleQueryUrl: '',
+        },
+      ],
+      productDescription: { whatItIs: 'A private task board.' },
+    });
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Nova' })).toBeTruthy();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Nova' }));
+    expect(screen.getByRole('button', { name: 'Checks' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Compare' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Feedback' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Compare' }));
+    expect(screen.getByText('Keep a name, then compare it here.')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Feedback' }));
+    expect(
+      screen.getByText('Keep at least two names, then start a round here.'),
+    ).toBeTruthy();
   });
 });

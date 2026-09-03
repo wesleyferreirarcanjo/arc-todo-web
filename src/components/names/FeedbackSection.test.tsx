@@ -195,8 +195,6 @@ describe('FeedbackSection', () => {
     const riftBlock = screen.getByRole('article', { name: 'Rift' });
     expect(novaBlock).not.toBe(riftBlock);
     expect(within(novaBlock).getByText('3 people answered')).toBeInTheDocument();
-    expect(within(novaBlock).getByText('Easy to say/type')).toBeInTheDocument();
-    expect(within(novaBlock).getByText('3.5')).toBeInTheDocument();
     expect(within(novaBlock).getByText('Hard to spell')).toBeInTheDocument();
     expect(
       within(novaBlock).getByText('Too close to Nova Corp'),
@@ -207,6 +205,7 @@ describe('FeedbackSection', () => {
     expect(text).not.toMatch(/Nova: easy /);
     expect(text).not.toMatch(/concerns:/i);
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
   });
 
   it('keeps a typed draft after unmounting and mounting again', async () => {
@@ -268,12 +267,11 @@ describe('FeedbackSection', () => {
 
     expect(screen.getByRole('heading', { name: 'Nova' })).toBeInTheDocument();
     expect(screen.getByLabelText('First impression')).toBeInTheDocument();
+    expect(screen.getByLabelText('Optional concern')).toBeInTheDocument();
     expect(screen.queryByText('human')).not.toBeInTheDocument();
     expect(screen.queryByText(/rationale/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/votes/i)).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('radiogroup', { name: 'Easy to say/type' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
   });
 
   it('surfaces Pick at least two names before the start click', async () => {
@@ -281,6 +279,7 @@ describe('FeedbackSection', () => {
     const { onNotice } = renderFeedback(
       session({
         candidates: [nova, rift],
+        shortlistIds: ['nova', 'rift'],
       }),
     );
 
