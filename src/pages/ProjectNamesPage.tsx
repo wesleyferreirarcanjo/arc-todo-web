@@ -18,6 +18,7 @@ import {
   updateProjectNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
+import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-session';
 
@@ -219,7 +220,7 @@ export function ProjectNamesPage() {
           </p>
           <div className="page-links">
             <Link
-              to={`/organizations/${orgId}/projects/${projectId}`}
+              to={projectTasksHref(orgId, projectId)}
               className="text-link"
             >
               Back to board

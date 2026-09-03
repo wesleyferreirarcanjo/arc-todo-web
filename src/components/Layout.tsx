@@ -3,7 +3,6 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { ThemeToggle } from './ThemeToggle';
-import { WorkspaceIdentity } from './WorkspaceIdentity';
 import { PwaControls } from './PwaControls';
 import { OfflineBanner } from './OfflineBanner';
 import { ChatProvider } from '../context/ChatContext';
@@ -181,8 +180,6 @@ export function Layout() {
               )}
             </button>
           </div>
-
-          <WorkspaceIdentity collapsed={collapsed} />
 
           <nav className="sidebar-primary-nav" aria-label="Main navigation">
             {primaryNav.map(({ to, label, icon: NavIcon, ...rest }) => (

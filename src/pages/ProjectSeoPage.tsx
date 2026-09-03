@@ -9,6 +9,7 @@ import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
 import { createSeoSite, deleteSeoSite, fetchProjectSeoSites } from '../lib/api/seo';
+import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import type { SeoSite } from '../types/seo';
 
@@ -129,7 +130,7 @@ export function ProjectSeoPage() {
           </p>
           <div className="page-links">
             <Link
-              to={`/organizations/${orgId}/projects/${projectId}`}
+              to={projectTasksHref(orgId, projectId)}
               className="text-link"
             >
               Back to board

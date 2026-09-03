@@ -3,6 +3,7 @@ import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, updateProject } from '../lib/api/projects';
+import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import { UNASSIGNED_VALUE } from '../lib/users/assigneeDisplay';
 import type { Project, UpdateProjectInput } from '../types/project';
@@ -208,9 +209,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                     type="button"
                     className="btn btn-primary"
                     onClick={() =>
-                      navigate(
-                        `/organizations/${orgId}/projects/${project.id}`,
-                      )
+                      navigate(projectTasksHref(orgId, project.id))
                     }
                   >
                     Open tasks

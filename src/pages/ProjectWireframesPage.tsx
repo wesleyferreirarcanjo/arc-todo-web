@@ -11,6 +11,7 @@ import { WireframesIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
+import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
@@ -261,7 +262,7 @@ export function ProjectWireframesPage() {
           </p>
           <div className="page-links">
             <Link
-              to={`/organizations/${orgId}/projects/${projectId}`}
+              to={projectTasksHref(orgId, projectId)}
               className="text-link"
             >
               Back to board

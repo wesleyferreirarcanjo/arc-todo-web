@@ -32,6 +32,7 @@ import {
 } from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { projectTasksHref } from '../lib/board/boardShellPath';
 import type {
   CreateKnowledgeInput,
   KnowledgeEntryWithContext,
@@ -305,7 +306,7 @@ export function KnowledgeWorkspacePage({
           <div className="page-links">
             {lockedProjectId ? (
               <Link
-                to={`/organizations/${lockedOrganizationId}/projects/${lockedProjectId}`}
+                to={projectTasksHref(lockedOrganizationId, lockedProjectId)}
                 className="text-link"
               >
                 Back to board

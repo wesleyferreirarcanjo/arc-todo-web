@@ -2,6 +2,7 @@ import { BrowserExtensionDownload } from '../components/BrowserExtensionDownload
 import { ProjectQaInfoForm } from '../components/ProjectQaInfoForm';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import type { CSSProperties } from 'react';
@@ -35,7 +36,7 @@ export function ProjectQaInfoPage() {
             Back to organizations
           </Link>
           <Link
-            to={`/organizations/${orgId}/projects/${projectId}`}
+            to={projectTasksHref(orgId, projectId)}
             className="text-link"
           >
             Open tasks
