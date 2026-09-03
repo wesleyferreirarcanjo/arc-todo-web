@@ -17,6 +17,12 @@ describe('Names shortlist CSS (#arc-503)', () => {
     const rule = ruleBlock('.names-funnel.names-shortlist');
     expect(rule).toContain('width: 100%');
     expect(rule).not.toContain('max-content');
+    const desk = ruleBlock('.names-session-page .names-shortlist-desk');
+    expect(desk).toContain('max-width: none');
+    expect(desk).toContain('width: 100%');
+    expect(css).toContain(
+      '.names-session-page .names-panel > :not(.names-funnel-wrap):not(.names-shortlist-desk)',
+    );
   });
 
   it('adds a session snapshot pane at 1280px', () => {

@@ -892,12 +892,18 @@
 }
 
 .names-session-page .names-quick-brief,
-.names-session-page .names-panel > :not(.names-funnel-wrap),
+.names-session-page .names-panel > :not(.names-funnel-wrap):not(.names-shortlist-desk),
 .names-session-page .names-brief-panel,
 .names-session-page .names-desk-main > .names-empty {
   width: 100%;
   max-width: 52rem;
   margin-inline: auto;
+}
+
+.names-session-page .names-shortlist-desk {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
 }
 
 .names-desk-rail {
