@@ -3,6 +3,7 @@ import { CompareSection } from '../components/names/CompareSection';
 import { FeedbackSection } from '../components/names/FeedbackSection';
 import { NamesSection } from '../components/names/NamesSection';
 import { CandidateCard } from '../components/names/CandidateCard';
+import { ErrorAlert } from '../components/ErrorAlert';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
