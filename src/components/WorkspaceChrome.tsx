@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import {
   getOrganizationColor,
@@ -20,29 +20,50 @@ export function useWorkspaceAccent(): {
   orgName: string | null;
   projectName: string | null;
 } {
+  const [searchParams] = useSearchParams();
   const {
+    organizations,
+    projects,
     currentOrgId,
     currentProjectId,
     currentOrganization,
     currentProject,
   } = useWorkspace();
 
-  const color = currentProject
-    ? getProjectColor(currentProject)
-    : currentProjectId
-      ? getProjectColor({ id: currentProjectId })
-      : currentOrganization
-        ? getOrganizationColor(currentOrganization)
-        : currentOrgId
-          ? getOrganizationColor({ id: currentOrgId })
-          : undefined;
+  // Board filters (?organizationId=&projectId=) are not mirrored into WorkspaceContext.
+  const boardOrgId = searchParams.get('organizationId');
+  const boardProjectId = searchParams.get('projectId');
+  const orgId = boardOrgId ?? currentOrgId ?? currentOrganization?.id ?? null;
+  const projectId = boardProjectId ?? currentProjectId ?? currentProject?.id ?? null;
+
+  const organization =
+    (orgId
+      ? organizations?.find((org) => org.id === orgId) ?? null
+      : null) ??
+    (orgId === currentOrgId || orgId === currentOrganization?.id
+      ? currentOrganization
+      : null);
+
+  const project =
+    (projectId
+      ? projects?.find((p) => p.id === projectId) ?? null
+      : null) ??
+    (projectId === currentProjectId || projectId === currentProject?.id
+      ? currentProject
+      : null);
+
+  const color = projectId
+    ? getProjectColor(project ?? { id: projectId })
+    : orgId
+      ? getOrganizationColor(organization ?? { id: orgId })
+      : undefined;
 
   return {
     color,
-    orgId: currentOrgId,
-    projectId: currentProjectId,
-    orgName: currentOrganization?.name ?? null,
-    projectName: currentProject?.name ?? null,
+    orgId,
+    projectId,
+    orgName: organization?.name ?? null,
+    projectName: project?.name ?? null,
   };
 }
 

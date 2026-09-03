@@ -34,7 +34,8 @@
 
 .entity-card.management-card.has-accent,
 .task-card.has-accent,
-.modal.has-accent {
+.modal.has-accent,
+.sidebar.has-accent {
   --entity-rail-card-color: color-mix(
     in srgb,
     var(--entity-accent, var(--border-strong)) var(--entity-rail-card-mix),

@@ -7,6 +7,8 @@ const authState = vi.hoisted(() => ({
 }));
 
 const workspace = vi.hoisted(() => ({
+  organizations: [] as { id: string; name: string; color: string }[],
+  projects: [] as { id: string; name: string; color: string }[],
   currentOrgId: null as string | null,
   currentProjectId: null as string | null,
   currentOrganization: null as { id: string; name: string; color: string } | null,
@@ -52,15 +54,17 @@ import { Layout } from './Layout';
 afterEach(() => {
   cleanup();
   authState.isAdmin = false;
+  workspace.organizations = [];
+  workspace.projects = [];
   workspace.currentOrgId = null;
   workspace.currentProjectId = null;
   workspace.currentOrganization = null;
   workspace.currentProject = null;
 });
 
-function renderLayout() {
+function renderLayout(path = '/board') {
   return render(
-    <MemoryRouter initialEntries={['/board']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/board" element={<div>Board</div>} />
@@ -79,7 +83,22 @@ describe('Layout sidebar identity', () => {
     expect(sidebar).not.toHaveClass('has-accent');
   });
 
-  it('stays graphite when a project page is open', () => {
+  it('uses the project color when org and project board filters are set', () => {
+    workspace.organizations = [
+      { id: 'org-1', name: 'Personal', color: '#c45c26' },
+    ];
+    workspace.projects = [
+      { id: 'proj-1', name: 'arc-todo', color: '#4a7c59' },
+    ];
+
+    renderLayout('/board?organizationId=org-1&projectId=proj-1');
+    const sidebar = screen.getByRole('navigation', { name: 'Main navigation' })
+      .closest('aside');
+    expect(sidebar).toHaveClass('has-accent');
+    expect(sidebar).toHaveStyle({ '--entity-accent': '#4a7c59' });
+  });
+
+  it('uses the project color when a nested hub has a focused project', () => {
     workspace.currentOrgId = 'org-1';
     workspace.currentProjectId = 'proj-1';
     workspace.currentOrganization = {
@@ -96,9 +115,8 @@ describe('Layout sidebar identity', () => {
     renderLayout();
     const sidebar = screen.getByRole('navigation', { name: 'Main navigation' })
       .closest('aside');
-    expect(sidebar).toHaveClass('sidebar');
-    expect(sidebar).not.toHaveClass('has-accent');
-    expect(sidebar).not.toHaveStyle({ '--entity-accent': '#4a7c59' });
+    expect(sidebar).toHaveClass('has-accent');
+    expect(sidebar).toHaveStyle({ '--entity-accent': '#4a7c59' });
   });
 
   it('shows Analytics before Users for an administrator', () => {

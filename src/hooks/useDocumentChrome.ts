@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useWorkspace } from '../context/WorkspaceContext';
+import { useWorkspaceAccent } from '../components/WorkspaceChrome';
+import { brandMarkFaviconHref } from '../lib/brand/brandMark';
 
 const DEFAULT_TITLE = 'Arc Todo';
 const FAVICON_REL = 'icon';
@@ -39,42 +39,15 @@ function buildTitle(
 
 /** Keeps document.title + favicon in sync with board filters or route workspace. */
 export function useDocumentChrome(): void {
-  const [searchParams] = useSearchParams();
-  const {
-    organizations,
-    projects,
-    currentOrgId,
-    currentProjectId,
-    currentOrganization,
-    currentProject,
-  } = useWorkspace();
-
-  // Board filters (?organizationId=&projectId=) are not mirrored into WorkspaceContext.
-  const boardOrgId = searchParams.get('organizationId');
-  const boardProjectId = searchParams.get('projectId');
-
-  const orgId = boardOrgId ?? currentOrgId;
-  const projectId = boardProjectId ?? currentProjectId;
-
-  const organization =
-    (orgId
-      ? organizations.find((org) => org.id === orgId) ?? null
-      : null) ?? (orgId === currentOrgId ? currentOrganization : null);
-
-  const project =
-    (projectId
-      ? projects.find((p) => p.id === projectId) ?? null
-      : null) ?? (projectId === currentProjectId ? currentProject : null);
-
-  const projectName = project?.name ?? null;
-  const orgName = organization?.name ?? null;
+  const { color, projectId, orgName, projectName } = useWorkspaceAccent();
 
   const title = buildTitle(projectName, orgName, Boolean(projectId));
+  const faviconHref = color ? brandMarkFaviconHref(color) : MARK_FAVICON_HREF;
 
   useEffect(() => {
     document.title = title;
-    ensureFaviconLink().href = MARK_FAVICON_HREF;
-  }, [title]);
+    ensureFaviconLink().href = faviconHref;
+  }, [title, faviconHref]);
 
   useEffect(() => {
     return () => {

@@ -53,15 +53,19 @@ describe('useDocumentChrome favicon', () => {
     expect(favicon()?.getAttribute('href')).toBe('/icons/icon.svg');
   });
 
-  it('keeps the brand mark favicon when a project page is open', () => {
+  it('uses the brand mark on a project-color square when org and project filters are set', () => {
+    workspace.organizations = [{ id: 'org-1', name: 'Personal', color: '#4a7c59' }];
     workspace.projects = [{ id: 'p1', name: 'arc-todo', color: '#c45c26' }];
-    workspace.currentProjectId = 'p1';
-    workspace.currentProject = workspace.projects[0];
     render(
-      <MemoryRouter initialEntries={['/board']}>
+      <MemoryRouter initialEntries={['/board?organizationId=org-1&projectId=p1']}>
         <Probe />
       </MemoryRouter>,
     );
-    expect(favicon()?.getAttribute('href')).toBe('/icons/icon.svg');
+    const href = favicon()?.getAttribute('href') ?? '';
+    expect(href.startsWith('data:image/svg+xml,')).toBe(true);
+    const svg = decodeURIComponent(href);
+    expect(svg).toContain('fill="#c45c26"');
+    expect(svg).toContain('stroke="#000000"');
+    expect(svg).toContain('M9.5 16.4 12 8.6l2.5 7.8');
   });
 });
