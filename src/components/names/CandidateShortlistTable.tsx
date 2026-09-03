@@ -49,13 +49,6 @@ export function CandidateShortlistTable(props: {
     }),
   );
   const ratingRow = rows.find((row) => row.candidate.id === ratingId);
-  const pickName = props.candidates.find(
-    (item) => item.id === props.recommendedCandidateId,
-  )?.name;
-  const keptNames = props.candidates.filter((item) =>
-    props.shortlistIds.includes(item.id),
-  );
-
   function openRating(candidate: NameCandidate) {
     setRatingId(candidate.id);
     setDraftScore(candidate.ratings?.overall);
@@ -81,8 +74,8 @@ export function CandidateShortlistTable(props: {
               <th scope="col">Domain</th>
               <th scope="col">Google</th>
               <th scope="col">Score</th>
-              <th scope="col">
-                <span className="sr-only">Actions</span>
+              <th scope="col" className="names-shortlist-decision-heading">
+                Decision
               </th>
             </tr>
           </thead>
@@ -146,32 +139,24 @@ export function CandidateShortlistTable(props: {
                     {blind ? (
                       <span>Answer in Feedback first.</span>
                     ) : (
-                      <>
+                      <div className="names-decision-actions">
                         <button
                           type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => props.onOpen(candidate.id)}
+                          className={`btn btn-sm ${kept ? 'btn-secondary is-kept' : 'btn-primary'}`}
+                          aria-pressed={kept}
+                          onClick={() => props.onKeep(candidate.id)}
                         >
-                          Open
+                          {kept ? 'Kept' : 'Keep'}
                         </button>
-                        {kept ? null : (
-                          <>
+                        {!kept ? (
                             <button
                               type="button"
-                              className="btn btn-primary btn-sm"
-                              onClick={() => props.onKeep(candidate.id)}
-                            >
-                              Keep
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
+                              className="btn btn-secondary btn-sm names-reject-btn"
                               onClick={() => props.onReject(candidate.id)}
                             >
                               Reject
                             </button>
-                          </>
-                        )}
+                        ) : null}
                         {picked ? (
                           <span className="names-funnel-verdict">Your pick</span>
                         ) : (
@@ -183,7 +168,7 @@ export function CandidateShortlistTable(props: {
                             Pick
                           </button>
                         )}
-                      </>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -192,34 +177,6 @@ export function CandidateShortlistTable(props: {
           </tbody>
         </table>
       </div>
-      <aside className="names-shortlist-aside" aria-label="Session snapshot">
-        <p>
-          {pickName ? `Your pick: ${pickName}` : 'No pick yet.'}
-        </p>
-        <p>
-          {keptNames.length === 0
-            ? 'No names kept.'
-            : keptNames.length === 1
-              ? '1 name kept.'
-              : `${keptNames.length} names kept.`}
-        </p>
-        <h3>Your scores</h3>
-        {rows.every((row) => row.candidate.ratings?.overall == null) ? (
-          <p>Score a name to keep your 1–10 here.</p>
-        ) : (
-          <ul>
-            {rows.map((row) => (
-              <li key={row.candidate.id}>
-                {row.candidate.name}
-                {row.candidate.ratings?.overall
-                  ? ` · ${row.candidate.ratings.overall}`
-                  : ' · not scored'}
-              </li>
-            ))}
-          </ul>
-        )}
-        <p>Click a row or Open to inspect Domain, Google, and brand checks.</p>
-      </aside>
       <Modal
         open={Boolean(ratingRow)}
         onClose={() => setRatingId(null)}

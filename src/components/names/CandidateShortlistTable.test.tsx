@@ -43,7 +43,7 @@ const tableProps = {
 };
 
 describe('CandidateShortlistTable', () => {
-  it('shows Domain, Google, Keep, Reject, Open, and Pick, and keeps Unknown unresolved', async () => {
+  it('shows Domain, Google, Score, and concise decision controls', async () => {
     const user = userEvent.setup();
     const onKeep = vi.fn();
     const onReject = vi.fn();
@@ -72,13 +72,14 @@ describe('CandidateShortlistTable', () => {
 
     const riftRow = screen.getByRole('row', { name: /Rift/ });
     expect(within(riftRow).getByRole('button', { name: 'Keep' })).toBeTruthy();
-    expect(within(riftRow).getByRole('button', { name: 'Open' })).toBeTruthy();
+    expect(within(riftRow).queryByRole('button', { name: 'Open' })).toBeNull();
     await user.click(within(riftRow).getByRole('button', { name: 'Reject' }));
     expect(onReject).toHaveBeenCalledWith('open');
     expect(onOpen).not.toHaveBeenCalled();
 
     const waveRow = screen.getByRole('row', { name: /Wave/ });
-    expect(within(waveRow).queryByRole('button', { name: 'Keep' })).toBeNull();
+    await user.click(within(waveRow).getByRole('button', { name: 'Kept' }));
+    expect(onKeep).toHaveBeenCalledWith('ready');
     await user.click(within(waveRow).getByRole('button', { name: 'Pick' }));
     expect(onPick).toHaveBeenCalledWith('ready');
 
@@ -86,7 +87,7 @@ describe('CandidateShortlistTable', () => {
     expect(onOpen).toHaveBeenCalledWith('open');
   });
 
-  it('opens Checks from an Open control and from a non-action row click', async () => {
+  it('opens Checks from the name control and from a non-action row click', async () => {
     const user = userEvent.setup();
     const onOpen = vi.fn();
     render(
@@ -98,7 +99,7 @@ describe('CandidateShortlistTable', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Wave' }));
     expect(onOpen).toHaveBeenCalledWith('ready');
     onOpen.mockClear();
     const row = screen.getByRole('row', { name: /Wave/ });

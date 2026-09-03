@@ -51,11 +51,29 @@
 
 .names-funnel.names-shortlist {
   width: 100%;
+  table-layout: fixed;
 }
 
 .names-funnel.names-shortlist th:first-child,
 .names-funnel.names-shortlist td:first-child {
   width: 28%;
+}
+
+.names-funnel.names-shortlist th:nth-child(2),
+.names-funnel.names-shortlist td:nth-child(2),
+.names-funnel.names-shortlist th:nth-child(3),
+.names-funnel.names-shortlist td:nth-child(3) {
+  width: 10%;
+}
+
+.names-funnel.names-shortlist th:nth-child(4),
+.names-funnel.names-shortlist td:nth-child(4) {
+  width: 5.5rem;
+}
+
+.names-funnel.names-shortlist th:nth-child(5),
+.names-funnel.names-shortlist td:nth-child(5) {
+  width: 22rem;
 }
 
 .names-shortlist-score {
@@ -72,10 +90,6 @@
   display: grid;
   gap: 1rem;
   min-width: 0;
-}
-
-.names-shortlist-aside {
-  display: none;
 }
 
 .names-funnel th,
@@ -184,6 +198,47 @@
 
 .names-funnel-actions .btn-sm + .btn-sm {
   margin-left: 0.3rem;
+}
+
+.names-shortlist-decision-heading {
+  text-align: right !important;
+}
+
+.names-decision-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.names-decision-actions .btn-sm + .btn-sm {
+  margin-left: 0;
+}
+
+.names-decision-actions .is-kept {
+  color: var(--success-text);
+  border-color: color-mix(in srgb, var(--success-text) 45%, var(--border));
+}
+
+.names-decision-actions .names-reject-btn {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .names-funnel.names-shortlist {
+    table-layout: auto;
+  }
+
+  .names-funnel.names-shortlist th:nth-child(5),
+  .names-funnel.names-shortlist td:nth-child(5) {
+    width: auto;
+  }
+
+  .names-decision-actions {
+    flex-wrap: wrap;
+  }
 }
 @media (max-width: 640px) {
   .names-funnel thead {

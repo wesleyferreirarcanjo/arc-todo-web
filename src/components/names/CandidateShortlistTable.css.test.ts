@@ -12,8 +12,8 @@ function ruleBlock(selector: string): string {
   return css.slice(start, close + 1);
 }
 
-describe('Names shortlist CSS (#arc-503)', () => {
-  it('stretches the shortlist table across the panel', () => {
+describe('Names shortlist CSS', () => {
+  it('uses the panel width without an intrinsic-width table', () => {
     const rule = ruleBlock('.names-funnel.names-shortlist');
     expect(rule).toContain('width: 100%');
     expect(rule).not.toContain('max-content');
@@ -25,13 +25,11 @@ describe('Names shortlist CSS (#arc-503)', () => {
     );
   });
 
-  it('adds a session snapshot pane at 1280px', () => {
-    expect(css).toContain('@media (min-width: 1280px)');
-    const wideStart = css.indexOf('@media (min-width: 1280px) {\n  .names-shortlist-desk {');
-    expect(wideStart).toBeGreaterThan(-1);
-    const wide = css.slice(wideStart, wideStart + 900);
-    expect(wide).toContain('grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem)');
-    expect(wide).toContain('.names-shortlist-aside');
-    expect(wide).toContain('display: grid');
+  it('caps the workspace and inspector to readable widths', () => {
+    const page = ruleBlock('.names-session-page');
+    expect(page).toContain('max-width: 96rem');
+    const inspector = ruleBlock('.names-inspector-modal');
+    expect(inspector).toContain('56rem');
+    expect(css).not.toContain('.names-shortlist-aside');
   });
 });

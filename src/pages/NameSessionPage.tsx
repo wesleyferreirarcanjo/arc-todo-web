@@ -418,6 +418,14 @@ export function NameSessionPage() {
     <div className="page-shell names-session-page">
       <header className="page-header page-header-with-actions">
         <div>
+          <div className="page-links names-session-back">
+            <Link
+              to={`/organizations/${orgId}/projects/${projectId}/names`}
+              className="text-link"
+            >
+              ← Names
+            </Link>
+          </div>
           <h2>{session?.title ?? 'Name session'}</h2>
           {session && !briefEditing && (
             <div className="names-session-meta">
@@ -427,6 +435,7 @@ export function NameSessionPage() {
               <button
                 type="button"
                 className="names-brief-line"
+                aria-label={`Edit brief: ${briefLine || 'Add a one-line brief'}`}
                 onClick={() => setBriefEditing(true)}
               >
                 {briefLine || 'Add a one-line brief'}
@@ -492,14 +501,6 @@ export function NameSessionPage() {
               Saved
             </span>
           )}
-          <div className="page-links">
-            <Link
-              to={`/organizations/${orgId}/projects/${projectId}/names`}
-              className="text-link"
-            >
-              ← Names
-            </Link>
-          </div>
         </div>
       </header>
       {loading && <p className="status-message">Loading session...</p>}

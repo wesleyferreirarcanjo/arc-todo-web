@@ -75,20 +75,26 @@ export function NamesSection(props: {
       {wave.length === 0 ? (
         <p className="names-empty">{props.emptyCopy}</p>
       ) : (
-        <CandidateShortlistTable
-          candidates={wave}
-          namingGoal={session.namingGoal}
-          shortlistIds={session.shortlistIds}
-          recommendedCandidateId={session.recommendedCandidateId}
-          resolvingKeys={props.resolvingKeys}
-          raterName={props.raterName}
-          isBlind={isBlind}
-          onKeep={props.onKeep}
-          onReject={props.onReject}
-          onPick={props.onPick}
-          onOpen={props.onOpen}
-          onRate={props.onRate}
-        />
+        <>
+          <div className="names-shortlist-heading">
+            <h3>Candidates</h3>
+            <span>{wave.length}</span>
+          </div>
+          <CandidateShortlistTable
+            candidates={wave}
+            namingGoal={session.namingGoal}
+            shortlistIds={session.shortlistIds}
+            recommendedCandidateId={session.recommendedCandidateId}
+            resolvingKeys={props.resolvingKeys}
+            raterName={props.raterName}
+            isBlind={isBlind}
+            onKeep={props.onKeep}
+            onReject={props.onReject}
+            onPick={props.onPick}
+            onOpen={props.onOpen}
+            onRate={props.onRate}
+          />
+        </>
       )}
       {rejectedCount > 0 && (
         <p className="names-meta">
