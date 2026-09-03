@@ -74,6 +74,8 @@ describe('NamesSection', () => {
         onReject={() => undefined}
         onPick={() => undefined}
         onOpen={() => undefined}
+        onScore={() => undefined}
+        onNotes={() => undefined}
       />,
     );
 
@@ -105,6 +107,8 @@ describe('NamesSection', () => {
         onReject={() => undefined}
         onPick={() => undefined}
         onOpen={() => undefined}
+        onScore={() => undefined}
+        onNotes={() => undefined}
       />,
     );
     expect(screen.getByText('Needs AI')).toBeTruthy();

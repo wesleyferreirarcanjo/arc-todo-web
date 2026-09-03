@@ -221,6 +221,14 @@ function spokenPillar(
 }
 
 function tastePillar(candidate: NameCandidate): ScorePillar {
+  const overall = candidate.ratings?.overall;
+  if (typeof overall === 'number' && overall >= 1 && overall <= 10) {
+    return {
+      value: overall,
+      unresolved: false,
+      notes: [`overall ${overall}/10`],
+    };
+  }
   const fit = candidate.ratings?.brandFit ?? 0;
   const easy = candidate.ratings?.easyToSay ?? 0;
   const memorable = candidate.ratings?.memorable ?? 0;

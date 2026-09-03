@@ -1,17 +1,31 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
 
 export const RATING_VALUES = [1, 2, 3, 4, 5] as const;
-export type RatingScaleValue = (typeof RATING_VALUES)[number];
+export const RATING_VALUES_10 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export type RatingScaleMax = 5 | 10;
+export type RatingScaleValue = (typeof RATING_VALUES_10)[number];
 
-export function isRatingScaleValue(value: unknown): value is RatingScaleValue {
-  return RATING_VALUES.includes(value as RatingScaleValue);
+export function isRatingScaleValue(
+  value: unknown,
+  max: RatingScaleMax = 5,
+): value is RatingScaleValue {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 1 &&
+    value <= max
+  );
 }
 
-function nextRating(value: unknown, delta: number): RatingScaleValue {
-  if (!isRatingScaleValue(value)) {
+function nextRating(
+  value: unknown,
+  delta: number,
+  max: RatingScaleMax,
+): RatingScaleValue {
+  if (!isRatingScaleValue(value, max)) {
     return 1;
   }
-  return RATING_VALUES[Math.min(4, Math.max(0, value - 1 + delta))]!;
+  return Math.min(max, Math.max(1, value + delta)) as RatingScaleValue;
 }
 
 export function RatingScale({
@@ -19,16 +33,21 @@ export function RatingScale({
   value,
   onChange,
   description,
+  max = 5,
+  compact = false,
 }: {
   label: string;
   value: number | null | undefined;
   onChange: (value: number) => void;
   description?: string;
+  max?: RatingScaleMax;
+  compact?: boolean;
 }) {
   const reactId = useId();
   const labelId = `${reactId}-label`;
   const descriptionId = `${reactId}-description`;
-  const radiosRef = useRef(new Map<RatingScaleValue, HTMLInputElement>());
+  const values = max === 10 ? RATING_VALUES_10 : RATING_VALUES;
+  const radiosRef = useRef(new Map<number, HTMLInputElement>());
 
   function commit(next: RatingScaleValue) {
     onChange(next);
@@ -38,13 +57,13 @@ export function RatingScale({
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     let next: RatingScaleValue | null = null;
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      next = nextRating(value, 1);
+      next = nextRating(value, 1, max);
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      next = nextRating(value, -1);
+      next = nextRating(value, -1, max);
     } else if (event.key === 'Home') {
       next = 1;
     } else if (event.key === 'End') {
-      next = 5;
+      next = max;
     }
     if (next == null) {
       return;
@@ -56,8 +75,11 @@ export function RatingScale({
   }
 
   return (
-    <div className="rating-scale">
-      <span id={labelId} className="rating-scale-label">
+    <div className={`rating-scale${compact ? ' is-compact' : ''}`}>
+      <span
+        id={labelId}
+        className={compact ? 'sr-only' : 'rating-scale-label'}
+      >
         {label}
       </span>
       {description ? (
@@ -66,15 +88,15 @@ export function RatingScale({
         </p>
       ) : null}
       <div
-        className="rating-scale-group"
+        className={`rating-scale-group${max === 10 ? ' is-max-10' : ''}`}
         role="radiogroup"
         aria-labelledby={labelId}
         aria-describedby={description ? descriptionId : undefined}
         onKeyDown={onKeyDown}
       >
-        {RATING_VALUES.map((rating) => {
+        {values.map((rating) => {
           const selected = value === rating;
-          const filled = isRatingScaleValue(value) && rating <= value;
+          const filled = isRatingScaleValue(value, max) && rating <= value;
           return (
             <label
               key={rating}

@@ -414,20 +414,26 @@ export function CompareSection(props: {
                 >
                   <h4 id={`compare-${item.id}`}>{item.name}</h4>
                   <NamesScoreStrip pillars={score} />
-                  {RATING_FIELDS.map((field) => (
-                    <RatingScale
-                      key={field.key}
-                      label={field.label}
-                      value={ratings[field.key]}
-                      onChange={(value) => {
-                        setRatingsById((prev) => ({
-                          ...prev,
-                          [item.id]: { ...prev[item.id], [field.key]: value },
-                        }));
-                      }}
-                    />
-                  ))}
-                  <EvidenceLedger rows={rows} />
+                  <section className="names-compare-judgments">
+                    <h5>Your 1–5 judgments</h5>
+                    {RATING_FIELDS.map((field) => (
+                      <RatingScale
+                        key={field.key}
+                        label={field.label}
+                        value={ratings[field.key]}
+                        onChange={(value) => {
+                          setRatingsById((prev) => ({
+                            ...prev,
+                            [item.id]: { ...prev[item.id], [field.key]: value },
+                          }));
+                        }}
+                      />
+                    ))}
+                  </section>
+                  <section className="names-compare-evidence">
+                    <h5>Evidence</h5>
+                    <EvidenceLedger rows={rows} />
+                  </section>
                   {canRetry(item) ? (
                     <button
                       type="button"

@@ -204,4 +204,16 @@ describe('candidateScore pillars', () => {
     expect(scored.formula).toMatch(/^Domain /);
     expect(scored.formula).not.toMatch(/winner|recommend|auto-pick/i);
   });
+
+  it('uses a 1–10 overall score as the taste pillar', () => {
+    const scored = candidateScore(
+      candidate({
+        domainChecks: COM_IO.freeCom,
+        ratings: { overall: 8 },
+      }),
+      'public_product',
+    );
+    expect(scored.taste.value).toBe(8);
+    expect(scored.taste.notes[0]).toMatch(/overall 8\/10/);
+  });
 });

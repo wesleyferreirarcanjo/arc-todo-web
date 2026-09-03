@@ -3,7 +3,10 @@ import {
   googleImagesQueryUrl,
   googleQueryUrl,
 } from '../../lib/names/catalog';
-import { keptVerdict } from '../../lib/names/funnel';
+import {
+  keptVerdict,
+  unknownBrandLabels,
+} from '../../lib/names/funnel';
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
 import { AutomatedEvidence } from './AutomatedEvidence';
 import { BrandFootprintBlock } from './BrandFootprintBlock';
@@ -26,6 +29,11 @@ export function CandidateCard(props: {
 }) {
   const { candidate, isBlind } = props;
   const kept = props.session.shortlistIds.includes(candidate.id);
+  const unknown = unknownBrandLabels(candidate, props.session.namingGoal);
+  const next =
+    unknown[0] != null
+      ? `Open ${unknown[0]} and mark Clear or Collision.`
+      : 'Score this name 1–10 on the shortlist, then Pick if it is the winner.';
 
   if (isBlind) {
     return (
@@ -38,9 +46,12 @@ export function CandidateCard(props: {
 
   return (
     <article className="names-card names-card-detail">
-      <p className="names-card-verdict-line">
-        {keptVerdict(candidate, props.session.namingGoal)}
-      </p>
+      <div className="names-check-summary">
+        <p className="names-card-verdict-line">
+          {keptVerdict(candidate, props.session.namingGoal)}
+        </p>
+        <p className="names-check-next">Next: {next}</p>
+      </div>
       <div className="names-card-links">
         <a
           className="names-text-link"

@@ -49,6 +49,20 @@
   font-size: 0.8rem;
 }
 
+.names-funnel.names-shortlist {
+  width: max-content;
+  max-width: 100%;
+}
+
+.names-shortlist-score {
+  min-width: 16rem;
+}
+
+.names-shortlist-note {
+  width: min(36rem, 100%);
+  min-height: 3.25rem;
+}
+
 .names-funnel th,
 .names-funnel td {
   padding: 0.4rem 0.35rem;
@@ -171,6 +185,19 @@
     width: 100%;
     padding: 0.45rem 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  .names-funnel.names-shortlist {
+    width: 100%;
+  }
+
+  .names-shortlist-score {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .names-funnel-detail td {
+    flex: 1 1 100%;
   }
 
   .names-funnel th,

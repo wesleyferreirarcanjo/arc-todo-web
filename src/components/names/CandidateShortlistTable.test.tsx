@@ -51,6 +51,8 @@ describe('CandidateShortlistTable', () => {
         onReject={onReject}
         onPick={onPick}
         onOpen={onOpen}
+        onScore={vi.fn()}
+        onNotes={vi.fn()}
       />,
     );
 
@@ -72,5 +74,37 @@ describe('CandidateShortlistTable', () => {
 
     await user.click(screen.getByRole('button', { name: 'Rift' }));
     expect(onOpen).toHaveBeenCalledWith('open');
+  });
+
+  it('lets a member set a 1–10 score and open optional written feedback', async () => {
+    const user = userEvent.setup();
+    const onScore = vi.fn();
+    const onNotes = vi.fn();
+    render(
+      <CandidateShortlistTable
+        candidates={[candidate({ id: 'ready', name: 'Wave', domainChecks: availableCom })]}
+        namingGoal="public_product"
+        shortlistIds={['ready']}
+        recommendedCandidateId={null}
+        resolvingKeys={[]}
+        isBlind={() => false}
+        onKeep={vi.fn()}
+        onReject={vi.fn()}
+        onPick={vi.fn()}
+        onOpen={vi.fn()}
+        onScore={onScore}
+        onNotes={onNotes}
+      />,
+    );
+
+    expect(screen.getByRole('columnheader', { name: 'Score' })).toBeTruthy();
+    await user.click(screen.getByRole('radio', { name: '8' }));
+    expect(onScore).toHaveBeenCalledWith('ready', 8);
+
+    await user.click(screen.getByRole('button', { name: 'Write feedback' }));
+    const note = screen.getByLabelText('Written feedback for Wave');
+    await user.type(note, 'Fits the notebook');
+    await user.tab();
+    expect(onNotes).toHaveBeenCalledWith('ready', 'Fits the notebook');
   });
 });

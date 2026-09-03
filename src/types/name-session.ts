@@ -122,6 +122,8 @@ export interface CandidateRatings {
   brandFit?: number;
   easyToSay?: number;
   memorable?: number;
+  /** Solo 1–10 overall on the shortlist (BR-NAME-25). */
+  overall?: number;
 }
 
 export interface ComIncumbency {

@@ -17,6 +17,8 @@ export function NamesSection(props: {
   onReject: (candidateId: string) => void;
   onPick: (candidateId: string) => void;
   onOpen: (candidateId: string) => void;
+  onScore: (candidateId: string, overall: number) => void;
+  onNotes: (candidateId: string, notes: string) => void;
 }) {
   const { session } = props;
   const wave = session.candidates.filter(
@@ -84,6 +86,8 @@ export function NamesSection(props: {
           onReject={props.onReject}
           onPick={props.onPick}
           onOpen={props.onOpen}
+          onScore={props.onScore}
+          onNotes={props.onNotes}
         />
       )}
       {rejectedCount > 0 && (

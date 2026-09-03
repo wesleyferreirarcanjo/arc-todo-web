@@ -87,8 +87,12 @@ describe('CandidateCard verdict, evidence, judgment', () => {
   it('renders one verdict sentence and the detail blocks in order', () => {
     renderCard(candidate());
 
-    expect(screen.getByText(/Good candidate — \d+ checks left/)).toBeInTheDocument();
-    expect(screen.getByText(/Checks left:/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/brand checks still Unknown: Google exact/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Next: Open Google exact/)).toBeInTheDocument();
+    expect(screen.getByText(/9 brand checks still Unknown$/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Unknown' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Heard spelling' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'What we found' })).toBeNull();

@@ -137,8 +137,8 @@ export function FeedbackSection(props: {
       {props.session.canManageFeedback && !open && (
         <>
           <p className="names-feedback-lead">
-            Start a round so project members who are not doing the naming work
-            can give a first impression of 2 to 5 names.
+            Quick 1–10 scores live on the shortlist. Start a Feedback round only
+            when you need a blind group round of 2 to 5 names.
           </p>
           <p>Select 2 to 5 names.</p>
           <div

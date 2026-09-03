@@ -139,8 +139,26 @@ describe('funnel rows', () => {
 
     const open = candidate({ name: 'Nova', domainChecks: availableCom });
     expect(keptVerdict(open, 'public_product')).toMatch(
-      /Good candidate — \d+ checks left before you can trust it\./,
+      /\d+ brand checks still Unknown:/,
     );
+  });
+
+  it('keeps an existing overall score when a check result merges', () => {
+    const open = candidate({
+      id: '1',
+      name: 'Nova',
+      ratings: { overall: 8 },
+      notes: 'Fits',
+    });
+    const checked = candidate({
+      id: '1',
+      name: 'Nova',
+      domainChecks: availableCom,
+    });
+    const merged = mergeCheckedCandidate([open], checked)[0];
+    expect(merged.ratings?.overall).toBe(8);
+    expect(merged.notes).toBe('Fits');
+    expect(merged.domainChecks).toEqual(availableCom);
   });
 
   it('runs mapLimit with bounded concurrency', async () => {

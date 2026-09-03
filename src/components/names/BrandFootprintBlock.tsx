@@ -47,9 +47,15 @@ export function BrandFootprintBlock(props: {
   return (
     <div className="names-card-block names-checks">
       <NamesSignalHeading id="brand" />
-      <p className="names-checks-left">Checks left: {left}</p>
+      <p className="names-checks-left">
+        {left === 0
+          ? 'No brand checks still Unknown'
+          : `${left} brand checks still Unknown`}
+      </p>
       {unresolved.length > 0 ? (
-        <ul className="names-checks-list">
+        <>
+          <h5 className="names-brief-label">Unknown</h5>
+          <ul className="names-checks-list">
           {unresolved.map((source) => {
             const href = source.url(candidate.name);
             const showChoice = opened[source.id] === true;
@@ -88,22 +94,26 @@ export function BrandFootprintBlock(props: {
             );
           })}
         </ul>
+        </>
       ) : (
-        <p className="names-meta">No checks left on the sources that apply.</p>
+        <p className="names-meta">Every listed brand source has a recorded result.</p>
       )}
       {resolved.length > 0 ? (
-        <p className="names-checks-resolved">
-          {resolved
-            .map((source) => {
-              const recorded = (candidate.brandChecks ?? []).find(
-                (item) => item.source === source.id,
-              );
-              const label =
-                recorded?.result === 'collision' ? 'Collision' : 'Clear';
-              return `${source.label} ${label}`;
-            })
-            .join(' · ')}
-        </p>
+        <>
+          <h5 className="names-brief-label">Passed</h5>
+          <p className="names-checks-resolved">
+            {resolved
+              .map((source) => {
+                const recorded = (candidate.brandChecks ?? []).find(
+                  (item) => item.source === source.id,
+                );
+                const label =
+                  recorded?.result === 'collision' ? 'Collision' : 'Clear';
+                return `${source.label} ${label}`;
+              })
+              .join(' · ')}
+          </p>
+        </>
       ) : null}
       <label className="form-field">
         <span>Note</span>

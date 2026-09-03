@@ -42,7 +42,12 @@ export function mergeCheckedCandidate(
   return candidates.map((item) =>
     item.id === checked.id ||
     normalizeNameKey(item.name) === normalizeNameKey(checked.name)
-      ? { ...item, ...checked }
+      ? {
+          ...item,
+          ...checked,
+          ratings: { ...item.ratings, ...checked.ratings },
+          notes: checked.notes ?? item.notes,
+        }
       : item,
   );
 }
@@ -125,10 +130,27 @@ export function keptVerdict(
     return 'Blocked: a collision is recorded on a brand check';
   }
   const left = checksLeftCount(candidate, namingGoal);
+  const unknown = unknownBrandLabels(candidate, namingGoal);
   if (left > 0) {
-    return `Good candidate — ${left} checks left before you can trust it.`;
+    const preview = unknown.slice(0, 3).join(', ');
+    const extra = unknown.length > 3 ? `, +${unknown.length - 3} more` : '';
+    return `${left} brand checks still Unknown: ${preview}${extra}`;
   }
-  return 'Good candidate — recorded checks look clear.';
+  return 'Recorded brand checks are Clear.';
+}
+
+export function unknownBrandLabels(
+  candidate: NameCandidate,
+  namingGoal: string | null,
+): string[] {
+  return visibleBrandSources(namingGoal)
+    .filter((source) => {
+      const recorded = (candidate.brandChecks ?? []).find(
+        (item) => item.source === source.id,
+      );
+      return !recorded || recorded.result === 'unknown';
+    })
+    .map((source) => source.label);
 }
 
 function pillarReason(pillar: ScorePillar): string {

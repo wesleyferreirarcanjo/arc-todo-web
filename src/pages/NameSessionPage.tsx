@@ -360,6 +360,17 @@ export function NameSessionPage() {
     }
   }
 
+  async function handleScore(id: string, overall: number) {
+    await updateCandidate(id, (item) => ({
+      ...item,
+      ratings: { ...item.ratings, overall },
+    }));
+  }
+
+  async function handleNotes(id: string, notes: string) {
+    await updateCandidate(id, (item) => ({ ...item, notes }));
+  }
+
   if (!orgId || !projectId || !sessionId) {
     return <Navigate to="/names" replace />;
   }
@@ -396,17 +407,19 @@ export function NameSessionPage() {
       <header className="page-header page-header-with-actions">
         <div>
           <h2>{session?.title ?? 'Name session'}</h2>
-          <p className="page-subtitle">
-            {pickName ? `Your pick: ${pickName}` : ''}
-          </p>
           {session && !briefEditing && (
-            <button
-              type="button"
-              className="names-brief-line"
-              onClick={() => setBriefEditing(true)}
-            >
-              {briefLine || 'Add a one-line brief'}
-            </button>
+            <div className="names-session-meta">
+              {pickName ? (
+                <span className="names-session-pick">Your pick: {pickName}</span>
+              ) : null}
+              <button
+                type="button"
+                className="names-brief-line"
+                onClick={() => setBriefEditing(true)}
+              >
+                {briefLine || 'Add a one-line brief'}
+              </button>
+            </div>
           )}
           {session && briefEditing && (
             <section className="names-quick-brief">
@@ -500,6 +513,8 @@ export function NameSessionPage() {
             setInspectorId(id);
             setInspectorView('checks');
           }}
+          onScore={(id, overall) => void handleScore(id, overall)}
+          onNotes={(id, notes) => void handleNotes(id, notes)}
         />
       )}
       <Modal
@@ -507,6 +522,7 @@ export function NameSessionPage() {
         onClose={() => setInspectorId(null)}
         title={inspector?.name ?? 'Name'}
         titleId="names-inspector-title"
+        className="names-inspector-modal"
       >
         <nav className="names-desk-tabs" aria-label="Name views">
           {(['checks', 'compare', 'feedback'] as const).map((id) => (
@@ -564,7 +580,8 @@ export function NameSessionPage() {
             />
           ) : (
             <p className="names-empty">
-              Keep at least two names, then start a round here.
+              Score names 1–10 on the shortlist anytime. Keep at least two names
+              to start a blind group round here.
             </p>
           )
         )}

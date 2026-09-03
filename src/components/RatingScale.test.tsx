@@ -59,4 +59,30 @@ describe('RatingScale', () => {
     await user.keyboard('{ArrowDown}');
     expect(onChange).toHaveBeenLastCalledWith(2);
   });
+
+  it('can render a 1–10 scale and End lands on 10', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    function TenHarness() {
+      const [value, setValue] = useState(7);
+      return (
+        <RatingScale
+          label="Score"
+          max={10}
+          compact
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    render(<TenHarness />);
+
+    expect(screen.getByRole('radio', { name: '10' })).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: '7' }));
+    await user.keyboard('{End}');
+    expect(onChange).toHaveBeenLastCalledWith(10);
+  });
 });

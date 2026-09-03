@@ -43,4 +43,22 @@ describe('Names hub session row CSS (#arc-474)', () => {
     const row = ruleBlock('.names-session-row');
     expect(row).toContain('border-radius: var(--radius-md)');
   });
+
+  it('places session cards in a multi-column grid on wide viewports', () => {
+    const list = ruleBlock('.names-session-list');
+    expect(list).toContain('auto-fill');
+    expect(list).toContain('minmax');
+  });
+
+  it('does not turn the session title accent blue on hover', () => {
+    expect(css).not.toContain(
+      '.names-session-row:hover .names-session-row-title',
+    );
+  });
+
+  it('widens the names inspector instead of a 640px island', () => {
+    const rule = ruleBlock('.names-inspector-modal');
+    expect(rule).toMatch(/min\(/);
+    expect(rule).not.toContain('640px');
+  });
 });

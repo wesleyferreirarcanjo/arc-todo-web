@@ -27,6 +27,28 @@
   background: var(--bg-page);
 }
 
+.rating-scale-group.is-max-10 {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.rating-scale.is-compact {
+  gap: 0.2rem;
+}
+
+.rating-scale.is-compact .rating-scale-group {
+  min-width: 16rem;
+}
+
+@media (max-width: 640px) {
+  .rating-scale-group.is-max-10 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .rating-scale.is-compact .rating-scale-group {
+    min-width: 0;
+  }
+}
+
 .rating-scale-option {
   position: relative;
   display: flex;

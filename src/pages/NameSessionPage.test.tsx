@@ -134,7 +134,10 @@ describe('NameSessionPage shortlist chrome', () => {
       expect(screen.getByRole('button', { name: /Project G/ })).toBeTruthy();
     });
 
-    expect(screen.queryByLabelText('Kind of name')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Project G' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Project G/ })).toBeTruthy();
+    expect(document.querySelector('.names-session-meta')).toBeTruthy();
+    expect(document.querySelector('.page-subtitle')).toBeNull();
     await user.click(screen.getByRole('button', { name: /Project G/ }));
     expect(screen.getByLabelText('Working name')).toBeTruthy();
     expect(screen.getByLabelText('What does it do?')).toBeTruthy();
@@ -173,7 +176,41 @@ describe('NameSessionPage shortlist chrome', () => {
 
     await user.click(screen.getByRole('button', { name: 'Feedback' }));
     expect(
-      screen.getByText('Keep at least two names, then start a round here.'),
+      screen.getByText(
+        'Score names 1–10 on the shortlist anytime. Keep at least two names to start a blind group round here.',
+      ),
     ).toBeTruthy();
+  });
+
+  it('saves a 1–10 shortlist score without opening the inspector', async () => {
+    const user = userEvent.setup();
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      candidates: [
+        {
+          id: 'nova',
+          name: 'Nova',
+          status: 'active',
+          sources: ['human'],
+          domainChecks: [],
+          googleQueryUrl: '',
+        },
+      ],
+    });
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('radio', { name: '8' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await user.click(screen.getByRole('radio', { name: '8' }));
+    await waitFor(() => {
+      expect(updateProjectNameSession).toHaveBeenCalled();
+    });
+    const payload = updateProjectNameSession.mock.calls[0][3] as {
+      candidates: Array<{ ratings?: { overall?: number } }>;
+    };
+    expect(payload.candidates[0]?.ratings?.overall).toBe(8);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
