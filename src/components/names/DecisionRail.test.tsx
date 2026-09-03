@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
-import type { NameCandidate, ProjectNameSession } from '../types/name-session';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
 import { DecisionRail } from './DecisionRail';
 
 afterEach(cleanup);
@@ -41,7 +42,9 @@ function session(partial: Partial<ProjectNameSession> = {}): ProjectNameSession 
 }
 
 describe('DecisionRail', () => {
-  it('shows no auto-picked leader and lists unresolved as an evidence ledger', () => {
+  it('lists each unresolved name once and jumps on click', async () => {
+    const user = userEvent.setup();
+    const onFocusName = vi.fn();
     render(
       <DecisionRail
         session={session({
@@ -50,13 +53,15 @@ describe('DecisionRail', () => {
           ],
           shortlistIds: ['kept'],
         })}
+        onFocusName={onFocusName}
       />,
     );
     expect(screen.getByRole('complementary', { name: 'Decision desk' })).toBeInTheDocument();
     expect(screen.getByText('No pick yet')).toBeInTheDocument();
     expect(screen.getByText('You pick — totals do not.')).toBeInTheDocument();
-    expect(screen.getAllByText('Rift').length).toBeGreaterThan(0);
-    expect(screen.getByText('Domain')).toBeInTheDocument();
-    expect(screen.queryByText('DNS/RDAP')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Rift — \d+ unknowns?/ })).toHaveLength(1);
+    expect(screen.queryByText('Domain')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Rift — \d+ unknowns?/ }));
+    expect(onFocusName).toHaveBeenCalledWith('kept');
   });
 });

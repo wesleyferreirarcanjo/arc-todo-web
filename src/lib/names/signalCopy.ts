@@ -22,7 +22,7 @@ export type NameSignalCopy = {
 
 export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
   domain: {
-    name: 'Domain',
+    name: 'Domain free?',
     source: 'DNS/RDAP',
     howToRead:
       'A number is a ladder of available endings (.com full credit, then .com.br / .io / .app / .dev, then .xyz). Unknown is unresolved and contributes 0 — not a low pass and never Available.',
@@ -31,7 +31,7 @@ export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
     rules: ['BR-NAME-02', 'BR-NAME-03', 'BR-NAME-16', 'BR-NAME-17', 'BR-NAME-21', 'BR-NAME-22'],
   },
   organic: {
-    name: 'Organic',
+    name: 'Findable on Google?',
     source: 'Autocomplete + .com history',
     howToRead:
       'Quiet vs crowded is a combined read of search autocomplete and .com history. Unknown means empty, timeout, or parse failure — never Clear, Available, or Quiet.',
@@ -40,7 +40,7 @@ export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
     rules: ['BR-NAME-18'],
   },
   spoken: {
-    name: 'Spoken',
+    name: 'Easy to say (PT/EN)?',
     source: 'Pronunciation scores',
     howToRead:
       'Portuguese and English are two independent scores, never blended into one verdict. A heard-spelling mismatch on a kept name is the strongest negative and stays visible.',
@@ -49,7 +49,7 @@ export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
     rules: ['BR-NAME-05', 'BR-NAME-20'],
   },
   taste: {
-    name: 'Taste',
+    name: 'Would you pick it?',
     source: 'Hand ratings',
     howToRead:
       'Taste is the hand ratings already entered for this name. Total beside it is sort-only — the highest total is never auto-picked.',
@@ -58,7 +58,7 @@ export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
     rules: ['BR-NAME-12'],
   },
   brand: {
-    name: 'Brand footprint',
+    name: 'Brand checks',
     source: 'Manual source checks',
     howToRead:
       'Unknown, Clear, and Collision are judgments you record per source. Unknown never auto-promotes to Clear.',
@@ -67,7 +67,7 @@ export const SIGNAL_COPY: Record<NameSignalId, NameSignalCopy> = {
     rules: ['BR-NAME-03', 'BR-NAME-05'],
   },
   handles: {
-    name: 'Social handles',
+    name: 'Social handles?',
     source: 'Handle probes',
     howToRead:
       'Handle probes run only for kept names. Gated, blocked, or timed-out probes stay Unknown, never Available.',

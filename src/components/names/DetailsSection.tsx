@@ -1,6 +1,7 @@
-import { goalProfile } from '../../lib/names/catalog';
+import { CODENAME_THEMES, DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS, goalProfile } from '../../lib/names/catalog';
 import { hasGeneratedCanvasCopy } from '../../lib/names/prompts';
-import type { ProductDescription, ProjectNameSession } from '../../types/name-session';
+import type { NamingGoal, ProductDescription, ProjectNameSession } from '../../types/name-session';
+import { InfoPopover } from '../InfoPopover';
 
 const CONTEXT_LONG_FIELDS = new Set<keyof ProductDescription>([
   'problem',
@@ -48,8 +49,14 @@ export function DetailsSection(props: {
   onSaveBrief: () => void;
   onDesc: (field: keyof ProductDescription, value: string) => void;
   onStartLane: () => void;
+  onNamingGoal: (value: string) => void;
+  codenameTheme: string;
+  onCodenameTheme: (value: string) => void;
+  forbiddenWords: string;
+  onForbiddenWords: (value: string) => void;
 }) {
   const { session, desc } = props;
+  const profile = goalProfile(session.namingGoal);
 
   return (
     <section className="names-panel names-brief-panel">
@@ -57,6 +64,49 @@ export function DetailsSection(props: {
         <h3>Details</h3>
         <p>Optional. Fill these when you want a richer brief or generated copy.</p>
       </header>
+      <div className="form-field">
+        <span className="names-brief-label-row">
+          <label htmlFor="names-kind-of-name">Kind of name</label>
+          <InfoPopover label="Kind of name">
+            <p>{profile.hint}</p>
+          </InfoPopover>
+        </span>
+        <select
+          id="names-kind-of-name"
+          value={(session.namingGoal as NamingGoal) || DEFAULT_NAMING_GOAL}
+          onChange={(event) => props.onNamingGoal(event.target.value)}
+        >
+          {NAMING_GOAL_OPTIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {session.namingGoal === 'internal_codename' && (
+        <div className="names-brief-codename">
+          <label className="form-field">
+            <span>Codename theme</span>
+            <select
+              value={props.codenameTheme}
+              onChange={(event) => props.onCodenameTheme(event.target.value)}
+            >
+              {CODENAME_THEMES.map((theme) => (
+                <option key={theme} value={theme}>
+                  {theme}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="form-field">
+            <span>Forbidden themes/words</span>
+            <input
+              value={props.forbiddenWords}
+              onChange={(event) => props.onForbiddenWords(event.target.value)}
+            />
+          </label>
+        </div>
+      )}
       <div className="names-brief-actions">
         <button
           type="button"

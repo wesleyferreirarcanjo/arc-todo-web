@@ -1,5 +1,6 @@
 import { type Dispatch, type SetStateAction } from 'react';
 import { NAME_FAMILIES } from '../../lib/names/catalog';
+import { keptVerdict } from '../../lib/names/funnel';
 import type {
   FeedbackRoundView,
   NameCandidate,
@@ -39,17 +40,18 @@ export function NamesSection(props: {
   onReject: (candidateId: string) => void;
   onBusy: (value: string | null) => void;
   onSession: (session: ProjectNameSession) => void;
+  lastCheckedId: string | null;
+  expandedId: string | null;
+  onExpandedId: (id: string | null) => void;
 }) {
   const { session } = props;
   const wave = props.visibleCandidates.filter(
     (candidate) => candidate.status !== 'rejected',
   );
-  const kept = wave.filter((candidate) =>
-    session.shortlistIds.includes(candidate.id),
-  );
   const rejectedCount = props.visibleCandidates.filter(
     (candidate) => candidate.status === 'rejected',
   ).length;
+  const checked = wave.find((candidate) => candidate.id === props.lastCheckedId) ?? null;
 
   function isBlind(candidateId: string) {
     return Boolean(
@@ -60,7 +62,7 @@ export function NamesSection(props: {
   return (
     <section className="names-panel">
       <h3>Names</h3>
-      <div className="names-composer">
+      <div className="names-composer names-composer-hero">
         <input
           value={props.typedName}
           placeholder="Type a name"
@@ -76,6 +78,14 @@ export function NamesSection(props: {
         <button
           type="button"
           className="btn btn-primary"
+          disabled={props.busy === 'check'}
+          onClick={() => void props.onCheckName()}
+        >
+          Check this name
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
           disabled={props.busy === 'suggest'}
           aria-describedby={
             props.readinessHint ? 'names-suggest-hint' : undefined
@@ -89,15 +99,20 @@ export function NamesSection(props: {
             {props.readinessHint}
           </small>
         ) : null}
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={props.busy === 'check'}
-          onClick={() => void props.onCheckName()}
-        >
-          Check name
-        </button>
       </div>
+      {checked ? (
+        <article className="names-check-result">
+          <strong>{checked.name}</strong>
+          <p>{keptVerdict(checked, session.namingGoal)}</p>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => props.onExplore(checked)}
+          >
+            Try variations of this name
+          </button>
+        </article>
+      ) : null}
       <details className="names-description-details">
         <summary>
           <span>
@@ -180,6 +195,23 @@ export function NamesSection(props: {
           isBlind={isBlind}
           onKeep={props.onKeep}
           onReject={props.onReject}
+          expandedId={props.expandedId}
+          onExpandedId={props.onExpandedId}
+          renderDetail={(candidate) => (
+            <CandidateCard
+              candidate={candidate}
+              session={session}
+              orgId={props.orgId}
+              projectId={props.projectId}
+              sessionId={props.sessionId}
+              isBlind={isBlind(candidate.id)}
+              busy={props.busy}
+              onBusy={props.onBusy}
+              onSession={props.onSession}
+              onUpdate={(next) => props.onUpdateCandidate(next)}
+              onReject={() => props.onReject(candidate.id)}
+            />
+          )}
         />
       )}
       {rejectedCount > 0 && (
@@ -188,32 +220,6 @@ export function NamesSection(props: {
             ? '1 rejected name is hidden from this wave.'
             : `${rejectedCount} rejected names are hidden from this wave.`}
         </p>
-      )}
-      {kept.length > 0 && (
-        <div className="names-kept">
-          <h4>Kept</h4>
-          <ul className="names-candidate-list">
-            {kept.map((candidate) => (
-              <li key={candidate.id}>
-                <CandidateCard
-                  candidate={candidate}
-                  session={session}
-                  orgId={props.orgId}
-                  projectId={props.projectId}
-                  sessionId={props.sessionId}
-                  isBlind={isBlind(candidate.id)}
-                  busy={props.busy}
-                  onBusy={props.onBusy}
-                  onSession={props.onSession}
-                  onCheck={() => void props.onCheckName(candidate.name)}
-                  onUpdate={(next) => props.onUpdateCandidate(next)}
-                  onExplore={() => props.onExplore(candidate)}
-                  onReject={() => props.onReject(candidate.id)}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
       )}
     </section>
   );

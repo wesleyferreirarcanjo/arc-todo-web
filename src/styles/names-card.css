@@ -9,6 +9,55 @@
   overflow: hidden;
 }
 
+.names-card-detail {
+  gap: 0.55rem;
+  padding: 0.7rem 0.8rem 0.85rem;
+}
+
+.names-card-verdict-line {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.names-checks-left {
+  margin: 0;
+  font-weight: 700;
+}
+
+.names-checks-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.names-check-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.names-check-choice {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.names-check-choice .btn-sm {
+  margin-top: 0;
+  min-height: 1.85rem;
+  width: auto;
+}
+
+.names-checks-resolved {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
 .names-card-verdict {
   display: grid;
   gap: 0.45rem;

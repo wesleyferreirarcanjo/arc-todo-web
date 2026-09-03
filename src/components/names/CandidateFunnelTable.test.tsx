@@ -99,7 +99,7 @@ describe('CandidateFunnelTable', () => {
       />,
     );
 
-    await user.click(screen.getAllByRole('button', { name: 'Domain' })[0]);
+    await user.click(screen.getAllByRole('button', { name: SIGNAL_COPY.domain.name })[0]);
     const rows = screen.getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent('Nova');
     expect(rows[1]).toHaveTextContent('Rift');
@@ -121,8 +121,8 @@ describe('CandidateFunnelTable', () => {
       />,
     );
 
-    const domainHeader = screen.getByRole('columnheader', { name: /Domain/ });
-    await user.click(within(domainHeader).getByRole('button', { name: 'About Domain' }));
+    const domainHeader = screen.getByRole('columnheader', { name: /Domain free/ });
+    await user.click(within(domainHeader).getByRole('button', { name: 'About Domain free?' }));
     const note = screen.getByRole('note');
     expect(note).toHaveTextContent(SIGNAL_COPY.domain.howToRead);
     expect(note).toHaveTextContent(SIGNAL_COPY.domain.honestLimit);
@@ -170,11 +170,11 @@ describe('CandidateFunnelTable', () => {
       />,
     );
 
-    const domainHeader = screen.getByRole('columnheader', { name: /Domain/ });
+    const domainHeader = screen.getByRole('columnheader', { name: /Domain free/ });
     expect(domainHeader).toHaveAttribute('aria-sort', 'none');
-    await user.click(within(domainHeader).getByRole('button', { name: 'Domain' }));
+    await user.click(within(domainHeader).getByRole('button', { name: SIGNAL_COPY.domain.name }));
     expect(domainHeader).toHaveAttribute('aria-sort', 'descending');
-    await user.click(within(domainHeader).getByRole('button', { name: 'Domain' }));
+    await user.click(within(domainHeader).getByRole('button', { name: SIGNAL_COPY.domain.name }));
     expect(domainHeader).toHaveAttribute('aria-sort', 'ascending');
 
     screen.getByLabelText('Name candidates').focus();
@@ -201,7 +201,8 @@ describe('CandidateFunnelTable', () => {
 
     const riftRow = screen.getByRole('row', { name: /Rift/ });
     expect(within(riftRow).queryByRole('button', { name: 'Keep' })).not.toBeInTheDocument();
-    expect(within(riftRow).getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+    expect(within(riftRow).queryByRole('button', { name: 'Reject' })).not.toBeInTheDocument();
+    expect(within(riftRow).getByText(/Good candidate|Blocked/)).toBeInTheDocument();
 
     screen.getByLabelText('Name candidates').focus();
     expect(screen.queryByText(/Highest total is not auto-picked/i)).not.toBeInTheDocument();
@@ -209,5 +210,37 @@ describe('CandidateFunnelTable', () => {
     expect(screen.getByRole('list', { name: 'Score' })).toBeInTheDocument();
     expect(screen.queryByText(/Highest total is not auto-picked/i)).not.toBeInTheDocument();
     expect(screen.getAllByText(/Unresolved — not a pass/i).length).toBeGreaterThan(0);
+  });
+
+  it('expands only one detail panel at a time', async () => {
+    const user = userEvent.setup();
+    render(
+      <CandidateFunnelTable
+        candidates={[
+          candidate({ id: 'open', name: 'Rift', domainChecks: [] }),
+          candidate({
+            id: 'ready',
+            name: 'Wave',
+            domainChecks: availableCom,
+          }),
+        ]}
+        namingGoal="public_product"
+        shortlistIds={['open']}
+        resolvingKeys={[]}
+        resolvingCount={0}
+        isBlind={() => false}
+        onKeep={() => undefined}
+        onReject={() => undefined}
+        renderDetail={(item) => <p>Detail for {item.name}</p>}
+      />,
+    );
+
+    await user.click(screen.getByRole('row', { name: /Rift/ }));
+    expect(screen.getByText('Detail for Rift')).toBeInTheDocument();
+    expect(screen.getByText(/Checks left|Detail for Rift/)).toBeTruthy();
+
+    await user.click(screen.getByRole('row', { name: /Wave/ }));
+    expect(screen.queryByText('Detail for Rift')).not.toBeInTheDocument();
+    expect(screen.getByText('Detail for Wave')).toBeInTheDocument();
   });
 });

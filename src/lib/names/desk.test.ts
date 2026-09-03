@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
-import { deskStanding, deskUnresolvedRows } from './desk';
+import { deskNameRows, deskStanding } from './desk';
 
 function candidate(partial: Partial<NameCandidate> = {}): NameCandidate {
   return {
@@ -79,19 +79,24 @@ describe('deskStanding', () => {
   });
 });
 
-describe('deskUnresolvedRows', () => {
-  it('lists Unknown domain as claim / source / confidence', () => {
-    const rows = deskUnresolvedRows(
+describe('deskNameRows', () => {
+  it('lists each unresolved name once with an unknown count', () => {
+    const rows = deskNameRows(
       session({
-        candidates: [candidate({ id: 'rift', name: 'Rift', domainChecks: [] })],
+        candidates: [
+          candidate({ id: 'rift', name: 'Rift', domainChecks: [] }),
+          candidate({ id: 'wave', name: 'Wave', domainChecks: freeCom }),
+        ],
+        shortlistIds: ['rift'],
       }),
     );
-    const domain = rows.find((row) => row.source === 'Domain');
-    expect(domain).toMatchObject({
-      claim: 'Rift',
-      source: 'Domain',
-      confidence: 'Unknown',
-      unknown: true,
-    });
+    expect(rows).toEqual([
+      expect.objectContaining({
+        candidateId: 'rift',
+        name: 'Rift',
+      }),
+    ]);
+    expect(rows[0].unknownCount).toBeGreaterThan(1);
+    expect(rows.filter((row) => row.name === 'Rift')).toHaveLength(1);
   });
 });

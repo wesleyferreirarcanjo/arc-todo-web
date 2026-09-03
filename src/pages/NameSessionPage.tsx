@@ -31,9 +31,6 @@ import {
   WAVE_SIZE,
 } from '../lib/names/wave';
 import {
-  CODENAME_THEMES,
-  DEFAULT_NAMING_GOAL,
-  NAMING_GOAL_OPTIONS,
   NAME_FAMILIES,
   goalProfile,
   googleQueryUrl,
@@ -120,6 +117,8 @@ export function NameSessionPage() {
   const [filterLane, setFilterLane] = useState('');
   const [exploreTarget, setExploreTarget] = useState<NameCandidate | null>(null);
   const [exploreBusy, setExploreBusy] = useState(false);
+  const [lastCheckedId, setLastCheckedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!orgId || !projectId || !sessionId) return;
@@ -270,7 +269,16 @@ export function NameSessionPage() {
           checked,
         );
         const updated = await patch({ candidates: merged });
-        if (updated) setTypedName('');
+        if (updated) {
+          setTypedName('');
+          const found = updated.candidates.find(
+            (item) => normalizeNameKey(item.name) === key,
+          );
+          if (found) {
+            setLastCheckedId(found.id);
+            setExpandedId(found.id);
+          }
+        }
       } catch (err) {
         setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
       } finally {
@@ -300,6 +308,13 @@ export function NameSessionPage() {
       });
       setSession(updated);
       setTypedName('');
+      const found = updated.candidates.find(
+        (item) => normalizeNameKey(item.name) === key,
+      );
+      if (found) {
+        setLastCheckedId(found.id);
+        setExpandedId(found.id);
+      }
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name check' }));
     } finally {
@@ -600,7 +615,7 @@ export function NameSessionPage() {
         <div>
           <h2>{session?.title ?? 'Name session'}</h2>
           <p className="page-subtitle">
-            {currentProject?.name ?? 'Project'} · {profile.label}
+            {currentProject?.name ?? 'Project'}
             {session?.recommendedCandidateId &&
               ` · Recommended: ${session.candidates.find((item) => item.id === session.recommendedCandidateId)?.name ?? ''}`}
           </p>
@@ -638,54 +653,7 @@ export function NameSessionPage() {
                   onBlur={() => void saveBrief()}
                 />
               </div>
-              <div className="form-field">
-                <span className="names-brief-label-row">
-                  <label htmlFor="names-kind-of-name">Kind of name</label>
-                  <InfoPopover label="Kind of name">
-                    <p>{profile.hint}</p>
-                  </InfoPopover>
-                </span>
-                <select
-                  id="names-kind-of-name"
-                  value={
-                    (session.namingGoal as NamingGoal) || DEFAULT_NAMING_GOAL
-                  }
-                  onChange={(event) =>
-                    void patch({ namingGoal: event.target.value })
-                  }
-                >
-                  {NAMING_GOAL_OPTIONS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
-            {session.namingGoal === 'internal_codename' && (
-              <div className="names-brief-codename">
-                <label className="form-field">
-                  <span>Codename theme</span>
-                  <select
-                    value={codenameTheme}
-                    onChange={(event) => setCodenameTheme(event.target.value)}
-                  >
-                    {CODENAME_THEMES.map((theme) => (
-                      <option key={theme} value={theme}>
-                        {theme}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="form-field">
-                  <span>Forbidden themes/words</span>
-                  <input
-                    value={forbiddenWords}
-                    onChange={(event) => setForbiddenWords(event.target.value)}
-                  />
-                </label>
-              </div>
-            )}
             <div className="names-quick-brief-actions">
               <button
                 type="button"
@@ -703,14 +671,30 @@ export function NameSessionPage() {
           </section>
 
           <div className="names-desk">
-            <DecisionRail session={session} />
+            <DecisionRail
+              session={session}
+              onFocusName={(candidateId) => {
+                setSection('names');
+                setExpandedId(candidateId);
+                window.requestAnimationFrame(() => {
+                  document
+                    .getElementById(`names-candidate-${candidateId}`)
+                    ?.scrollIntoView({ block: 'nearest' });
+                });
+              }}
+            />
             <div className="names-desk-main">
           <nav className="names-desk-tabs" aria-label="Session context">
             {SECTIONS.map((id) => (
               <button
                 key={id}
                 type="button"
-                className={section === id ? 'is-current' : undefined}
+                className={[
+                  section === id ? 'is-current' : '',
+                  id === 'names' ? 'is-primary' : 'is-secondary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 aria-current={section === id ? 'true' : undefined}
                 onClick={() => setSection(id)}
               >
@@ -753,6 +737,9 @@ export function NameSessionPage() {
               onReject={(id) => void handleReject(id)}
               onBusy={setBusy}
               onSession={setSession}
+              lastCheckedId={lastCheckedId}
+              expandedId={expandedId}
+              onExpandedId={setExpandedId}
             />
           )}
 
@@ -808,6 +795,11 @@ export function NameSessionPage() {
               onSaveBrief={() => void saveBrief()}
               onDesc={setDesc}
               onStartLane={() => void startLane()}
+              onNamingGoal={(value) => void patch({ namingGoal: value })}
+              codenameTheme={codenameTheme}
+              onCodenameTheme={setCodenameTheme}
+              forbiddenWords={forbiddenWords}
+              onForbiddenWords={setForbiddenWords}
             />
           )}
             </div>
@@ -816,7 +808,7 @@ export function NameSessionPage() {
       )}
       <ConfirmDialog
         open={Boolean(exploreTarget) && exploreVariants.length > 0}
-        title="Explore variations"
+        title="Try variations of this name"
         description={`Add variation "${exploreVariants[0] ?? ''}" from ${exploreTarget?.name ?? 'this name'}? Checks start empty.`}
         confirmLabel="Add variation"
         loading={exploreBusy}

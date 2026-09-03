@@ -1,10 +1,11 @@
-import { Fragment, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { Fragment, useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import type { EvidenceLedgerRow } from '../EvidenceLedger';
 import { EvidenceLedger } from '../EvidenceLedger';
 import { AnalyticsMetricInfo } from '../analytics/AnalyticsMetricInfo';
 import { normalizeNameKey } from '../../lib/names/catalog';
 import {
   buildFunnelRow,
+  keptVerdict,
   pillarCell,
   sortFunnelRows,
   spokenCell,
@@ -18,11 +19,11 @@ import type { NameCandidate } from '../../types/name-session';
 
 const SORT_LABELS: Record<FunnelSortKey, string> = {
   name: 'Name',
-  domain: 'Domain',
-  organic: 'Organic',
-  spoken: 'Spoken',
-  taste: 'Taste',
-  total: 'Total',
+  domain: SIGNAL_COPY.domain.name,
+  organic: SIGNAL_COPY.organic.name,
+  spoken: SIGNAL_COPY.spoken.name,
+  taste: SIGNAL_COPY.taste.name,
+  total: SIGNAL_COPY.total.name,
 };
 
 const COLUMN_INFO_KEYS = ['domain', 'organic', 'spoken', 'taste', 'total'] as const;
@@ -91,11 +92,22 @@ export function CandidateFunnelTable(props: {
   isBlind: (candidateId: string) => boolean;
   onKeep: (candidateId: string) => void;
   onReject: (candidateId: string) => void;
+  expandedId?: string | null;
+  onExpandedId?: (id: string | null) => void;
+  renderDetail?: (candidate: NameCandidate) => ReactNode;
 }) {
   const [sortKey, setSortKey] = useState<FunnelSortKey>('total');
   const [sortDir, setSortDir] = useState<FunnelSortDir>('desc');
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [internalExpandedId, setInternalExpandedId] = useState<string | null>(null);
+  const expandedId = props.expandedId ?? internalExpandedId;
+
+  function setExpandedId(next: string | null) {
+    props.onExpandedId?.(next);
+    if (props.expandedId === undefined) {
+      setInternalExpandedId(next);
+    }
+  }
   const resolving = useMemo(
     () => new Set(props.resolvingKeys),
     [props.resolvingKeys],
@@ -159,8 +171,8 @@ export function CandidateFunnelTable(props: {
       }
     } else if (event.key === 'Enter' && focused) {
       event.preventDefault();
-      setExpandedId((prev) =>
-        prev === focused.candidate.id ? null : focused.candidate.id,
+      setExpandedId(
+        expandedId === focused.candidate.id ? null : focused.candidate.id,
       );
     }
   }
@@ -237,25 +249,31 @@ export function CandidateFunnelTable(props: {
                     .join(' ')}
                   onClick={() => {
                     setFocusedId(candidate.id);
-                    setExpandedId((prev) =>
-                      prev === candidate.id ? null : candidate.id,
+                    setExpandedId(
+                      expandedId === candidate.id ? null : candidate.id,
                     );
                   }}
                 >
-                  <th scope="row">
+                  <th scope="row" id={`names-candidate-${candidate.id}`}>
                     <span className="names-funnel-name">{candidate.name}</span>
-                    <span className="names-funnel-weak">
-                      {weakest.reason
-                        ? `${weakest.label} · ${weakest.reason}`
-                        : weakest.label}
-                    </span>
+                    {kept ? (
+                      <span className="names-funnel-verdict">
+                        {keptVerdict(candidate, props.namingGoal)}
+                      </span>
+                    ) : (
+                      <span className="names-funnel-weak">
+                        {weakest.reason
+                          ? `${weakest.label} · ${weakest.reason}`
+                          : weakest.label}
+                      </span>
+                    )}
                   </th>
                   <td
                     className={`names-funnel-signal ${pillars.domain.unresolved ? 'is-unresolved' : ''}`}
                     data-unresolved={pillars.domain.unresolved ? 'true' : 'false'}
                   >
                     <span className="names-funnel-label">
-                      Domain
+                      {SIGNAL_COPY.domain.name}
                       <ColumnInfo id="domain" />
                     </span>
                     {pillars.domain.unresolved ? <UnresolvedCue /> : null}
@@ -266,7 +284,7 @@ export function CandidateFunnelTable(props: {
                     data-unresolved={pillars.organic.unresolved ? 'true' : 'false'}
                   >
                     <span className="names-funnel-label">
-                      Organic
+                      {SIGNAL_COPY.organic.name}
                       <ColumnInfo id="organic" />
                     </span>
                     {pillars.organic.unresolved ? <UnresolvedCue /> : null}
@@ -274,21 +292,21 @@ export function CandidateFunnelTable(props: {
                   </td>
                   <td className="names-funnel-signal">
                     <span className="names-funnel-label">
-                      Spoken
+                      {SIGNAL_COPY.spoken.name}
                       <ColumnInfo id="spoken" />
                     </span>
                     {spokenCell(pillars)}
                   </td>
                   <td className="names-funnel-signal">
                     <span className="names-funnel-label">
-                      Taste
+                      {SIGNAL_COPY.taste.name}
                       <ColumnInfo id="taste" />
                     </span>
                     {pillarCell(pillars.taste)}
                   </td>
                   <td className="names-funnel-total">
                     <span className="names-funnel-label">
-                      Total
+                      {SIGNAL_COPY.total.name}
                       <ColumnInfo id="total" />
                     </span>
                     {pillars.total}
@@ -300,27 +318,29 @@ export function CandidateFunnelTable(props: {
                     ) : (
                       <>
                         {kept ? null : (
-                          <button
-                            type="button"
-                            className="btn btn-primary btn-sm"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              props.onKeep(candidate.id);
-                            }}
-                          >
-                            Keep
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                props.onKeep(candidate.id);
+                              }}
+                            >
+                              Keep
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                props.onReject(candidate.id);
+                              }}
+                            >
+                              Reject
+                            </button>
+                          </>
                         )}
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            props.onReject(candidate.id);
-                          }}
-                        >
-                          Reject
-                        </button>
                       </>
                     )}
                   </td>
@@ -328,11 +348,17 @@ export function CandidateFunnelTable(props: {
                 {expanded ? (
                   <tr className="names-funnel-detail">
                     <td colSpan={8}>
-                      <NamesScoreStrip pillars={pillars} />
-                      <EvidenceLedger
-                        caption={`${weakest.label} · ${weakest.reason}`}
-                        rows={expandedLedgerRows(row)}
-                      />
+                      {props.renderDetail ? (
+                        props.renderDetail(candidate)
+                      ) : (
+                        <>
+                          <NamesScoreStrip pillars={pillars} />
+                          <EvidenceLedger
+                            caption={`${weakest.label} · ${weakest.reason}`}
+                            rows={expandedLedgerRows(row)}
+                          />
+                        </>
+                      )}
                     </td>
                   </tr>
                 ) : null}

@@ -30,14 +30,17 @@ function renderRow(props: Partial<ComponentProps<typeof NameSessionRow>> = {}) {
 }
 
 describe('NameSessionRow', () => {
-  it('shows the recommended name as the subtitle', () => {
+  it('makes the whole card a link and shows recommended progress', () => {
     renderRow();
-    expect(screen.getByRole('link', { name: 'Project G' })).toHaveAttribute(
+    const link = screen.getByRole('link', { name: /Project G/ });
+    expect(link).toHaveAttribute(
       'href',
       '/organizations/o/projects/p/names/s',
     );
-    expect(screen.getByText('Recommended: Arc Todo')).toBeTruthy();
-    expect(screen.getByText(/Public product\/app/)).toBeTruthy();
+    expect(link).toHaveTextContent('Recommended: Arc Todo');
+    expect(screen.queryByText(/Public product\/app/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
 
   it('falls back when there is no recommendation yet', () => {
@@ -45,12 +48,15 @@ describe('NameSessionRow', () => {
     expect(screen.getByText('No recommendation yet')).toBeTruthy();
   });
 
-  it('keeps rename and delete as one action each', async () => {
+  it('keeps rename and delete behind the kebab menu', async () => {
     const user = userEvent.setup();
     const { onRename, onDelete } = renderRow();
-    await user.click(screen.getByRole('button', { name: 'Rename' }));
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Session actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Rename' }));
     expect(onRename).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Session actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 });

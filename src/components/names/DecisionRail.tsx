@@ -1,10 +1,12 @@
-import { EvidenceLedger } from '../EvidenceLedger';
-import { deskStanding, deskUnresolvedRows } from '../../lib/names/desk';
+import { deskNameRows, deskStanding } from '../../lib/names/desk';
 import type { ProjectNameSession } from '../../types/name-session';
 
-export function DecisionRail({ session }: { session: ProjectNameSession }) {
-  const standing = deskStanding(session);
-  const unresolved = deskUnresolvedRows(session);
+export function DecisionRail(props: {
+  session: ProjectNameSession;
+  onFocusName?: (candidateId: string) => void;
+}) {
+  const standing = deskStanding(props.session);
+  const names = deskNameRows(props.session);
   const pickLabel = standing.pick?.name ?? 'No pick yet';
   const runnerLabel = standing.runnerUp?.name ?? 'None yet';
 
@@ -28,10 +30,23 @@ export function DecisionRail({ session }: { session: ProjectNameSession }) {
       </section>
       <section className="names-desk-rail-block">
         <h3>Still unresolved</h3>
-        {unresolved.length === 0 ? (
+        {names.length === 0 ? (
           <p className="names-meta">Nothing unresolved on the names in play.</p>
         ) : (
-          <EvidenceLedger rows={unresolved} />
+          <ul className="names-desk-name-list">
+            {names.map((row) => (
+              <li key={row.candidateId}>
+                <button
+                  type="button"
+                  className="names-desk-name-link"
+                  onClick={() => props.onFocusName?.(row.candidateId)}
+                >
+                  {row.name} — {row.unknownCount}{' '}
+                  {row.unknownCount === 1 ? 'unknown' : 'unknowns'}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </aside>

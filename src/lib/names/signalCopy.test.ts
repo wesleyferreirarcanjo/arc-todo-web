@@ -14,6 +14,13 @@ describe('signalCopy', () => {
     }
   });
 
+  it('asks buyer questions instead of Organic/Taste jargon', () => {
+    expect(SIGNAL_COPY.domain.name).toBe('Domain free?');
+    expect(SIGNAL_COPY.organic.name).toBe('Findable on Google?');
+    expect(SIGNAL_COPY.spoken.name).toBe('Easy to say (PT/EN)?');
+    expect(SIGNAL_COPY.handles.name).toBe('Social handles?');
+  });
+
   it('treats Unknown as unresolved rather than Available for domain and organic', () => {
     expect(SIGNAL_COPY.domain.howToRead).toMatch(/Unknown is unresolved/);
     expect(SIGNAL_COPY.domain.howToRead).toMatch(/never Available/);

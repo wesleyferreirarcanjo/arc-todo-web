@@ -147,4 +147,17 @@ describe('NameSessionPage brief readiness', () => {
     await user.click(screen.getByRole('button', { name: 'Feedback' }));
     expect(screen.getByText(FEEDBACK_EMPTY)).toBeTruthy();
   });
+
+  it('keeps kind of name behind Add more details, not in the session header', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Check this name' })).toBeTruthy();
+    });
+
+    expect(screen.queryByLabelText('Kind of name')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Add more details' }));
+    expect(screen.getByLabelText('Kind of name')).toBeTruthy();
+  });
 });

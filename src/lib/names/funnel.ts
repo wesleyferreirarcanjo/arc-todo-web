@@ -1,4 +1,5 @@
 import type { NameCandidate } from '../../types/name-session';
+import { visibleBrandSources } from './brandSources';
 import { normalizeNameKey } from './catalog';
 import {
   candidateScore,
@@ -6,6 +7,7 @@ import {
   type CandidatePillarScore,
   type ScorePillar,
 } from './score';
+import { SIGNAL_COPY } from './signalCopy';
 
 export const FUNNEL_SORT_KEYS = [
   'name',
@@ -84,7 +86,7 @@ export function weakestSignal(pillars: CandidatePillarScore): FunnelRow['weakest
   if (unknown) {
     return {
       key: unknown.key,
-      label: `${titleCase(unknown.key)} Unknown`,
+      label: `${SIGNAL_COPY[unknown.key].name} Unknown`,
       reason: pillarReason(pillars[unknown.key]),
     };
   }
@@ -93,9 +95,40 @@ export function weakestSignal(pillars: CandidatePillarScore): FunnelRow['weakest
   );
   return {
     key: lowest.key,
-    label: `${titleCase(lowest.key)} ${lowest.value}`,
+    label: `${SIGNAL_COPY[lowest.key].name} ${lowest.value}`,
     reason: pillarReason(pillars[lowest.key]),
   };
+}
+
+export function checksLeftCount(
+  candidate: NameCandidate,
+  namingGoal: string | null,
+): number {
+  return visibleBrandSources(namingGoal).filter((source) => {
+    const recorded = (candidate.brandChecks ?? []).find(
+      (item) => item.source === source.id,
+    );
+    return !recorded || recorded.result === 'unknown';
+  }).length;
+}
+
+export function keptVerdict(
+  candidate: NameCandidate,
+  namingGoal: string | null,
+): string {
+  const com = (candidate.domainChecks ?? []).find((item) => item.tld === 'com');
+  const grade = candidate.comIncumbency?.grade;
+  if (com?.availability === 'taken' && grade === 'clearly_active') {
+    return `Blocked: ${com.host} is taken by an active site`;
+  }
+  if ((candidate.brandChecks ?? []).some((item) => item.result === 'collision')) {
+    return 'Blocked: a collision is recorded on a brand check';
+  }
+  const left = checksLeftCount(candidate, namingGoal);
+  if (left > 0) {
+    return `Good candidate — ${left} checks left before you can trust it.`;
+  }
+  return 'Good candidate — recorded checks look clear.';
 }
 
 function pillarReason(pillar: ScorePillar): string {
@@ -158,6 +191,3 @@ function isSortUnresolved(row: FunnelRow, key: FunnelSortKey): boolean {
   return row.pillars[key].unresolved;
 }
 
-function titleCase(value: string): string {
-  return value.slice(0, 1).toUpperCase() + value.slice(1);
-}

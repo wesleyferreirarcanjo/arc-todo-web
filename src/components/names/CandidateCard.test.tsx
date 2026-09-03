@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
+import { CandidateCard } from './CandidateCard';
 
 const checkNameHandles = vi.hoisted(() => vi.fn());
 const checkNameHistory = vi.hoisted(() => vi.fn());
@@ -18,8 +19,6 @@ vi.mock('../../lib/api/names', async () => {
     fetchProjectNameSession,
   };
 });
-
-import { CandidateCard } from './CandidateCard';
 
 afterEach(cleanup);
 
@@ -61,11 +60,16 @@ function session(partial: Partial<ProjectNameSession> = {}): ProjectNameSession 
 function renderCard(
   item: NameCandidate,
   onUpdate = vi.fn(),
+  namingGoal: ProjectNameSession['namingGoal'] = 'public_product',
 ) {
   return render(
     <CandidateCard
       candidate={item}
-      session={session({ candidates: [item], shortlistIds: [item.id] })}
+      session={session({
+        candidates: [item],
+        shortlistIds: [item.id],
+        namingGoal,
+      })}
       orgId="org-1"
       projectId="proj-1"
       sessionId="sess-1"
@@ -73,53 +77,60 @@ function renderCard(
       busy={null}
       onBusy={() => undefined}
       onSession={() => undefined}
-      onCheck={() => undefined}
       onUpdate={onUpdate}
-      onExplore={() => undefined}
       onReject={() => undefined}
     />,
   );
 }
 
 describe('CandidateCard verdict, evidence, judgment', () => {
-  it('renders the verdict and weakest reason before the judgment group', () => {
+  it('renders one verdict sentence and the detail blocks in order', () => {
     renderCard(candidate());
 
-    const weakest = screen.getByText(/Weakest: Domain Unknown/);
-    expect(weakest).toHaveTextContent('Unresolved — not a pass');
-    const judgment = screen.getByRole('heading', { name: 'What you must judge' });
-    expect(
-      weakest.compareDocumentPosition(judgment) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'What we found' })).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Score' })).toBeInTheDocument();
+    expect(screen.getByText(/Good candidate — \d+ checks left/)).toBeInTheDocument();
+    expect(screen.getByText(/Checks left:/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Heard spelling' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'What we found' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'What you must judge' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Preview in context' })).toBeNull();
-    expect(screen.queryByText(/Highest total is not auto-picked/)).toBeNull();
-    expect(screen.queryByText(/These answers stay Unknown/)).toBeNull();
-    expect(screen.queryByText(/pass\/fail/i)).toBeNull();
   });
 
-  it('reads an unanswered brand row as Unknown', () => {
+  it('hides GitHub and npm rows for a public product', () => {
     renderCard(candidate());
-    const google = screen.getByRole('link', { name: 'Google exact' }).closest('.names-brand-row');
-    expect(google).toBeTruthy();
-    expect(
-      within(google as HTMLElement).getByRole('radio', { name: 'Unknown' }),
-    ).toBeChecked();
+    expect(screen.queryByRole('link', { name: 'GitHub' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'npm' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Google exact' })).toBeInTheDocument();
   });
 
-  it('saves extracted manual judgments through onUpdate', async () => {
+  it('shows GitHub and npm when the goal is not a public product', () => {
+    renderCard(candidate(), vi.fn(), 'api');
+    expect(screen.getByRole('link', { name: 'GitHub' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'npm' })).toBeInTheDocument();
+  });
+
+  it('saves Clear/Collision only after the check link is opened', async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn();
     renderCard(candidate(), onUpdate);
 
-    const google = screen.getByRole('link', { name: 'Google exact' }).closest('.names-brand-row');
+    const google = screen.getByRole('link', { name: 'Google exact' }).closest('li');
+    expect(google).toBeTruthy();
+    expect(
+      within(google as HTMLElement).queryByRole('button', { name: 'Collision' }),
+    ).toBeNull();
+
+    await user.click(screen.getByRole('link', { name: 'Google exact' }));
     await user.click(
-      within(google as HTMLElement).getByRole('radio', { name: 'Collision' }),
+      within(google as HTMLElement).getByRole('button', { name: 'Collision' }),
     );
     expect(onUpdate).toHaveBeenCalled();
     const brandCall = onUpdate.mock.calls[0][0] as NameCandidate;
-    expect(brandCall.brandChecks?.some((item) => item.source === 'google_exact' && item.result === 'collision')).toBe(true);
+    expect(
+      brandCall.brandChecks?.some(
+        (item) => item.source === 'google_exact' && item.result === 'collision',
+      ),
+    ).toBe(true);
 
     const languageGroup = screen.getByRole('radiogroup', { name: 'Português result' });
     await user.click(within(languageGroup).getByRole('radio', { name: 'Concern' }));

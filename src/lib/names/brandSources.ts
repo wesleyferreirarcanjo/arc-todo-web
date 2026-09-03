@@ -1,3 +1,11 @@
+export function visibleBrandSources(namingGoal: string | null | undefined) {
+  return BRAND_SOURCES.filter((source) => {
+    if (source.kind === 'social') return false;
+    if (namingGoal === 'public_product' && source.kind === 'package') return false;
+    return true;
+  });
+}
+
 export const BRAND_SOURCES: Array<{
   id: string;
   label: string;

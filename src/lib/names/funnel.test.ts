@@ -6,6 +6,7 @@ import {
   mergeCheckedCandidate,
   sortFunnelRows,
   spokenCell,
+  keptVerdict,
   weakestSignal,
 } from './funnel';
 
@@ -52,7 +53,7 @@ describe('funnel rows', () => {
     expect(row.pillars.domain.unresolved).toBe(true);
     expect(row.weakest).toEqual({
       key: 'domain',
-      label: 'Domain Unknown',
+      label: 'Domain free? Unknown',
       reason: 'Unresolved — not a pass',
     });
   });
@@ -98,7 +99,7 @@ describe('funnel rows', () => {
     expect(checking.status).toBe('Checking');
     expect(kept.status).toBe('Kept');
     expect(rejected.status).toBe('Rejected');
-    expect(weakestSignal(kept.pillars).label).toMatch(/Unknown|Taste/);
+    expect(weakestSignal(kept.pillars).label).toMatch(/Unknown|Would you pick it/);
   });
 
   it('merges a streamed check onto the matching name', () => {
@@ -110,6 +111,35 @@ describe('funnel rows', () => {
     });
     expect(mergeCheckedCandidate([open], checked)[0].domainChecks).toEqual(
       availableCom,
+    );
+  });
+
+  it('writes one blocked or checks-left verdict for a kept name', () => {
+    const blocked = candidate({
+      name: 'VerdeSafra',
+      domainChecks: [
+        {
+          host: 'verdesafra.com',
+          tld: 'com',
+          dnsStatus: 'taken',
+          rdapStatus: 'taken',
+          availability: 'taken',
+          checkedAt: '2026-09-03',
+        },
+      ],
+      comIncumbency: {
+        grade: 'clearly_active',
+        parking: 'content',
+        gradedAt: '2026-09-03',
+      },
+    });
+    expect(keptVerdict(blocked, 'public_product')).toBe(
+      'Blocked: verdesafra.com is taken by an active site',
+    );
+
+    const open = candidate({ name: 'Nova', domainChecks: availableCom });
+    expect(keptVerdict(open, 'public_product')).toMatch(
+      /Good candidate — \d+ checks left before you can trust it\./,
     );
   });
 

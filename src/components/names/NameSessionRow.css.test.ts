@@ -30,9 +30,10 @@ describe('Names hub session row CSS (#arc-474)', () => {
     expect(phone).toContain('white-space: nowrap');
   });
 
-  it('gives row actions a 2.75rem tap target when there is no hover', () => {
-    expect(css).toContain('.names-session-row-actions .btn-sm');
-    expect(css).toContain('min-height: 2.75rem');
+  it('gives the kebab a 2.75rem tap target', () => {
+    const rule = ruleBlock('.names-session-kebab');
+    expect(rule).toContain('width: 2.75rem');
+    expect(rule).toContain('height: 2.75rem');
   });
 
   it('bounds hub rows to a content column with even radius', () => {

@@ -1,8 +1,6 @@
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
+import { visibleBrandSources } from './brandSources';
 import { candidateScore } from './score';
-import { SIGNAL_COPY } from './signalCopy';
-
-const UNRESOLVED_CAP = 8;
 
 export type DeskStanding = {
   pick: NameCandidate | null;
@@ -11,11 +9,10 @@ export type DeskStanding = {
   kept: NameCandidate[];
 };
 
-export type DeskUnresolvedRow = {
-  claim: string;
-  source: string;
-  confidence: string;
-  unknown: true;
+export type DeskNameRow = {
+  candidateId: string;
+  name: string;
+  unknownCount: number;
 };
 
 export function deskStanding(session: ProjectNameSession): DeskStanding {
@@ -34,39 +31,30 @@ export function deskStanding(session: ProjectNameSession): DeskStanding {
   };
 }
 
-export function deskUnresolvedRows(session: ProjectNameSession): DeskUnresolvedRow[] {
-  const inPlay = session.candidates.filter((candidate) => candidate.status !== 'rejected');
-  const rows: DeskUnresolvedRow[] = [];
+export function deskNameRows(session: ProjectNameSession): DeskNameRow[] {
+  const inPlay = session.candidates.filter(
+    (candidate) => candidate.status !== 'rejected',
+  );
+  const rows: DeskNameRow[] = [];
   for (const candidate of inPlay) {
-    if (rows.length >= UNRESOLVED_CAP) break;
     const kept = session.shortlistIds.includes(candidate.id);
+    if (!kept) continue;
     const pillars = candidateScore(candidate, session.namingGoal, { kept });
-    if (pillars.domain.unresolved) {
-      rows.push(unresolvedRow(candidate.name, 'domain'));
-    }
-    if (pillars.organic.unresolved) {
-      rows.push(unresolvedRow(candidate.name, 'organic'));
-    }
-    const brandUnknown = (candidate.brandChecks ?? []).some(
-      (item) => item.result === 'unknown',
-    );
-    const brandUnchecked = (candidate.brandChecks ?? []).length === 0 && kept;
-    if (brandUnknown || brandUnchecked) {
-      rows.push(unresolvedRow(candidate.name, 'brand'));
-    }
+    let unknownCount = 0;
+    if (pillars.domain.unresolved) unknownCount += 1;
+    if (pillars.organic.unresolved) unknownCount += 1;
+    unknownCount += visibleBrandSources(session.namingGoal).filter((source) => {
+        const recorded = (candidate.brandChecks ?? []).find(
+          (item) => item.source === source.id,
+        );
+        return !recorded || recorded.result === 'unknown';
+      }).length;
+    if (unknownCount === 0) continue;
+    rows.push({
+      candidateId: candidate.id,
+      name: candidate.name,
+      unknownCount,
+    });
   }
-  return rows.slice(0, UNRESOLVED_CAP);
-}
-
-function unresolvedRow(
-  name: string,
-  id: 'domain' | 'organic' | 'brand',
-): DeskUnresolvedRow {
-  const copy = SIGNAL_COPY[id];
-  return {
-    claim: name,
-    source: copy.name,
-    confidence: 'Unknown',
-    unknown: true,
-  };
+  return rows;
 }

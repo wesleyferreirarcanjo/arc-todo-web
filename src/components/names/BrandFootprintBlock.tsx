@@ -1,31 +1,31 @@
 import { useState } from 'react';
-import { ChoiceGroup } from '../ChoiceGroup';
-import { BRAND_SOURCES } from '../../lib/names/brandSources';
+import { visibleBrandSources } from '../../lib/names/brandSources';
+import { checksLeftCount } from '../../lib/names/funnel';
 import type { BrandResult, NameCandidate } from '../../types/name-session';
 import { NamesSignalHeading } from './NamesSignalHeading';
 
-const BRAND_OPTIONS = [
-  { value: 'unknown', label: 'Unknown', unknown: true },
-  { value: 'clear', label: 'Clear' },
-  { value: 'collision', label: 'Collision' },
-];
-
-const KIND_ORDER = ['search', 'store', 'package', 'trademark'] as const;
-
-const KIND_LABEL: Record<(typeof KIND_ORDER)[number], string> = {
-  search: 'Search',
-  store: 'Stores',
-  package: 'Packages',
-  trademark: 'Trademarks',
-};
-
 export function BrandFootprintBlock(props: {
   candidate: NameCandidate;
+  namingGoal: string | null;
   onUpdate: (candidate: NameCandidate) => void;
 }) {
-  const { candidate } = props;
+  const { candidate, namingGoal } = props;
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
   const [brandNote, setBrandNote] = useState('');
-  const sources = BRAND_SOURCES.filter((source) => source.kind !== 'social');
+  const sources = visibleBrandSources(namingGoal);
+  const left = checksLeftCount(candidate, namingGoal);
+  const unresolved = sources.filter((source) => {
+    const recorded = (candidate.brandChecks ?? []).find(
+      (item) => item.source === source.id,
+    );
+    return !recorded || recorded.result === 'unknown';
+  });
+  const resolved = sources.filter((source) => {
+    const recorded = (candidate.brandChecks ?? []).find(
+      (item) => item.source === source.id,
+    );
+    return recorded && recorded.result !== 'unknown';
+  });
 
   function setResult(sourceId: string, result: BrandResult, queryUrl: string) {
     const recorded = (candidate.brandChecks ?? []).find(
@@ -45,69 +45,66 @@ export function BrandFootprintBlock(props: {
   }
 
   return (
-    <div className="names-card-block">
+    <div className="names-card-block names-checks">
       <NamesSignalHeading id="brand" />
-      <p className="names-meta">
-        Social handles stay under What we found. Record a brand collision here.
-      </p>
-      {KIND_ORDER.map((kind) => {
-        const kindSources = sources.filter((source) => source.kind === kind);
-        const unknown = kindSources.filter((source) => {
-          const recorded = (candidate.brandChecks ?? []).find(
-            (item) => item.source === source.id,
-          );
-          return !recorded || recorded.result === 'unknown';
-        });
-        const resolved = kindSources.filter((source) => {
-          const recorded = (candidate.brandChecks ?? []).find(
-            (item) => item.source === source.id,
-          );
-          return recorded && recorded.result !== 'unknown';
-        });
-        return (
-          <div key={kind} className="names-brand-kind">
-            <h6>{KIND_LABEL[kind]}</h6>
-            <div className="names-brand-grid">
-              {unknown.map((source) => (
-                <BrandRow
-                  key={source.id}
-                  candidateId={candidate.id}
-                  name={candidate.name}
-                  source={source}
-                  result="unknown"
-                  onChange={(result) =>
-                    setResult(source.id, result, source.url(candidate.name))
+      <p className="names-checks-left">Checks left: {left}</p>
+      {unresolved.length > 0 ? (
+        <ul className="names-checks-list">
+          {unresolved.map((source) => {
+            const href = source.url(candidate.name);
+            const showChoice = opened[source.id] === true;
+            return (
+              <li key={source.id} className="names-check-line">
+                <a
+                  className="names-text-link"
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() =>
+                    setOpened((prev) => ({ ...prev, [source.id]: true }))
                   }
-                />
-              ))}
-            </div>
-            {resolved.length > 0 ? (
-              <details>
-                <summary>{resolved.length} recorded</summary>
-                <div className="names-brand-grid">
-                  {resolved.map((source) => {
-                    const recorded = (candidate.brandChecks ?? []).find(
-                      (item) => item.source === source.id,
-                    );
-                    return (
-                      <BrandRow
-                        key={source.id}
-                        candidateId={candidate.id}
-                        name={candidate.name}
-                        source={source}
-                        result={recorded?.result ?? 'unknown'}
-                        onChange={(result) =>
-                          setResult(source.id, result, source.url(candidate.name))
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </details>
-            ) : null}
-          </div>
-        );
-      })}
+                >
+                  {source.label}
+                </a>
+                {showChoice ? (
+                  <span className="names-check-choice">
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setResult(source.id, 'clear', href)}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setResult(source.id, 'collision', href)}
+                    >
+                      Collision
+                    </button>
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="names-meta">No checks left on the sources that apply.</p>
+      )}
+      {resolved.length > 0 ? (
+        <p className="names-checks-resolved">
+          {resolved
+            .map((source) => {
+              const recorded = (candidate.brandChecks ?? []).find(
+                (item) => item.source === source.id,
+              );
+              const label =
+                recorded?.result === 'collision' ? 'Collision' : 'Clear';
+              return `${source.label} ${label}`;
+            })
+            .join(' · ')}
+        </p>
+      ) : null}
       <label className="form-field">
         <span>Note</span>
         <input
@@ -118,34 +115,6 @@ export function BrandFootprintBlock(props: {
       {(candidate.brandChecks ?? []).some((item) => item.result === 'collision') && (
         <div className="alert">Exact collision recorded. This is not legal clearance.</div>
       )}
-    </div>
-  );
-}
-
-function BrandRow(props: {
-  candidateId: string;
-  name: string;
-  source: (typeof BRAND_SOURCES)[number];
-  result: string;
-  onChange: (result: BrandResult) => void;
-}) {
-  return (
-    <div className="names-brand-row">
-      <a
-        className="names-text-link"
-        href={props.source.url(props.name)}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {props.source.label}
-      </a>
-      <ChoiceGroup
-        name={`brand-${props.candidateId}-${props.source.id}`}
-        label={`${props.source.label} result`}
-        value={props.result}
-        options={BRAND_OPTIONS}
-        onChange={(next) => props.onChange(next as BrandResult)}
-      />
     </div>
   );
 }

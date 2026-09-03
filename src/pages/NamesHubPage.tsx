@@ -343,39 +343,43 @@ export function NamesHubPage() {
                 aria-label="Filter name sessions by title"
               />
             </label>
-            <label className="board-filter-field">
-              Organization
-              <Select
-                value={orgFilter}
-                placeholder="All organizations"
-                onChange={(value) => {
-                  setOrgFilter(value);
-                  setProjectFilter('');
-                }}
-                options={[
-                  { value: '', label: 'All organizations' },
-                  ...organizations.map((org) => ({
-                    value: org.id,
-                    label: org.name,
-                  })),
-                ]}
-              />
-            </label>
-            <label className="board-filter-field">
-              Project
-              <Select
-                value={projectFilter}
-                placeholder="All projects"
-                onChange={setProjectFilter}
-                options={[
-                  { value: '', label: 'All projects' },
-                  ...projectOptions.map((project) => ({
-                    value: project.id,
-                    label: project.name,
-                  })),
-                ]}
-              />
-            </label>
+            {items.length > 10 ? (
+              <>
+                <label className="board-filter-field">
+                  Organization
+                  <Select
+                    value={orgFilter}
+                    placeholder="All organizations"
+                    onChange={(value) => {
+                      setOrgFilter(value);
+                      setProjectFilter('');
+                    }}
+                    options={[
+                      { value: '', label: 'All organizations' },
+                      ...organizations.map((org) => ({
+                        value: org.id,
+                        label: org.name,
+                      })),
+                    ]}
+                  />
+                </label>
+                <label className="board-filter-field">
+                  Project
+                  <Select
+                    value={projectFilter}
+                    placeholder="All projects"
+                    onChange={setProjectFilter}
+                    options={[
+                      { value: '', label: 'All projects' },
+                      ...projectOptions.map((project) => ({
+                        value: project.id,
+                        label: project.name,
+                      })),
+                    ]}
+                  />
+                </label>
+              </>
+            ) : null}
             <label className="board-filter-field">
               Sort by
               <Select
