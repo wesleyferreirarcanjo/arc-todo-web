@@ -1,5 +1,6 @@
 import { apiRequest } from './client';
 import type {
+  CandidateReaction,
   CreateNameSessionInput,
   NameCandidate,
   ProjectNameSession,
@@ -155,6 +156,57 @@ export function upsertNameCandidateRating(
   );
 }
 
+export function setNameCandidateReaction(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  candidateId: string,
+  input: { reaction: CandidateReaction | null },
+): Promise<ProjectNameSession> {
+  return apiRequest<ProjectNameSession>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/candidates/${candidateId}/reaction`,
+    { method: 'PUT', body: input },
+  );
+}
+
+export function startNameBatch(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  input: { candidateIds: string[] },
+): Promise<ProjectNameSession> {
+  return apiRequest<ProjectNameSession>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/batches`,
+    { method: 'POST', body: input },
+  );
+}
+
+export function crownNameBatchWinner(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  batchNumber: number,
+  input: { candidateId: string; decisionNote?: string },
+): Promise<ProjectNameSession> {
+  return apiRequest<ProjectNameSession>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/batches/${batchNumber}/winner`,
+    { method: 'POST', body: input },
+  );
+}
+
+export function setNameBatchFinalists(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  batchNumber: number,
+  input: { candidateIds: string[] },
+): Promise<ProjectNameSession> {
+  return apiRequest<ProjectNameSession>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/batches/${batchNumber}/finalists`,
+    { method: 'POST', body: input },
+  );
+}
+
 export function recommendNameCandidate(
   orgId: string,
   projectId: string,
@@ -186,12 +238,21 @@ export function upsertNameFeedback(
   sessionId: string,
   roundId: string,
   input: {
-    candidateId: string;
+    candidateId?: string;
+    reaction?: CandidateReaction;
     firstImpression?: string;
     rememberedSpelling?: string;
     perceivedPurpose?: string;
     ratings?: { easyToSay?: number; memorable?: number; fitsProduct?: number };
     concern?: string;
+    responses?: Array<{
+      candidateId: string;
+      reaction: CandidateReaction;
+      rememberedSpelling?: string;
+      perceivedPurpose?: string;
+      firstImpression?: string;
+      concern?: string;
+    }>;
   },
 ): Promise<ProjectNameSession> {
   return apiRequest<ProjectNameSession>(

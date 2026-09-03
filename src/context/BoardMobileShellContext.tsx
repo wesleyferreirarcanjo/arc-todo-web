@@ -26,11 +26,21 @@ export interface BoardMobileStatusTabs {
   onChange: (status: TaskStatus) => void;
 }
 
+/** Labeled mode tabs in the same Bottom App Bar (Names session, not board status). */
+export interface MobileShellModeTabs {
+  items: { id: string; label: string; count?: number }[];
+  activeId: string;
+  onChange: (id: string) => void;
+  ariaLabel: string;
+}
+
 interface BoardMobileShellContextValue {
   actions: BoardMobileShellActions | null;
   registerActions: (actions: BoardMobileShellActions | null) => void;
   statusTabs: BoardMobileStatusTabs | null;
   registerStatusTabs: (tabs: BoardMobileStatusTabs | null) => void;
+  modeTabs: MobileShellModeTabs | null;
+  registerModeTabs: (tabs: MobileShellModeTabs | null) => void;
 }
 
 const BoardMobileShellContext = createContext<BoardMobileShellContextValue | null>(
@@ -40,6 +50,7 @@ const BoardMobileShellContext = createContext<BoardMobileShellContextValue | nul
 export function BoardMobileShellProvider({ children }: { children: ReactNode }) {
   const [actions, setActions] = useState<BoardMobileShellActions | null>(null);
   const [statusTabs, setStatusTabs] = useState<BoardMobileStatusTabs | null>(null);
+  const [modeTabs, setModeTabs] = useState<MobileShellModeTabs | null>(null);
 
   const registerActions = useCallback((next: BoardMobileShellActions | null) => {
     setActions(next);
@@ -49,9 +60,27 @@ export function BoardMobileShellProvider({ children }: { children: ReactNode }) 
     setStatusTabs(next);
   }, []);
 
+  const registerModeTabs = useCallback((next: MobileShellModeTabs | null) => {
+    setModeTabs(next);
+  }, []);
+
   const value = useMemo(
-    () => ({ actions, registerActions, statusTabs, registerStatusTabs }),
-    [actions, registerActions, statusTabs, registerStatusTabs],
+    () => ({
+      actions,
+      registerActions,
+      statusTabs,
+      registerStatusTabs,
+      modeTabs,
+      registerModeTabs,
+    }),
+    [
+      actions,
+      registerActions,
+      statusTabs,
+      registerStatusTabs,
+      modeTabs,
+      registerModeTabs,
+    ],
   );
 
   return (
@@ -131,4 +160,37 @@ export function useRegisterBoardMobileStatusTabs(
     return () => registerStatusTabs(null);
     // tabs object identity changes every render; use stable keys above.
   }, [activeStatus, columnsKey, countsKey, registerStatusTabs, tabs]);
+}
+
+/** Names session (and later hosts) register labeled mode tabs for the Bottom App Bar. */
+export function useRegisterMobileShellModeTabs(
+  tabs: MobileShellModeTabs | null,
+) {
+  const { registerModeTabs } = useBoardMobileShell();
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
+
+  const activeId = tabs?.activeId;
+  const enabled = Boolean(tabs && activeId);
+  const itemsKey =
+    tabs?.items
+      .map((item) => `${item.id}:${item.label}:${item.count ?? ''}`)
+      .join(',') ?? '';
+
+  useEffect(() => {
+    if (!enabled) {
+      registerModeTabs(null);
+      return () => registerModeTabs(null);
+    }
+
+    registerModeTabs({
+      items: tabsRef.current!.items,
+      activeId: tabsRef.current!.activeId,
+      onChange: (id) => tabsRef.current!.onChange(id),
+      ariaLabel: tabsRef.current!.ariaLabel,
+    });
+
+    return () => registerModeTabs(null);
+    // tabs object identity changes every render; use stable keys above.
+  }, [activeId, enabled, itemsKey, registerModeTabs]);
 }

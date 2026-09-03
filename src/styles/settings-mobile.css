@@ -116,6 +116,10 @@
     min-width: 0;
   }
 
+  .names-session-mode-nav {
+    display: none;
+  }
+
   .page-header-with-actions {
     flex-direction: column;
     align-items: stretch;
@@ -201,7 +205,8 @@
   overflow: hidden;
 }
 
-.mobile-bottom-app-bar.has-status-tabs {
+.mobile-bottom-app-bar.has-status-tabs,
+.mobile-bottom-app-bar.has-mode-tabs {
   --mobile-bottom-bar-h: 2.85rem;
 }
 
@@ -277,7 +282,8 @@
   isolation: isolate;
 }
 
-.mobile-board-fab.has-status-tabs {
+.mobile-board-fab.has-status-tabs,
+.mobile-board-fab.has-mode-tabs {
   --mobile-bottom-bar-h: 2.85rem;
 }
 
@@ -750,6 +756,11 @@
   .page-shell {
     /* Clear only the slim Bottom App Bar — FAB floats over content, does not own chrome. */
     padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .page-shell.names-session-page {
+    /* Mode actions sit above the bar, not only the document end (#arc-512). */
+    padding-bottom: calc(3.25rem + 0.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .content-area.is-board-page {

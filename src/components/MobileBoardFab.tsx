@@ -7,7 +7,10 @@ import { useChat } from '../context/ChatContext';
 import { useTheme } from '../context/ThemeContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { vibrateSafe } from '../lib/ui/haptics';
-import { isBoardShellPath } from '../lib/board/boardShellPath';
+import {
+  isBoardShellPath,
+  isNamesSessionPath,
+} from '../lib/board/boardShellPath';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { MobileQuickCreateSheet } from './MobileQuickCreateSheet';
@@ -87,12 +90,13 @@ export function MobileBoardFab() {
   const navigate = useNavigate();
   const isBoardPage = location.pathname === '/board';
   const isBoardShell = isBoardShellPath(location.pathname);
+  const isNamesSession = isNamesSessionPath(location.pathname);
   const { logout, isAdmin } = useAuth();
   const { setChatOpen } = useChat();
   const { theme, toggleTheme } = useTheme();
   const { canInstall, install, isIos, isStandalone } = usePwaInstall();
   const { optedIn, enable, disable, loading: pushLoading } = usePushNotifications();
-  const { actions, statusTabs } = useBoardMobileShell();
+  const { actions, statusTabs, modeTabs } = useBoardMobileShell();
   const reducedMotion = useReducedMotion();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialLevel, setDialLevel] = useState<DialLevel>('main');
@@ -409,6 +413,8 @@ export function MobileBoardFab() {
   }
 
   const visibleStatusTabs = isBoardShell ? statusTabs : null;
+  const visibleModeTabs = isNamesSession ? modeTabs : null;
+  const hasBarTabs = Boolean(visibleStatusTabs || visibleModeTabs);
   const dialActions =
     dialLevel === 'nav'
       ? navActions
@@ -426,7 +432,9 @@ export function MobileBoardFab() {
   return (
     <>
       <div
-        className={`mobile-bottom-app-bar${visibleStatusTabs ? ' has-status-tabs' : ''}`}
+        className={`mobile-bottom-app-bar${
+          visibleStatusTabs ? ' has-status-tabs' : ''
+        }${visibleModeTabs ? ' has-mode-tabs' : ''}`}
         aria-hidden="false"
       >
         <div className="mobile-bottom-app-bar-surface">
@@ -438,6 +446,30 @@ export function MobileBoardFab() {
               onChange={visibleStatusTabs.onChange}
             />
           ) : null}
+          {visibleModeTabs ? (
+            <nav
+              className="board-status-tabs"
+              aria-label={visibleModeTabs.ariaLabel}
+            >
+              {visibleModeTabs.items.map((item) => {
+                const current = item.id === visibleModeTabs.activeId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`board-status-tab${current ? ' is-active' : ''}`}
+                    aria-current={current ? 'true' : undefined}
+                    onClick={() => visibleModeTabs.onChange(item.id)}
+                  >
+                    {item.label}
+                    {item.count != null ? (
+                      <span className="board-status-tab-count">{item.count}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </nav>
+          ) : null}
         </div>
       </div>
 
@@ -445,8 +477,8 @@ export function MobileBoardFab() {
       <div
         ref={rootRef}
         className={`mobile-board-fab${menuOpen ? ' is-open' : ''}${
-          visibleStatusTabs ? ' has-status-tabs' : ''
-        }`}
+          hasBarTabs ? ' has-status-tabs' : ''
+        }${visibleModeTabs ? ' has-mode-tabs' : ''}`}
       >
         <div
           className={`mobile-board-fab-dial${

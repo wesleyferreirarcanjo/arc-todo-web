@@ -5,11 +5,12 @@ import {
   upsertNameFeedback,
 } from '../../lib/api/names';
 import type {
+  CandidateReaction,
   FeedbackMine,
   ProjectNameSession,
 } from '../../types/name-session';
 
-type FeedbackDraft = {
+export type FeedbackDraft = {
   firstImpression: string;
   rememberedSpelling: string;
   perceivedPurpose: string;
@@ -17,18 +18,19 @@ type FeedbackDraft = {
   memorable: number;
   fitsProduct: number;
   concern: string;
+  reaction?: CandidateReaction | '';
 };
 
-type StoredFeedback = {
+export type StoredFeedback = {
   pick: string[];
   drafts: Record<string, FeedbackDraft>;
   activeId: string | null;
 };
 
-const STORAGE_PREFIX = 'arc-todo-names-feedback:';
+export const FEEDBACK_STORAGE_PREFIX = 'arc-todo-names-feedback:';
 
-function storageKey(sessionId: string) {
-  return `${STORAGE_PREFIX}${sessionId}`;
+export function feedbackStorageKey(sessionId: string) {
+  return `${FEEDBACK_STORAGE_PREFIX}${sessionId}`;
 }
 
 function emptyDraft(mine?: FeedbackMine): FeedbackDraft {
@@ -40,12 +42,13 @@ function emptyDraft(mine?: FeedbackMine): FeedbackDraft {
     memorable: mine?.ratings?.memorable ?? 3,
     fitsProduct: mine?.ratings?.fitsProduct ?? 3,
     concern: mine?.concern ?? '',
+    reaction: mine?.reaction ?? '',
   };
 }
 
-function readStored(sessionId: string): StoredFeedback {
+export function readFeedbackStored(sessionId: string): StoredFeedback {
   try {
-    const raw = sessionStorage.getItem(storageKey(sessionId));
+    const raw = sessionStorage.getItem(feedbackStorageKey(sessionId));
     if (!raw) {
       return { pick: [], drafts: {}, activeId: null };
     }
@@ -61,9 +64,9 @@ function readStored(sessionId: string): StoredFeedback {
   }
 }
 
-function writeStored(sessionId: string, stored: StoredFeedback) {
+export function writeFeedbackStored(sessionId: string, stored: StoredFeedback) {
   try {
-    sessionStorage.setItem(storageKey(sessionId), JSON.stringify(stored));
+    sessionStorage.setItem(feedbackStorageKey(sessionId), JSON.stringify(stored));
   } catch {
     /* quota / private mode */
   }
@@ -90,17 +93,17 @@ export function FeedbackSection(props: {
     : [];
 
   const [pick, setPick] = useState<string[]>(
-    () => readStored(props.sessionId).pick,
+    () => readFeedbackStored(props.sessionId).pick,
   );
   const [drafts, setDrafts] = useState<Record<string, FeedbackDraft>>(
-    () => readStored(props.sessionId).drafts,
+    () => readFeedbackStored(props.sessionId).drafts,
   );
   const [activeId, setActiveId] = useState<string | null>(
-    () => readStored(props.sessionId).activeId,
+    () => readFeedbackStored(props.sessionId).activeId,
   );
 
   useEffect(() => {
-    writeStored(props.sessionId, { pick, drafts, activeId });
+    writeFeedbackStored(props.sessionId, { pick, drafts, activeId });
   }, [props.sessionId, pick, drafts, activeId]);
 
   const currentId =

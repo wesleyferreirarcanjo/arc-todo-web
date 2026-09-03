@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getVisibleStatusColumns } from '../lib/tasks/taskStatus';
-import type { BoardMobileStatusTabs } from '../context/BoardMobileShellContext';
+import type { BoardMobileStatusTabs, MobileShellModeTabs } from '../context/BoardMobileShellContext';
 
 const leftoverStatusTabs: BoardMobileStatusTabs = {
   columns: getVisibleStatusColumns([]),
@@ -12,8 +12,20 @@ const leftoverStatusTabs: BoardMobileStatusTabs = {
   onChange: () => {},
 };
 
+const leftoverModeTabs: MobileShellModeTabs = {
+  items: [
+    { id: 'explore', label: 'Explore' },
+    { id: 'shortlist', label: 'Shortlist', count: 2 },
+    { id: 'decision', label: 'Decision' },
+  ],
+  activeId: 'explore',
+  onChange: () => {},
+  ariaLabel: 'Name session modes',
+};
+
 const shellState = vi.hoisted(() => ({
   statusTabs: null as BoardMobileStatusTabs | null,
+  modeTabs: null as MobileShellModeTabs | null,
   isAdmin: false,
 }));
 
@@ -43,6 +55,7 @@ vi.mock('../context/BoardMobileShellContext', () => ({
   useBoardMobileShell: () => ({
     actions: null,
     statusTabs: shellState.statusTabs,
+    modeTabs: shellState.modeTabs,
   }),
 }));
 
@@ -68,6 +81,7 @@ import { MobileBoardFab } from './MobileBoardFab';
 
 afterEach(() => {
   shellState.statusTabs = null;
+  shellState.modeTabs = null;
   shellState.isAdmin = false;
   cleanup();
 });
@@ -236,5 +250,55 @@ describe('MobileBoardFab Navigate from All tasks', () => {
 
     expect(screen.getByText('All tasks page')).toBeInTheDocument();
     expect(screen.getByRole('tablist', { name: 'Task status' })).toBeInTheDocument();
+  });
+});
+
+describe('MobileBoardFab Names session bar', () => {
+  it('keeps board status icon tabs and hides leftover Names modes on All tasks', () => {
+    shellState.statusTabs = leftoverStatusTabs;
+    shellState.modeTabs = leftoverModeTabs;
+    render(
+      <MemoryRouter initialEntries={['/board']}>
+        <MobileBoardFab />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('tablist', { name: 'Task status' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Explore' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('navigation', { name: 'Name session modes' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows Names mode tabs and hides leftover status tabs on a session', async () => {
+    const onChange = vi.fn();
+    shellState.statusTabs = leftoverStatusTabs;
+    shellState.modeTabs = { ...leftoverModeTabs, onChange };
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter
+        initialEntries={['/organizations/org-1/projects/proj-1/names/sess-1']}
+      >
+        <Routes>
+          <Route
+            path="/organizations/:orgId/projects/:projectId/names/:sessionId"
+            element={<div>Session page</div>}
+          />
+        </Routes>
+        <MobileBoardFab />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Session page')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('tablist', { name: 'Task status' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Explore' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await user.click(screen.getByRole('button', { name: /Shortlist/ }));
+    expect(onChange).toHaveBeenCalledWith('shortlist');
+    expect(screen.getByText('Session page')).toBeInTheDocument();
   });
 });

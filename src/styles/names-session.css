@@ -1,4 +1,4 @@
-/* names-session.css — imported from src/index.css; keep cascade order. */
+/* names-session.css — page shell, brief, panel, inspector. Deck/reaction in names-explore.css; ballot/face-off in names-decision.css. */
 .names-session-page {
   width: 100%;
   max-width: 96rem;

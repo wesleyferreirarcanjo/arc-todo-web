@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isBoardShellPath, projectTasksHref } from './boardShellPath';
+import {
+  isBoardShellPath,
+  isNamesSessionPath,
+  projectTasksHref,
+} from './boardShellPath';
 
 describe('isBoardShellPath', () => {
   it('locks only All tasks', () => {
@@ -24,6 +28,22 @@ describe('isBoardShellPath', () => {
     expect(
       isBoardShellPath('/organizations/org-1/knowledge'),
     ).toBe(false);
+    expect(
+      isBoardShellPath('/organizations/org-1/projects/proj-1/names/sess-1'),
+    ).toBe(false);
+  });
+});
+
+describe('isNamesSessionPath', () => {
+  it('locks only a session, not the hub or project list', () => {
+    expect(
+      isNamesSessionPath('/organizations/org-1/projects/proj-1/names/sess-1'),
+    ).toBe(true);
+    expect(isNamesSessionPath('/names')).toBe(false);
+    expect(
+      isNamesSessionPath('/organizations/org-1/projects/proj-1/names'),
+    ).toBe(false);
+    expect(isNamesSessionPath('/board')).toBe(false);
   });
 });
 

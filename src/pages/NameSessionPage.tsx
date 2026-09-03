@@ -1,7 +1,11 @@
 import { useAuth } from '../context/AuthContext';
+import { useRegisterMobileShellModeTabs } from '../context/BoardMobileShellContext';
 import { CompareSection } from '../components/names/CompareSection';
+import { DecisionMode } from '../components/names/DecisionMode';
+import { ExploreMode } from '../components/names/ExploreMode';
 import { FeedbackSection } from '../components/names/FeedbackSection';
-import { NamesSection } from '../components/names/NamesSection';
+import { NamesComposer } from '../components/names/NamesSection';
+import { ShortlistMode } from '../components/names/ShortlistMode';
 import { CandidateCard } from '../components/names/CandidateCard';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { Modal } from '../components/Modal';
@@ -37,6 +41,13 @@ import {
   looksLikeNamesPacket,
   parseNamesSmartCopy,
 } from '../lib/names/smartCopy';
+import {
+  BELOW_TOP_REASON_MESSAGE,
+  ERR_ARC_NAME_24,
+  needsWinnerReason,
+  reactionPointsForSession,
+  winnerScopeIds,
+} from '../lib/names/winnerReason';
 import type {
   NameCandidate,
   NamingGoal,
@@ -45,8 +56,6 @@ import type {
   CandidateSource,
 } from '../types/name-session';
 
-const NEEDS_AI_COPY =
-  'Needs AI. Copy the brief with Smart copy, paste suggestions, or type a name.';
 const SMART_COPY_GATE =
   'Add one sentence about what it does, then use Smart copy. You can still check a name.';
 const PASTE_GATE =
@@ -54,6 +63,17 @@ const PASTE_GATE =
 const BRIEF_SAVED_MS = 2000;
 
 type InspectorView = 'checks' | 'compare' | 'feedback';
+type NamesSessionMode = 'explore' | 'shortlist' | 'decision';
+
+const SESSION_MODES: { id: NamesSessionMode; label: string }[] = [
+  { id: 'explore', label: 'Explore' },
+  { id: 'shortlist', label: 'Shortlist' },
+  { id: 'decision', label: 'Decision' },
+];
+
+function isSessionMode(id: string): id is NamesSessionMode {
+  return SESSION_MODES.some((item) => item.id === id);
+}
 
 export function NameSessionPage() {
   const { orgId, projectId, sessionId } = useParams();
@@ -72,6 +92,29 @@ export function NameSessionPage() {
   const [resolvingKeys, setResolvingKeys] = useState<string[]>([]);
   const [inspectorId, setInspectorId] = useState<string | null>(null);
   const [inspectorView, setInspectorView] = useState<InspectorView>('checks');
+  const [mode, setMode] = useState<NamesSessionMode>('explore');
+  const [pendingPickId, setPendingPickId] = useState<string | null>(null);
+  const [pickNote, setPickNote] = useState('');
+
+  const candidateCount =
+    session?.candidates.filter((item) => item.status !== 'rejected').length ?? 0;
+
+  useRegisterMobileShellModeTabs(
+    forbidden
+      ? null
+      : {
+          items: SESSION_MODES.map((item) =>
+            item.id === 'shortlist'
+              ? { ...item, count: candidateCount }
+              : item,
+          ),
+          activeId: mode,
+          onChange: (id) => {
+            if (isSessionMode(id)) setMode(id);
+          },
+          ariaLabel: 'Name session modes',
+        },
+  );
 
   const load = useCallback(async () => {
     if (!orgId || !projectId || !sessionId) return;
@@ -350,14 +393,33 @@ export function NameSessionPage() {
     if (inspectorId === id) setInspectorId(null);
   }
 
-  async function handlePick(id: string) {
-    if (!orgId || !projectId || !sessionId) return;
+  async function handlePick(id: string, note = pickNote) {
+    if (!orgId || !projectId || !sessionId || !session) return;
+    const scope = winnerScopeIds(session, id);
+    const points = reactionPointsForSession(session, scope);
+    if (needsWinnerReason(id, scope, points, note)) {
+      setPendingPickId(id);
+      setError(BELOW_TOP_REASON_MESSAGE);
+      setErrorCode(ERR_ARC_NAME_24);
+      return;
+    }
     setBusy('pick');
     try {
-      const updated = await recommendNameCandidate(orgId, projectId, sessionId, id);
+      const updated = await recommendNameCandidate(
+        orgId,
+        projectId,
+        sessionId,
+        id,
+        note.trim() || undefined,
+      );
       setSession(updated);
+      setPendingPickId(null);
+      setPickNote('');
+      setError(null);
+      setErrorCode(undefined);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this pick' }));
+      setErrorCode(err instanceof ApiError ? err.code : undefined);
     } finally {
       setBusy(null);
     }
@@ -506,29 +568,103 @@ export function NameSessionPage() {
       {loading && <p className="status-message">Loading session...</p>}
       {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
       {notice && <div className="alert">{notice}</div>}
+      {pendingPickId && session && (
+        <div className="names-decision-panel">
+          <label className="form-field">
+            <span>Why this name is not the top result</span>
+            <textarea
+              rows={3}
+              value={pickNote}
+              onChange={(event) => setPickNote(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={busy === 'pick'}
+            onClick={() => void handlePick(pendingPickId, pickNote)}
+          >
+            Confirm pick
+          </button>
+        </div>
+      )}
       {session && (
-        <NamesSection
-          session={session}
-          typedName={typedName}
-          onTypedName={setTypedName}
-          busy={busy}
-          resolvingKeys={resolvingKeys}
-          isBlind={Boolean(isBlind)}
-          openRound={openRound}
-          emptyCopy={NEEDS_AI_COPY}
-          raterName={user?.username ?? 'you'}
-          onCheckName={() => void handleAddField()}
-          onSmartCopy={() => void handleSmartCopy()}
-          onPastePacket={(text) => void handlePastePacket(text)}
-          onKeep={(id) => void handleKeep(id)}
-          onReject={(id) => void handleReject(id)}
-          onPick={(id) => void handlePick(id)}
-          onOpen={(id) => {
-            setInspectorId(id);
-            setInspectorView('checks');
-          }}
-          onRate={(id, overall, notes) => void handleRate(id, overall, notes)}
-        />
+        <>
+          <nav
+            className="names-desk-tabs names-session-mode-nav"
+            aria-label="Name session modes"
+          >
+            {SESSION_MODES.map((item) => {
+              const current = mode === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={current ? 'is-current is-primary' : 'is-secondary'}
+                  aria-current={current ? 'true' : undefined}
+                  onClick={() => setMode(item.id)}
+                >
+                  {item.label}
+                  {item.id === 'shortlist' ? (
+                    <span> {candidateCount}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+          <section className="names-panel">
+            <NamesComposer
+              typedName={typedName}
+              onTypedName={setTypedName}
+              busy={busy}
+              onCheckName={() => void handleAddField()}
+              onSmartCopy={() => void handleSmartCopy()}
+              onPastePacket={(text) => void handlePastePacket(text)}
+            />
+            {mode === 'explore' && (
+              <ExploreMode
+                session={session}
+                orgId={orgId}
+                projectId={projectId}
+                sessionId={sessionId}
+                onSession={setSession}
+                onGoToShortlist={() => setMode('shortlist')}
+              />
+            )}
+            {mode === 'shortlist' && (
+              <ShortlistMode
+                session={session}
+                orgId={orgId}
+                projectId={projectId}
+                sessionId={sessionId}
+                resolvingKeys={resolvingKeys}
+                isBlind={Boolean(isBlind)}
+                openRound={openRound}
+                raterName={user?.username ?? 'you'}
+                onSession={setSession}
+                onGoToDecision={() => setMode('decision')}
+                onKeep={(id) => void handleKeep(id)}
+                onReject={(id) => void handleReject(id)}
+                onPick={(id) => void handlePick(id)}
+                onOpen={(id) => {
+                  setInspectorId(id);
+                  setInspectorView('checks');
+                }}
+                onRate={(id, overall, notes) => void handleRate(id, overall, notes)}
+              />
+            )}
+            {mode === 'decision' && (
+              <DecisionMode
+                session={session}
+                orgId={orgId}
+                projectId={projectId}
+                sessionId={sessionId}
+                onSession={setSession}
+                onNotice={setNotice}
+              />
+            )}
+          </section>
+        </>
       )}
       <Modal
         open={Boolean(inspector)}

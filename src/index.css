@@ -14,6 +14,8 @@
 @import './styles/extension.css';
 @import './styles/diagrams.css';
 @import './styles/names-session.css';
+@import './styles/names-explore.css';
+@import './styles/names-decision.css';
 @import './styles/names-hub.css';
 @import './styles/names-funnel.css';
 @import './styles/names-card.css';

@@ -18,6 +18,10 @@ import { spokenClarity } from '../../lib/names/pronunciation';
 import { buildDecisionReport } from '../../lib/names/report';
 import { candidateScore } from '../../lib/names/score';
 import { SIGNAL_COPY } from '../../lib/names/signalCopy';
+import {
+  BELOW_TOP_REASON_MESSAGE,
+  needsWinnerReason,
+} from '../../lib/names/winnerReason';
 import type {
   CandidateRatings,
   FeedbackAggregate,
@@ -260,7 +264,6 @@ export function CompareSection(props: {
       };
     })
     .sort((a, b) => b.score.total - a.score.total);
-  const top = Math.max(0, ...scores.map((row) => row.score.total));
   const drilled = scores.find((row) => row.item.id === drillId) ?? null;
 
   function overlayCandidates(): NameCandidate[] {
@@ -342,11 +345,12 @@ export function CompareSection(props: {
 
   async function chooseWinner(id: string) {
     if (!id) return;
-    const selected = scores.find((row) => row.item.id === id);
-    if (selected && selected.score.total < top && !winnerNote.trim()) {
-      props.onNotice(
-        'Write a reason to recommend a name that is not the highest score.',
-      );
+    const ids = scores.map((row) => row.item.id);
+    const points = Object.fromEntries(
+      scores.map((row) => [row.item.id, row.score.total]),
+    );
+    if (needsWinnerReason(id, ids, points, winnerNote)) {
+      props.onNotice(BELOW_TOP_REASON_MESSAGE);
       return;
     }
     await persistSession({ decisionNote: winnerNote });
@@ -505,8 +509,8 @@ export function CompareSection(props: {
           <section className="names-compare-decision">
             <h3>Decision</h3>
             <p className="names-meta">
-              Write a reason before recommending a name that is not the highest
-              score.
+              Write a reason before recommending a name that is not the top
+              result.
             </p>
             <label className="form-field">
               <span>Decision note</span>

@@ -1,0 +1,277 @@
+/* names-explore.css — deck, candidate card, reaction controls, batch progress. */
+.names-batch-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
+.names-batch-progress-track {
+  flex: 1;
+  height: 0.3rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+}
+
+.names-batch-progress-track > span {
+  display: block;
+  height: 100%;
+  background: var(--gradient-accent);
+}
+
+.names-explore-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 40rem) minmax(14rem, 18rem);
+  justify-content: center;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.names-deck {
+  position: relative;
+  isolation: isolate;
+}
+
+/*
+ * Stacked-cards cue. Size from the card (inset on all four edges) so the fan
+ * cannot smear below a short card or vanish against --bg-shell. Do not restore
+ * a fixed 475px height.
+ */
+.names-deck::before,
+.names-deck::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0.7rem 1.25rem 0.95rem;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-blob);
+  background: var(--bg-elevated);
+}
+
+.names-deck::before {
+  transform: rotate(-1.5deg);
+}
+
+.names-deck::after {
+  transform: rotate(1.5deg);
+  background: color-mix(in srgb, var(--bg-surface) 88%, var(--bg-elevated));
+}
+
+.names-deck-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 22rem;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-blob);
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      color-mix(in srgb, var(--accent-secondary) 20%, transparent),
+      transparent 34%
+    ),
+    var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.names-deck-kicker {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.names-deck-name {
+  margin: 2.5rem 0 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 8vw, 5.5rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+}
+
+.names-deck-rationale {
+  max-width: 33rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.names-deck-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.35rem 0 1.4rem;
+}
+
+.names-deck-trait {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-shell);
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
+.names-deck-sound {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: auto;
+}
+
+.names-reaction-controls {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+
+.names-reaction-controls button {
+  min-height: 3.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg-surface);
+  font-weight: 700;
+}
+
+.names-reaction-controls .is-pass {
+  color: var(--danger-text);
+}
+
+.names-reaction-controls .is-like {
+  color: var(--link);
+}
+
+.names-reaction-controls .is-love {
+  color: var(--success-text);
+}
+
+@media (max-width: 1023px) {
+  .names-explore-layout {
+    grid-template-columns: 1fr;
+    padding-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .names-deck-card {
+    padding: 1.5rem;
+  }
+
+  .names-deck-name {
+    margin-top: 2.2rem;
+  }
+
+  .names-reaction-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (hover: none) {
+  .names-reaction-controls button,
+  .names-deck-sound button {
+    min-height: 2.75rem;
+  }
+}
+
+.names-deck.is-last::before,
+.names-deck.is-last::after {
+  content: none;
+}
+
+.names-session-page .names-panel > .names-explore-layout {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.names-explore-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.names-explore-aside {
+  display: grid;
+  gap: 1.1rem;
+  padding: 0.25rem 0.15rem;
+}
+
+.names-deck-webfit.is-unchecked {
+  color: var(--text-muted);
+}
+
+.names-deck-webfit.is-available {
+  color: var(--success-text);
+}
+
+.names-batch-progress-block {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.names-batch-champion,
+.names-batch-start p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  line-height: 1.4;
+}
+
+.names-quick-keys h3 {
+  margin: 0 0 0.4rem;
+  font-size: var(--type-meta);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.names-quick-keys ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  line-height: 1.55;
+}
+
+.names-variation-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.names-explore-exhausted {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+}
+
+.names-explore-survivors {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .names-deck::before,
+  .names-deck::after {
+    transform: none;
+  }
+}

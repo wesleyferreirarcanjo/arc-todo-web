@@ -118,12 +118,36 @@ export interface Pronunciation {
   speechUnsupported?: boolean;
 }
 
+export type CandidateReaction = 'passed' | 'liked' | 'loved';
+export type NameDecisionPhase = 'ballot' | 'results' | 'faceoff';
+export type NameBatchStatus = 'open' | 'decided';
+
 export interface CandidateRatings {
   brandFit?: number;
   easyToSay?: number;
   memorable?: number;
   /** Solo 1–10 overall on the shortlist (BR-NAME-25). */
   overall?: number;
+}
+
+export interface NameUserRating {
+  overall?: number;
+  notes?: string;
+  reaction?: CandidateReaction;
+  reactedAt?: string;
+  updatedAt?: string;
+}
+
+export interface NameBatch {
+  number: number;
+  candidateIds: string[];
+  status: NameBatchStatus;
+  winnerCandidateId: string | null;
+  decisionNote: string | null;
+  roundId: string | null;
+  finalistCandidateIds: string[];
+  createdAt: string;
+  decidedAt: string | null;
 }
 
 export interface ComIncumbency {
@@ -185,12 +209,21 @@ export interface NameCandidate {
   languageChecks?: LanguageChecks;
   pronunciation?: Pronunciation;
   ratings?: CandidateRatings;
-  /** Present only on writes; GET projects the current user's row onto ratings.overall + notes. */
-  userRatings?: Record<string, { overall?: number; notes?: string; updatedAt?: string }>;
+  /**
+   * Present only on writes. GET projects the caller's row onto `ratings.overall`,
+   * `notes`, `reaction`, and `reactedAt`, and omits the map.
+   */
+  userRatings?: Record<string, NameUserRating>;
+  /** GET projection of the caller's Pass / Like / Love. */
+  reaction?: CandidateReaction;
+  reactedAt?: string;
+  /** Missing means the candidate belongs to batch 1. Do not default in the type. */
+  batchNumber?: number;
 }
 
 export interface FeedbackMine {
   candidateId: string;
+  reaction?: CandidateReaction | null;
   firstImpression: string;
   rememberedSpelling: string;
   perceivedPurpose: string;
@@ -209,6 +242,8 @@ export interface FeedbackAggregate {
       memorable: number | null;
       fitsProduct: number | null;
       repeatedConcerns: string[];
+      reactions?: { passed: number; liked: number; loved: number };
+      points?: number;
     }
   >;
 }
@@ -247,6 +282,8 @@ export interface ProjectNameSession {
   recommendedCandidateId: string | null;
   runnerUpCandidateId: string | null;
   decisionNote: string | null;
+  batches?: NameBatch[];
+  decisionPhase?: NameDecisionPhase;
   createdById: string;
   createdAt: string;
   updatedAt: string;

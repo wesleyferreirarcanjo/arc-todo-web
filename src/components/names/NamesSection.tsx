@@ -1,19 +1,61 @@
 import type { FeedbackRoundView, ProjectNameSession } from '../../types/name-session';
 import { CandidateShortlistTable } from './CandidateShortlistTable';
 
-export function NamesSection(props: {
-  session: ProjectNameSession;
+export function NamesComposer(props: {
   typedName: string;
   onTypedName: (value: string) => void;
   busy: string | null;
-  resolvingKeys: string[];
-  isBlind: boolean;
-  openRound: FeedbackRoundView | undefined;
-  emptyCopy: string;
-  raterName: string;
   onCheckName: (name?: string) => void;
   onSmartCopy: () => void;
   onPastePacket: (text: string) => void;
+}) {
+  return (
+    <div className="names-composer names-composer-hero">
+      <input
+        value={props.typedName}
+        placeholder="Type a name or paste suggestions"
+        aria-label="Name or pasted suggestions"
+        onChange={(event) => props.onTypedName(event.target.value)}
+        onPaste={(event) => {
+          const text = event.clipboardData.getData('text');
+          if (!text.includes('\n') && !/^NAMES\b/im.test(text.trim())) return;
+          event.preventDefault();
+          props.onPastePacket(text);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            void props.onCheckName();
+          }
+        }}
+      />
+      <button
+        type="button"
+        className="btn btn-primary"
+        disabled={props.busy === 'check'}
+        onClick={() => void props.onCheckName()}
+      >
+        Check this name
+      </button>
+      <button
+        type="button"
+        className="btn btn-secondary"
+        disabled={props.busy === 'copy'}
+        onClick={() => void props.onSmartCopy()}
+      >
+        Smart copy
+      </button>
+    </div>
+  );
+}
+
+export function NamesWorkbench(props: {
+  session: ProjectNameSession;
+  resolvingKeys: string[];
+  isBlind: boolean;
+  openRound: FeedbackRoundView | undefined;
+  emptyCopy?: string;
+  raterName: string;
   onKeep: (candidateId: string) => void;
   onReject: (candidateId: string) => void;
   onPick: (candidateId: string) => void;
@@ -35,45 +77,9 @@ export function NamesSection(props: {
   }
 
   return (
-    <section className="names-panel">
-      <div className="names-composer names-composer-hero">
-        <input
-          value={props.typedName}
-          placeholder="Type a name or paste suggestions"
-          aria-label="Name or pasted suggestions"
-          onChange={(event) => props.onTypedName(event.target.value)}
-          onPaste={(event) => {
-            const text = event.clipboardData.getData('text');
-            if (!text.includes('\n') && !/^NAMES\b/im.test(text.trim())) return;
-            event.preventDefault();
-            props.onPastePacket(text);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              void props.onCheckName();
-            }
-          }}
-        />
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={props.busy === 'check'}
-          onClick={() => void props.onCheckName()}
-        >
-          Check this name
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={props.busy === 'copy'}
-          onClick={() => void props.onSmartCopy()}
-        >
-          Smart copy
-        </button>
-      </div>
+    <>
       {wave.length === 0 ? (
-        <p className="names-empty">{props.emptyCopy}</p>
+        props.emptyCopy ? <p className="names-empty">{props.emptyCopy}</p> : null
       ) : (
         <>
           <div className="names-shortlist-heading">
@@ -103,6 +109,52 @@ export function NamesSection(props: {
             : `${rejectedCount} rejected names are hidden from this list.`}
         </p>
       )}
+    </>
+  );
+}
+
+export function NamesSection(props: {
+  session: ProjectNameSession;
+  typedName: string;
+  onTypedName: (value: string) => void;
+  busy: string | null;
+  resolvingKeys: string[];
+  isBlind: boolean;
+  openRound: FeedbackRoundView | undefined;
+  emptyCopy: string;
+  raterName: string;
+  onCheckName: (name?: string) => void;
+  onSmartCopy: () => void;
+  onPastePacket: (text: string) => void;
+  onKeep: (candidateId: string) => void;
+  onReject: (candidateId: string) => void;
+  onPick: (candidateId: string) => void;
+  onOpen: (candidateId: string) => void;
+  onRate: (candidateId: string, overall: number | undefined, notes: string) => void;
+}) {
+  return (
+    <section className="names-panel">
+      <NamesComposer
+        typedName={props.typedName}
+        onTypedName={props.onTypedName}
+        busy={props.busy}
+        onCheckName={props.onCheckName}
+        onSmartCopy={props.onSmartCopy}
+        onPastePacket={props.onPastePacket}
+      />
+      <NamesWorkbench
+        session={props.session}
+        resolvingKeys={props.resolvingKeys}
+        isBlind={props.isBlind}
+        openRound={props.openRound}
+        emptyCopy={props.emptyCopy}
+        raterName={props.raterName}
+        onKeep={props.onKeep}
+        onReject={props.onReject}
+        onPick={props.onPick}
+        onOpen={props.onOpen}
+        onRate={props.onRate}
+      />
     </section>
   );
 }

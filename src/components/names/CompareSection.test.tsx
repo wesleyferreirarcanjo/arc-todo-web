@@ -217,7 +217,7 @@ describe('CompareSection', () => {
     await user.selectOptions(screen.getByLabelText('Winner'), 'rift');
     expect(recommendNameCandidate).not.toHaveBeenCalled();
     expect(onNotice).toHaveBeenCalledWith(
-      'Write a reason to recommend a name that is not the highest score.',
+      'Write a reason to recommend a name that is not the top result.',
     );
   });
 });
