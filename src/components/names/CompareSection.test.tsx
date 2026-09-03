@@ -168,28 +168,42 @@ describe('CompareSection', () => {
     fetchProjectNameSession.mockReset().mockResolvedValue(compared);
   });
 
-  it('does not render = joined pairs or n= counts', () => {
+  it('compares selected names in a criteria matrix and keeps evidence behind drill-in', async () => {
+    const user = userEvent.setup();
     renderCompare();
+    expect(screen.getByRole('columnheader', { name: 'Criterion' })).toBeTruthy();
+    expect(screen.getByRole('row', { name: /Domain/ })).toBeTruthy();
+    expect(screen.getByRole('row', { name: /Your score/ })).toBeTruthy();
+    expect(screen.queryByText('.com is Available')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Wave' }));
     const text = document.body.textContent ?? '';
     expect(text).not.toMatch(/\b[A-Za-z0-9.]+=[A-Za-z0-9]/);
     expect(text).not.toMatch(/\bn=/);
-    expect(screen.queryByText(/How this score works/i)).not.toBeInTheDocument();
     expect(screen.getByText('.com is Available')).toBeInTheDocument();
     expect(screen.getByText('3 people answered')).toBeInTheDocument();
     expect(screen.getByText('Instagram is unresolved')).toBeInTheDocument();
     expect(screen.getByText('USPTO is unresolved')).toBeInTheDocument();
-    expect(screen.getAllByText('No visual concerns recorded').length).toBeGreaterThan(0);
   });
 
-  it('shows a compact score strip instead of a formula paragraph', () => {
-    renderCompare();
-    expect(screen.getAllByRole('list', { name: 'Score' }).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/Highest total is not auto-picked/)).not.toBeInTheDocument();
+  it('does not write Keep when compare selection changes', async () => {
+    const user = userEvent.setup();
+    renderCompare(
+      session({
+        candidates: [wave, rift],
+        shortlistIds: [],
+      }),
+    );
+    expect(screen.getByText('Select names to compare.')).toBeInTheDocument();
+    const group = screen.getByRole('group', { name: 'Names to compare' });
+    await user.click(within(group).getByRole('checkbox', { name: 'Wave' }));
+    expect(updateProjectNameSession).not.toHaveBeenCalled();
+    expect(screen.getByRole('columnheader', { name: 'Wave' })).toBeTruthy();
   });
 
   it('does not write to the API when a rating changes', async () => {
     const user = userEvent.setup();
     renderCompare();
+    await user.click(screen.getByRole('button', { name: 'Wave' }));
     const waveCard = screen.getByRole('article', { name: 'Wave' });
     const brandFit = within(waveCard).getByRole('radiogroup', { name: 'Brand fit' });
     await user.click(within(brandFit).getByRole('radio', { name: '5' }));
@@ -205,19 +219,5 @@ describe('CompareSection', () => {
     expect(onNotice).toHaveBeenCalledWith(
       'Write a reason to recommend a name that is not the highest score.',
     );
-  });
-
-  it('asks to keep names first when none are kept', () => {
-    renderCompare(
-      session({
-        candidates: [wave, rift],
-        shortlistIds: [],
-      }),
-    );
-    expect(
-      screen.getByText('Keep a name on Names, then compare it here.'),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('article', { name: 'Wave' })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Winner')).not.toBeInTheDocument();
   });
 });

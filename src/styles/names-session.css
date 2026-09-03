@@ -507,6 +507,53 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 }
 
+.names-compare-matrix-wrap {
+  overflow-x: auto;
+}
+
+.names-compare-matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+}
+
+.names-compare-matrix th,
+.names-compare-matrix td {
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.names-compare-matrix thead th {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.names-compare-matrix tbody th {
+  width: 8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.names-compare-matrix button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.names-compare-matrix button:hover,
+.names-compare-matrix button:focus-visible {
+  text-decoration: underline;
+}
+
 .names-compare-decision {
   display: grid;
   gap: 0.75rem;
@@ -933,6 +980,57 @@
   max-height: min(92dvh, 58rem);
 }
 
+.names-score-modal {
+  width: min(100%, 28rem);
+}
+
+.names-score-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.names-shortlist-desk .names-funnel-wrap {
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .names-shortlist-desk {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    align-items: start;
+  }
+
+  .names-shortlist-aside {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.85rem 0.95rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-page);
+  }
+
+  .names-shortlist-aside h3,
+  .names-shortlist-aside p,
+  .names-shortlist-aside ul {
+    margin: 0;
+  }
+
+  .names-shortlist-aside h3 {
+    color: var(--text-muted);
+    font-size: var(--type-meta);
+    font-weight: 600;
+  }
+
+  .names-shortlist-aside ul {
+    padding-left: 1.1rem;
+  }
+
+  .names-shortlist-aside p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+}
+
 .names-inspector-modal .modal-body {
   display: grid;
   gap: 1rem;
@@ -962,6 +1060,22 @@
 .names-check-summary ul {
   margin: 0;
   padding-left: 1.1rem;
+}
+
+.names-check-hero {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.15rem 0 0.35rem;
+}
+
+.names-check-hero .names-card-verdict-line {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.names-check-hero .btn {
+  justify-self: start;
+  width: auto;
 }
 
 .names-check-next {

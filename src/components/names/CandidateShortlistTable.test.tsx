@@ -29,8 +29,21 @@ const availableCom = [
   },
 ];
 
+const tableProps = {
+  namingGoal: 'public_product' as const,
+  recommendedCandidateId: null as string | null,
+  resolvingKeys: [] as string[],
+  raterName: 'wesley',
+  isBlind: () => false,
+  onKeep: vi.fn(),
+  onReject: vi.fn(),
+  onPick: vi.fn(),
+  onOpen: vi.fn(),
+  onRate: vi.fn(),
+};
+
 describe('CandidateShortlistTable', () => {
-  it('shows Domain, Google, Keep, Reject, and Pick, and keeps Unknown unresolved', async () => {
+  it('shows Domain, Google, Keep, Reject, Open, and Pick, and keeps Unknown unresolved', async () => {
     const user = userEvent.setup();
     const onKeep = vi.fn();
     const onReject = vi.fn();
@@ -38,21 +51,16 @@ describe('CandidateShortlistTable', () => {
     const onOpen = vi.fn();
     render(
       <CandidateShortlistTable
+        {...tableProps}
         candidates={[
           candidate({ id: 'open', name: 'Rift', domainChecks: [] }),
           candidate({ id: 'ready', name: 'Wave', domainChecks: availableCom }),
         ]}
-        namingGoal="public_product"
         shortlistIds={['ready']}
-        recommendedCandidateId={null}
-        resolvingKeys={[]}
-        isBlind={() => false}
         onKeep={onKeep}
         onReject={onReject}
         onPick={onPick}
         onOpen={onOpen}
-        onScore={vi.fn()}
-        onNotes={vi.fn()}
       />,
     );
 
@@ -64,8 +72,10 @@ describe('CandidateShortlistTable', () => {
 
     const riftRow = screen.getByRole('row', { name: /Rift/ });
     expect(within(riftRow).getByRole('button', { name: 'Keep' })).toBeTruthy();
+    expect(within(riftRow).getByRole('button', { name: 'Open' })).toBeTruthy();
     await user.click(within(riftRow).getByRole('button', { name: 'Reject' }));
     expect(onReject).toHaveBeenCalledWith('open');
+    expect(onOpen).not.toHaveBeenCalled();
 
     const waveRow = screen.getByRole('row', { name: /Wave/ });
     expect(within(waveRow).queryByRole('button', { name: 'Keep' })).toBeNull();
@@ -76,35 +86,45 @@ describe('CandidateShortlistTable', () => {
     expect(onOpen).toHaveBeenCalledWith('open');
   });
 
-  it('lets a member set a 1–10 score and open optional written feedback', async () => {
+  it('opens Checks from an Open control and from a non-action row click', async () => {
     const user = userEvent.setup();
-    const onScore = vi.fn();
-    const onNotes = vi.fn();
+    const onOpen = vi.fn();
     render(
       <CandidateShortlistTable
+        {...tableProps}
         candidates={[candidate({ id: 'ready', name: 'Wave', domainChecks: availableCom })]}
-        namingGoal="public_product"
         shortlistIds={['ready']}
-        recommendedCandidateId={null}
-        resolvingKeys={[]}
-        isBlind={() => false}
-        onKeep={vi.fn()}
-        onReject={vi.fn()}
-        onPick={vi.fn()}
-        onOpen={vi.fn()}
-        onScore={onScore}
-        onNotes={onNotes}
+        onOpen={onOpen}
       />,
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Score' })).toBeTruthy();
-    await user.click(screen.getByRole('radio', { name: '8' }));
-    expect(onScore).toHaveBeenCalledWith('ready', 8);
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    expect(onOpen).toHaveBeenCalledWith('ready');
+    onOpen.mockClear();
+    const row = screen.getByRole('row', { name: /Wave/ });
+    await user.click(within(row).getAllByRole('cell')[0]);
+    expect(onOpen).toHaveBeenCalledWith('ready');
+  });
 
-    await user.click(screen.getByRole('button', { name: 'Write feedback' }));
-    const note = screen.getByLabelText('Written feedback for Wave');
-    await user.type(note, 'Fits the notebook');
-    await user.tab();
-    expect(onNotes).toHaveBeenCalledWith('ready', 'Fits the notebook');
+  it('opens a mini modal for 1–10 score and written note', async () => {
+    const user = userEvent.setup();
+    const onRate = vi.fn();
+    render(
+      <CandidateShortlistTable
+        {...tableProps}
+        candidates={[candidate({ id: 'ready', name: 'Wave', domainChecks: availableCom })]}
+        shortlistIds={['ready']}
+        onRate={onRate}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Write feedback' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Score Wave' }));
+    expect(screen.getByRole('dialog', { name: 'Your score for Wave' })).toBeTruthy();
+    expect(screen.getByText(/Saved as wesley/)).toBeTruthy();
+    await user.click(screen.getByRole('radio', { name: '8' }));
+    await user.type(screen.getByLabelText('Written note'), 'Fits the notebook');
+    await user.click(screen.getByRole('button', { name: 'Save score' }));
+    expect(onRate).toHaveBeenCalledWith('ready', 8, 'Fits the notebook');
   });
 });

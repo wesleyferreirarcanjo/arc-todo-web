@@ -142,6 +142,19 @@ export function addNameCandidates(
   );
 }
 
+export function upsertNameCandidateRating(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  candidateId: string,
+  input: { overall?: number; notes?: string },
+): Promise<ProjectNameSession> {
+  return apiRequest<ProjectNameSession>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/candidates/${candidateId}/rating`,
+    { method: 'PUT', body: input },
+  );
+}
+
 export function recommendNameCandidate(
   orgId: string,
   projectId: string,

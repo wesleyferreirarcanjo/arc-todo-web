@@ -185,6 +185,8 @@ export interface NameCandidate {
   languageChecks?: LanguageChecks;
   pronunciation?: Pronunciation;
   ratings?: CandidateRatings;
+  /** Present only on writes; GET projects the current user's row onto ratings.overall + notes. */
+  userRatings?: Record<string, { overall?: number; notes?: string; updatedAt?: string }>;
 }
 
 export interface FeedbackMine {

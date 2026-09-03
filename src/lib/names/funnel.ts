@@ -47,6 +47,7 @@ export function mergeCheckedCandidate(
           ...checked,
           ratings: { ...item.ratings, ...checked.ratings },
           notes: checked.notes ?? item.notes,
+          userRatings: item.userRatings ?? checked.userRatings,
         }
       : item,
   );
@@ -139,18 +140,41 @@ export function keptVerdict(
   return 'Recorded brand checks are Clear.';
 }
 
+export function unknownBrandSources(
+  candidate: NameCandidate,
+  namingGoal: string | null,
+) {
+  return visibleBrandSources(namingGoal).filter((source) => {
+    const recorded = (candidate.brandChecks ?? []).find(
+      (item) => item.source === source.id,
+    );
+    return !recorded || recorded.result === 'unknown';
+  });
+}
+
 export function unknownBrandLabels(
   candidate: NameCandidate,
   namingGoal: string | null,
 ): string[] {
-  return visibleBrandSources(namingGoal)
-    .filter((source) => {
-      const recorded = (candidate.brandChecks ?? []).find(
-        (item) => item.source === source.id,
-      );
-      return !recorded || recorded.result === 'unknown';
-    })
-    .map((source) => source.label);
+  return unknownBrandSources(candidate, namingGoal).map((source) => source.label);
+}
+
+export function checksNextStep(
+  candidate: NameCandidate,
+  namingGoal: string | null,
+): { label: string; href?: string; sourceId?: string } {
+  const first = unknownBrandSources(candidate, namingGoal)[0];
+  if (first) {
+    return {
+      label: `Check ${first.label}`,
+      href: first.url(candidate.name),
+      sourceId: first.id,
+    };
+  }
+  if (!candidate.ratings?.overall) {
+    return { label: 'Score this name on the shortlist' };
+  }
+  return { label: 'Pick this name from the shortlist if it is the winner' };
 }
 
 function pillarReason(pillar: ScorePillar): string {

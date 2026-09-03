@@ -10,6 +10,7 @@ export function NamesSection(props: {
   isBlind: boolean;
   openRound: FeedbackRoundView | undefined;
   emptyCopy: string;
+  raterName: string;
   onCheckName: (name?: string) => void;
   onSmartCopy: () => void;
   onPastePacket: (text: string) => void;
@@ -17,8 +18,7 @@ export function NamesSection(props: {
   onReject: (candidateId: string) => void;
   onPick: (candidateId: string) => void;
   onOpen: (candidateId: string) => void;
-  onScore: (candidateId: string, overall: number) => void;
-  onNotes: (candidateId: string, notes: string) => void;
+  onRate: (candidateId: string, overall: number | undefined, notes: string) => void;
 }) {
   const { session } = props;
   const wave = session.candidates.filter(
@@ -81,13 +81,13 @@ export function NamesSection(props: {
           shortlistIds={session.shortlistIds}
           recommendedCandidateId={session.recommendedCandidateId}
           resolvingKeys={props.resolvingKeys}
+          raterName={props.raterName}
           isBlind={isBlind}
           onKeep={props.onKeep}
           onReject={props.onReject}
           onPick={props.onPick}
           onOpen={props.onOpen}
-          onScore={props.onScore}
-          onNotes={props.onNotes}
+          onRate={props.onRate}
         />
       )}
       {rejectedCount > 0 && (

@@ -50,17 +50,32 @@
 }
 
 .names-funnel.names-shortlist {
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
+}
+
+.names-funnel.names-shortlist th:first-child,
+.names-funnel.names-shortlist td:first-child {
+  width: 28%;
 }
 
 .names-shortlist-score {
-  min-width: 16rem;
+  width: 1%;
+  white-space: nowrap;
 }
 
 .names-shortlist-note {
-  width: min(36rem, 100%);
+  width: 100%;
   min-height: 3.25rem;
+}
+
+.names-shortlist-desk {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.names-shortlist-aside {
+  display: none;
 }
 
 .names-funnel th,
@@ -123,6 +138,10 @@
 
 .names-funnel tbody tr.is-selected {
   background: color-mix(in srgb, var(--accent) 8%, var(--bg-page));
+}
+
+.names-funnel.names-shortlist tbody tr {
+  cursor: pointer;
 }
 
 .names-funnel tbody tr.is-checking {
@@ -189,6 +208,11 @@
 
   .names-funnel.names-shortlist {
     width: 100%;
+  }
+
+  .names-funnel.names-shortlist th:first-child,
+  .names-funnel.names-shortlist td:first-child {
+    width: auto;
   }
 
   .names-shortlist-score {

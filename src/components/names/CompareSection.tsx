@@ -13,11 +13,10 @@ import {
 } from '../../lib/api/names';
 import { BRAND_SOURCES } from '../../lib/names/brandSources';
 import { VISUAL_FLAGS } from '../../lib/names/catalog';
-import { deskStanding } from '../../lib/names/desk';
+import { pillarCell } from '../../lib/names/funnel';
 import { spokenClarity } from '../../lib/names/pronunciation';
 import { buildDecisionReport } from '../../lib/names/report';
 import { candidateScore } from '../../lib/names/score';
-import { NamesScoreStrip } from './NamesScoreStrip';
 import { SIGNAL_COPY } from '../../lib/names/signalCopy';
 import type {
   CandidateRatings,
@@ -39,7 +38,7 @@ const RATING_FIELDS = [
   { key: 'memorable', label: 'Memorable' },
 ] as const;
 
-const SHORTLIST_CAP = 5;
+const COMPARE_CAP = 5;
 
 function brandSourceLabel(id: string): string {
   return BRAND_SOURCES.find((source) => source.id === id)?.label ?? id;
@@ -232,6 +231,10 @@ export function CompareSection(props: {
   const [winnerNote, setWinnerNote] = useState(props.session.decisionNote ?? '');
   const [runnerId, setRunnerId] = useState(props.session.runnerUpCandidateId ?? '');
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [drillId, setDrillId] = useState<string | null>(null);
+  const [compareIds, setCompareIds] = useState<string[]>(() =>
+    props.session.shortlistIds.slice(0, COMPARE_CAP),
+  );
   const [ratingsById, setRatingsById] = useState<Record<string, CandidateRatings>>(
     () =>
       Object.fromEntries(
@@ -239,24 +242,26 @@ export function CompareSection(props: {
       ),
   );
 
-  const standing = deskStanding(props.session);
-  const keepable = props.session.candidates.filter(
+  const selectable = props.session.candidates.filter(
     (item) => item.status !== 'rejected',
   );
-  const scores = standing.kept
+  const compared = selectable.filter((item) => compareIds.includes(item.id));
+  const scores = compared
     .map((item) => {
       const rated = overlayCandidate(item, ratingsById);
+      const kept = props.session.shortlistIds.includes(item.id);
       return {
         item: rated,
-        score: candidateScore(rated, props.session.namingGoal, { kept: true }),
+        score: candidateScore(rated, props.session.namingGoal, { kept }),
         spoken: spokenClarity(rated.name, {
           heardSpelling: rated.pronunciation?.heardSpelling,
-          kept: true,
+          kept,
         }),
       };
     })
     .sort((a, b) => b.score.total - a.score.total);
   const top = Math.max(0, ...scores.map((row) => row.score.total));
+  const drilled = scores.find((row) => row.item.id === drillId) ?? null;
 
   function overlayCandidates(): NameCandidate[] {
     return props.session.candidates.map((item) =>
@@ -275,33 +280,17 @@ export function CompareSection(props: {
     return updated;
   }
 
-  async function toggle(id: string) {
-    const adding = !props.session.shortlistIds.includes(id);
-    if (adding && props.session.shortlistIds.length >= SHORTLIST_CAP) {
-      props.onNotice('Keep at most 5 names.');
-      return;
-    }
-    const ids = adding
-      ? [...props.session.shortlistIds, id]
-      : props.session.shortlistIds.filter((item) => item !== id);
-    const updated = await persistSession({ shortlistIds: ids });
-    if (adding && ids.includes(id)) {
-      const kept = updated.candidates.find((item) => item.id === id);
-      if (kept) {
-        await checkNameHandles(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          kept.name,
-        );
-        const latest = await fetchProjectNameSession(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-        );
-        props.onSession(latest);
+  function toggleCompare(id: string) {
+    setCompareIds((current) => {
+      if (current.includes(id)) {
+        return current.filter((item) => item !== id);
       }
-    }
+      if (current.length >= COMPARE_CAP) {
+        props.onNotice('Compare at most 5 names.');
+        return current;
+      }
+      return [...current, id];
+    });
   }
 
   async function retryUnresolved(item: NameCandidate) {
@@ -374,27 +363,27 @@ export function CompareSection(props: {
   return (
     <section className="names-panel">
       <h3>Compare</h3>
-      {keepable.length > 0 && (
-        <div className="names-inline" role="group" aria-label="Kept names">
-          {keepable.map((item) => (
+      {selectable.length > 0 && (
+        <div className="names-inline" role="group" aria-label="Names to compare">
+          {selectable.map((item) => (
             <label key={item.id} className="names-chip">
               <input
                 type="checkbox"
-                checked={props.session.shortlistIds.includes(item.id)}
-                onChange={() => void toggle(item.id)}
+                checked={compareIds.includes(item.id)}
+                onChange={() => toggleCompare(item.id)}
               />
               {item.name}
             </label>
           ))}
         </div>
       )}
-      <p className="names-meta">Up to 5 names.</p>
+      <p className="names-meta">Select up to 5 names. Keep stays on the shortlist.</p>
       {scores.length === 0 ? (
-        <p className="names-empty">Keep a name on Names, then compare it here.</p>
+        <p className="names-empty">Select names to compare.</p>
       ) : (
         <>
           <div className="names-signal-heading">
-            <h4 className="names-brief-label">Scores</h4>
+            <h4 className="names-brief-label">Side by side</h4>
             <InfoPopover label={SIGNAL_COPY.total.name}>
               <p>{SIGNAL_COPY.total.howToRead}</p>
               <p>{SIGNAL_COPY.total.source}</p>
@@ -402,52 +391,117 @@ export function CompareSection(props: {
               <p>{SIGNAL_COPY.total.rules.join(' · ')}</p>
             </InfoPopover>
           </div>
-          <div className="names-compare-grid">
-            {scores.map(({ item, score, spoken }) => {
-              const rows = compareLedgerRows(item, spoken, props.session.feedback);
-              const ratings = item.ratings ?? {};
-              return (
-                <article
-                  key={item.id}
-                  className="names-card"
-                  aria-labelledby={`compare-${item.id}`}
-                >
-                  <h4 id={`compare-${item.id}`}>{item.name}</h4>
-                  <NamesScoreStrip pillars={score} />
-                  <section className="names-compare-judgments">
-                    <h5>Your 1–5 judgments</h5>
-                    {RATING_FIELDS.map((field) => (
-                      <RatingScale
-                        key={field.key}
-                        label={field.label}
-                        value={ratings[field.key]}
-                        onChange={(value) => {
-                          setRatingsById((prev) => ({
-                            ...prev,
-                            [item.id]: { ...prev[item.id], [field.key]: value },
-                          }));
-                        }}
-                      />
-                    ))}
-                  </section>
-                  <section className="names-compare-evidence">
-                    <h5>Evidence</h5>
-                    <EvidenceLedger rows={rows} />
-                  </section>
-                  {canRetry(item) ? (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      disabled={retryingId === item.id}
-                      onClick={() => void retryUnresolved(item)}
+          <div className="names-compare-matrix-wrap">
+            <table className="names-compare-matrix">
+              <caption className="sr-only">
+                Criteria by name. Open a name for full evidence.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Criterion</th>
+                  {scores.map(({ item }) => (
+                    <th key={item.id} scope="col">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDrillId((current) =>
+                            current === item.id ? null : item.id,
+                          )
+                        }
+                      >
+                        {item.name}
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Domain</th>
+                  {scores.map(({ item, score }) => (
+                    <td
+                      key={item.id}
+                      className={score.domain.unresolved ? 'is-unresolved' : undefined}
                     >
-                      Retry unresolved checks
-                    </button>
-                  ) : null}
-                </article>
-              );
-            })}
+                      {pillarCell(score.domain)}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th scope="row">Google</th>
+                  {scores.map(({ item, score }) => (
+                    <td
+                      key={item.id}
+                      className={score.organic.unresolved ? 'is-unresolved' : undefined}
+                    >
+                      {pillarCell(score.organic)}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th scope="row">Your score</th>
+                  {scores.map(({ item }) => (
+                    <td key={item.id}>{item.ratings?.overall ?? '—'}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <th scope="row">Total</th>
+                  {scores.map(({ item, score }) => (
+                    <td key={item.id}>{score.total}</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
           </div>
+          {drilled ? (
+            <article
+              className="names-card"
+              aria-labelledby={`compare-${drilled.item.id}`}
+            >
+              <h4 id={`compare-${drilled.item.id}`}>{drilled.item.name}</h4>
+              <section className="names-compare-judgments">
+                <h5>Your 1–5 judgments</h5>
+                {RATING_FIELDS.map((field) => (
+                  <RatingScale
+                    key={field.key}
+                    label={field.label}
+                    value={drilled.item.ratings?.[field.key]}
+                    onChange={(value) => {
+                      setRatingsById((prev) => ({
+                        ...prev,
+                        [drilled.item.id]: {
+                          ...prev[drilled.item.id],
+                          [field.key]: value,
+                        },
+                      }));
+                    }}
+                  />
+                ))}
+              </section>
+              <section className="names-compare-evidence">
+                <h5>Evidence</h5>
+                <EvidenceLedger
+                  rows={compareLedgerRows(
+                    drilled.item,
+                    drilled.spoken,
+                    props.session.feedback,
+                  )}
+                />
+              </section>
+              {canRetry(drilled.item) ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  disabled={retryingId === drilled.item.id}
+                  onClick={() => void retryUnresolved(drilled.item)}
+                >
+                  Retry unresolved checks
+                </button>
+              ) : null}
+            </article>
+          ) : (
+            <p className="names-meta">Open a name in the table for full evidence.</p>
+          )}
           <section className="names-compare-decision">
             <h3>Decision</h3>
             <p className="names-meta">

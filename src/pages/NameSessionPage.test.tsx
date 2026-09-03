@@ -6,6 +6,7 @@ import type { ProjectNameSession } from '../types/name-session';
 
 const fetchProjectNameSession = vi.hoisted(() => vi.fn());
 const updateProjectNameSession = vi.hoisted(() => vi.fn());
+const upsertNameCandidateRating = vi.hoisted(() => vi.fn());
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
@@ -43,6 +44,7 @@ vi.mock('../lib/api/names', async () => {
     ...actual,
     fetchProjectNameSession,
     updateProjectNameSession,
+    upsertNameCandidateRating,
   };
 });
 
@@ -100,6 +102,7 @@ describe('NameSessionPage shortlist chrome', () => {
         ...(input.productDescription ?? {}),
       },
     }));
+    upsertNameCandidateRating.mockReset();
   });
 
   it('shows Needs AI and Smart copy, and hides Suggest names, rail, and old tabs', async () => {
@@ -172,7 +175,7 @@ describe('NameSessionPage shortlist chrome', () => {
     expect(screen.getByRole('button', { name: 'Feedback' })).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Compare' }));
-    expect(screen.getByText('Keep a name, then compare it here.')).toBeTruthy();
+    expect(screen.getByText('Select names to compare.')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Feedback' }));
     expect(
@@ -182,7 +185,7 @@ describe('NameSessionPage shortlist chrome', () => {
     ).toBeTruthy();
   });
 
-  it('saves a 1–10 shortlist score without opening the inspector', async () => {
+  it('saves a 1–10 shortlist score in a mini modal without opening the inspector', async () => {
     const user = userEvent.setup();
     fetchProjectNameSession.mockResolvedValue({
       ...emptySession,
@@ -197,20 +200,38 @@ describe('NameSessionPage shortlist chrome', () => {
         },
       ],
     });
+    upsertNameCandidateRating.mockResolvedValue({
+      ...emptySession,
+      candidates: [
+        {
+          id: 'nova',
+          name: 'Nova',
+          status: 'active',
+          sources: ['human'],
+          domainChecks: [],
+          googleQueryUrl: '',
+          ratings: { overall: 8 },
+        },
+      ],
+    });
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('radio', { name: '8' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Score Nova' })).toBeTruthy();
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Score Nova' }));
+    expect(screen.getByRole('dialog', { name: 'Your score for Nova' })).toBeTruthy();
     await user.click(screen.getByRole('radio', { name: '8' }));
+    await user.click(screen.getByRole('button', { name: 'Save score' }));
     await waitFor(() => {
-      expect(updateProjectNameSession).toHaveBeenCalled();
+      expect(upsertNameCandidateRating).toHaveBeenCalled();
     });
-    const payload = updateProjectNameSession.mock.calls[0][3] as {
-      candidates: Array<{ ratings?: { overall?: number } }>;
-    };
-    expect(payload.candidates[0]?.ratings?.overall).toBe(8);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(upsertNameCandidateRating.mock.calls[0][3]).toBe('nova');
+    expect(upsertNameCandidateRating.mock.calls[0][4]).toEqual({
+      overall: 8,
+      notes: '',
+    });
+    expect(screen.queryByRole('button', { name: 'Checks' })).toBeNull();
   });
 });

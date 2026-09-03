@@ -7,6 +7,7 @@ import {
   sortFunnelRows,
   spokenCell,
   keptVerdict,
+  checksNextStep,
   weakestSignal,
 } from './funnel';
 
@@ -141,6 +142,8 @@ describe('funnel rows', () => {
     expect(keptVerdict(open, 'public_product')).toMatch(
       /\d+ brand checks still Unknown:/,
     );
+    expect(checksNextStep(open, 'public_product').label).toBe('Check Google exact');
+    expect(checksNextStep(open, 'public_product').href).toContain('google.com');
   });
 
   it('keeps an existing overall score when a check result merges', () => {

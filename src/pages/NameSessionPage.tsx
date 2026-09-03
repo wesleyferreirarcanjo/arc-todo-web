@@ -1,4 +1,4 @@
-import { ErrorAlert } from '../components/ErrorAlert';
+import { useAuth } from '../context/AuthContext';
 import { CompareSection } from '../components/names/CompareSection';
 import { FeedbackSection } from '../components/names/FeedbackSection';
 import { NamesSection } from '../components/names/NamesSection';
@@ -17,6 +17,7 @@ import {
   fetchProjectNameSession,
   recommendNameCandidate,
   updateProjectNameSession,
+  upsertNameCandidateRating,
 } from '../lib/api/names';
 import { mergeCheckedCandidate } from '../lib/names/funnel';
 import {
@@ -55,6 +56,7 @@ type InspectorView = 'checks' | 'compare' | 'feedback';
 
 export function NameSessionPage() {
   const { orgId, projectId, sessionId } = useParams();
+  const { user } = useAuth();
   const [session, setSession] = useState<ProjectNameSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -360,15 +362,24 @@ export function NameSessionPage() {
     }
   }
 
-  async function handleScore(id: string, overall: number) {
-    await updateCandidate(id, (item) => ({
-      ...item,
-      ratings: { ...item.ratings, overall },
-    }));
-  }
-
-  async function handleNotes(id: string, notes: string) {
-    await updateCandidate(id, (item) => ({ ...item, notes }));
+  async function handleRate(
+    id: string,
+    overall: number | undefined,
+    notes: string,
+  ) {
+    if (!orgId || !projectId || !sessionId) return;
+    try {
+      const updated = await upsertNameCandidateRating(
+        orgId,
+        projectId,
+        sessionId,
+        id,
+        { overall, notes },
+      );
+      setSession(updated);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this score' }));
+    }
   }
 
   if (!orgId || !projectId || !sessionId) {
@@ -503,6 +514,7 @@ export function NameSessionPage() {
           isBlind={Boolean(isBlind)}
           openRound={openRound}
           emptyCopy={NEEDS_AI_COPY}
+          raterName={user?.username ?? 'you'}
           onCheckName={() => void handleAddField()}
           onSmartCopy={() => void handleSmartCopy()}
           onPastePacket={(text) => void handlePastePacket(text)}
@@ -513,8 +525,7 @@ export function NameSessionPage() {
             setInspectorId(id);
             setInspectorView('checks');
           }}
-          onScore={(id, overall) => void handleScore(id, overall)}
-          onNotes={(id, notes) => void handleNotes(id, notes)}
+          onRate={(id, overall, notes) => void handleRate(id, overall, notes)}
         />
       )}
       <Modal
@@ -555,18 +566,14 @@ export function NameSessionPage() {
           />
         )}
         {inspectorView === 'compare' && session && (
-          keptCount > 0 ? (
-            <CompareSection
-              session={session}
-              orgId={orgId}
-              projectId={projectId}
-              sessionId={sessionId}
-              onSession={setSession}
-              onNotice={setNotice}
-            />
-          ) : (
-            <p className="names-empty">Keep a name, then compare it here.</p>
-          )
+          <CompareSection
+            session={session}
+            orgId={orgId}
+            projectId={projectId}
+            sessionId={sessionId}
+            onSession={setSession}
+            onNotice={setNotice}
+          />
         )}
         {inspectorView === 'feedback' && session && (
           feedbackReady ? (

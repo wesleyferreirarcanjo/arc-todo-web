@@ -1,19 +1,18 @@
 import { useState } from 'react';
 import { visibleBrandSources } from '../../lib/names/brandSources';
-import { checksLeftCount } from '../../lib/names/funnel';
 import type { BrandResult, NameCandidate } from '../../types/name-session';
 import { NamesSignalHeading } from './NamesSignalHeading';
 
 export function BrandFootprintBlock(props: {
   candidate: NameCandidate;
   namingGoal: string | null;
+  heroSourceId?: string;
   onUpdate: (candidate: NameCandidate) => void;
 }) {
   const { candidate, namingGoal } = props;
   const [opened, setOpened] = useState<Record<string, boolean>>({});
   const [brandNote, setBrandNote] = useState('');
   const sources = visibleBrandSources(namingGoal);
-  const left = checksLeftCount(candidate, namingGoal);
   const unresolved = sources.filter((source) => {
     const recorded = (candidate.brandChecks ?? []).find(
       (item) => item.source === source.id,
@@ -47,18 +46,12 @@ export function BrandFootprintBlock(props: {
   return (
     <div className="names-card-block names-checks">
       <NamesSignalHeading id="brand" />
-      <p className="names-checks-left">
-        {left === 0
-          ? 'No brand checks still Unknown'
-          : `${left} brand checks still Unknown`}
-      </p>
       {unresolved.length > 0 ? (
-        <>
-          <h5 className="names-brief-label">Unknown</h5>
-          <ul className="names-checks-list">
+        <ul className="names-checks-list">
           {unresolved.map((source) => {
             const href = source.url(candidate.name);
-            const showChoice = opened[source.id] === true;
+            const showChoice =
+              opened[source.id] === true || props.heroSourceId === source.id;
             return (
               <li key={source.id} className="names-check-line">
                 <a
@@ -94,13 +87,12 @@ export function BrandFootprintBlock(props: {
             );
           })}
         </ul>
-        </>
       ) : (
         <p className="names-meta">Every listed brand source has a recorded result.</p>
       )}
       {resolved.length > 0 ? (
-        <>
-          <h5 className="names-brief-label">Passed</h5>
+        <details className="names-card-more">
+          <summary>Resolved brand checks</summary>
           <p className="names-checks-resolved">
             {resolved
               .map((source) => {
@@ -113,7 +105,7 @@ export function BrandFootprintBlock(props: {
               })
               .join(' · ')}
           </p>
-        </>
+        </details>
       ) : null}
       <label className="form-field">
         <span>Note</span>

@@ -67,6 +67,7 @@ describe('NamesSection', () => {
         isBlind={false}
         openRound={undefined}
         emptyCopy="Needs AI"
+        raterName="wesley"
         onCheckName={onCheckName}
         onSmartCopy={() => undefined}
         onPastePacket={() => undefined}
@@ -74,8 +75,7 @@ describe('NamesSection', () => {
         onReject={() => undefined}
         onPick={() => undefined}
         onOpen={() => undefined}
-        onScore={() => undefined}
-        onNotes={() => undefined}
+        onRate={() => undefined}
       />,
     );
 
@@ -100,6 +100,7 @@ describe('NamesSection', () => {
         isBlind={false}
         openRound={undefined}
         emptyCopy="Needs AI"
+        raterName="wesley"
         onCheckName={() => undefined}
         onSmartCopy={() => undefined}
         onPastePacket={() => undefined}
@@ -107,8 +108,7 @@ describe('NamesSection', () => {
         onReject={() => undefined}
         onPick={() => undefined}
         onOpen={() => undefined}
-        onScore={() => undefined}
-        onNotes={() => undefined}
+        onRate={() => undefined}
       />,
     );
     expect(screen.getByText('Needs AI')).toBeTruthy();

@@ -90,11 +90,11 @@ describe('CandidateCard verdict, evidence, judgment', () => {
     expect(
       screen.getByText(/brand checks still Unknown: Google exact/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Next: Open Google exact/)).toBeInTheDocument();
-    expect(screen.getByText(/9 brand checks still Unknown$/)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Unknown' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Heard spelling' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Check Google exact' })).toBeInTheDocument();
+    expect(screen.queryByText(/9 brand checks still Unknown$/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Unknown' })).toBeNull();
+    expect(screen.getByText('How it sounds')).toBeInTheDocument();
+    expect(screen.getByText('Reject or note')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'What we found' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'What you must judge' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Preview in context' })).toBeNull();
@@ -119,12 +119,10 @@ describe('CandidateCard verdict, evidence, judgment', () => {
     renderCard(candidate(), onUpdate);
 
     const google = screen.getByRole('link', { name: 'Google exact' }).closest('li');
-    expect(google).toBeTruthy();
     expect(
       within(google as HTMLElement).queryByRole('button', { name: 'Collision' }),
     ).toBeNull();
-
-    await user.click(screen.getByRole('link', { name: 'Google exact' }));
+    await user.click(screen.getByRole('link', { name: 'Check Google exact' }));
     await user.click(
       within(google as HTMLElement).getByRole('button', { name: 'Collision' }),
     );
@@ -136,6 +134,7 @@ describe('CandidateCard verdict, evidence, judgment', () => {
       ),
     ).toBe(true);
 
+    await user.click(screen.getByText('Language judgment'));
     const languageGroup = screen.getByRole('radiogroup', { name: 'Português result' });
     await user.click(within(languageGroup).getByRole('radio', { name: 'Concern' }));
     const languageCall = onUpdate.mock.calls[onUpdate.mock.calls.length - 1][0] as NameCandidate;
@@ -153,6 +152,7 @@ describe('CandidateCard verdict, evidence, judgment', () => {
     const heardCall = onUpdate.mock.calls[onUpdate.mock.calls.length - 1][0] as NameCandidate;
     expect(heardCall.pronunciation?.heardSpelling).toBe('Nova');
 
+    await user.click(screen.getByText('Reject or note'));
     const notes = screen.getByRole('textbox', { name: 'Notes' });
     await user.type(notes, 'Keep this');
     await user.tab();
@@ -180,6 +180,7 @@ describe('CandidateCard verdict, evidence, judgment', () => {
       session({ candidates: [item], shortlistIds: [item.id] }),
     );
     renderCard(item);
+    await user.click(screen.getByText('Fetched evidence'));
     await user.click(screen.getByRole('button', { name: 'Recheck handles' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Instagram Unknown');
   });
