@@ -123,7 +123,7 @@ export function CandidateDeckCard(props: {
           ))}
         </ul>
       )}
-      <details className="names-deck-details">
+      <details className="names-deck-details" open>
         <summary>DNS and score details</summary>
         <ul className="names-deck-dns" aria-label="DNS">
           {dns.map((line) => (

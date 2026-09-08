@@ -517,7 +517,7 @@ describe('ExploreMode', () => {
     expect(setNameCandidateReaction).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps DNS and score behind a details control', () => {
+  it('keeps DNS and score details open', () => {
     render(
       <Harness
         initial={session({
@@ -538,7 +538,9 @@ describe('ExploreMode', () => {
         })}
       />,
     );
-    expect(screen.getByText('DNS and score details')).toBeTruthy();
+    const details = screen.getByText('DNS and score details').closest('details');
+    expect(details?.hasAttribute('open')).toBe(true);
+    expect(screen.getByText('.com Taken')).toBeTruthy();
     expect(screen.getByText('Web fit: Taken')).toBeTruthy();
   });
 });
