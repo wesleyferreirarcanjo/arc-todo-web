@@ -34,12 +34,14 @@ export function createNameSessionBasics(
   title: string,
   whatItIs = '',
   namingGoal = DEFAULT_NAMING_GOAL,
+  participationMode: CreateNameSessionInput['participationMode'] = 'solo',
 ): CreateNameSessionInput {
   const product = whatItIs.trim();
   return {
     title,
     brief: title,
     namingGoal,
+    participationMode,
     productDescription: product ? { whatItIs: product } : {},
   };
 }

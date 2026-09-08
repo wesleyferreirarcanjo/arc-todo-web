@@ -26,7 +26,7 @@ describe('Names hub session row CSS (#arc-474)', () => {
     const phone = css.slice(phoneStart, phoneStart + 2500);
     expect(phone).toContain('.names-session-row');
     expect(phone).toContain('flex-wrap: nowrap');
-    expect(phone).toContain('.names-session-row-subtitle');
+    expect(phone).toContain('.names-session-row-next');
     expect(phone).toContain('white-space: nowrap');
   });
 

@@ -39,19 +39,35 @@ describe('NameSessionRow', () => {
       '/organizations/o/projects/p/names/s',
     );
     expect(link).toHaveTextContent('Your pick: Arc Todo');
+    expect(link).toHaveTextContent('Open your pick');
+    expect(link).toHaveTextContent('On your own');
     expect(screen.queryByText(/Public product\/app/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Rename' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
 
-  it('shows Needs AI when the session has no names yet', () => {
+  it('asks to add names instead of implying an AI job', () => {
     renderRow({ recommendedName: null, candidateCount: 0 });
-    expect(screen.getByText('Needs AI')).toBeTruthy();
+    expect(screen.getByText('Add names — type them or copy the brief')).toBeTruthy();
+    expect(screen.getByText('Describe the tool · On your own · 0 names')).toBeTruthy();
+    expect(screen.getAllByText('Add names').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Needs AI')).toBeNull();
   });
 
   it('falls back when names exist but there is no pick', () => {
     renderRow({ recommendedName: null, candidateCount: 1 });
     expect(screen.getByText('No pick yet')).toBeTruthy();
+    expect(screen.getByText('Choose a name')).toBeTruthy();
+  });
+
+  it('uses team copy for a legacy-capable team session', () => {
+    renderRow({
+      recommendedName: null,
+      candidateCount: 3,
+      participationMode: 'team',
+    });
+    expect(screen.getByText('Review with the team')).toBeTruthy();
+    expect(screen.getByText(/With the team/)).toBeTruthy();
   });
 
   it('keeps rename and delete behind the kebab menu', async () => {

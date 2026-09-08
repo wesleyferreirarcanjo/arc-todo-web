@@ -143,7 +143,7 @@ describe('NameSessionPage shortlist chrome', () => {
     });
 
     expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByText(/Needs AI/)).toBeTruthy();
+    expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Suggest names' })).toBeNull();
     expect(screen.queryByText('Generate more')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Messaging' })).toBeNull();
@@ -167,27 +167,66 @@ describe('NameSessionPage shortlist chrome', () => {
       expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
     });
 
-    expect(screen.getByText(/Needs AI/)).toBeTruthy();
+    expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
 
     await user.click(modeButton(/Shortlist/));
     expect(modeButton(/Shortlist/)).toHaveAttribute('aria-current', 'true');
     expect(modeButton('Explore')).not.toHaveAttribute('aria-current');
-    expect(screen.queryByText(/Needs AI/)).toBeNull();
+    expect(screen.queryByText(/Add names — type them here/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
 
     await user.click(modeButton('Decision'));
     expect(modeButton('Decision')).toHaveAttribute('aria-current', 'true');
     expect(
       screen.getByText(
-        'Start a batch in Explore, or open a team round from Shortlist.',
+        /Add names in Explore — type them here, or copy the brief/,
       ),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
 
     await user.click(modeButton('Explore'));
     expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByText(/Needs AI/)).toBeTruthy();
+    expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+  });
+
+  it('shows the personal favorites count on the Shortlist tab, not every name', async () => {
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      candidates: [
+        {
+          id: 'nova',
+          name: 'Nova',
+          status: 'active',
+          sources: ['human'],
+          domainChecks: [],
+          googleQueryUrl: '',
+          reaction: 'liked',
+        },
+        {
+          id: 'rift',
+          name: 'Rift',
+          status: 'active',
+          sources: ['human'],
+          domainChecks: [],
+          googleQueryUrl: '',
+        },
+        {
+          id: 'wave',
+          name: 'Wave',
+          status: 'active',
+          sources: ['human'],
+          domainChecks: [],
+          googleQueryUrl: '',
+        },
+      ],
+      shortlistIds: ['nova', 'rift', 'wave'],
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(modeButton(/Shortlist 1/)).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: /Shortlist 3/ })).toBeNull();
   });
 
   it('lets a click on the brief edit working name, what it does, and kind of name, then save', async () => {

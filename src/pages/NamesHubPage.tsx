@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { NamesIcon } from '../components/icons';
+import { NamesParticipationChoice } from '../components/names/NamesParticipationChoice';
 import { NameSessionRow } from '../components/names/NameSessionRow';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../lib/api/client';
@@ -17,11 +18,11 @@ import {
   updateProjectNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
-import { hubOrgProjectFiltersVisible } from '../lib/names/hubList';
+import { hubOrgProjectFiltersVisible, NAMES_JOURNEY_COPY } from '../lib/names/hubList';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { createProject, fetchProjects } from '../lib/api/projects';
 import { DEFAULT_PROJECT_COLOR, getProjectColor } from '../lib/color/entityColor';
-import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-session';
+import type { NamingGoal, ParticipationMode, ProjectNameSessionSummary } from '../types/name-session';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 
@@ -58,6 +59,7 @@ export function NamesHubPage() {
   const [newTitle, setNewTitle] = useState('');
   const [whatItIs, setWhatItIs] = useState('');
   const [createGoal, setCreateGoal] = useState<NamingGoal>(DEFAULT_NAMING_GOAL);
+  const [createMode, setCreateMode] = useState<ParticipationMode>('solo');
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [renameTarget, setRenameTarget] = useState<HubSession | null>(null);
@@ -177,6 +179,7 @@ export function NamesHubPage() {
     setNewTitle('');
     setWhatItIs('');
     setCreateGoal(DEFAULT_NAMING_GOAL);
+    setCreateMode('solo');
     setCreateError(null);
     setCreateOpen(true);
   }
@@ -209,7 +212,7 @@ export function NamesHubPage() {
       const created = await createProjectNameSession(
         createOrgId,
         projectId,
-        createNameSessionBasics(title, whatItIs, createGoal),
+        createNameSessionBasics(title, whatItIs, createGoal, createMode),
       );
       setCreateOpen(false);
       navigate(
@@ -293,7 +296,7 @@ export function NamesHubPage() {
         <div>
           <h2>Names</h2>
           <p className="page-subtitle">
-            Start with a working name and one sentence. You can add more later.
+            {NAMES_JOURNEY_COPY}
             {!loading && !error && items.length > 0 && (
               <>
                 {' '}
@@ -319,7 +322,7 @@ export function NamesHubPage() {
           </span>
           <p className="status-message">
             {canCreate ? (
-              'No name sessions yet. A working name and one sentence are enough to start.'
+              'No name sessions yet. Describe the tool, then add names yourself or copy the brief for an AI assistant.'
             ) : (
               <>
                 Join an organization, then start with a working name like project-g
@@ -423,6 +426,7 @@ export function NamesHubPage() {
                     href={`/organizations/${item.org.id}/projects/${item.project.id}/names/${item.session.id}`}
                     recommendedName={item.session.recommendedName}
                     candidateCount={item.session.candidateCount}
+                    participationMode={item.session.participationMode}
                     updatedAt={item.session.updatedAt}
                     namingGoal={item.session.namingGoal}
                     accent={getProjectColor(item.project)}
@@ -518,10 +522,11 @@ export function NamesHubPage() {
               }))}
             />
           </div>
+          <NamesParticipationChoice value={createMode} onChange={setCreateMode} />
           <p className="page-subtitle">
             {isAdmin
-              ? 'Enough to start checking names. Extra context can wait. This also creates a project with the working name.'
-              : 'Enough to start checking names. Extra context can wait. Stored on the selected project.'}
+              ? 'This also creates a project with the working name.'
+              : 'Stored on the selected project.'}
           </p>
           {createError && <ErrorAlert>{createError}</ErrorAlert>}
           <div className="knowledge-actions">

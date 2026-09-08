@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { hubOrgProjectFiltersVisible, sessionHubSubtitle } from './hubList';
+import {
+  hubOrgProjectFiltersVisible,
+  resolveSessionParticipation,
+  sessionHubModeLabel,
+  sessionHubNextAction,
+  sessionHubProgress,
+  sessionHubStage,
+  sessionHubSubtitle,
+} from './hubList';
 
 describe('sessionHubSubtitle', () => {
-  it('shows Needs AI until any name exists', () => {
+  it('asks to add names instead of implying an AI job', () => {
     expect(
       sessionHubSubtitle({ candidateCount: 0, recommendedName: 'Arc Todo' }),
-    ).toBe('Needs AI');
+    ).toBe('Add names — type them or copy the brief');
   });
 
   it('shows the human pick after names exist', () => {
@@ -18,6 +26,51 @@ describe('sessionHubSubtitle', () => {
     expect(
       sessionHubSubtitle({ candidateCount: 3, recommendedName: null }),
     ).toBe('No pick yet');
+  });
+});
+
+describe('session hub stage and next action', () => {
+  it('defaults legacy sessions without a mode to solo copy', () => {
+    expect(
+      sessionHubStage({ candidateCount: 0, recommendedName: null }),
+    ).toBe('Describe the tool');
+    expect(
+      sessionHubNextAction({ candidateCount: 0, recommendedName: null }),
+    ).toBe('Add names');
+    expect(sessionHubModeLabel(undefined)).toBe('On your own');
+    expect(sessionHubProgress(0)).toBe('0 names');
+  });
+
+  it('infers team only when a feedback round already exists', () => {
+    expect(resolveSessionParticipation({})).toBe('solo');
+    expect(resolveSessionParticipation({ feedback: [] })).toBe('solo');
+    expect(resolveSessionParticipation({ feedback: [{}] })).toBe('team');
+    expect(
+      resolveSessionParticipation({ participationMode: 'solo', feedback: [{}] }),
+    ).toBe('solo');
+  });
+
+  it('points a named solo session at the saved winner', () => {
+    expect(
+      sessionHubStage({ candidateCount: 4, recommendedName: 'SafraBook' }),
+    ).toBe('Choose a name');
+    expect(
+      sessionHubNextAction({
+        candidateCount: 4,
+        recommendedName: 'SafraBook',
+        participationMode: 'solo',
+      }),
+    ).toBe('Open your pick');
+  });
+
+  it('tells a team session with names to review together', () => {
+    expect(
+      sessionHubNextAction({
+        candidateCount: 5,
+        recommendedName: null,
+        participationMode: 'team',
+      }),
+    ).toBe('Review with the team');
   });
 });
 

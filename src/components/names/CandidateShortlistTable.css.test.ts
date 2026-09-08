@@ -21,7 +21,7 @@ describe('Names shortlist CSS', () => {
     expect(desk).toContain('max-width: none');
     expect(desk).toContain('width: 100%');
     expect(css).toContain(
-      '.names-session-page .names-panel > :not(.names-funnel-wrap):not(.names-shortlist-desk)',
+      '.names-session-page .names-panel > :not(.names-funnel-wrap):not(.names-shortlist-desk):not(.names-shortlist-heading):not(.names-explore-layout):not(.names-decision)',
     );
   });
 

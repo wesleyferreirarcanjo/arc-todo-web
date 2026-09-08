@@ -123,20 +123,23 @@ export function CandidateDeckCard(props: {
           ))}
         </ul>
       )}
-      <ul className="names-deck-dns" aria-label="DNS">
-        {dns.map((line) => (
-          <li
-            key={line.tld}
-            className={`names-deck-dns-item is-${line.availability}`}
-          >
-            {line.text}
-          </li>
-        ))}
-      </ul>
-      <div className="names-deck-score">
-        <NamesScoreStrip pillars={pillars} />
-        <p className="names-deck-formula">{pillars.formula}</p>
-      </div>
+      <details className="names-deck-details">
+        <summary>DNS and score details</summary>
+        <ul className="names-deck-dns" aria-label="DNS">
+          {dns.map((line) => (
+            <li
+              key={line.tld}
+              className={`names-deck-dns-item is-${line.availability}`}
+            >
+              {line.text}
+            </li>
+          ))}
+        </ul>
+        <div className="names-deck-score">
+          <NamesScoreStrip pillars={pillars} />
+          <p className="names-deck-formula">{pillars.formula}</p>
+        </div>
+      </details>
       <div className="names-deck-sound">
         <button type="button" className="btn btn-secondary btn-sm" onClick={props.onHear}>
           Hear it

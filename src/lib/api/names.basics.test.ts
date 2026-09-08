@@ -8,6 +8,19 @@ describe('createNameSessionBasics', () => {
       title: 'project-g',
       brief: 'project-g',
       namingGoal: DEFAULT_NAMING_GOAL,
+      participationMode: 'solo',
+      productDescription: {},
+    });
+  });
+
+  it('includes a team participation choice when asked', () => {
+    expect(
+      createNameSessionBasics('project-g', '', DEFAULT_NAMING_GOAL, 'team'),
+    ).toEqual({
+      title: 'project-g',
+      brief: 'project-g',
+      namingGoal: DEFAULT_NAMING_GOAL,
+      participationMode: 'team',
       productDescription: {},
     });
   });
@@ -19,6 +32,7 @@ describe('createNameSessionBasics', () => {
       title: 'project-g',
       brief: 'project-g',
       namingGoal: 'feature',
+      participationMode: 'solo',
       productDescription: { whatItIs: 'A private task board.' },
     });
   });

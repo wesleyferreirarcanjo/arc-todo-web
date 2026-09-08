@@ -21,7 +21,7 @@ import { ReactionControls } from './ReactionControls';
 import { VariationPicker } from './VariationPicker';
 
 const NEEDS_AI_COPY =
-  'Needs AI. Copy the brief with Smart copy, paste suggestions, or type a name.';
+  'Add names — type them here, or copy the brief for an AI assistant. Suggestions return to this session.';
 
 type UndoEntry = {
   id: string;
@@ -99,6 +99,7 @@ export function ExploreMode(props: {
   const [startingBatch, setStartingBatch] = useState(false);
   const writeChain = useRef(Promise.resolve());
   const indexRef = useRef(index);
+  const reactLock = useRef(false);
   const deckKey = (session.batches ?? []).find((batch) => batch.status === 'open')
     ?.number ?? 'waiting';
   const [seenDeckKey, setSeenDeckKey] = useState(deckKey);
@@ -161,9 +162,14 @@ export function ExploreMode(props: {
   );
 
   function react(reaction: CandidateReaction) {
+    if (reactLock.current) return;
     const fromIndex = indexRef.current;
     const card = deck[fromIndex];
     if (!card || fromIndex >= deck.length) return;
+    reactLock.current = true;
+    queueMicrotask(() => {
+      reactLock.current = false;
+    });
     const id = card.id;
     const previous = card.reaction;
     setError(null);
@@ -356,7 +362,7 @@ export function ExploreMode(props: {
                 ))}
               </ul>
             ) : (
-              <p>Nothing kept from this batch.</p>
+              <p>Nothing kept from this batch. Revisit names, add more, or open favorites.</p>
             )}
             <button
               type="button"
@@ -368,7 +374,11 @@ export function ExploreMode(props: {
           </div>
         ) : current ? (
           <>
-            <CandidateDeck stacked={index < deck.length - 1}>
+            <CandidateDeck
+              stacked={index < deck.length - 1}
+              onPass={() => react('passed')}
+              onLike={() => react('liked')}
+            >
               <CandidateDeckCard
                 candidate={current}
                 namingGoal={session.namingGoal}

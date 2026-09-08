@@ -17,11 +17,15 @@ import {
 const upsertNameFeedback = vi.hoisted(() => vi.fn());
 const setNameBatchFinalists = vi.hoisted(() => vi.fn());
 const crownNameBatchWinner = vi.hoisted(() => vi.fn());
+const recommendNameCandidate = vi.hoisted(() => vi.fn());
+const closeNameFeedbackRound = vi.hoisted(() => vi.fn());
 
 vi.mock('../../lib/api/names', () => ({
   upsertNameFeedback,
   setNameBatchFinalists,
   crownNameBatchWinner,
+  recommendNameCandidate,
+  closeNameFeedbackRound,
 }));
 
 import { DecisionMode } from './DecisionMode';
@@ -118,6 +122,8 @@ beforeEach(() => {
   upsertNameFeedback.mockReset();
   setNameBatchFinalists.mockReset();
   crownNameBatchWinner.mockReset();
+  recommendNameCandidate.mockReset();
+  closeNameFeedbackRound.mockReset();
 });
 
 async function vote(user: ReturnType<typeof userEvent.setup>, name: string, label: string) {
@@ -327,7 +333,7 @@ describe('DecisionMode', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Team result' })).toBeTruthy();
-    expect(screen.getByText('2 invited members have submitted.')).toBeTruthy();
+    expect(screen.getByText('2 project members have submitted.')).toBeTruthy();
     expect(screen.getByText(/3 points/)).toBeTruthy();
     expect(screen.getAllByText(/2 voters/).length).toBe(2);
     expect(screen.getByText(/Medians: easy to say 4/)).toBeTruthy();
@@ -477,5 +483,203 @@ describe('DecisionMode', () => {
     expect(
       (screen.getByRole('checkbox', { name: 'Rift' }) as HTMLInputElement).checked,
     ).toBe(false);
+  });
+
+  it('lets a solo session choose a winner without a batch', async () => {
+    const user = userEvent.setup();
+    recommendNameCandidate.mockResolvedValue(
+      session({
+        participationMode: 'solo',
+        decisionPhase: 'faceoff',
+        feedback: [],
+        batches: [],
+        candidates: [candidate({ reaction: 'loved' })],
+        recommendedCandidateId: 'nova',
+      }),
+    );
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'solo',
+          decisionPhase: 'faceoff',
+          feedback: [],
+          batches: [],
+          candidates: [candidate({ reaction: 'loved' })],
+          shortlistIds: [],
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Choose a name' })).toBeTruthy();
+    expect(screen.getByText(/One favorite is ready/)).toBeTruthy();
+    expect(screen.queryByText(/Start a batch in Explore/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Choose this name' }));
+    expect(recommendNameCandidate).toHaveBeenCalledWith(
+      'org-1',
+      'proj-1',
+      'sess-1',
+      'nova',
+      undefined,
+    );
+    expect(await screen.findByText('Your pick')).toBeTruthy();
+    expect(screen.getByText('Nova')).toBeTruthy();
+  });
+
+  it('requires a below-top reason on the no-batch solo pick', async () => {
+    const user = userEvent.setup();
+    recommendNameCandidate.mockResolvedValue(
+      session({
+        participationMode: 'solo',
+        decisionPhase: 'faceoff',
+        feedback: [],
+        batches: [],
+        recommendedCandidateId: 'rift',
+        decisionNote: 'Fits the spoken test.',
+        candidates: [
+          candidate({ reaction: 'loved' }),
+          candidate({ id: 'rift', name: 'Rift', reaction: 'liked' }),
+        ],
+      }),
+    );
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'solo',
+          decisionPhase: 'faceoff',
+          feedback: [],
+          batches: [],
+          candidates: [
+            candidate({ reaction: 'loved' }),
+            candidate({ id: 'rift', name: 'Rift', reaction: 'liked' }),
+          ],
+          shortlistIds: [],
+        })}
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Rift' }));
+    await user.click(screen.getByRole('button', { name: 'Choose this name' }));
+    expect(recommendNameCandidate).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveAttribute(
+      'data-error-code',
+      'ERR-ARC-NAME-24',
+    );
+    await user.type(
+      screen.getByLabelText(/Why this name/),
+      'Fits the spoken test.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Choose this name' }));
+    expect(recommendNameCandidate).toHaveBeenCalledWith(
+      'org-1',
+      'proj-1',
+      'sess-1',
+      'rift',
+      'Fits the spoken test.',
+    );
+  });
+
+  it('shows a saved pick when a solo session has no batch', () => {
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'solo',
+          decisionPhase: 'faceoff',
+          feedback: [],
+          batches: [],
+          recommendedCandidateId: 'nova',
+          decisionNote: 'Fits the spoken test.',
+        })}
+      />,
+    );
+    expect(screen.getByText('Your pick')).toBeTruthy();
+    expect(screen.getByText('Nova')).toBeTruthy();
+    expect(screen.getByText('Fits the spoken test.')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Choose a name' })).toBeNull();
+  });
+
+  it('sends members to wait and owners to Shortlist when the team round is not open', () => {
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'team',
+          decisionPhase: 'faceoff',
+          feedback: [],
+          batches: [],
+          canManageFeedback: false,
+        })}
+      />,
+    );
+    expect(
+      screen.getByText('Waiting for the session owner to open a team round.'),
+    ).toBeTruthy();
+    cleanup();
+
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'team',
+          decisionPhase: 'faceoff',
+          feedback: [],
+          batches: [],
+        })}
+      />,
+    );
+    expect(
+      screen.getByText('Promote 2 to 5 names on Shortlist, then open a team round.'),
+    ).toBeTruthy();
+  });
+
+  it('closes an open round from Team result', async () => {
+    const user = userEvent.setup();
+    closeNameFeedbackRound.mockResolvedValue(
+      session({
+        decisionPhase: 'faceoff',
+        feedback: [round({ status: 'closed', closedAt: '2026-09-03T01:00:00.000Z' })],
+        batches: [],
+      }),
+    );
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'team',
+          decisionPhase: 'results',
+          batches: [],
+          participationProgress: { submittedCount: 2, eligibleCount: 4 },
+          feedback: [
+            round({
+              aggregate: {
+                participantCount: 2,
+                byCandidate: {
+                  nova: {
+                    responses: 2,
+                    easyToSay: 4,
+                    memorable: 3,
+                    fitsProduct: 5,
+                    repeatedConcerns: [],
+                    points: 3,
+                  },
+                  rift: {
+                    responses: 2,
+                    easyToSay: 2,
+                    memorable: 2,
+                    fitsProduct: 2,
+                    repeatedConcerns: [],
+                    points: 1,
+                  },
+                },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText('2 of 4 project members have submitted.')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Close team round' }));
+    expect(closeNameFeedbackRound).toHaveBeenCalledWith(
+      'org-1',
+      'proj-1',
+      'sess-1',
+      'round-1',
+    );
   });
 });

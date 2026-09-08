@@ -88,6 +88,7 @@ function session(partial: Partial<ProjectNameSession> = {}): ProjectNameSession 
     createdAt: '2026-09-02T00:00:00.000Z',
     updatedAt: '2026-09-02T00:00:00.000Z',
     canManageFeedback: true,
+    participationMode: 'team',
     feedback: [],
     ...partial,
   };
@@ -210,7 +211,7 @@ describe('ShortlistMode', () => {
     render(<Harness initial={initial} />);
 
     await user.click(
-      screen.getByRole('button', { name: 'Remove Nova from your shortlist' }),
+      screen.getByRole('button', { name: 'Remove Nova from your favorites' }),
     );
     await waitFor(() => {
       expect(setNameCandidateReaction).toHaveBeenCalledWith(
@@ -331,7 +332,7 @@ describe('ShortlistMode', () => {
     );
     expect(
       screen.queryByRole('button', {
-        name: 'Promote Nova to team shortlist',
+        name: 'Promote Nova to team finalists',
       }),
     ).toBeNull();
 
@@ -353,11 +354,11 @@ describe('ShortlistMode', () => {
     );
     await user.click(
       screen.getByRole('button', {
-        name: 'Promote Name5 to team shortlist',
+        name: 'Promote Name5 to team finalists',
       }),
     );
     expect(
-      screen.getByText('The team shortlist can hold at most 5 names.'),
+      screen.getByText('The team finalists list can hold at most 5 names.'),
     ).toBeTruthy();
     expect(updateProjectNameSession).not.toHaveBeenCalled();
   });
@@ -401,7 +402,7 @@ describe('ShortlistMode', () => {
     );
     expect(screen.getByRole('button', { name: 'Open team round' })).toBeDisabled();
     expect(
-      screen.getByText('A team round needs 2 to 5 names on the team shortlist.'),
+      screen.getByText('A team round needs 2 to 5 names on the team finalists list.'),
     ).toBeTruthy();
     cleanup();
 
@@ -418,7 +419,7 @@ describe('ShortlistMode', () => {
     );
     expect(screen.getByRole('button', { name: 'Open team round' })).toBeEnabled();
     expect(
-      screen.queryByText('A team round needs 2 to 5 names on the team shortlist.'),
+      screen.queryByText('A team round needs 2 to 5 names on the team finalists list.'),
     ).toBeNull();
     cleanup();
 
@@ -438,5 +439,50 @@ describe('ShortlistMode', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Open team round' })).toBeDisabled();
+  });
+
+  it('shows personal favorites and team finalist counts from their own lists', () => {
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate({ reaction: 'liked' }),
+            candidate({ id: 'halo', name: 'Halo', reaction: 'loved' }),
+            candidate({ id: 'rift', name: 'Rift', reaction: 'passed' }),
+            candidate({ id: 'wave', name: 'Wave' }),
+          ],
+          shortlistIds: ['nova', 'halo', 'wave'],
+        })}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Personal favorites' }).closest('div')?.textContent).toMatch(/2/);
+    expect(screen.getByRole('heading', { name: 'Team finalists' }).closest('div')?.textContent).toMatch(/3 \/ 5/);
+    expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Halo' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Wave' })).toBeNull();
+    expect(screen.getByText('Wave')).toBeTruthy();
+  });
+
+  it('keeps legacy team finalists without fabricating personal votes', () => {
+    render(
+      <Harness
+        initial={session({
+          participationMode: 'solo',
+          candidates: [
+            candidate(),
+            candidate({ id: 'rift', name: 'Rift' }),
+          ],
+          shortlistIds: ['nova'],
+        })}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Personal favorites' }).closest('div')?.textContent).toMatch(/0/);
+    expect(screen.getByRole('heading', { name: 'Team finalists' }).closest('div')?.textContent).toMatch(/1 \/ 5/);
+    expect(screen.queryByRole('heading', { name: 'Nova' })).toBeNull();
+    expect(screen.getByText('Nova')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open team round' })).toBeNull();
+    expect(
+      screen.getByText('Choose a name in Decision. You do not need a team round.'),
+    ).toBeTruthy();
   });
 });

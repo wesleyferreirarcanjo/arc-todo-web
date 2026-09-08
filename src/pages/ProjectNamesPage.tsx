@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { NamesIcon } from '../components/icons';
+import { NamesParticipationChoice } from '../components/names/NamesParticipationChoice';
 import { NameSessionRow } from '../components/names/NameSessionRow';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -18,9 +19,10 @@ import {
   updateProjectNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
+import { NAMES_JOURNEY_COPY } from '../lib/names/hubList';
 import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
-import type { NamingGoal, ProjectNameSessionSummary } from '../types/name-session';
+import type { NamingGoal, ParticipationMode, ProjectNameSessionSummary } from '../types/name-session';
 
 type NameSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
 
@@ -43,6 +45,7 @@ export function ProjectNamesPage() {
   const [newTitle, setNewTitle] = useState('');
   const [whatItIs, setWhatItIs] = useState('');
   const [createGoal, setCreateGoal] = useState<NamingGoal>(DEFAULT_NAMING_GOAL);
+  const [createMode, setCreateMode] = useState<ParticipationMode>('solo');
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [renameTarget, setRenameTarget] =
@@ -102,6 +105,7 @@ export function ProjectNamesPage() {
     setNewTitle('');
     setWhatItIs('');
     setCreateGoal(DEFAULT_NAMING_GOAL);
+    setCreateMode('solo');
     setCreateError(null);
   }
 
@@ -118,7 +122,7 @@ export function ProjectNamesPage() {
       const created = await createProjectNameSession(
         orgId,
         projectId,
-        createNameSessionBasics(title, whatItIs, createGoal),
+        createNameSessionBasics(title, whatItIs, createGoal, createMode),
       );
       navigate(`/organizations/${orgId}/projects/${projectId}/names/${created.id}`);
     } catch (err) {
@@ -210,7 +214,7 @@ export function ProjectNamesPage() {
           <WorkspaceEyebrow />
           <h2>{currentProject?.name ?? 'Project'} names</h2>
           <p className="page-subtitle">
-            Naming sessions for this project. Start with a working name and one sentence.
+            {NAMES_JOURNEY_COPY}
             {!loading && !error && sessions.length > 0 && (
               <>
                 {' '}
@@ -243,7 +247,7 @@ export function ProjectNamesPage() {
             <NamesIcon className="arc-icon-empty" />
           </span>
           <p className="status-message">
-            No name sessions yet. Create the first working name for this project.
+            No name sessions yet. Describe the tool, then add names yourself or copy the brief for an AI assistant.
           </p>
           <button
             type="button"
@@ -301,6 +305,7 @@ export function ProjectNamesPage() {
                 href={`/organizations/${orgId}/projects/${projectId}/names/${session.id}`}
                 recommendedName={session.recommendedName}
                 candidateCount={session.candidateCount}
+                participationMode={session.participationMode}
                 updatedAt={session.updatedAt}
                 namingGoal={session.namingGoal}
                 accent={
@@ -362,9 +367,7 @@ export function ProjectNamesPage() {
               }))}
             />
           </div>
-          <p className="page-subtitle">
-            Enough to start checking names. Extra context can wait.
-          </p>
+          <NamesParticipationChoice value={createMode} onChange={setCreateMode} />
           {createError && <ErrorAlert>{createError}</ErrorAlert>}
           <div className="knowledge-actions">
             <button

@@ -447,6 +447,22 @@
   margin-top: 0;
 }
 
+.names-composer-more {
+  width: 100%;
+}
+
+.names-composer-more summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.names-composer-more .names-composer {
+  margin-top: 0.75rem;
+}
+
 .names-check-result {
   display: grid;
   gap: 0.4rem;
@@ -668,7 +684,7 @@
 }
 
 .names-session-page .names-quick-brief,
-.names-session-page .names-panel > :not(.names-funnel-wrap):not(.names-shortlist-desk):not(.names-shortlist-heading),
+.names-session-page .names-panel > :not(.names-funnel-wrap):not(.names-shortlist-desk):not(.names-shortlist-heading):not(.names-explore-layout):not(.names-decision),
 .names-session-page .names-brief-panel,
 .names-session-page .names-desk-main > .names-empty {
   width: 100%;

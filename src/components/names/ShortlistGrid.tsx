@@ -13,6 +13,7 @@ export function ShortlistGrid(props: {
   shortlistIds: string[];
   resolvingKeys: string[];
   canManage: boolean;
+  showPromote?: boolean;
   onRemove: (candidateId: string) => void;
   onPromote: (candidateId: string) => void;
   onScore: (candidateId: string) => void;
@@ -21,11 +22,12 @@ export function ShortlistGrid(props: {
   onVariations: (candidateId: string) => void;
 }) {
   const resolving = new Set(props.resolvingKeys);
+  const showPromote = props.showPromote ?? props.canManage;
 
   if (props.candidates.length === 0) {
     return (
       <p className="names-empty">
-        No names on your shortlist yet. Like or Love names in Explore.
+        No personal favorites yet. Like or Love names in Explore.
       </p>
     );
   }
@@ -44,7 +46,7 @@ export function ShortlistGrid(props: {
               {candidate.rationale?.trim() || 'Added to this session.'}
             </p>
             {promoted ? (
-              <p className="names-funnel-verdict">On the team shortlist</p>
+              <p className="names-funnel-verdict">On the team finalists</p>
             ) : null}
             <CheckSummary candidate={candidate} />
             <div className="names-decision-actions">
@@ -86,25 +88,25 @@ export function ShortlistGrid(props: {
               >
                 More like this
               </button>
-              {props.canManage ? (
+              {showPromote ? (
                 <button
                   type="button"
                   className={`btn btn-sm ${promoted ? 'btn-secondary is-kept' : 'btn-primary'}`}
                   aria-pressed={promoted}
                   aria-label={
                     promoted
-                      ? `${candidate.name} is on the team shortlist`
-                      : `Promote ${candidate.name} to team shortlist`
+                      ? `${candidate.name} is on the team finalists`
+                      : `Promote ${candidate.name} to team finalists`
                   }
                   onClick={() => props.onPromote(candidate.id)}
                 >
-                  {promoted ? 'On team shortlist' : 'Promote to team shortlist'}
+                  {promoted ? 'On team finalists' : 'Promote to team finalists'}
                 </button>
               ) : null}
               <button
                 type="button"
                 className="btn btn-secondary btn-sm names-reject-btn"
-                aria-label={`Remove ${candidate.name} from your shortlist`}
+                aria-label={`Remove ${candidate.name} from your favorites`}
                 onClick={() => props.onRemove(candidate.id)}
               >
                 Remove

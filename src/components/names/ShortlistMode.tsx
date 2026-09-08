@@ -15,6 +15,7 @@ import {
   startNameFeedbackRound,
   updateProjectNameSession,
 } from '../../lib/api/names';
+import { resolveSessionParticipation } from '../../lib/names/hubList';
 import { normalizeNameKey } from '../../lib/names/catalog';
 import { emptyCandidate, exploreVariations } from '../../lib/names/variations';
 import type {
@@ -38,6 +39,12 @@ export function yourShortlist(session: ProjectNameSession): NameCandidate[] {
       item.status !== 'rejected' &&
       (item.reaction === 'liked' || item.reaction === 'loved'),
   );
+}
+
+export function teamFinalists(session: ProjectNameSession): NameCandidate[] {
+  return session.shortlistIds
+    .map((id) => session.candidates.find((item) => item.id === id))
+    .filter((item): item is NameCandidate => Boolean(item));
 }
 
 function needsHistory(candidate: NameCandidate): boolean {
@@ -84,10 +91,9 @@ export function ShortlistMode(props: {
 }) {
   const { session } = props;
   const mine = yourShortlist(session);
-  const promoted = session.shortlistIds
-    .map((id) => session.candidates.find((item) => item.id === id))
-    .filter((item): item is NameCandidate => Boolean(item));
+  const promoted = teamFinalists(session);
   const promotedCount = session.shortlistIds.length;
+  const isTeam = resolveSessionParticipation(session) === 'team';
   const roundReady = promotedCount >= 2 && promotedCount <= TEAM_SHORTLIST_CAP;
   const [workbench, setWorkbench] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,7 +159,7 @@ export function ShortlistMode(props: {
     if (!session.canManageFeedback) return;
     const already = session.shortlistIds.includes(id);
     if (!already && session.shortlistIds.length >= TEAM_SHORTLIST_CAP) {
-      setNotice('The team shortlist can hold at most 5 names.');
+      setNotice('The team finalists list can hold at most 5 names.');
       return;
     }
     setNotice(null);
@@ -186,7 +192,7 @@ export function ShortlistMode(props: {
         }
       }
     } catch (err) {
-      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the team shortlist' }));
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the team finalists' }));
     }
   }
 
@@ -359,14 +365,14 @@ export function ShortlistMode(props: {
   }
 
   const roundHint =
-    'A team round needs 2 to 5 names on the team shortlist.';
+    'A team round needs 2 to 5 names on the team finalists list.';
 
   return (
     <>
       {error ? <ErrorAlert code={errorCode}>{error}</ErrorAlert> : null}
       {notice ? <div className="alert">{notice}</div> : null}
       <div className="names-shortlist-heading">
-        <h3>Your shortlist</h3>
+        <h3>Personal favorites</h3>
         <span>{mine.length}</span>
       </div>
       <div className="names-decision-actions">
@@ -376,7 +382,7 @@ export function ShortlistMode(props: {
           onClick={() => setWorkbench((open) => !open)}
         >
           {workbench
-            ? 'Back to your shortlist'
+            ? 'Back to personal favorites'
             : 'Open table and inspector'}
         </button>
         {!workbench && mine.length > 0 ? (
@@ -385,7 +391,7 @@ export function ShortlistMode(props: {
             className="btn btn-secondary btn-sm"
             onClick={() => void handleCheckAll()}
           >
-            Check your shortlist
+            Check personal favorites
           </button>
         ) : null}
       </div>
@@ -409,6 +415,7 @@ export function ShortlistMode(props: {
             shortlistIds={session.shortlistIds}
             resolvingKeys={resolvingKeys}
             canManage={session.canManageFeedback}
+            showPromote={isTeam && session.canManageFeedback}
             onRemove={(id) => void handleRemove(id)}
             onPromote={(id) => void handlePromote(id)}
             onScore={openRating}
@@ -417,15 +424,16 @@ export function ShortlistMode(props: {
             onVariations={setVariationId}
           />
           <div className="names-shortlist-heading">
-            <h3>Team shortlist</h3>
+            <h3>Team finalists</h3>
             <span>
               {promotedCount} / {TEAM_SHORTLIST_CAP}
             </span>
           </div>
           {promoted.length === 0 ? (
             <p className="names-meta">
-              The session owner promotes up to 5 names for handle probes and a
-              team round. A Like or Love is not a promotion.
+              {isTeam
+                ? 'The session owner promotes up to 5 names for handle probes and a team round. A Like or Love is not a promotion.'
+                : 'Team finalists are for sessions that choose with the team. A Like or Love is not a promotion.'}
             </p>
           ) : (
             <ul className="names-checks-list">
@@ -440,7 +448,7 @@ export function ShortlistMode(props: {
       )}
       <div className="names-shortlist-desk">
         <div className="names-inline">
-          {session.canManageFeedback && !props.openRound ? (
+          {isTeam && session.canManageFeedback && !props.openRound ? (
             <>
               <button
                 type="button"
@@ -455,20 +463,17 @@ export function ShortlistMode(props: {
               ) : null}
             </>
           ) : null}
-          {session.canManageFeedback || props.openRound ? (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={props.onGoToDecision}
-            >
-              Go to Decision
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={props.onGoToDecision}
+          >
+            Go to Decision
+          </button>
         </div>
-        {session.canManageFeedback && !props.openRound ? (
+        {!isTeam && !props.openRound ? (
           <p className="names-meta">
-            Solo sessions can go to Decision and crown a winner without a team
-            round.
+            Choose a name in Decision. You do not need a team round.
           </p>
         ) : null}
         {props.openRound ? (

@@ -120,6 +120,13 @@ export interface Pronunciation {
 
 export type CandidateReaction = 'passed' | 'liked' | 'loved';
 export type NameDecisionPhase = 'ballot' | 'results' | 'faceoff';
+export type ParticipationMode = 'solo' | 'team';
+
+export interface ParticipationProgress {
+  submittedCount: number;
+  eligibleCount: number;
+}
+
 export type NameBatchStatus = 'open' | 'decided';
 
 export interface CandidateRatings {
@@ -263,6 +270,7 @@ export interface ProjectNameSessionSummary {
   id: string;
   title: string;
   namingGoal: NamingGoal | string | null;
+  participationMode?: ParticipationMode;
   recommendedName: string | null;
   candidateCount: number;
   createdAt: string;
@@ -275,6 +283,8 @@ export interface ProjectNameSession {
   title: string;
   brief: string;
   namingGoal: NamingGoal | string | null;
+  participationMode?: ParticipationMode;
+  participationProgress?: ParticipationProgress | null;
   productDescription: ProductDescription;
   lanes: NameLane[];
   candidates: NameCandidate[];
@@ -295,6 +305,7 @@ export interface CreateNameSessionInput {
   title: string;
   brief?: string;
   namingGoal?: string;
+  participationMode?: ParticipationMode;
   productDescription?: ProductDescription;
 }
 
@@ -302,6 +313,7 @@ export interface UpdateNameSessionInput {
   title?: string;
   brief?: string;
   namingGoal?: string | null;
+  participationMode?: ParticipationMode;
   productDescription?: ProductDescription;
   lanes?: NameLane[];
   candidates?: NameCandidate[];

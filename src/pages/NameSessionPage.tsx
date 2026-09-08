@@ -5,7 +5,7 @@ import { DecisionMode } from '../components/names/DecisionMode';
 import { ExploreMode } from '../components/names/ExploreMode';
 import { FeedbackSection } from '../components/names/FeedbackSection';
 import { NamesComposer } from '../components/names/NamesSection';
-import { ShortlistMode } from '../components/names/ShortlistMode';
+import { ShortlistMode, yourShortlist } from '../components/names/ShortlistMode';
 import { CandidateCard } from '../components/names/CandidateCard';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { Modal } from '../components/Modal';
@@ -96,8 +96,7 @@ export function NameSessionPage() {
   const [pendingPickId, setPendingPickId] = useState<string | null>(null);
   const [pickNote, setPickNote] = useState('');
 
-  const candidateCount =
-    session?.candidates.filter((item) => item.status !== 'rejected').length ?? 0;
+  const favoriteCount = session ? yourShortlist(session).length : 0;
 
   useRegisterMobileShellModeTabs(
     forbidden
@@ -105,7 +104,7 @@ export function NameSessionPage() {
       : {
           items: SESSION_MODES.map((item) =>
             item.id === 'shortlist'
-              ? { ...item, count: candidateCount }
+              ? { ...item, count: favoriteCount }
               : item,
           ),
           activeId: mode,
@@ -472,9 +471,9 @@ export function NameSessionPage() {
         .filter(Boolean)
         .join(' · ')
     : '';
-  const keptCount = session?.shortlistIds.length ?? 0;
+  const promotedCount = session?.shortlistIds.length ?? 0;
   const feedbackReady =
-    (session?.feedback.length ?? 0) > 0 || keptCount >= 2;
+    (session?.feedback.length ?? 0) > 0 || promotedCount >= 2;
 
   return (
     <div className="page-shell names-session-page">
@@ -606,21 +605,35 @@ export function NameSessionPage() {
                 >
                   {item.label}
                   {item.id === 'shortlist' ? (
-                    <span> {candidateCount}</span>
+                    <span> {favoriteCount}</span>
                   ) : null}
                 </button>
               );
             })}
           </nav>
           <section className="names-panel">
-            <NamesComposer
-              typedName={typedName}
-              onTypedName={setTypedName}
-              busy={busy}
-              onCheckName={() => void handleAddField()}
-              onSmartCopy={() => void handleSmartCopy()}
-              onPastePacket={(text) => void handlePastePacket(text)}
-            />
+            {mode === 'explore' ? (
+              <NamesComposer
+                typedName={typedName}
+                onTypedName={setTypedName}
+                busy={busy}
+                onCheckName={() => void handleAddField()}
+                onSmartCopy={() => void handleSmartCopy()}
+                onPastePacket={(text) => void handlePastePacket(text)}
+              />
+            ) : (
+              <details className="names-composer-more">
+                <summary>Add names — type them or copy the brief</summary>
+                <NamesComposer
+                  typedName={typedName}
+                  onTypedName={setTypedName}
+                  busy={busy}
+                  onCheckName={() => void handleAddField()}
+                  onSmartCopy={() => void handleSmartCopy()}
+                  onPastePacket={(text) => void handlePastePacket(text)}
+                />
+              </details>
+            )}
             {mode === 'explore' && (
               <ExploreMode
                 session={session}
@@ -661,6 +674,7 @@ export function NameSessionPage() {
                 sessionId={sessionId}
                 onSession={setSession}
                 onNotice={setNotice}
+                onGoToShortlist={() => setMode('shortlist')}
               />
             )}
           </section>

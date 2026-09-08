@@ -37,6 +37,7 @@
 .names-deck {
   position: relative;
   isolation: isolate;
+  touch-action: pan-y;
 }
 
 /*
@@ -113,6 +114,17 @@
   line-height: 1.5;
 }
 
+.names-deck-details {
+  margin: 0 0 1rem;
+}
+
+.names-deck-details > summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  font-weight: 600;
+}
+
 .names-deck-traits {
   display: flex;
   flex-wrap: wrap;
@@ -176,7 +188,7 @@
 
 @media (max-width: 1023px) {
   .names-explore-layout {
-    padding-bottom: 0.5rem;
+    padding-bottom: calc(var(--mobile-bottom-bar-h, 4.5rem) + 0.5rem);
   }
 }
 

@@ -6,6 +6,10 @@ import { describe, expect, it } from 'vitest';
 const here = dirname(fileURLToPath(import.meta.url));
 const hub = readFileSync(resolve(here, 'NamesHubPage.tsx'), 'utf8');
 const list = readFileSync(resolve(here, 'ProjectNamesPage.tsx'), 'utf8');
+const choice = readFileSync(
+  resolve(here, '../components/names/NamesParticipationChoice.tsx'),
+  'utf8',
+);
 
 describe('Names hub and project list create (#arc-474)', () => {
   it('keeps hub create as org + working name with optional sentence and kind', () => {
@@ -15,7 +19,12 @@ describe('Names hub and project list create (#arc-474)', () => {
     expect(hub).toContain('Kind of name');
     expect(hub).toContain('WEB_ERROR.VAL_WORKING');
     expect(hub).toContain('createNameSessionBasics');
+    expect(hub).toContain('NamesParticipationChoice');
+    expect(choice).toContain('Choose on my own');
+    expect(choice).toContain('Choose with my team');
+    expect(hub).toContain('createMode');
     expect(hub).not.toContain('Preferred domain');
+    expect(hub).not.toContain('Needs AI');
   });
 
   it('lets an admin create a project from the working name and asks members to pick one', () => {
@@ -39,6 +48,9 @@ describe('Names hub and project list create (#arc-474)', () => {
     expect(list).toContain('Kind of name');
     expect(list).toContain('WEB_ERROR.VAL_SESSION');
     expect(list).toContain('createNameSessionBasics');
+    expect(list).toContain('NamesParticipationChoice');
+    expect(choice).toContain('Choose on my own');
+    expect(choice).toContain('Choose with my team');
     expect(list).not.toContain('Preferred domain');
     expect(list).not.toContain('createProject(');
   });

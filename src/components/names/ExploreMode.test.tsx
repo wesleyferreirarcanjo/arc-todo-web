@@ -115,9 +115,9 @@ beforeEach(() => {
 });
 
 describe('ExploreMode', () => {
-  it('keeps Needs AI when the session has no names', () => {
+  it('asks to add names instead of implying an AI job', () => {
     render(<Harness initial={session({ candidates: [] })} />);
-    expect(screen.getByText(/Needs AI/)).toBeTruthy();
+    expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Pass' })).toBeNull();
   });
 
@@ -486,5 +486,59 @@ describe('ExploreMode', () => {
     expect(
       batch!.compareDocumentPosition(deck!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it('maps a left swipe to Pass and a right swipe to Like', async () => {
+    const { swipeReaction } = await import('./CandidateDeck');
+    expect(swipeReaction(-80, 8)).toBe('passed');
+    expect(swipeReaction(80, 8)).toBe('liked');
+    expect(swipeReaction(-20, 0)).toBeNull();
+    expect(swipeReaction(-80, 90)).toBeNull();
+  });
+
+  it('ignores a second Pass before the lock clears', async () => {
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate(),
+            candidate({ id: 'rift', name: 'Rift' }),
+            candidate({ id: 'wave', name: 'Wave' }),
+          ],
+        })}
+      />,
+    );
+    const pass = screen.getByRole('button', { name: 'Pass' });
+    fireEvent.click(pass);
+    fireEvent.click(pass);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rift' })).toBeTruthy();
+    });
+    expect(setNameCandidateReaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps DNS and score behind a details control', () => {
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate({
+              domainChecks: [
+                {
+                  host: 'nova.com',
+                  tld: 'com',
+                  dnsStatus: 'taken',
+                  rdapStatus: 'taken',
+                  availability: 'taken',
+                  checkedAt: '2026-09-03T00:00:00.000Z',
+                },
+              ],
+            }),
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText('DNS and score details')).toBeTruthy();
+    expect(screen.getByText('Web fit: Taken')).toBeTruthy();
   });
 });

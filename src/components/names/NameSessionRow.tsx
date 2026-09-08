@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import type { CSSProperties } from 'react';
-import { sessionHubSubtitle } from '../../lib/names/hubList';
+import { sessionHubModeLabel, sessionHubNextAction, sessionHubProgress, sessionHubStage, sessionHubSubtitle } from '../../lib/names/hubList';
 import { MoreVerticalIcon } from '../icons';
+import type { ParticipationMode } from '../../types/name-session';
 
 export function formatSessionUpdatedAt(value: string): string {
   try {
@@ -39,6 +40,7 @@ export function NameSessionRow(props: {
   candidateCount: number;
   updatedAt: string;
   namingGoal?: string | null;
+  participationMode?: ParticipationMode | null;
   accent?: string;
   badges?: Array<{ label: string; title?: string; kind: 'org' | 'project' }>;
   onRename: () => void;
@@ -49,6 +51,17 @@ export function NameSessionRow(props: {
     candidateCount: props.candidateCount,
     recommendedName: props.recommendedName,
   });
+  const stage = sessionHubStage({
+    candidateCount: props.candidateCount,
+    recommendedName: props.recommendedName,
+  });
+  const nextAction = sessionHubNextAction({
+    candidateCount: props.candidateCount,
+    recommendedName: props.recommendedName,
+    participationMode: props.participationMode,
+  });
+  const progress = sessionHubProgress(props.candidateCount);
+  const modeLabel = sessionHubModeLabel(props.participationMode);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -106,9 +119,11 @@ export function NameSessionRow(props: {
           </div>
         )}
         <h3 className="names-session-row-title">{props.title}</h3>
-        <p className="names-session-row-subtitle">
-          {subtitle}
+        <p className="names-session-row-stage">
+          {stage} · {modeLabel} · {progress}
         </p>
+        <p className="names-session-row-subtitle">{subtitle}</p>
+        <p className="names-session-row-next">{nextAction}</p>
       </Link>
       <div className="names-session-row-actions">
         <button

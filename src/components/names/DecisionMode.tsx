@@ -3,10 +3,14 @@ import { ErrorAlert } from '../ErrorAlert';
 import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import { ApiError } from '../../lib/api/client';
 import {
+  closeNameFeedbackRound,
   crownNameBatchWinner,
+  recommendNameCandidate,
   setNameBatchFinalists,
   upsertNameFeedback,
 } from '../../lib/api/names';
+import { resolveSessionParticipation } from '../../lib/names/hubList';
+import { NoBatchDecision } from './DecisionNoBatch';
 import {
   BELOW_TOP_REASON_MESSAGE,
   ERR_ARC_NAME_21,
@@ -146,10 +150,13 @@ function speakName(name: string): boolean {
   return true;
 }
 
-function peopleSubmitted(count: number) {
-  return count === 1
-    ? '1 invited member has submitted.'
-    : `${count} invited members have submitted.`;
+function peopleSubmitted(submitted: number, eligible?: number | null) {
+  if (typeof eligible === 'number' && eligible > 0) {
+    return `${submitted} of ${eligible} project members have submitted.`;
+  }
+  return submitted === 1
+    ? '1 project member has submitted.'
+    : `${submitted} project members have submitted.`;
 }
 
 export function DecisionMode(props: {
@@ -159,6 +166,7 @@ export function DecisionMode(props: {
   sessionId: string;
   onSession: (session: ProjectNameSession) => void;
   onNotice?: (value: string | null) => void;
+  onGoToShortlist?: () => void;
 }) {
   const { session } = props;
   const openRound = session.feedback.find((round) => round.status === 'open');
@@ -362,21 +370,68 @@ export function DecisionMode(props: {
     }
   }
 
+  async function recommendWinner(candidateId: string, scopeIds: string[]) {
+    if (!candidateId) return;
+    const points = reactionPointsForSession(session, scopeIds);
+    if (needsWinnerReason(candidateId, scopeIds, points, winnerNote)) {
+      setError(BELOW_TOP_REASON_MESSAGE);
+      setErrorCode(ERR_ARC_NAME_24);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await recommendNameCandidate(
+        props.orgId,
+        props.projectId,
+        props.sessionId,
+        candidateId,
+        winnerNote.trim() || undefined,
+      );
+      props.onSession(updated);
+      props.onNotice?.('Your pick is saved.');
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this pick' }));
+      setErrorCode(err instanceof ApiError ? err.code : ERR_ARC_NAME_24);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function closeRound() {
+    if (!openRound) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await closeNameFeedbackRound(
+        props.orgId,
+        props.projectId,
+        props.sessionId,
+        openRound.id,
+      );
+      props.onSession(updated);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this team round' }));
+      setErrorCode(err instanceof ApiError ? err.code : undefined);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const showBallot = phase === 'ballot' || editingBallot;
   const showResults = phase === 'results' && !editingBallot;
   const showFaceoff = phase === 'faceoff';
+  const participation = resolveSessionParticipation(session);
+  const isSolo = participation === 'solo';
+  const progress = session.participationProgress;
 
   if (!showBallot && !showResults && !showFaceoff) {
     return <p className="names-empty">Decision comes next.</p>;
   }
 
-  if (showFaceoff && !batch) {
-    return (
-      <p className="names-empty">
-        Start a batch in Explore, or open a team round from Shortlist.
-      </p>
-    );
-  }
+  const savedPick = session.recommendedCandidateId
+    ? session.candidates.find((item) => item.id === session.recommendedCandidateId)
+    : undefined;
 
   return (
     <div className="names-decision">
@@ -388,6 +443,11 @@ export function DecisionMode(props: {
             <div>
               <h2 id="names-ballot-title">Your ballot</h2>
               <p className="names-meta">{PRIVACY_LINE}</p>
+              {progress ? (
+                <p className="names-meta">
+                  {peopleSubmitted(progress.submittedCount, progress.eligibleCount)}
+                </p>
+              ) : null}
             </div>
           </div>
           {ballotStep === 'reactions' ? (
@@ -511,10 +571,13 @@ export function DecisionMode(props: {
           session={session}
           round={round}
           canUpdate={Boolean(openRound)}
+          canClose={Boolean(openRound && session.canManageFeedback)}
+          closeBusy={busy}
           onUpdate={() => {
             setEditingBallot(true);
             setBallotStep('reactions');
           }}
+          onClose={() => void closeRound()}
         />
       ) : null}
 
@@ -542,6 +605,22 @@ export function DecisionMode(props: {
           onCrown={() => void crownWinner()}
         />
       ) : null}
+
+      {showFaceoff && !batch ? (
+        <NoBatchDecision
+          session={session}
+          isSolo={isSolo}
+          savedPick={savedPick}
+          winnerId={winnerId}
+          winnerNote={winnerNote}
+          busy={busy}
+          closedRound={closedRound}
+          onWinnerId={setWinnerId}
+          onWinnerNote={setWinnerNote}
+          onGoToShortlist={props.onGoToShortlist}
+          onRecommend={(id, scope) => void recommendWinner(id, scope)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -550,9 +629,13 @@ function ResultsPanel(props: {
   session: ProjectNameSession;
   round?: ProjectNameSession['feedback'][number];
   canUpdate: boolean;
+  canClose: boolean;
+  closeBusy: boolean;
   onUpdate: () => void;
+  onClose: () => void;
 }) {
   const aggregate = props.round?.aggregate;
+  const progress = props.session.participationProgress;
   const ids = props.round
     ? (props.round.order.length
         ? props.round.order
@@ -582,7 +665,10 @@ function ResultsPanel(props: {
         <div>
           <h2 id="names-results-title">Team result</h2>
           <p className="names-meta">
-            {peopleSubmitted(aggregate?.participantCount ?? 0)}
+            {peopleSubmitted(
+              aggregate?.participantCount ?? progress?.submittedCount ?? 0,
+              progress?.eligibleCount,
+            )}
           </p>
         </div>
       </div>
@@ -622,6 +708,16 @@ function ResultsPanel(props: {
           onClick={props.onUpdate}
         >
           Update ballot
+        </button>
+      ) : null}
+      {props.canClose ? (
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={props.closeBusy}
+          onClick={props.onClose}
+        >
+          Close team round
         </button>
       ) : null}
     </section>
