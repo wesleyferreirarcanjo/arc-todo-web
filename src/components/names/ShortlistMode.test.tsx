@@ -16,6 +16,7 @@ import {
 import { shortlistWebFit } from './CheckSummary';
 
 const setNameCandidateReaction = vi.hoisted(() => vi.fn());
+const setNameCandidateFavorite = vi.hoisted(() => vi.fn());
 const updateProjectNameSession = vi.hoisted(() => vi.fn());
 const upsertNameCandidateRating = vi.hoisted(() => vi.fn());
 const checkNameCandidate = vi.hoisted(() => vi.fn());
@@ -28,6 +29,7 @@ const addNameCandidates = vi.hoisted(() => vi.fn());
 
 vi.mock('../../lib/api/names', () => ({
   setNameCandidateReaction,
+  setNameCandidateFavorite,
   updateProjectNameSession,
   upsertNameCandidateRating,
   checkNameCandidate,
@@ -112,6 +114,24 @@ function applyReaction(
   };
 }
 
+function applyFavorite(
+  current: ProjectNameSession,
+  id: string,
+  favorited: boolean,
+): ProjectNameSession {
+  return {
+    ...current,
+    candidates: current.candidates.map((item) => {
+      if (item.id !== id) return item;
+      if (!favorited) {
+        const { favorited: _f, ...rest } = item;
+        return rest;
+      }
+      return { ...item, favorited: true };
+    }),
+  };
+}
+
 function Harness(props: {
   initial: ProjectNameSession;
   onDecision?: () => void;
@@ -161,6 +181,7 @@ afterEach(() => {
 
 beforeEach(() => {
   setNameCandidateReaction.mockReset();
+  setNameCandidateFavorite.mockReset();
   updateProjectNameSession.mockReset();
   upsertNameCandidateRating.mockReset();
   checkNameCandidate.mockReset();
@@ -172,6 +193,9 @@ beforeEach(() => {
   addNameCandidates.mockReset();
   setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) =>
     applyReaction(session(), id, input.reaction),
+  );
+  setNameCandidateFavorite.mockImplementation(async (_o, _p, _s, id, input) =>
+    applyFavorite(session(), id, input.favorited),
   );
   fetchProjectNameSession.mockImplementation(async () => session());
 });
@@ -211,7 +235,7 @@ describe('ShortlistMode', () => {
     render(<Harness initial={initial} />);
 
     await user.click(
-      screen.getByRole('button', { name: 'Remove Nova from your favorites' }),
+      screen.getByRole('button', { name: 'Remove Nova from your shortlist' }),
     );
     await waitFor(() => {
       expect(setNameCandidateReaction).toHaveBeenCalledWith(
@@ -441,7 +465,7 @@ describe('ShortlistMode', () => {
     expect(screen.getByRole('button', { name: 'Open team round' })).toBeDisabled();
   });
 
-  it('shows personal favorites and team finalist counts from their own lists', () => {
+  it('shows shortlist and team finalist counts from their own lists', () => {
     render(
       <Harness
         initial={session({
@@ -455,7 +479,11 @@ describe('ShortlistMode', () => {
         })}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Personal favorites' }).closest('div')?.textContent).toMatch(/2/);
+    expect(screen.getByRole('button', { name: 'Shortlist 2' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Personal favorites 0' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Rejected 1' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Team finalists' }).closest('div')?.textContent).toMatch(/3 \/ 5/);
     expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Halo' })).toBeTruthy();
@@ -476,13 +504,220 @@ describe('ShortlistMode', () => {
         })}
       />,
     );
-    expect(screen.getByRole('heading', { name: 'Personal favorites' }).closest('div')?.textContent).toMatch(/0/);
+    expect(screen.getByRole('button', { name: 'Shortlist 0' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Personal favorites 0' }),
+    ).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Team finalists' }).closest('div')?.textContent).toMatch(/1 \/ 5/);
     expect(screen.queryByRole('heading', { name: 'Nova' })).toBeNull();
     expect(screen.getByText('Nova')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open team round' })).toBeNull();
     expect(
       screen.getByText('Choose a name in Decision. You do not need a team round.'),
+    ).toBeTruthy();
+  });
+
+  it('keeps liked and loved names on Shortlist and only hearted names in Personal favorites', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [
+        candidate({ reaction: 'liked' }),
+        candidate({ id: 'halo', name: 'Halo', reaction: 'loved' }),
+      ],
+    });
+    let latest = initial;
+    setNameCandidateFavorite.mockImplementation(async (_o, _p, _s, id, input) => {
+      latest = applyFavorite(latest, id, input.favorited);
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Halo' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Personal favorites 0' }));
+    expect(screen.queryByRole('heading', { name: 'Nova' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Halo' })).toBeNull();
+    expect(
+      screen.getByText(
+        'No personal favorites yet. Tap the heart on a Shortlist card.',
+      ),
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Shortlist 2' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Add Nova to personal favorites' }),
+    );
+    await waitFor(() => {
+      expect(setNameCandidateFavorite).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        'sess-1',
+        'nova',
+        { favorited: true },
+      );
+    });
+    expect(setNameCandidateReaction).not.toHaveBeenCalled();
+    expect(updateProjectNameSession).not.toHaveBeenCalled();
+    expect(checkNameHandles).not.toHaveBeenCalled();
+    expect(latest.shortlistIds).toEqual([]);
+    expect(latest.candidates.find((item) => item.id === 'nova')?.reaction).toBe(
+      'liked',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Nova is a personal favorite' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Personal favorites 1' }));
+    expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Halo' })).toBeNull();
+    expect(screen.getByText('Liked')).toBeTruthy();
+  });
+
+  it('does not promote a hearted name to team finalists', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [candidate({ reaction: 'liked' })],
+      shortlistIds: [],
+    });
+    let latest = initial;
+    setNameCandidateFavorite.mockImplementation(async (_o, _p, _s, id, input) => {
+      latest = applyFavorite(latest, id, input.favorited);
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Add Nova to personal favorites' }),
+    );
+    await waitFor(() => {
+      expect(setNameCandidateFavorite).toHaveBeenCalled();
+    });
+    expect(updateProjectNameSession).not.toHaveBeenCalled();
+    expect(latest.shortlistIds).toEqual([]);
+    expect(checkNameHandles).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText('On the team finalists'),
+    ).toBeNull();
+  });
+
+  it('lists this member’s passed and table-rejected names on Rejected, not likes', async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate({ reaction: 'liked' }),
+            candidate({ id: 'halo', name: 'Halo', reaction: 'loved' }),
+            candidate({ id: 'rift', name: 'Rift', reaction: 'passed' }),
+            candidate({ id: 'wave', name: 'Wave', status: 'rejected' }),
+            candidate({ id: 'echo', name: 'Echo' }),
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Rejected 2' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Rejected 2' }));
+    expect(screen.getByText('Rift')).toBeTruthy();
+    expect(screen.getByText('Wave')).toBeTruthy();
+    expect(screen.queryByText('Nova')).toBeNull();
+    expect(screen.queryByText('Halo')).toBeNull();
+    expect(screen.queryByText('Echo')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Add Rift to personal favorites' }),
+    ).toBeNull();
+  });
+
+  it('restores a Pass by clearing the reaction without a status patch', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [
+        candidate({ reaction: 'liked' }),
+        candidate({ id: 'rift', name: 'Rift', reaction: 'passed' }),
+      ],
+    });
+    let latest = initial;
+    setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) => {
+      latest = applyReaction(latest, id, input.reaction);
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    await user.click(screen.getByRole('button', { name: 'Rejected 1' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Restore Rift to Explore' }),
+    );
+    await waitFor(() => {
+      expect(setNameCandidateReaction).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        'sess-1',
+        'rift',
+        { reaction: null },
+      );
+    });
+    expect(updateProjectNameSession).not.toHaveBeenCalled();
+    expect(screen.queryByText('Rift')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
+  });
+
+  it('restores a table reject by setting status back to active', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [
+        candidate({ reaction: 'liked' }),
+        candidate({ id: 'wave', name: 'Wave', status: 'rejected' }),
+      ],
+    });
+    let latest = initial;
+    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
+      latest = {
+        ...latest,
+        candidates: input.candidates ?? latest.candidates,
+      };
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    await user.click(screen.getByRole('button', { name: 'Rejected 1' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Restore Wave to Explore' }),
+    );
+    await waitFor(() => {
+      expect(updateProjectNameSession).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        'sess-1',
+        expect.objectContaining({
+          candidates: expect.arrayContaining([
+            expect.objectContaining({ id: 'wave', status: 'active' }),
+          ]),
+        }),
+      );
+    });
+    expect(setNameCandidateReaction).not.toHaveBeenCalled();
+    expect(screen.queryByText('Wave')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
+  });
+
+  it('keeps the heart on Shortlist after visiting Rejected', async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initial={session({
+          candidates: [candidate({ reaction: 'liked' })],
+        })}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Add Nova to personal favorites' }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Rejected 0' }));
+    expect(
+      screen.queryByRole('button', { name: 'Add Nova to personal favorites' }),
+    ).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Shortlist 1' }));
+    expect(
+      screen.getByRole('button', { name: 'Add Nova to personal favorites' }),
     ).toBeTruthy();
   });
 });

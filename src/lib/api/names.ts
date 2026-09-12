@@ -171,6 +171,19 @@ export function setNameCandidateReaction(
   );
 }
 
+export function setNameCandidateFavorite(
+  orgId: string,
+  projectId: string,
+  sessionId: string,
+  candidateId: string,
+  input: { favorited: boolean },
+): Promise<ProjectNameSession> {
+  return apiRequest<ProjectNameSession>(
+    `${namesBasePath(orgId, projectId)}/${sessionId}/candidates/${candidateId}/favorite`,
+    { method: 'PUT', body: input },
+  );
+}
+
 export function startNameBatch(
   orgId: string,
   projectId: string,

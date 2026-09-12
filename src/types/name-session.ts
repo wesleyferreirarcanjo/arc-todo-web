@@ -142,7 +142,29 @@ export interface NameUserRating {
   notes?: string;
   reaction?: CandidateReaction;
   reactedAt?: string;
+  favorited?: boolean;
   updatedAt?: string;
+}
+
+export interface MemberShortlistLiked {
+  candidateId: string;
+  name: string;
+  reaction: Extract<CandidateReaction, 'liked' | 'loved'>;
+}
+
+export interface MemberShortlistRating {
+  candidateId: string;
+  name: string;
+  overall: number;
+  notes?: string;
+}
+
+/** Team GET only. Other members' Like/Love and 1–10, not ballots or userRatings maps. */
+export interface MemberShortlist {
+  userId: string;
+  displayName: string;
+  likedLoved: MemberShortlistLiked[];
+  ratings: MemberShortlistRating[];
 }
 
 export interface NameBatch {
@@ -218,12 +240,14 @@ export interface NameCandidate {
   ratings?: CandidateRatings;
   /**
    * Present only on writes. GET projects the caller's row onto `ratings.overall`,
-   * `notes`, `reaction`, and `reactedAt`, and omits the map.
+   * `notes`, `reaction`, `reactedAt`, and `favorited`, and omits the map.
    */
   userRatings?: Record<string, NameUserRating>;
   /** GET projection of the caller's Pass / Like / Love. */
   reaction?: CandidateReaction;
   reactedAt?: string;
+  /** GET projection of the caller's personal-favorite heart. */
+  favorited?: boolean;
   /** Missing means the candidate belongs to batch 1. Do not default in the type. */
   batchNumber?: number;
 }
@@ -285,6 +309,7 @@ export interface ProjectNameSession {
   namingGoal: NamingGoal | string | null;
   participationMode?: ParticipationMode;
   participationProgress?: ParticipationProgress | null;
+  memberShortlists?: MemberShortlist[];
   productDescription: ProductDescription;
   lanes: NameLane[];
   candidates: NameCandidate[];

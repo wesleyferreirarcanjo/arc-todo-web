@@ -54,8 +54,6 @@ export function NamesHubPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<NameSort>('updated_desc');
   const [createOpen, setCreateOpen] = useState(false);
-  const [createOrgId, setCreateOrgId] = useState('');
-  const [createProjectId, setCreateProjectId] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [whatItIs, setWhatItIs] = useState('');
   const [createGoal, setCreateGoal] = useState<NamingGoal>(DEFAULT_NAMING_GOAL);
@@ -113,14 +111,6 @@ export function NamesHubPage() {
         : projects,
     [projects, orgFilter],
   );
-  const createProjectOptions = useMemo(
-    () =>
-      createOrgId
-        ? projects.filter((project) => project.organizationId === createOrgId)
-        : [],
-    [projects, createOrgId],
-  );
-
   const visibleItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filtered = items.filter(({ session, org, project }) => {
@@ -162,20 +152,6 @@ export function NamesHubPage() {
     : organizations.length > 0 && projects.length > 0;
 
   function openCreate() {
-    const defaultOrg =
-      orgFilter || (organizations.length === 1 ? organizations[0].id : '');
-    const projectsForOrg = defaultOrg
-      ? projects.filter((project) => project.organizationId === defaultOrg)
-      : [];
-    const defaultProject =
-      projectFilter &&
-      projectsForOrg.some((project) => project.id === projectFilter)
-        ? projectFilter
-        : projectsForOrg.length === 1
-          ? projectsForOrg[0].id
-          : '';
-    setCreateOrgId(defaultOrg);
-    setCreateProjectId(isAdmin ? '' : defaultProject);
     setNewTitle('');
     setWhatItIs('');
     setCreateGoal(DEFAULT_NAMING_GOAL);
@@ -186,14 +162,22 @@ export function NamesHubPage() {
 
   async function handleCreate() {
     const title = newTitle.trim();
-    if (!createOrgId) {
-      setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
-      return;
-    }
     if (!title) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_WORKING));
       return;
     }
+    const createOrgId = orgFilter || organizations[0]?.id || '';
+    if (!createOrgId) {
+      setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
+      return;
+    }
+    const projectsForOrg = projects.filter(
+      (project) => project.organizationId === createOrgId,
+    );
+    const createProjectId =
+      projectFilter && projectsForOrg.some((project) => project.id === projectFilter)
+        ? projectFilter
+        : projectsForOrg[0]?.id ?? '';
     if (!isAdmin && !createProjectId) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
       return;
@@ -455,37 +439,6 @@ export function NamesHubPage() {
         titleId="new-name-session-title"
       >
         <div className="names-create-form">
-          <div className="form-field">
-            <span>Organization</span>
-            <Select
-              value={createOrgId}
-              onChange={(value) => {
-                setCreateOrgId(value);
-                setCreateProjectId('');
-              }}
-              options={[
-                { value: '', label: 'Select organization' },
-                ...organizations.map((org) => ({ value: org.id, label: org.name })),
-              ]}
-            />
-          </div>
-          {!isAdmin && (
-            <div className="form-field">
-              <span>Project</span>
-              <Select
-                value={createProjectId}
-                onChange={setCreateProjectId}
-                disabled={!createOrgId}
-                options={[
-                  { value: '', label: 'Select project' },
-                  ...createProjectOptions.map((project) => ({
-                    value: project.id,
-                    label: project.name,
-                  })),
-                ]}
-              />
-            </div>
-          )}
           <label className="form-field">
             <span>Working name</span>
             <input
@@ -526,7 +479,7 @@ export function NamesHubPage() {
           <p className="page-subtitle">
             {isAdmin
               ? 'This also creates a project with the working name.'
-              : 'Stored on the selected project.'}
+              : 'Stored on a project you belong to.'}
           </p>
           {createError && <ErrorAlert>{createError}</ErrorAlert>}
           <div className="knowledge-actions">

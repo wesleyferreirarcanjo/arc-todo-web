@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { createNameSessionBasics } from './names';
+import { describe, expect, it, vi } from 'vitest';
+import { createNameSessionBasics, setNameCandidateFavorite } from './names';
 import { DEFAULT_NAMING_GOAL } from '../names/catalog';
+
+const apiRequest = vi.hoisted(() => vi.fn());
+
+vi.mock('./client', () => ({
+  apiRequest,
+}));
 
 describe('createNameSessionBasics', () => {
   it('sends a working name and default goal without extra canvas fields', () => {
@@ -35,5 +41,18 @@ describe('createNameSessionBasics', () => {
       participationMode: 'solo',
       productDescription: { whatItIs: 'A private task board.' },
     });
+  });
+});
+
+describe('setNameCandidateFavorite', () => {
+  it('PUTs favorited on the candidate favorite route', async () => {
+    apiRequest.mockResolvedValue({});
+    await setNameCandidateFavorite('org', 'proj', 'sess', 'cand', {
+      favorited: true,
+    });
+    expect(apiRequest).toHaveBeenCalledWith(
+      '/organizations/org/projects/proj/name-sessions/sess/candidates/cand/favorite',
+      { method: 'PUT', body: { favorited: true } },
+    );
   });
 });

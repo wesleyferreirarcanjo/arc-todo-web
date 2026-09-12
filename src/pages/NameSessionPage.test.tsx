@@ -16,6 +16,8 @@ const checkNameCandidatesBatch = vi.hoisted(() => vi.fn());
 const checkNameHistory = vi.hoisted(() => vi.fn());
 const checkNameHandles = vi.hoisted(() => vi.fn());
 const recommendNameCandidate = vi.hoisted(() => vi.fn());
+const addNameCandidates = vi.hoisted(() => vi.fn());
+const generateNameSuggestions = vi.hoisted(() => vi.fn());
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
@@ -61,6 +63,17 @@ vi.mock('../lib/api/names', async () => {
     checkNameHistory,
     checkNameHandles,
     recommendNameCandidate,
+    addNameCandidates,
+  };
+});
+
+vi.mock('../lib/api/chat', async () => {
+  const actual = await vi.importActual<typeof import('../lib/api/chat')>(
+    '../lib/api/chat',
+  );
+  return {
+    ...actual,
+    generateNameSuggestions,
   };
 });
 
@@ -106,7 +119,9 @@ function renderPage() {
 }
 
 function modeButton(name: RegExp | string) {
-  return screen.getByRole('button', { name });
+  return within(
+    screen.getByRole('navigation', { name: 'Name session modes' }),
+  ).getByRole('button', { name });
 }
 
 describe('NameSessionPage shortlist chrome', () => {
@@ -132,14 +147,16 @@ describe('NameSessionPage shortlist chrome', () => {
     checkNameHistory.mockReset();
     checkNameHandles.mockReset();
     recommendNameCandidate.mockReset();
+    addNameCandidates.mockResolvedValue({ candidates: [] });
+    generateNameSuggestions.mockReset();
   });
 
-  it('lands on Explore with Needs AI and Smart copy, and hides Suggest names, rail, and old tabs', async () => {
+  it('lands on Explore with Needs AI and Generate with AI, and hides Suggest names, rail, and old tabs', async () => {
     const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Copy prompt for external AI' })).toBeTruthy();
     });
 
     expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
@@ -151,43 +168,92 @@ describe('NameSessionPage shortlist chrome', () => {
     expect(screen.queryByRole('button', { name: 'Add more details' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Standing pick' })).toBeNull();
 
-    await user.click(screen.getByRole('button', { name: 'Smart copy' }));
+    await user.click(screen.getByRole('button', { name: 'Copy prompt for external AI' }));
     expect(
       screen.getByText(
-        'Add one sentence about what it does, then use Smart copy. You can still check a name.',
+        'Add one sentence about what it does, then generate or copy a prompt. You can still check a name.',
       ),
     ).toBeTruthy();
   });
 
-  it('switches Explore / Shortlist / Decision with aria-current and keeps Smart copy', async () => {
+  it('switches Explore / Shortlist / Decision with aria-current and shows composer only on Explore', async () => {
     const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => {
       expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
     });
+    expect(modeButton('Shortlist-0')).toBeTruthy();
 
     expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Generate with AI' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy prompt for external AI' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Paste AI response' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Check this name' })).toBeTruthy();
 
     await user.click(modeButton(/Shortlist/));
     expect(modeButton(/Shortlist/)).toHaveAttribute('aria-current', 'true');
     expect(modeButton('Explore')).not.toHaveAttribute('aria-current');
     expect(screen.queryByText(/Add names — type them here/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+    expect(screen.queryByText('Add names — type them or copy the brief')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generate with AI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy prompt for external AI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Paste AI response' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Check this name' })).toBeNull();
 
     await user.click(modeButton('Decision'));
     expect(modeButton('Decision')).toHaveAttribute('aria-current', 'true');
     expect(
       screen.getByText(
-        /Add names in Explore — type them here, or copy the brief/,
+        /Add names in Explore — type them here, generate with AI/,
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+    expect(screen.queryByText('Add names — type them or copy the brief')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generate with AI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy prompt for external AI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Paste AI response' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Check this name' })).toBeNull();
 
     await user.click(modeButton('Explore'));
     expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
     expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy prompt for external AI' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Generate with AI' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Paste AI response' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Check this name' })).toBeTruthy();
+  });
+
+  it('reviews generated names before adding them', async () => {
+    const user = userEvent.setup();
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      productDescription: { whatItIs: 'A coffee club for offices.' },
+    });
+    generateNameSuggestions.mockResolvedValue({
+      suggestions: [{ name: 'Helio', rationale: 'sun', family: 'metaphor' }],
+      usedTools: [],
+    });
+    checkNameCandidatesBatch.mockResolvedValue({ candidates: [] });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Generate with AI' })).toBeTruthy();
+    });
+    await user.click(screen.getByRole('button', { name: 'Generate with AI' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Review suggested names' })).toBeTruthy();
+    });
+    expect(addNameCandidates).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Add selected names' }));
+    await waitFor(() => {
+      expect(addNameCandidates).toHaveBeenCalled();
+    });
+    expect(generateNameSuggestions.mock.calls[0][0].productDescription.whatItIs).toBe(
+      'A coffee club for offices.',
+    );
+    expect(addNameCandidates.mock.calls[0][3]).toEqual([
+      { name: 'Helio', rationale: 'sun', family: 'metaphor' },
+    ]);
+    expect(addNameCandidates.mock.calls[0][4]).toBe('chatbot');
   });
 
   it('shows the personal favorites count on the Shortlist tab, not every name', async () => {
@@ -224,9 +290,37 @@ describe('NameSessionPage shortlist chrome', () => {
     });
     renderPage();
     await waitFor(() => {
-      expect(modeButton(/Shortlist 1/)).toBeTruthy();
+      expect(modeButton('Shortlist-1')).toBeTruthy();
     });
-    expect(screen.queryByRole('button', { name: /Shortlist 3/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Shortlist-3' })).toBeNull();
+  });
+
+  it('updates Shortlist-N after Like in Explore without reload', async () => {
+    const user = userEvent.setup();
+    const nova = {
+      id: 'nova',
+      name: 'Nova',
+      status: 'active' as const,
+      sources: ['human' as const],
+      domainChecks: [] as [],
+      googleQueryUrl: '',
+    };
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      candidates: [nova],
+    });
+    setNameCandidateReaction.mockResolvedValue({
+      ...emptySession,
+      candidates: [{ ...nova, reaction: 'liked' }],
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(modeButton('Shortlist-0')).toBeTruthy();
+    });
+    await user.click(screen.getByRole('button', { name: 'Like' }));
+    await waitFor(() => {
+      expect(modeButton('Shortlist-1')).toBeTruthy();
+    });
   });
 
   it('lets a click on the brief edit working name, what it does, and kind of name, then save', async () => {
@@ -366,6 +460,57 @@ describe('NameSessionPage shortlist chrome', () => {
     });
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Smart copy' })).toBeNull();
+  });
+
+  it('hides Team views on a solo session', async () => {
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      participationMode: 'solo',
+    });
+    renderPage();
+
+    await waitFor(() => {
+      expect(modeButton('Explore')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Team views' })).toBeNull();
+  });
+
+  it('shows a read-only Team views tab for team sessions', async () => {
+    const user = userEvent.setup();
+    fetchProjectNameSession.mockResolvedValue({
+      ...emptySession,
+      participationMode: 'team',
+      memberShortlists: [
+        {
+          userId: 'user-2',
+          displayName: 'arthura',
+          likedLoved: [
+            { candidateId: 'nova', name: 'Nova', reaction: 'loved' },
+          ],
+          ratings: [
+            { candidateId: 'nova', name: 'Nova', overall: 8, notes: 'Fits' },
+          ],
+        },
+      ],
+    });
+    renderPage();
+
+    await waitFor(() => {
+      expect(modeButton('Team views')).toBeTruthy();
+    });
+    expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
+
+    await user.click(modeButton('Team views'));
+    expect(modeButton('Team views')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('heading', { name: 'arthura' })).toBeTruthy();
+    expect(screen.getByText('Nova · Love')).toBeTruthy();
+    expect(screen.getByText('Nova · 8/10 — Fits')).toBeTruthy();
+    expect(screen.queryByText(/Add names — type them here/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generate with AI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pass' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Like' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Love' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Promote/ })).toBeNull();
   });
 });
 

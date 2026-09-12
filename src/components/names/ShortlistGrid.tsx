@@ -8,14 +8,34 @@ function reactionLabel(reaction: NameCandidate['reaction']): string {
   return 'Kept';
 }
 
+function HeartIcon(props: { filled: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="1.1em"
+      height="1.1em"
+      aria-hidden="true"
+      fill={props.filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 21s-6.2-4.35-9.33-8.5C.5 9.5 1.2 5.4 4.5 3.9c2.1-.95 4.4-.2 5.5 1.6 1.1-1.8 3.4-2.55 5.5-1.6 3.3 1.5 4 5.6 1.83 8.6C18.2 16.65 12 21 12 21z" />
+    </svg>
+  );
+}
+
 export function ShortlistGrid(props: {
   candidates: NameCandidate[];
   shortlistIds: string[];
   resolvingKeys: string[];
   canManage: boolean;
   showPromote?: boolean;
+  emptyMessage?: string;
   onRemove: (candidateId: string) => void;
   onPromote: (candidateId: string) => void;
+  onFavorite: (candidateId: string, favorited: boolean) => void;
   onScore: (candidateId: string) => void;
   onCheck: (candidateId: string) => void;
   onCheckHandles: (candidateId: string) => void;
@@ -27,7 +47,8 @@ export function ShortlistGrid(props: {
   if (props.candidates.length === 0) {
     return (
       <p className="names-empty">
-        No personal favorites yet. Like or Love names in Explore.
+        {props.emptyMessage ??
+          'No shortlist yet. Like or Love names in Explore.'}
       </p>
     );
   }
@@ -38,9 +59,25 @@ export function ShortlistGrid(props: {
         const promoted = props.shortlistIds.includes(candidate.id);
         const checking = resolving.has(normalizeNameKey(candidate.name));
         const score = candidate.ratings?.overall;
+        const favorited = candidate.favorited === true;
         return (
           <article key={candidate.id} className="names-card">
-            <p className="names-meta">{reactionLabel(candidate.reaction)}</p>
+            <div className="names-card-head">
+              <p className="names-meta">{reactionLabel(candidate.reaction)}</p>
+              <button
+                type="button"
+                className={`btn btn-sm ${favorited ? 'btn-secondary is-kept' : 'btn-secondary'}`}
+                aria-pressed={favorited}
+                aria-label={
+                  favorited
+                    ? `${candidate.name} is a personal favorite`
+                    : `Add ${candidate.name} to personal favorites`
+                }
+                onClick={() => props.onFavorite(candidate.id, !favorited)}
+              >
+                <HeartIcon filled={favorited} />
+              </button>
+            </div>
             <h3 className="names-deck-name">{candidate.name}</h3>
             <p className="names-deck-rationale">
               {candidate.rationale?.trim() || 'Added to this session.'}
@@ -106,7 +143,7 @@ export function ShortlistGrid(props: {
               <button
                 type="button"
                 className="btn btn-secondary btn-sm names-reject-btn"
-                aria-label={`Remove ${candidate.name} from your favorites`}
+                aria-label={`Remove ${candidate.name} from your shortlist`}
                 onClick={() => props.onRemove(candidate.id)}
               >
                 Remove

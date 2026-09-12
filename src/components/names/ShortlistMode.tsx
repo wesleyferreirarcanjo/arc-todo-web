@@ -11,6 +11,7 @@ import {
   checkNameHandles,
   checkNameHistory,
   fetchProjectNameSession,
+  setNameCandidateFavorite,
   setNameCandidateReaction,
   startNameFeedbackRound,
   updateProjectNameSession,
@@ -24,6 +25,7 @@ import type {
   ProjectNameSession,
 } from '../../types/name-session';
 import { NamesWorkbench } from './NamesSection';
+import { RejectedNamesList } from './RejectedNamesList';
 import { ShortlistGrid } from './ShortlistGrid';
 import { VariationPicker } from './VariationPicker';
 
@@ -38,6 +40,22 @@ export function yourShortlist(session: ProjectNameSession): NameCandidate[] {
     (item) =>
       item.status !== 'rejected' &&
       (item.reaction === 'liked' || item.reaction === 'loved'),
+  );
+}
+
+export function yourPersonalFavorites(
+  session: ProjectNameSession,
+): NameCandidate[] {
+  return session.candidates.filter(
+    (item) => item.status !== 'rejected' && item.favorited === true,
+  );
+}
+
+export function yourRejectedNames(
+  session: ProjectNameSession,
+): NameCandidate[] {
+  return session.candidates.filter(
+    (item) => item.reaction === 'passed' || item.status === 'rejected',
   );
 }
 
@@ -91,10 +109,15 @@ export function ShortlistMode(props: {
 }) {
   const { session } = props;
   const mine = yourShortlist(session);
+  const favorites = yourPersonalFavorites(session);
+  const rejected = yourRejectedNames(session);
   const promoted = teamFinalists(session);
   const promotedCount = session.shortlistIds.length;
   const isTeam = resolveSessionParticipation(session) === 'team';
   const roundReady = promotedCount >= 2 && promotedCount <= TEAM_SHORTLIST_CAP;
+  const [listTab, setListTab] = useState<
+    'shortlist' | 'favorites' | 'rejected'
+  >('shortlist');
   const [workbench, setWorkbench] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | undefined>();
@@ -108,8 +131,16 @@ export function ShortlistMode(props: {
   const [roundBusy, setRoundBusy] = useState(false);
 
   const resolvingKeys = [...new Set([...props.resolvingKeys, ...localResolving])];
-  const ratingCandidate = mine.find((item) => item.id === ratingId);
-  const variationCandidate = mine.find((item) => item.id === variationId);
+  const visible =
+    listTab === 'favorites'
+      ? favorites
+      : listTab === 'rejected'
+        ? rejected
+        : mine;
+  const ratingCandidate = session.candidates.find((item) => item.id === ratingId);
+  const variationCandidate = session.candidates.find(
+    (item) => item.id === variationId,
+  );
   const variations = variationCandidate
     ? exploreVariations(variationCandidate.name).filter(
         (name) =>
@@ -152,6 +183,59 @@ export function ShortlistMode(props: {
       props.onSession(updated);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this shortlist' }));
+    }
+  }
+
+  async function handleRestore(id: string) {
+    const candidate = session.candidates.find((item) => item.id === id);
+    if (!candidate) return;
+    setError(null);
+    setErrorCode(undefined);
+    try {
+      let latest = session;
+      if (candidate.reaction === 'passed') {
+        latest = await setNameCandidateReaction(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+          id,
+          { reaction: null },
+        );
+        props.onSession(latest);
+      }
+      const current = latest.candidates.find((item) => item.id === id);
+      if ((current ?? candidate).status === 'rejected') {
+        latest = await updateProjectNameSession(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+          {
+            candidates: latest.candidates.map((item) =>
+              item.id === id ? { ...item, status: 'active' } : item,
+            ),
+          },
+        );
+        props.onSession(latest);
+      }
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this name' }));
+    }
+  }
+
+  async function handleFavorite(id: string, favorited: boolean) {
+    setError(null);
+    setErrorCode(undefined);
+    try {
+      const updated = await setNameCandidateFavorite(
+        props.orgId,
+        props.projectId,
+        props.sessionId,
+        id,
+        { favorited },
+      );
+      props.onSession(updated);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this favorite' }));
     }
   }
 
@@ -224,7 +308,7 @@ export function ShortlistMode(props: {
   }
 
   async function handleCheckAll() {
-    const names = mine.slice(0, CHECK_BATCH_CAP).map((item) => item.name);
+    const names = visible.slice(0, CHECK_BATCH_CAP).map((item) => item.name);
     if (!names.length) return;
     setError(null);
     setErrorCode(undefined);
@@ -371,27 +455,53 @@ export function ShortlistMode(props: {
     <>
       {error ? <ErrorAlert code={errorCode}>{error}</ErrorAlert> : null}
       {notice ? <div className="alert">{notice}</div> : null}
-      <div className="names-shortlist-heading">
-        <h3>Personal favorites</h3>
-        <span>{mine.length}</span>
-      </div>
+      <nav className="names-desk-tabs" aria-label="Shortlist lists">
+        <button
+          type="button"
+          className={listTab === 'shortlist' ? 'is-current is-primary' : 'is-secondary'}
+          aria-current={listTab === 'shortlist' ? 'true' : undefined}
+          onClick={() => setListTab('shortlist')}
+        >
+          Shortlist <span>{mine.length}</span>
+        </button>
+        <button
+          type="button"
+          className={
+            listTab === 'favorites' ? 'is-current is-primary' : 'is-secondary'
+          }
+          aria-current={listTab === 'favorites' ? 'true' : undefined}
+          onClick={() => setListTab('favorites')}
+        >
+          Personal favorites <span>{favorites.length}</span>
+        </button>
+        <button
+          type="button"
+          className={
+            listTab === 'rejected' ? 'is-current is-primary' : 'is-secondary'
+          }
+          aria-current={listTab === 'rejected' ? 'true' : undefined}
+          onClick={() => setListTab('rejected')}
+        >
+          Rejected <span>{rejected.length}</span>
+        </button>
+      </nav>
       <div className="names-decision-actions">
         <button
           type="button"
           className="btn btn-secondary btn-sm"
           onClick={() => setWorkbench((open) => !open)}
         >
-          {workbench
-            ? 'Back to personal favorites'
-            : 'Open table and inspector'}
+          {workbench ? 'Back to shortlist' : 'Open table and inspector'}
         </button>
-        {!workbench && mine.length > 0 ? (
+        {!workbench && listTab !== 'rejected' && visible.length > 0 ? (
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => void handleCheckAll()}
           >
-            Check personal favorites
+            {listTab === 'favorites'
+              ? 'Check personal favorites'
+              : 'Check shortlist'}
           </button>
         ) : null}
       </div>
@@ -410,19 +520,32 @@ export function ShortlistMode(props: {
         />
       ) : (
         <div className="names-shortlist-desk">
-          <ShortlistGrid
-            candidates={mine}
-            shortlistIds={session.shortlistIds}
-            resolvingKeys={resolvingKeys}
-            canManage={session.canManageFeedback}
-            showPromote={isTeam && session.canManageFeedback}
-            onRemove={(id) => void handleRemove(id)}
-            onPromote={(id) => void handlePromote(id)}
-            onScore={openRating}
-            onCheck={(id) => void handleCheck(id)}
-            onCheckHandles={(id) => void handleCheckHandles(id)}
-            onVariations={setVariationId}
-          />
+          {listTab === 'rejected' ? (
+            <RejectedNamesList
+              candidates={visible}
+              onRestore={(id) => void handleRestore(id)}
+            />
+          ) : (
+            <ShortlistGrid
+              candidates={visible}
+              shortlistIds={session.shortlistIds}
+              resolvingKeys={resolvingKeys}
+              canManage={session.canManageFeedback}
+              showPromote={isTeam && session.canManageFeedback}
+              emptyMessage={
+                listTab === 'favorites'
+                  ? 'No personal favorites yet. Tap the heart on a Shortlist card.'
+                  : 'No shortlist yet. Like or Love names in Explore.'
+              }
+              onRemove={(id) => void handleRemove(id)}
+              onPromote={(id) => void handlePromote(id)}
+              onFavorite={(id, favorited) => void handleFavorite(id, favorited)}
+              onScore={openRating}
+              onCheck={(id) => void handleCheck(id)}
+              onCheckHandles={(id) => void handleCheckHandles(id)}
+              onVariations={setVariationId}
+            />
+          )}
           <div className="names-shortlist-heading">
             <h3>Team finalists</h3>
             <span>

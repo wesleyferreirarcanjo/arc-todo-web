@@ -11,8 +11,8 @@ const choice = readFileSync(
   'utf8',
 );
 
-describe('Names hub and project list create (#arc-474)', () => {
-  it('keeps hub create as org + working name with optional sentence and kind', () => {
+describe('Names hub and project list create (#arc-474, #arc-524)', () => {
+  it('keeps hub create as working name with optional sentence and kind', () => {
     expect(hub).toContain('New name session');
     expect(hub).toContain('Working name');
     expect(hub).toContain('What does it do?');
@@ -25,13 +25,22 @@ describe('Names hub and project list create (#arc-474)', () => {
     expect(hub).toContain('createMode');
     expect(hub).not.toContain('Preferred domain');
     expect(hub).not.toContain('Needs AI');
+    expect(hub).not.toContain('<span>Organization</span>');
+    expect(hub).not.toContain('<span>Project</span>');
+    expect(hub).not.toContain('Select organization');
+    expect(hub).not.toContain('Select project');
   });
 
-  it('lets an admin create a project from the working name and asks members to pick one', () => {
+  it('lets an admin create a holding project from the working name and infers a member project', () => {
     expect(hub).toContain('createProject');
     expect(hub).toContain('isAdmin');
     expect(hub).toContain('WEB_ERROR.VAL_PROJECT');
     expect(hub).toContain("Creating a new product workspace is admin-only");
+    expect(hub).toContain('This also creates a project with the working name.');
+    expect(hub).toContain('orgFilter');
+    expect(hub).toContain('projectFilter');
+    expect(hub).toContain('Stored on a project you belong to.');
+    expect(hub).not.toContain('Stored on the selected project.');
   });
 
   it('shows org/project filters only when they discriminate, never after a session count', () => {

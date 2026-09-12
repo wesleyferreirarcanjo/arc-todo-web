@@ -6,14 +6,17 @@ import { ExploreMode } from '../components/names/ExploreMode';
 import { FeedbackSection } from '../components/names/FeedbackSection';
 import { NamesComposer } from '../components/names/NamesSection';
 import { ShortlistMode, yourShortlist } from '../components/names/ShortlistMode';
+import { TeamViewsMode } from '../components/names/TeamViewsMode';
 import { CandidateCard } from '../components/names/CandidateCard';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { CandidateReviewDialog, NamesPasteDialog } from '../components/names/CandidateReviewDialog';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ApiError } from '../lib/api/client';
+import { ChatApiError, generateNameSuggestions } from '../lib/api/chat';
 import {
   addNameCandidates,
   checkNameCandidate,
@@ -28,6 +31,7 @@ import { mergeCheckedCandidate } from '../lib/names/funnel';
 import {
   mergeCheckedCandidates,
   runNameWave,
+  sessionAvoidList,
 } from '../lib/names/wave';
 import {
   DEFAULT_NAMING_GOAL,
@@ -37,9 +41,14 @@ import {
 } from '../lib/names/catalog';
 import { canvasHasProduct } from '../lib/names/prompts';
 import {
+  GENERATE_DEFAULT,
+  buildNamesDecisionSummary,
   buildNamesSmartCopyPrompt,
+  looksLikeAiNameResponse,
   looksLikeNamesPacket,
-  parseNamesSmartCopy,
+  previewNamingResponse,
+  selectedReviewNames,
+  type NamingReviewRow,
 } from '../lib/names/smartCopy';
 import {
   BELOW_TOP_REASON_MESSAGE,
@@ -56,19 +65,31 @@ import type {
   CandidateSource,
 } from '../types/name-session';
 
-const SMART_COPY_GATE =
-  'Add one sentence about what it does, then use Smart copy. You can still check a name.';
-const PASTE_GATE =
-  'Add one sentence about what it does, then paste suggestions. You can still check a name.';
+const PRODUCT_GATE =
+  'Add one sentence about what it does, then generate or copy a prompt. You can still check a name.';
 const BRIEF_SAVED_MS = 2000;
+const BRIEF_EXTRA_FIELDS: Array<{ key: keyof ProductDescription; label: string }> = [
+  { key: 'problem', label: 'Problem it solves' },
+  { key: 'audience', label: 'Primary audience' },
+  { key: 'platform', label: 'Platform' },
+  { key: 'benefits', label: 'Core benefits' },
+  { key: 'personality', label: 'Brand personality' },
+  { key: 'countries', label: 'Markets / countries' },
+  { key: 'languages', label: 'Languages' },
+  { key: 'competitors', label: 'Competitors to avoid' },
+  { key: 'includeWords', label: 'Words to include' },
+  { key: 'excludeWords', label: 'Words to avoid' },
+  { key: 'preferredLength', label: 'Preferred length' },
+];
 
 type InspectorView = 'checks' | 'compare' | 'feedback';
-type NamesSessionMode = 'explore' | 'shortlist' | 'decision';
+type NamesSessionMode = 'explore' | 'shortlist' | 'decision' | 'team';
 
 const SESSION_MODES: { id: NamesSessionMode; label: string }[] = [
   { id: 'explore', label: 'Explore' },
   { id: 'shortlist', label: 'Shortlist' },
   { id: 'decision', label: 'Decision' },
+  { id: 'team', label: 'Team views' },
 ];
 
 function isSessionMode(id: string): id is NamesSessionMode {
@@ -95,21 +116,36 @@ export function NameSessionPage() {
   const [mode, setMode] = useState<NamesSessionMode>('explore');
   const [pendingPickId, setPendingPickId] = useState<string | null>(null);
   const [pickNote, setPickNote] = useState('');
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRows, setReviewRows] = useState<NamingReviewRow[]>([]);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSource, setReviewSource] = useState<CandidateSource>('chatbot');
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [copyFallback, setCopyFallback] = useState<string | null>(null);
+  const [retryNames, setRetryNames] = useState<string[]>([]);
+  const whatItIsRef = useRef<HTMLTextAreaElement | null>(null);
+  const generateSeq = useRef(0);
+  const savedBriefRef = useRef('');
 
   const favoriteCount = session ? yourShortlist(session).length : 0;
+  const showTeamTab = session?.participationMode === 'team';
+  const sessionModes = SESSION_MODES.filter(
+    (item) => item.id !== 'team' || showTeamTab,
+  ).map((item) =>
+    item.id === 'shortlist'
+      ? { ...item, label: `Shortlist-${favoriteCount}` }
+      : item,
+  );
 
   useRegisterMobileShellModeTabs(
     forbidden
       ? null
       : {
-          items: SESSION_MODES.map((item) =>
-            item.id === 'shortlist'
-              ? { ...item, count: favoriteCount }
-              : item,
-          ),
+          items: sessionModes,
           activeId: mode,
           onChange: (id) => {
-            if (isSessionMode(id)) setMode(id);
+            if (isSessionMode(id) && (id !== 'team' || showTeamTab)) setMode(id);
           },
           ariaLabel: 'Name session modes',
         },
@@ -121,7 +157,13 @@ export function NameSessionPage() {
     setError(null);
     setForbidden(false);
     try {
-      setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
+      const loaded = await fetchProjectNameSession(orgId, projectId, sessionId);
+      setSession(loaded);
+      savedBriefRef.current = JSON.stringify({
+        title: loaded.title,
+        namingGoal: loaded.namingGoal,
+        productDescription: loaded.productDescription,
+      });
     } catch (err) {
       if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
         setForbidden(true);
@@ -142,6 +184,23 @@ export function NameSessionPage() {
       if (briefSavedTimerRef.current) clearTimeout(briefSavedTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const dirty =
+      Boolean(session) &&
+      JSON.stringify({
+        title: session?.title,
+        namingGoal: session?.namingGoal,
+        productDescription: session?.productDescription,
+      }) !== savedBriefRef.current;
+    if (!dirty && !reviewOpen && !pasteOpen) return;
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [session, reviewOpen, pasteOpen]);
 
   const desc: ProductDescription = session?.productDescription ?? {};
   const pickName = session?.recommendedCandidateId
@@ -177,6 +236,11 @@ export function NameSessionPage() {
         setBriefSaved(false);
         briefSavedTimerRef.current = null;
       }, BRIEF_SAVED_MS);
+      savedBriefRef.current = JSON.stringify({
+        title: session.title,
+        namingGoal: session.namingGoal,
+        productDescription: desc,
+      });
       return true;
     } catch (err) {
       setBriefSaved(false);
@@ -251,24 +315,47 @@ export function NameSessionPage() {
     }
   }
 
-  async function runWaveChecks(names: string[]) {
+  function focusProductField() {
+    setBriefEditing(true);
+    window.setTimeout(() => whatItIsRef.current?.focus(), 0);
+  }
+
+  function currentPrompt() {
+    if (!session) return '';
+    return buildNamesSmartCopyPrompt({
+      title: session.title,
+      namingGoal: session.namingGoal,
+      productDescription: desc,
+      candidates: session.candidates,
+      count: GENERATE_DEFAULT,
+    });
+  }
+
+  async function runWaveChecks(
+    names: Array<string | { name: string; rationale?: string; family?: string }>,
+    source: CandidateSource,
+    opts?: { retry?: boolean },
+  ) {
     if (!orgId || !projectId || !sessionId || !names.length) return;
-    const keys = names.map((name) => normalizeNameKey(name));
+    if (busy === 'check' || busy === 'save') return;
+    const payloads = names.map((item) =>
+      typeof item === 'string' ? { name: item } : item,
+    );
+    const keys = payloads.map((item) => normalizeNameKey(item.name));
     setResolvingKeys((prev) => [...new Set([...prev, ...keys])]);
-    setBusy('check');
+    let added = Boolean(opts?.retry);
     try {
+      if (!opts?.retry) {
+        setBusy('save');
+        await addNameCandidates(orgId, projectId, sessionId, payloads, source);
+        added = true;
+        setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
+      }
+      setBusy('check');
+      const waveNames = payloads.map((item) => item.name);
       await runNameWave({
-        names,
-        add: async (waveNames) => {
-          await addNameCandidates(
-            orgId,
-            projectId,
-            sessionId,
-            waveNames.map((name) => ({ name })),
-            'human',
-          );
-          setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
-        },
+        names: waveNames,
+        add: async () => undefined,
         checkBatch: async (waveNames) => {
           const { candidates } = await checkNameCandidatesBatch(
             orgId,
@@ -289,60 +376,138 @@ export function NameSessionPage() {
       });
       setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
       setTypedName('');
+      setRetryNames([]);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'these name checks' }));
+      if (added) setRetryNames(payloads.map((item) => item.name));
     } finally {
       setResolvingKeys((prev) => prev.filter((item) => !keys.includes(item)));
       setBusy(null);
     }
   }
 
-  async function handlePastePacket(text: string) {
+  function openReviewFromText(text: string, source: CandidateSource) {
     if (!session) return;
-    if (!canvasHasProduct(desc)) {
-      setNotice(PASTE_GATE);
-      return;
-    }
-    const parsed = parseNamesSmartCopy(text);
-    if (!parsed.ok) {
-      setNotice(parsed.error);
-      return;
-    }
-    setNotice(null);
-    await runWaveChecks(parsed.names);
+    const review = previewNamingResponse(text, session.candidates);
+    setReviewSource(source);
+    setReviewRows(review.rows);
+    setReviewError(review.error ?? null);
+    setReviewOpen(true);
+    setPasteOpen(false);
+  }
+
+  function handlePastePacket(text: string) {
+    if (!session) return;
+    openReviewFromText(text, 'chatbot');
   }
 
   async function handleAddField() {
     const text = typedName;
     if (!text.trim()) return;
-    if (looksLikeNamesPacket(text) || text.includes('\n')) {
-      await handlePastePacket(text);
+    if (looksLikeAiNameResponse(text) || looksLikeNamesPacket(text) || text.includes('\n')) {
+      handlePastePacket(text);
       return;
     }
     await handleCheckName(text);
   }
 
-  async function handleSmartCopy() {
+  async function handleCopyPrompt() {
     if (!session) return;
     if (!canvasHasProduct(desc)) {
-      setNotice(SMART_COPY_GATE);
+      setNotice(PRODUCT_GATE);
+      focusProductField();
       return;
     }
     setBusy('copy');
+    const prompt = currentPrompt();
     try {
-      await navigator.clipboard.writeText(
-        buildNamesSmartCopyPrompt({
-          title: session.title,
-          whatItIs: desc.whatItIs,
-          namingGoal: session.namingGoal,
-          candidates: session.candidates,
-        }),
-      );
-      setNotice('Smart copy is on the clipboard.');
+      await navigator.clipboard.writeText(prompt);
+      setCopyFallback(null);
+      setNotice('The naming prompt is on the clipboard. Paste it into any chatbot.');
     } catch {
-      setNotice('Could not copy the brief.');
+      setCopyFallback(prompt);
+      setNotice('Clipboard permission was blocked. Select the prompt below and copy it.');
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function handleGenerate() {
+    if (!orgId || !projectId || !sessionId || !session) return;
+    if (busy) return;
+    if (!canvasHasProduct(desc)) {
+      setNotice(PRODUCT_GATE);
+      focusProductField();
+      return;
+    }
+    const seq = generateSeq.current + 1;
+    generateSeq.current = seq;
+    const saved = await saveBrief();
+    if (!saved) return;
+    setBusy('generate');
+    setNotice(null);
+    try {
+      const result = await generateNameSuggestions({
+        organizationId: orgId,
+        projectId: projectId,
+        sessionId,
+        title: session.title,
+        namingGoal: session.namingGoal,
+        productDescription: Object.fromEntries(
+          Object.entries(desc).filter(([, value]) => Boolean(value?.trim())),
+        ),
+        count: GENERATE_DEFAULT,
+        avoid: sessionAvoidList(session.candidates),
+      });
+      if (seq !== generateSeq.current || sessionId !== session.id) return;
+      if (result.usedTools?.length) {
+        setError('Name generation used unexpected tools. Nothing was added.');
+        return;
+      }
+      const text = JSON.stringify({ suggestions: result.suggestions });
+      openReviewFromText(text, 'chatbot');
+    } catch (err) {
+      if (seq !== generateSeq.current) return;
+      setError(
+        userMessage(err instanceof ChatApiError ? err : err, WEB_ERROR.CHAT_REQUEST, {
+          thing: 'name suggestions',
+        }),
+      );
+    } finally {
+      if (seq === generateSeq.current) setBusy(null);
+    }
+  }
+
+  async function handleConfirmReview() {
+    const selected = selectedReviewNames(reviewRows);
+    if (!selected.length) return;
+    setReviewOpen(false);
+    await runWaveChecks(selected, reviewSource);
+  }
+
+  async function handleCopySummary() {
+    if (!session) return;
+    const pick =
+      session.recommendedCandidateId
+        ? session.candidates.find((item) => item.id === session.recommendedCandidateId)?.name
+        : null;
+    const liked = session.candidates
+      .filter((item) => item.reaction === 'liked' || item.reaction === 'loved')
+      .map((item) => item.name);
+    const summary = buildNamesDecisionSummary({
+      title: session.title,
+      pick,
+      favoriteNames: liked,
+      finalistNames: session.shortlistIds
+        .map((id) => session.candidates.find((item) => item.id === id)?.name)
+        .filter((name): name is string => Boolean(name)),
+    });
+    try {
+      await navigator.clipboard.writeText(summary);
+      setNotice('The shortlist summary is on the clipboard.');
+    } catch {
+      setCopyFallback(summary);
+      setNotice('Clipboard permission was blocked. Select the summary below and copy it.');
     }
   }
 
@@ -474,6 +639,40 @@ export function NameSessionPage() {
   const promotedCount = session?.shortlistIds.length ?? 0;
   const feedbackReady =
     (session?.feedback.length ?? 0) > 0 || promotedCount >= 2;
+  const progressLabel =
+    busy === 'generate'
+      ? 'Generating names…'
+      : busy === 'save'
+        ? 'Saving names…'
+        : busy === 'check'
+          ? 'Checking names…'
+          : busy === 'copy'
+            ? 'Copying prompt…'
+            : null;
+  const briefDirty =
+    Boolean(session) &&
+    JSON.stringify({
+      title: session?.title,
+      namingGoal: session?.namingGoal,
+      productDescription: desc,
+    }) !== savedBriefRef.current;
+
+  const composer = (
+    <NamesComposer
+      typedName={typedName}
+      onTypedName={setTypedName}
+      busy={busy}
+      progress={progressLabel}
+      onCheckName={() => void handleAddField()}
+      onGenerate={() => void handleGenerate()}
+      onCopyPrompt={() => void handleCopyPrompt()}
+      onPasteAi={() => {
+        setPasteText('');
+        setPasteOpen(true);
+      }}
+      onPastePacket={(text) => handlePastePacket(text)}
+    />
+  );
 
   return (
     <div className="page-shell names-session-page">
@@ -517,6 +716,7 @@ export function NameSessionPage() {
               <label className="form-field">
                 <span>What does it do?</span>
                 <textarea
+                  ref={whatItIsRef}
                   rows={2}
                   value={desc.whatItIs ?? ''}
                   onChange={(event) => setDesc('whatItIs', event.target.value)}
@@ -538,6 +738,19 @@ export function NameSessionPage() {
                   }))}
                 />
               </div>
+              <details className="names-brief-extras">
+                <summary>More about the product (optional)</summary>
+                {BRIEF_EXTRA_FIELDS.map((field) => (
+                  <label key={field.key} className="form-field">
+                    <span>{field.label}</span>
+                    <textarea
+                      rows={2}
+                      value={desc[field.key] ?? ''}
+                      onChange={(event) => setDesc(field.key, event.target.value)}
+                    />
+                  </label>
+                ))}
+              </details>
               <div className="names-quick-brief-actions">
                 <button
                   type="button"
@@ -593,7 +806,7 @@ export function NameSessionPage() {
             className="names-desk-tabs names-session-mode-nav"
             aria-label="Name session modes"
           >
-            {SESSION_MODES.map((item) => {
+            {sessionModes.map((item) => {
               const current = mode === item.id;
               return (
                 <button
@@ -604,36 +817,37 @@ export function NameSessionPage() {
                   onClick={() => setMode(item.id)}
                 >
                   {item.label}
-                  {item.id === 'shortlist' ? (
-                    <span> {favoriteCount}</span>
-                  ) : null}
                 </button>
               );
             })}
           </nav>
           <section className="names-panel">
-            {mode === 'explore' ? (
-              <NamesComposer
-                typedName={typedName}
-                onTypedName={setTypedName}
-                busy={busy}
-                onCheckName={() => void handleAddField()}
-                onSmartCopy={() => void handleSmartCopy()}
-                onPastePacket={(text) => void handlePastePacket(text)}
-              />
-            ) : (
-              <details className="names-composer-more">
-                <summary>Add names — type them or copy the brief</summary>
-                <NamesComposer
-                  typedName={typedName}
-                  onTypedName={setTypedName}
-                  busy={busy}
-                  onCheckName={() => void handleAddField()}
-                  onSmartCopy={() => void handleSmartCopy()}
-                  onPastePacket={(text) => void handlePastePacket(text)}
-                />
-              </details>
+            {mode === 'explore' ? composer : null}
+            {retryNames.length > 0 && (
+              <p className="names-retry" role="status">
+                Some checks did not finish.{' '}
+                <button
+                  type="button"
+                  className="text-link"
+                  onClick={() => void runWaveChecks(retryNames, 'chatbot', { retry: true })}
+                >
+                  Retry checks
+                </button>
+              </p>
             )}
+            {copyFallback ? (
+              <label className="form-field names-copy-fallback">
+                <span>Select this text and copy it</span>
+                <textarea readOnly rows={8} value={copyFallback} />
+              </label>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => void handleCopySummary()}
+            >
+              Copy shortlist summary
+            </button>
             {mode === 'explore' && (
               <ExploreMode
                 session={session}
@@ -677,9 +891,41 @@ export function NameSessionPage() {
                 onGoToShortlist={() => setMode('shortlist')}
               />
             )}
+            {mode === 'team' && showTeamTab ? (
+              <TeamViewsMode session={session} />
+            ) : null}
           </section>
         </>
       )}
+      {briefDirty && (
+        <p className="names-meta" role="status">
+          Brief edits are not saved yet. Save brief or they will be lost if you leave.
+        </p>
+      )}
+      <CandidateReviewDialog
+        open={reviewOpen}
+        rows={reviewRows}
+        error={reviewError}
+        busy={busy === 'save' || busy === 'check'}
+        onRowChange={(id, patch) => {
+          setReviewRows((prev) =>
+            prev.map((row) => (row.id === id ? { ...row, ...patch } : row)),
+          );
+        }}
+        onConfirm={() => void handleConfirmReview()}
+        onCancel={() => {
+          setReviewOpen(false);
+          setReviewRows([]);
+          setReviewError(null);
+        }}
+      />
+      <NamesPasteDialog
+        open={pasteOpen}
+        text={pasteText}
+        onChange={setPasteText}
+        onReview={() => openReviewFromText(pasteText, 'chatbot')}
+        onCancel={() => setPasteOpen(false)}
+      />
       <Modal
         open={Boolean(inspector)}
         onClose={() => setInspectorId(null)}
