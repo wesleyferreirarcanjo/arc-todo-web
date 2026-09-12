@@ -54,7 +54,7 @@ const session: ProjectNameSession = {
 };
 
 describe('NamesSection', () => {
-  it('uses one add field plus Smart copy and does not revive Suggest names', async () => {
+  it('uses one add field plus Generate with AI and does not revive Suggest names', async () => {
     const user = userEvent.setup();
     const onCheckName = vi.fn();
     render(
@@ -69,7 +69,9 @@ describe('NamesSection', () => {
         emptyCopy="Needs AI"
         raterName="wesley"
         onCheckName={onCheckName}
-        onSmartCopy={() => undefined}
+        onGenerate={() => undefined}
+        onCopyPrompt={() => undefined}
+        onPasteAi={() => undefined}
         onPastePacket={() => undefined}
         onKeep={() => undefined}
         onReject={() => undefined}
@@ -80,7 +82,10 @@ describe('NamesSection', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Check this name' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Smart copy' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Generate with AI' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy prompt for external AI' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Paste AI response' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Smart copy' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Suggest names' })).toBeNull();
     expect(screen.queryByText('Generate more')).toBeNull();
     expect(screen.getByLabelText('Name candidates')).toBeTruthy();
@@ -102,7 +107,9 @@ describe('NamesSection', () => {
         emptyCopy="Needs AI"
         raterName="wesley"
         onCheckName={() => undefined}
-        onSmartCopy={() => undefined}
+        onGenerate={() => undefined}
+        onCopyPrompt={() => undefined}
+        onPasteAi={() => undefined}
         onPastePacket={() => undefined}
         onKeep={() => undefined}
         onReject={() => undefined}

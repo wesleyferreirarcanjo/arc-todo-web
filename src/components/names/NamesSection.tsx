@@ -1,24 +1,29 @@
 import type { FeedbackRoundView, ProjectNameSession } from '../../types/name-session';
+import { looksLikeAiNameResponse } from '../../lib/names/smartCopy';
 import { CandidateShortlistTable } from './CandidateShortlistTable';
 
 export function NamesComposer(props: {
   typedName: string;
   onTypedName: (value: string) => void;
   busy: string | null;
+  progress?: string | null;
   onCheckName: (name?: string) => void;
-  onSmartCopy: () => void;
+  onGenerate: () => void;
+  onCopyPrompt: () => void;
+  onPasteAi: () => void;
   onPastePacket: (text: string) => void;
 }) {
+  const busy = Boolean(props.busy);
   return (
     <div className="names-composer names-composer-hero">
       <input
         value={props.typedName}
-        placeholder="Type a name or paste suggestions"
-        aria-label="Name or pasted suggestions"
+        placeholder="Type a name"
+        aria-label="Name to check"
         onChange={(event) => props.onTypedName(event.target.value)}
         onPaste={(event) => {
           const text = event.clipboardData.getData('text');
-          if (!text.includes('\n') && !/^NAMES\b/im.test(text.trim())) return;
+          if (!looksLikeAiNameResponse(text)) return;
           event.preventDefault();
           props.onPastePacket(text);
         }}
@@ -37,14 +42,37 @@ export function NamesComposer(props: {
       >
         Check this name
       </button>
-      <button
-        type="button"
-        className="btn btn-secondary"
-        disabled={props.busy === 'copy'}
-        onClick={() => void props.onSmartCopy()}
-      >
-        Smart copy
-      </button>
+      <div className="names-composer-ai">
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={busy}
+          onClick={() => void props.onGenerate()}
+        >
+          Generate with AI
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={props.busy === 'copy'}
+          onClick={() => void props.onCopyPrompt()}
+        >
+          Copy prompt for external AI
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={busy}
+          onClick={() => void props.onPasteAi()}
+        >
+          Paste AI response
+        </button>
+      </div>
+      {props.progress ? (
+        <p className="names-composer-progress" role="status">
+          {props.progress}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -124,7 +152,9 @@ export function NamesSection(props: {
   emptyCopy: string;
   raterName: string;
   onCheckName: (name?: string) => void;
-  onSmartCopy: () => void;
+  onGenerate: () => void;
+  onCopyPrompt: () => void;
+  onPasteAi: () => void;
   onPastePacket: (text: string) => void;
   onKeep: (candidateId: string) => void;
   onReject: (candidateId: string) => void;
@@ -139,7 +169,9 @@ export function NamesSection(props: {
         onTypedName={props.onTypedName}
         busy={props.busy}
         onCheckName={props.onCheckName}
-        onSmartCopy={props.onSmartCopy}
+        onGenerate={props.onGenerate}
+        onCopyPrompt={props.onCopyPrompt}
+        onPasteAi={props.onPasteAi}
         onPastePacket={props.onPastePacket}
       />
       <NamesWorkbench

@@ -430,7 +430,7 @@
 
 .names-composer-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.5rem;
 }
@@ -445,6 +445,59 @@
 .names-composer-hero .btn-secondary {
   min-height: 3rem;
   margin-top: 0;
+}
+
+.names-composer-ai {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.names-composer-progress,
+.names-retry,
+.names-copy-fallback {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.names-brief-extras {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.names-brief-extras summary {
+  min-height: 2.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.names-review-table-wrap {
+  overflow: auto;
+}
+
+.names-review-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.names-review-table th,
+.names-review-table td {
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.names-review-table input[type='text'],
+.names-review-table input:not([type='checkbox']) {
+  width: 100%;
+}
+
+.names-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
 }
 
 .names-composer-more {

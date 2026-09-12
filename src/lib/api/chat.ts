@@ -30,6 +30,29 @@ export interface ChatResponse {
   usedTools?: string[];
 }
 
+export interface NamingGenerateRequest {
+  organizationId: string;
+  projectId: string;
+  sessionId: string;
+  title: string;
+  namingGoal?: string | null;
+  productDescription?: Record<string, string>;
+  count?: number;
+  avoid?: string[];
+  refinement?: string;
+}
+
+export interface NamingSuggestion {
+  name: string;
+  rationale?: string | null;
+  family?: string | null;
+}
+
+export interface NamingGenerateResponse {
+  suggestions: NamingSuggestion[];
+  usedTools?: string[];
+}
+
 export interface StreamChatCallbacks {
   onToken?: (delta: string) => void;
   onDone?: (message: string, usedTools: string[]) => void;
@@ -101,6 +124,45 @@ export async function sendChatMessage(
   }
 
   return response.json() as Promise<ChatResponse>;
+}
+
+export async function generateNameSuggestions(
+  request: NamingGenerateRequest,
+): Promise<NamingGenerateResponse> {
+  const token = getToken();
+  if (!token) {
+    throw new ChatApiError(catalogMessage(WEB_ERROR.CHAT_AUTH), 401, undefined, WEB_ERROR.CHAT_AUTH);
+  }
+
+  const response = await fetch(`${CHAT_API_BASE_URL}/names/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let message = catalogMessage(WEB_ERROR.CHAT_REQUEST);
+    let code: string | undefined = WEB_ERROR.CHAT_REQUEST;
+    let body: unknown;
+    try {
+      body = await response.json();
+      const parsed = parseErrorMessage(response.status, body);
+      message = parsed.message;
+      code = parsed.code ?? code;
+    } catch {
+      // ignore parse errors
+    }
+    throw new ChatApiError(message, response.status, body, code);
+  }
+
+  const payload = (await response.json()) as NamingGenerateResponse;
+  return {
+    suggestions: Array.isArray(payload.suggestions) ? payload.suggestions : [],
+    usedTools: payload.usedTools ?? [],
+  };
 }
 
 function parseSseEvent(rawEvent: string): { event: string; data: string } | null {
