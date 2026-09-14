@@ -62,7 +62,8 @@ export function yourRejectedNames(
 /** Undo Rejected: active, no Pass/Like/Love, unbatched so Explore can deal it. */
 export function restoredExploreCandidate(item: NameCandidate): NameCandidate {
   const { reaction: _r, reactedAt: _a, batchNumber: _b, ...rest } = item;
-  return { ...rest, status: 'active', reaction: null } as NameCandidate;
+  // PATCH clears Pass/Like/Love with JSON null; GET types omit that write shape.
+  return { ...rest, status: 'active', reaction: null } as unknown as NameCandidate;
 }
 
 export function teamFinalists(session: ProjectNameSession): NameCandidate[] {
