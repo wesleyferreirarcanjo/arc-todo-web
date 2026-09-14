@@ -21,7 +21,7 @@ import { ReactionControls } from './ReactionControls';
 import { VariationPicker } from './VariationPicker';
 
 const NEEDS_AI_COPY =
-  'Add names — type them here, or copy the brief for an AI assistant. Suggestions return to this session.';
+  'Add names — type them here, generate with AI, or paste suggestions from another chatbot.';
 
 type UndoEntry = {
   id: string;
@@ -39,12 +39,22 @@ function isBatched(candidate: NameCandidate): boolean {
 export function exploreDeck(session: ProjectNameSession): NameCandidate[] {
   const active = session.candidates.filter((item) => item.status !== 'rejected');
   const open = (session.batches ?? []).find((batch) => batch.status === 'open');
+  const unevaluated = (item: NameCandidate) => !item.reaction;
   if (open) {
-    return open.candidateIds
+    const fromBatch = open.candidateIds
       .map((id) => active.find((item) => item.id === id))
       .filter((item): item is NameCandidate => Boolean(item));
+    const extra = active.filter(
+      (item) =>
+        unevaluated(item) &&
+        isBatched(item) &&
+        !fromBatch.some((card) => card.id === item.id),
+    );
+    return extra.length ? [...fromBatch, ...extra] : fromBatch;
   }
-  return active.filter((item) => !isBatched(item));
+  const waiting = active.filter((item) => !isBatched(item));
+  const extra = active.filter((item) => isBatched(item) && unevaluated(item));
+  return extra.length ? [...waiting, ...extra] : waiting;
 }
 
 export function unbatchedActive(session: ProjectNameSession): NameCandidate[] {

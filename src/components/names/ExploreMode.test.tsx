@@ -24,7 +24,7 @@ vi.mock('../../lib/api/names', () => ({
   checkNameHandles,
 }));
 
-import { ExploreMode } from './ExploreMode';
+import { ExploreMode, exploreDeck } from './ExploreMode';
 import { deckDnsLines, webFitLine } from './CandidateDeckCard';
 
 function candidate(partial: Partial<NameCandidate> = {}): NameCandidate {
@@ -115,6 +115,70 @@ beforeEach(() => {
 });
 
 describe('ExploreMode', () => {
+  it('deals a restored batched name with no reaction, not only unbatched waiting cards', () => {
+    const deck = exploreDeck(
+      session({
+        candidates: [
+          candidate({
+            id: 'nova',
+            name: 'Nova',
+            reaction: 'liked',
+            batchNumber: 1,
+          }),
+          candidate({ id: 'rift', name: 'Rift', batchNumber: 1 }),
+          candidate({ id: 'wave', name: 'Wave' }),
+        ],
+        batches: [
+          {
+            number: 1,
+            candidateIds: ['nova'],
+            status: 'decided',
+            winnerCandidateId: 'nova',
+            decisionNote: null,
+            roundId: null,
+            createdAt: '2026-09-03T00:00:00.000Z',
+            decidedAt: '2026-09-03T01:00:00.000Z',
+            finalistCandidateIds: [],
+          },
+        ],
+      }),
+    );
+    expect(deck.map((item) => item.id)).toEqual(['wave', 'rift']);
+  });
+
+  it('shows a restored batched name as the next Explore card', () => {
+    render(
+      <Harness
+        initial={session({
+          candidates: [
+            candidate({
+              id: 'nova',
+              name: 'Nova',
+              reaction: 'liked',
+              batchNumber: 1,
+            }),
+            candidate({ id: 'rift', name: 'Rift', batchNumber: 1 }),
+          ],
+          batches: [
+            {
+              number: 1,
+              candidateIds: ['nova', 'rift'],
+              status: 'decided',
+              winnerCandidateId: 'nova',
+              decisionNote: null,
+              roundId: null,
+              createdAt: '2026-09-03T00:00:00.000Z',
+              decidedAt: '2026-09-03T01:00:00.000Z',
+              finalistCandidateIds: [],
+            },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Rift' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Nova' })).toBeNull();
+  });
+
   it('asks to add names instead of implying an AI job', () => {
     render(<Harness initial={session({ candidates: [] })} />);
     expect(screen.getByText(/Add names — type them here/)).toBeTruthy();

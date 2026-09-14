@@ -59,6 +59,12 @@ export function yourRejectedNames(
   );
 }
 
+/** Undo Rejected: active, no Pass/Like/Love, unbatched so Explore can deal it. */
+export function restoredExploreCandidate(item: NameCandidate): NameCandidate {
+  const { reaction: _r, reactedAt: _a, batchNumber: _b, ...rest } = item;
+  return { ...rest, status: 'active', reaction: null } as NameCandidate;
+}
+
 export function teamFinalists(session: ProjectNameSession): NameCandidate[] {
   return session.shortlistIds
     .map((id) => session.candidates.find((item) => item.id === id))
@@ -193,7 +199,7 @@ export function ShortlistMode(props: {
     setErrorCode(undefined);
     try {
       let latest = session;
-      if (candidate.reaction === 'passed') {
+      if (candidate.reaction) {
         latest = await setNameCandidateReaction(
           props.orgId,
           props.projectId,
@@ -203,15 +209,19 @@ export function ShortlistMode(props: {
         );
         props.onSession(latest);
       }
-      const current = latest.candidates.find((item) => item.id === id);
-      if ((current ?? candidate).status === 'rejected') {
+      const current = latest.candidates.find((item) => item.id === id) ?? candidate;
+      const needsPatch =
+        current.status === 'rejected' ||
+        Boolean(current.reaction) ||
+        typeof current.batchNumber === 'number';
+      if (needsPatch) {
         latest = await updateProjectNameSession(
           props.orgId,
           props.projectId,
           props.sessionId,
           {
             candidates: latest.candidates.map((item) =>
-              item.id === id ? { ...item, status: 'active' } : item,
+              item.id === id ? restoredExploreCandidate(item) : item,
             ),
           },
         );

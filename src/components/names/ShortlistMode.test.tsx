@@ -660,6 +660,137 @@ describe('ShortlistMode', () => {
     expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
   });
 
+  it('restores a table-rejected Like or Love by clearing the reaction so it returns to Explore, not Shortlist', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [
+        candidate({ reaction: 'liked', status: 'rejected' }),
+        candidate({
+          id: 'halo',
+          name: 'Halo',
+          reaction: 'loved',
+          status: 'rejected',
+        }),
+      ],
+    });
+    let latest = initial;
+    setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) => {
+      latest = applyReaction(latest, id, input.reaction);
+      return latest;
+    });
+    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
+      latest = {
+        ...latest,
+        candidates: input.candidates ?? latest.candidates,
+      };
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    expect(screen.getByRole('button', { name: 'Shortlist 0' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Rejected 2' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Restore Nova to Explore' }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Restore Halo to Explore' }),
+    );
+    await waitFor(() => {
+      expect(setNameCandidateReaction).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        'sess-1',
+        'nova',
+        { reaction: null },
+      );
+    });
+    expect(setNameCandidateReaction).toHaveBeenCalledWith(
+      'org-1',
+      'proj-1',
+      'sess-1',
+      'halo',
+      { reaction: null },
+    );
+    expect(latest.candidates.find((item) => item.id === 'nova')?.reaction).toBeFalsy();
+    expect(latest.candidates.find((item) => item.id === 'halo')?.reaction).toBeFalsy();
+    expect(latest.candidates.find((item) => item.id === 'nova')?.status).toBe(
+      'active',
+    );
+    expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Shortlist 0' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Shortlist 0' }));
+    expect(screen.queryByRole('heading', { name: 'Nova' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Halo' })).toBeNull();
+    expect(updateProjectNameSession).toHaveBeenCalledWith(
+      'org-1',
+      'proj-1',
+      'sess-1',
+      expect.objectContaining({
+        candidates: expect.arrayContaining([
+          expect.objectContaining({ id: 'nova', status: 'active', reaction: null }),
+          expect.objectContaining({ id: 'halo', status: 'active', reaction: null }),
+        ]),
+      }),
+    );
+  });
+
+  it('restores an already-evaluated reject to Explore even when the reaction PUT is a no-op', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [
+        candidate({
+          reaction: 'loved',
+          status: 'rejected',
+          batchNumber: 1,
+        }),
+      ],
+    });
+    let latest = initial;
+    setNameCandidateReaction.mockImplementation(async () => latest);
+    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
+      latest = {
+        ...latest,
+        candidates: (input.candidates ?? latest.candidates).map((item) => {
+          if (item.reaction !== null) return item;
+          const { reaction: _r, reactedAt: _a, batchNumber: _b, ...rest } = item;
+          return { ...rest, status: 'active' };
+        }),
+      };
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    await user.click(screen.getByRole('button', { name: 'Rejected 1' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Restore Nova to Explore' }),
+    );
+    await waitFor(() => {
+      expect(updateProjectNameSession).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        'sess-1',
+        expect.objectContaining({
+          candidates: [
+            expect.objectContaining({
+              id: 'nova',
+              status: 'active',
+              reaction: null,
+            }),
+          ],
+        }),
+      );
+    });
+    expect(
+      updateProjectNameSession.mock.calls[0][3].candidates[0].batchNumber,
+    ).toBeUndefined();
+    expect(latest.candidates[0]?.reaction).toBeUndefined();
+    expect(latest.candidates[0]?.status).toBe('active');
+    expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Shortlist 0' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Shortlist 0' }));
+    expect(screen.queryByRole('heading', { name: 'Nova' })).toBeNull();
+  });
+
   it('restores a table reject by setting status back to active', async () => {
     const user = userEvent.setup();
     const initial = session({
@@ -689,7 +820,11 @@ describe('ShortlistMode', () => {
         'sess-1',
         expect.objectContaining({
           candidates: expect.arrayContaining([
-            expect.objectContaining({ id: 'wave', status: 'active' }),
+            expect.objectContaining({
+              id: 'wave',
+              status: 'active',
+              reaction: null,
+            }),
           ]),
         }),
       );
