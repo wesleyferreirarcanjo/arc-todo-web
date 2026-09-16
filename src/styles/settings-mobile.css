@@ -116,7 +116,7 @@
     min-width: 0;
   }
 
-  .names-session-mode-nav {
+  nav.names-desk-tabs.names-session-mode-nav {
     display: none;
   }
 

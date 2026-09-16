@@ -80,7 +80,7 @@ export function NoBatchDecision(props: {
     return (
       <p className="names-empty">
         {props.isSolo
-          ? 'Add names in Explore — type them here, or copy the brief for an AI assistant. Like the ones you want to keep, then choose a winner.'
+          ? 'Add names in Explore — type them here, generate with AI, or paste suggestions. Like the ones you want to keep, then choose a winner.'
           : 'Promote names on Shortlist, then return here to choose a winner.'}
       </p>
     );

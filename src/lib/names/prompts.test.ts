@@ -39,7 +39,7 @@ describe('product description canvas', () => {
     expect(formatted).not.toMatch(/preferred domain/i);
   });
 
-  it('asks for about a dozen names and lists the session avoid-list', () => {
+  it('asks for names and lists the session avoid-list', () => {
     const prompt = suggestNamesPrompt(
       { whatItIs: 'A private task board.' },
       { avoid: ['Nova', 'Rift'] },

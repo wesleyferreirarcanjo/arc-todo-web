@@ -114,6 +114,18 @@ function applyReaction(
   };
 }
 
+function applyCandidatePatch(
+  current: ProjectNameSession,
+  incoming: NameCandidate[] | undefined,
+): ProjectNameSession {
+  if (!incoming?.length) return current;
+  const byId = new Map(incoming.map((item) => [item.id, item]));
+  return {
+    ...current,
+    candidates: current.candidates.map((item) => byId.get(item.id) ?? item),
+  };
+}
+
 function applyFavorite(
   current: ProjectNameSession,
   id: string,
@@ -679,10 +691,7 @@ describe('ShortlistMode', () => {
       return latest;
     });
     updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
-      latest = {
-        ...latest,
-        candidates: input.candidates ?? latest.candidates,
-      };
+      latest = applyCandidatePatch(latest, input.candidates);
       return latest;
     });
     render(<Harness initial={initial} />);
@@ -725,12 +734,21 @@ describe('ShortlistMode', () => {
       'org-1',
       'proj-1',
       'sess-1',
-      expect.objectContaining({
-        candidates: expect.arrayContaining([
+      {
+        candidates: [
           expect.objectContaining({ id: 'nova', status: 'active', reaction: null }),
+        ],
+      },
+    );
+    expect(updateProjectNameSession).toHaveBeenCalledWith(
+      'org-1',
+      'proj-1',
+      'sess-1',
+      {
+        candidates: [
           expect.objectContaining({ id: 'halo', status: 'active', reaction: null }),
-        ]),
-      }),
+        ],
+      },
     );
   });
 
@@ -748,14 +766,12 @@ describe('ShortlistMode', () => {
     let latest = initial;
     setNameCandidateReaction.mockImplementation(async () => latest);
     updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
-      latest = {
-        ...latest,
-        candidates: (input.candidates ?? latest.candidates).map((item) => {
-          if (item.reaction !== null) return item;
-          const { reaction: _r, reactedAt: _a, batchNumber: _b, ...rest } = item;
-          return { ...rest, status: 'active' };
-        }),
-      };
+      const incoming = (input.candidates ?? []).map((item) => {
+        if (item.reaction !== null) return item;
+        const { reaction: _r, reactedAt: _a, batchNumber: _b, ...rest } = item;
+        return { ...rest, status: 'active' as const };
+      });
+      latest = applyCandidatePatch(latest, incoming);
       return latest;
     });
     render(<Harness initial={initial} />);
@@ -801,10 +817,7 @@ describe('ShortlistMode', () => {
     });
     let latest = initial;
     updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
-      latest = {
-        ...latest,
-        candidates: input.candidates ?? latest.candidates,
-      };
+      latest = applyCandidatePatch(latest, input.candidates);
       return latest;
     });
     render(<Harness initial={initial} />);
@@ -818,20 +831,99 @@ describe('ShortlistMode', () => {
         'org-1',
         'proj-1',
         'sess-1',
-        expect.objectContaining({
-          candidates: expect.arrayContaining([
+        {
+          candidates: [
             expect.objectContaining({
               id: 'wave',
               status: 'active',
               reaction: null,
             }),
-          ]),
-        }),
+          ],
+        },
       );
     });
+    expect(updateProjectNameSession.mock.calls[0][3].candidates).toHaveLength(1);
+    expect(latest.candidates.find((item) => item.id === 'nova')?.reaction).toBe(
+      'liked',
+    );
     expect(setNameCandidateReaction).not.toHaveBeenCalled();
     expect(screen.queryByText('Wave')).toBeNull();
     expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
+  });
+
+  it('patches only the restored name so other Shortlist likes stay put', async () => {
+    const user = userEvent.setup();
+    const initial = session({
+      candidates: [
+        candidate({ reaction: 'liked', batchNumber: 1 }),
+        candidate({
+          id: 'halo',
+          name: 'Halo',
+          reaction: 'loved',
+          batchNumber: 1,
+        }),
+        candidate({
+          id: 'rift',
+          name: 'Rift',
+          reaction: 'passed',
+          status: 'rejected',
+          batchNumber: 1,
+        }),
+      ],
+    });
+    let latest = initial;
+    setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) => {
+      latest = applyReaction(latest, id, input.reaction);
+      return latest;
+    });
+    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => {
+      latest = applyCandidatePatch(latest, input.candidates);
+      return latest;
+    });
+    render(<Harness initial={initial} />);
+
+    expect(screen.getByRole('button', { name: 'Shortlist 2' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Rejected 1' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Restore Rift to Explore' }),
+    );
+    await waitFor(() => {
+      expect(updateProjectNameSession).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        'sess-1',
+        {
+          candidates: [
+            expect.objectContaining({
+              id: 'rift',
+              status: 'active',
+              reaction: null,
+            }),
+          ],
+        },
+      );
+    });
+    expect(updateProjectNameSession.mock.calls[0][3].candidates).toHaveLength(1);
+    expect(
+      updateProjectNameSession.mock.calls[0][3].candidates.map(
+        (item: { id: string }) => item.id,
+      ),
+    ).toEqual(['rift']);
+    expect(latest.candidates.find((item) => item.id === 'nova')?.reaction).toBe(
+      'liked',
+    );
+    expect(latest.candidates.find((item) => item.id === 'halo')?.reaction).toBe(
+      'loved',
+    );
+    expect(latest.candidates.find((item) => item.id === 'rift')?.reaction).toBeFalsy();
+    expect(latest.candidates.find((item) => item.id === 'rift')?.status).toBe(
+      'active',
+    );
+    expect(screen.getByRole('button', { name: 'Rejected 0' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Shortlist 2' }));
+    expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Halo' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Rift' })).toBeNull();
   });
 
   it('keeps the heart on Shortlist after visiting Rejected', async () => {

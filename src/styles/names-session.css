@@ -1075,6 +1075,10 @@
 }
 
 @media (max-width: 1023px) {
+  nav.names-desk-tabs.names-session-mode-nav {
+    display: none;
+  }
+
   .names-desk {
     grid-template-columns: 1fr;
   }

@@ -79,4 +79,12 @@ describe('TeamViewsMode', () => {
       screen.getByText('No one else has liked, loved, or scored a name yet.'),
     ).toBeTruthy();
   });
+
+  it('treats an explicit empty memberShortlists array as the same empty copy', () => {
+    render(<TeamViewsMode session={session({ memberShortlists: [] })} />);
+    expect(
+      screen.getByText('No one else has liked, loved, or scored a name yet.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'arthura' })).toBeNull();
+  });
 });

@@ -5,7 +5,9 @@ function reactionLabel(reaction: MemberShortlist['likedLoved'][number]['reaction
 }
 
 export function TeamViewsMode(props: { session: ProjectNameSession }) {
-  const members = props.session.memberShortlists ?? [];
+  const members = Array.isArray(props.session.memberShortlists)
+    ? props.session.memberShortlists
+    : [];
   if (members.length === 0) {
     return (
       <p className="names-empty">

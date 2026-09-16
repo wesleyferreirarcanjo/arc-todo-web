@@ -216,15 +216,12 @@ export function ShortlistMode(props: {
         Boolean(current.reaction) ||
         typeof current.batchNumber === 'number';
       if (needsPatch) {
+        // Only this name. A full GET-shaped candidates array clobbers other Like/Love.
         latest = await updateProjectNameSession(
           props.orgId,
           props.projectId,
           props.sessionId,
-          {
-            candidates: latest.candidates.map((item) =>
-              item.id === id ? restoredExploreCandidate(item) : item,
-            ),
-          },
+          { candidates: [restoredExploreCandidate(current)] },
         );
         props.onSession(latest);
       }
