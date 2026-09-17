@@ -82,7 +82,11 @@ function applyReaction(
   };
 }
 
-function Harness(props: { initial: ProjectNameSession; onShortlist?: () => void }) {
+function Harness(props: {
+  initial: ProjectNameSession;
+  onShortlist?: () => void;
+  onSession?: (next: ProjectNameSession) => void;
+}) {
   const [current, setCurrent] = useState(props.initial);
   return (
     <ExploreMode
@@ -90,7 +94,10 @@ function Harness(props: { initial: ProjectNameSession; onShortlist?: () => void 
       orgId="org-1"
       projectId="proj-1"
       sessionId="sess-1"
-      onSession={setCurrent}
+      onSession={(next) => {
+        setCurrent(next);
+        props.onSession?.(next);
+      }}
       onGoToShortlist={props.onShortlist ?? vi.fn()}
     />
   );
@@ -231,6 +238,58 @@ describe('ExploreMode', () => {
     });
     expect(screen.getByText('Rift')).toBeTruthy();
     expect(screen.getByText('Wave')).toBeTruthy();
+  });
+
+  it('keeps an in-flight reaction when an earlier server snapshot resolves', async () => {
+    const initial = session({
+      candidates: [
+        candidate(),
+        candidate({ id: 'rift', name: 'Rift' }),
+        candidate({ id: 'wave', name: 'Wave' }),
+      ],
+    });
+    const seen: ProjectNameSession[] = [];
+    const resolvers: Array<() => void> = [];
+    const snapshot = { current: initial };
+    setNameCandidateReaction.mockImplementation(
+      (_o, _p, _s, id: string, input: { reaction: 'passed' | 'liked' | 'loved' | null }) =>
+        new Promise<ProjectNameSession>((resolve) => {
+          resolvers.push(() => {
+            snapshot.current = applyReaction(snapshot.current, id, input.reaction);
+            resolve(snapshot.current);
+          });
+        }),
+    );
+    render(<Harness initial={initial} onSession={(next) => seen.push(next)} />);
+
+    fireEvent.keyDown(window, { key: 'ArrowUp' });
+    await waitFor(() => {
+      expect(resolvers.length).toBe(1);
+    });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+    // The first PUT resolves with a snapshot taken before Rift's reaction.
+    resolvers[0]();
+    await waitFor(() => {
+      const latest = seen[seen.length - 1];
+      expect(latest.candidates.find((item) => item.id === 'rift')?.reaction).toBe(
+        'loved',
+      );
+    });
+
+    await waitFor(() => {
+      expect(resolvers.length).toBe(2);
+    });
+    resolvers[1]();
+    await waitFor(() => {
+      const latest = seen[seen.length - 1];
+      expect(latest.candidates.find((item) => item.id === 'nova')?.reaction).toBe(
+        'liked',
+      );
+      expect(latest.candidates.find((item) => item.id === 'rift')?.reaction).toBe(
+        'loved',
+      );
+    });
   });
 
   it('undo restores the previous name and clears that reaction on the server', async () => {

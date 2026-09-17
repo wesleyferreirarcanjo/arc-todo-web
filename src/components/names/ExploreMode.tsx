@@ -110,6 +110,13 @@ export function ExploreMode(props: {
   const writeChain = useRef(Promise.resolve());
   const indexRef = useRef(index);
   const reactLock = useRef(false);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  // Reactions still in flight; a resolving PUT returns a snapshot taken before
+  // later optimistic patches, so applyServerSession overlays these back on.
+  const pendingReactions = useRef(
+    new Map<string, CandidateReaction | undefined>(),
+  );
   const deckKey = (session.batches ?? []).find((batch) => batch.status === 'open')
     ?.number ?? 'waiting';
   const [seenDeckKey, setSeenDeckKey] = useState(deckKey);
@@ -133,24 +140,51 @@ export function ExploreMode(props: {
         ?.name ?? null
     : null;
 
+  function emit(next: ProjectNameSession) {
+    sessionRef.current = next;
+    props.onSession(next);
+  }
+
+  function withCandidateReaction(
+    item: NameCandidate,
+    reaction: CandidateReaction | undefined,
+  ): NameCandidate {
+    if (reaction) {
+      return {
+        ...item,
+        reaction,
+        reactedAt: item.reactedAt ?? new Date().toISOString(),
+      };
+    }
+    const { reaction: _ignored, reactedAt: _at, ...rest } = item;
+    return rest;
+  }
+
   function patchLocal(
     id: string,
     reaction: CandidateReaction | undefined,
   ) {
-    props.onSession({
-      ...session,
-      candidates: session.candidates.map((item) => {
-        if (item.id !== id) return item;
-        if (reaction) {
-          return {
-            ...item,
-            reaction,
-            reactedAt: new Date().toISOString(),
-          };
-        }
-        const { reaction: _ignored, reactedAt: _at, ...rest } = item;
-        return rest;
-      }),
+    const base = sessionRef.current;
+    emit({
+      ...base,
+      candidates: base.candidates.map((item) =>
+        item.id === id ? withCandidateReaction(item, reaction) : item,
+      ),
+    });
+  }
+
+  function applyServerSession(updated: ProjectNameSession) {
+    if (!pendingReactions.current.size) {
+      emit(updated);
+      return;
+    }
+    emit({
+      ...updated,
+      candidates: updated.candidates.map((item) =>
+        pendingReactions.current.has(item.id)
+          ? withCandidateReaction(item, pendingReactions.current.get(item.id))
+          : item,
+      ),
     });
   }
 
@@ -183,6 +217,7 @@ export function ExploreMode(props: {
     const id = card.id;
     const previous = card.reaction;
     setError(null);
+    pendingReactions.current.set(id, reaction);
     patchLocal(id, reaction);
     setUndoStack((stack) => [...stack, { id, previous, index: fromIndex }]);
     indexRef.current = fromIndex + 1;
@@ -190,8 +225,10 @@ export function ExploreMode(props: {
     void enqueue(async () => {
       try {
         const updated = await persistReaction(id, reaction);
-        props.onSession(updated);
+        pendingReactions.current.delete(id);
+        applyServerSession(updated);
       } catch (err) {
+        pendingReactions.current.delete(id);
         patchLocal(id, previous);
         indexRef.current = fromIndex;
         setIndex(fromIndex);
@@ -211,11 +248,14 @@ export function ExploreMode(props: {
     indexRef.current = entry.index;
     setIndex(entry.index);
     patchLocal(entry.id, undefined);
+    pendingReactions.current.set(entry.id, undefined);
     void enqueue(async () => {
       try {
         const updated = await persistReaction(entry.id, null);
-        props.onSession(updated);
+        pendingReactions.current.delete(entry.id);
+        applyServerSession(updated);
       } catch (err) {
+        pendingReactions.current.delete(entry.id);
         patchLocal(entry.id, entry.previous);
         setUndoStack((stack) => [...stack, entry]);
         setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this undo' }));
@@ -227,77 +267,84 @@ export function ExploreMode(props: {
     if (!speakName(name)) setSpeechUnsupported(true);
   }
 
-  async function addVariation(name: string) {
+  function addVariation(name: string) {
     if (!current) return;
     const originId = current.id;
     const originIndex = index;
     setVariationBusy(true);
     setError(null);
-    try {
-      const { candidates: added } = await addNameCandidates(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        [
-          {
-            name,
-            family: current.family ?? undefined,
-            rationale: `Variation of ${current.name}`,
-          },
-        ],
-        'human',
-      );
-      const created = added[0];
-      if (!created) return;
-      const others = session.candidates.filter(
-        (item) => normalizeNameKey(item.name) !== normalizeNameKey(created.name),
-      );
-      const linked: NameCandidate = {
-        ...created,
-        ...emptyCandidate(created.name),
-        id: created.id,
-        name: created.name,
-        derivedFromCandidateId: originId,
-        family: current.family ?? created.family,
-        rationale: created.rationale || `Variation of ${current.name}`,
-      };
-      const updated = await updateProjectNameSession(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        { candidates: [...others, linked] },
-      );
-      props.onSession(updated);
-      const nextDeck = exploreDeck(updated);
-      const kept = nextDeck.findIndex((item) => item.id === originId);
-      setIndex(kept >= 0 ? kept : originIndex);
-      setVariationOpen(false);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this variation' }));
-    } finally {
-      setVariationBusy(false);
-    }
+    void enqueue(async () => {
+      try {
+        const { candidates: added } = await addNameCandidates(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+          [
+            {
+              name,
+              family: current.family ?? undefined,
+              rationale: `Variation of ${current.name}`,
+            },
+          ],
+          'human',
+        );
+        const created = added[0];
+        if (!created) return;
+        const others = sessionRef.current.candidates.filter(
+          (item) =>
+            normalizeNameKey(item.name) !== normalizeNameKey(created.name),
+        );
+        const linked: NameCandidate = {
+          ...created,
+          ...emptyCandidate(created.name),
+          id: created.id,
+          name: created.name,
+          derivedFromCandidateId: originId,
+          family: current.family ?? created.family,
+          rationale: created.rationale || `Variation of ${current.name}`,
+        };
+        const updated = await updateProjectNameSession(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+          { candidates: [...others, linked] },
+        );
+        applyServerSession(updated);
+        const nextDeck = exploreDeck(updated);
+        const kept = nextDeck.findIndex((item) => item.id === originId);
+        setIndex(kept >= 0 ? kept : originIndex);
+        setVariationOpen(false);
+      } catch (err) {
+        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this variation' }));
+      } finally {
+        setVariationBusy(false);
+      }
+    });
   }
 
-  async function startBatch() {
-    const ids = waiting.slice(0, 20).map((item) => item.id);
+  function startBatch() {
+    const ids = unbatchedActive(sessionRef.current)
+      .slice(0, 20)
+      .map((item) => item.id);
     if (ids.length < 10) return;
     setStartingBatch(true);
     setError(null);
-    try {
-      const updated = await startNameBatch(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        { candidateIds: ids },
-      );
-      props.onSession(updated);
-      setUndoStack([]);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this batch' }));
-    } finally {
-      setStartingBatch(false);
-    }
+    void enqueue(async () => {
+      try {
+        const updated = await startNameBatch(
+          props.orgId,
+          props.projectId,
+          props.sessionId,
+          { candidateIds: ids },
+        );
+        applyServerSession(updated);
+        setUndoStack([]);
+      } catch (err) {
+        setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this batch' }));
+      } finally {
+        setStartingBatch(false);
+      }
+    });
   }
 
   useEffect(() => {
