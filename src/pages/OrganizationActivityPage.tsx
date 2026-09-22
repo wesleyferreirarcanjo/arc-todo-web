@@ -69,7 +69,7 @@ export function OrganizationActivityPage() {
       <header className={`page-header${color ? ' has-accent' : ''}`}>
         <h2>{currentOrganization?.name ?? 'Organization'} activity</h2>
         <p className="page-subtitle">
-          Recent actions by users across tasks, knowledge, and project work.
+          Recent actions by users across tasks and project work.
         </p>
         <div className="page-links">
           <Link to={`/organizations/${orgId}`} className="text-link">

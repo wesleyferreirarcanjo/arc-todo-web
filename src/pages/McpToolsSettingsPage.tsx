@@ -80,8 +80,11 @@ export function McpToolsSettingsPage() {
     setError(null);
     try {
       const data = await fetchMcpToolSettings();
-      setGroups(data.groups);
-      setTokenSummary(data.tokenSummary);
+      const visibleGroups = data.groups.filter(
+        (group): group is typeof group => group.group in MCP_TOOL_GROUP_LABELS,
+      );
+      setGroups(visibleGroups);
+      setTokenSummary(buildTokenSummary(visibleGroups, data.tokenSummary));
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'MCP tools' }));
     } finally {

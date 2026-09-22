@@ -146,7 +146,7 @@ describe('Layout sidebar identity', () => {
     );
     expect(labels).toContain('SEO');
     expect(labels.indexOf('Names')).toBeLessThan(labels.indexOf('SEO'));
-    expect(labels.indexOf('SEO')).toBeLessThan(labels.indexOf('People'));
+    expect(labels.indexOf('SEO')).toBeLessThan(labels.indexOf('Organizations'));
     expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
   });
 

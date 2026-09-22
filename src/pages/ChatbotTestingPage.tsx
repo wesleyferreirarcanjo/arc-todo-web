@@ -228,7 +228,7 @@ function ConfigStatusCard({ settings }: { settings: ChatbotSettings | null }) {
       <div className="chatbot-testing-status-header">
         <h3>Chatbot status</h3>
         <span
-          className={`rag-index-status-badge status-${
+          className={`chatbot-testing-status-badge status-${
             settings.enabled && settings.hasApiKey ? 'completed' : 'failed'
           }`}
         >

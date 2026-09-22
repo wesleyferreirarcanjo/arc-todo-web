@@ -826,8 +826,7 @@
 /* Light: keep badge text readable on the stronger entity fill */
 [data-theme='light'] .task-badge-project,
 [data-theme='light'] .entity-scope-badge-project,
-[data-theme='light'] .entity-scope-badge-org,
-[data-theme='light'] .knowledge-scope-badge.has-accent {
+[data-theme='light'] .entity-scope-badge-org {
   background: color-mix(
     in srgb,
     var(--entity-accent, var(--accent-secondary)) var(--entity-mix-badge),

@@ -76,9 +76,9 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
       onSubmit={handleSubmit}
       aria-labelledby="users-create-heading"
     >
-      <div className="person-form-header">
+      <div className="user-form-header">
         <h2 id="users-create-heading">New user</h2>
-        <p className="person-form-description">
+        <p className="user-form-description">
           Create a system user. Set SSO assign to their Google email so they can
           sign in. Password is optional when SSO-only mode is enabled.
         </p>
@@ -158,7 +158,7 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
         </fieldset>
       )}
 
-      <div className="person-form-actions">
+      <div className="user-form-actions">
         <button type="submit" className="btn btn-primary" disabled={loading}>
           {loading ? 'Creating...' : 'Create user'}
         </button>

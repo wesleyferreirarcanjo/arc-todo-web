@@ -92,8 +92,7 @@ export function StorageSettingsPage() {
           <p className="subtitle settings-summary-note">
             Evidence older than {retentionDays} day
             {retentionDays === 1 ? '' : 's'} is deleted automatically. Recent
-            uploads remain available until they reach that age. Knowledge
-            attachments are not included.
+            uploads remain available until they reach that age.
           </p>
         </div>
       ) : null}

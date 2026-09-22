@@ -39,9 +39,8 @@ Vite + React frontend deployed in Coolify project **`arc-todo`** on server **`ma
 | API `arc-todo-api` | `lmsx2avrg1k29ex12w6e3gce` | `https://lmsx2avrg1k29ex12w6e3gce.72.60.59.203.sslip.io` |
 | MCP `arc-todo-mcp` | `qv9bek5he3ns8upu71rphbrc` | `https://qv9bek5he3ns8upu71rphbrc.72.60.59.203.sslip.io/mcp` |
 | Chatbot `arc-todo-chatbot` | `nyagev0aqp4qow1zri6wise5` | `https://nyagev0aqp4qow1zri6wise5.72.60.59.203.sslip.io` |
-| RAG `arc-todo-rag` | `tqfgi4rhtndy3xtgdep04xnd` | `https://tqfgi4rhtndy3xtgdep04xnd.72.60.59.203.sslip.io` |
-| PostgreSQL `arc-todo-postgres-pgvector` | `x420nshn1p0cjzlhomi0cbnk` | Used by API and RAG; image `pgvector/pgvector:pg16` |
-| MinIO `arc-todo-minio` | `jsx5tkzb1b8hj5oz0ydt491u` | Used by API only (knowledge attachments) |
+| PostgreSQL `arc-todo-postgres-pgvector` | `x420nshn1p0cjzlhomi0cbnk` | Used by the API; image `pgvector/pgvector:pg16` |
+| MinIO `arc-todo-minio` | `jsx5tkzb1b8hj5oz0ydt491u` | Used by the API for uploaded files |
 
 ## Environment variables (production)
 
@@ -57,12 +56,11 @@ Redeploy the frontend whenever the API or chatbot public URL changes, or when `V
 
 1. Ensure Postgres and MinIO are healthy.
 2. Deploy API first and confirm `GET /health`.
-3. Deploy / restart `arc-todo-rag` after Postgres and MinIO are healthy (see [../arc-todo-rag/coolify.md](../arc-todo-rag/coolify.md)).
-4. Deploy / restart `arc-todo-chatbot` after the API is healthy (see [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md)).
-5. Set `VITE_API_BASE_URL` to the API URL and `VITE_CHAT_API_BASE_URL` to the chatbot URL.
-6. Deploy this application.
-7. Configure chatbot settings at `/settings/chatbot`, RAG settings at `/settings/rag`, and MCP tools at `/settings/mcp-tools`.
-8. Deploy / restart `arc-todo-mcp` after MCP tools are configured.
+3. Deploy / restart `arc-todo-chatbot` after the API is healthy (see [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md)).
+4. Set `VITE_API_BASE_URL` to the API URL and `VITE_CHAT_API_BASE_URL` to the chatbot URL.
+5. Deploy this application.
+6. Configure chatbot settings at `/settings/chatbot` and MCP tools at `/settings/mcp-tools`.
+7. Deploy / restart `arc-todo-mcp` after MCP tools are configured.
 
 ## Notes
 
@@ -71,9 +69,8 @@ Redeploy the frontend whenever the API or chatbot public URL changes, or when `V
 - Browser extension packages are static files in `public/extension/` (`chromium.zip`, `firefox.zip`, `version.json`). `arc-todo-extension` has **no Coolify app** — releases deploy **this** web application. After bumping the extension `package.json` version (when the build changes), run `npm run build` then `npm run copy:web` from that repo, commit `public/extension/*` here, push both repos, and Coolify-deploy `arc-todo-web`. `/download` and project QA info both serve those files; `/login` does not.
 
 - Human login is Google SSO only (`AUTH_SSO_ONLY` on API). Ensure Google Console authorized JavaScript origins include this app's live URL scheme+host.
-- Knowledge attachment files are stored in MinIO by the API; the web app has no MinIO env vars.
+- Uploaded files are stored in MinIO by the API; the web app has no MinIO env vars.
 - Git source uses the Coolify deploy key (`private_key_uuid`: `lms2y9fjpybdznft4t7uf3td`).
 - See [../arc-todo-api/coolify.md](../arc-todo-api/coolify.md) for API and Postgres Coolify IDs.
 - See [../arc-todo-chatbot/coolify.md](../arc-todo-chatbot/coolify.md) for the chatbot service Coolify reference.
 - See [../arc-todo-mcp/coolify.md](../arc-todo-mcp/coolify.md) for the MCP server Coolify reference.
-- See [../arc-todo-rag/coolify.md](../arc-todo-rag/coolify.md) for the RAG service Coolify reference.

@@ -305,7 +305,7 @@ export function NamesHubPage() {
           </div>
           <NamesParticipationChoice value={createMode} onChange={setCreateMode} />
           {createError && <ErrorAlert>{createError}</ErrorAlert>}
-          <div className="knowledge-actions">
+          <div className="hub-actions">
             <button
               type="button"
               className="btn btn-primary"
@@ -342,7 +342,7 @@ export function NamesHubPage() {
           />
         </label>
         {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
-        <div className="knowledge-actions">
+        <div className="hub-actions">
           <button
             type="button"
             className="btn btn-primary"

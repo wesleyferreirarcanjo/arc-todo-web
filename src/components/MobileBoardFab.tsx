@@ -24,7 +24,6 @@ import {
   FilterIcon,
   FlaskIcon,
   InstallIcon,
-  KnowledgeIcon,
   LogoutIcon,
   McpIcon,
   MoonIcon,
@@ -33,8 +32,6 @@ import {
   SeoIcon,
   NewTaskIcon,
   OrganizationsIcon,
-  PeopleIcon,
-  RagIcon,
   SettingsIcon,
   StorageIcon,
   SunIcon,
@@ -278,12 +275,6 @@ export function MobileBoardFab() {
         onClick: () => go('/board'),
       },
       {
-        id: 'nav-knowledge',
-        label: 'Knowledge',
-        icon: <KnowledgeIcon />,
-        onClick: () => go('/knowledge'),
-      },
-      {
         id: 'nav-diagrams',
         label: 'Diagrams',
         icon: <DiagramsIcon />,
@@ -306,12 +297,6 @@ export function MobileBoardFab() {
         label: 'SEO',
         icon: <SeoIcon />,
         onClick: () => go('/seo'),
-      },
-      {
-        id: 'nav-people',
-        label: 'People',
-        icon: <PeopleIcon />,
-        onClick: () => go('/people'),
       },
       {
         id: 'nav-organizations',
@@ -394,15 +379,6 @@ export function MobileBoardFab() {
         onClick: () => {
           setMenuOpen(false);
           navigate('/settings/seo');
-        },
-      },
-      {
-        id: 'settings-rag',
-        label: 'RAG settings',
-        icon: <RagIcon />,
-        onClick: () => {
-          setMenuOpen(false);
-          navigate('/settings/rag/settings');
         },
       },
     ];

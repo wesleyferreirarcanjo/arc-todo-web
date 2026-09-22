@@ -75,7 +75,7 @@ export function SeoSettingsPage() {
           </label>
           {error && <ErrorAlert>{error}</ErrorAlert>}
           {saved && <p className="status-message">{saved}</p>}
-          <div className="knowledge-actions">
+          <div className="hub-actions">
             <button
               type="button"
               className="btn btn-primary"

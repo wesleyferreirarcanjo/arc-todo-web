@@ -230,7 +230,7 @@ export function ProjectWireframePreviewPage() {
           />
         </label>
         {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
-        <div className="knowledge-actions">
+        <div className="hub-actions">
           <button
             type="button"
             className="btn btn-primary"

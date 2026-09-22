@@ -21,8 +21,8 @@ describe('userMessage', () => {
   });
 
   it('fills load/save patterns', () => {
-    expect(catalogMessage(WEB_ERROR.LOAD, { thing: 'knowledge' })).toBe(
-      "Couldn't load knowledge. Check your connection and try again.",
+    expect(catalogMessage(WEB_ERROR.LOAD, { thing: 'tasks' })).toBe(
+      "Couldn't load tasks. Check your connection and try again.",
     );
   });
 });

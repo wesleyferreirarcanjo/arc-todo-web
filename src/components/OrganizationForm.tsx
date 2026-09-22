@@ -44,7 +44,7 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
       <div className="organization-form-header">
         <h2 id="organizations-create-heading">New organization</h2>
         <p className="organization-form-description">
-          Create a workspace to group projects, people, and knowledge.
+          Create a workspace to group projects.
         </p>
       </div>
 

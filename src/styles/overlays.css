@@ -924,8 +924,7 @@
   max-width: 32rem;
 }
 
-.board-filter-checkbox,
-.board-filter-field.knowledge-filter-toggle {
+.board-filter-checkbox {
   min-width: auto;
   max-width: none;
   flex: 0 0 auto;

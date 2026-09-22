@@ -231,7 +231,7 @@ export function WireframeMarkupBlock({
           />
         </label>
         {nameError && <ErrorAlert>{nameError}</ErrorAlert>}
-        <div className="knowledge-actions">
+        <div className="hub-actions">
           <button
             type="button"
             className="btn btn-primary"

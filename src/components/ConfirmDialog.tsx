@@ -32,7 +32,7 @@ export function ConfirmDialog({
       className="confirm-dialog"
     >
       <p className="confirm-dialog-description">{description}</p>
-      <div className="knowledge-actions">
+      <div className="hub-actions">
         <button
           type="button"
           className={`btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`}

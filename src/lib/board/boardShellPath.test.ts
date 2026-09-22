@@ -14,19 +14,11 @@ describe('isBoardShellPath', () => {
   });
 
   it('does not lock Navigate destinations or nested project pages', () => {
-    expect(isBoardShellPath('/knowledge')).toBe(false);
     expect(isBoardShellPath('/diagrams')).toBe(false);
     expect(isBoardShellPath('/wireframes')).toBe(false);
-    expect(isBoardShellPath('/people')).toBe(false);
     expect(isBoardShellPath('/organizations')).toBe(false);
     expect(
-      isBoardShellPath('/organizations/org-1/projects/proj-1/knowledge'),
-    ).toBe(false);
-    expect(
       isBoardShellPath('/organizations/org-1/projects/proj-1/diagrams'),
-    ).toBe(false);
-    expect(
-      isBoardShellPath('/organizations/org-1/knowledge'),
     ).toBe(false);
     expect(
       isBoardShellPath('/organizations/org-1/projects/proj-1/names/sess-1'),

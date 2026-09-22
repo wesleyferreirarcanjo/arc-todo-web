@@ -1,4 +1,4 @@
-/** All tasks Kanban shell — not Knowledge, diagrams, wireframes, or nested project hubs. */
+/** All tasks Kanban shell — not diagrams, wireframes, or nested project hubs. */
 export function isBoardShellPath(pathname: string): boolean {
   return pathname === '/board';
 }

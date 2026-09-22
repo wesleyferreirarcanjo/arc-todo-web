@@ -158,7 +158,7 @@ describe('AnalyticsPage copy', () => {
           title: 'Corrigir Navigate a partir de All tasks (tela não carrega)',
           primary: 'REAL_DEFECT',
           secondary: ['regression', 'not_deployed'],
-          motivo: 'URL goes to /knowledge but the screen stays on All tasks',
+          motivo: 'URL goes to /diagrams but the screen stays on All tasks',
           evidence: 'image.png',
           taskScore: 7,
           flagScore: 9,

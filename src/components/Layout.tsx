@@ -25,14 +25,11 @@ import {
   ChevronIcon,
   ConfigIcon,
   DiagramsIcon,
-  KnowledgeIcon,
   LogoutIcon,
   McpIcon,
   NamesIcon,
   OrganizationsIcon,
   SeoIcon,
-  PeopleIcon,
-  RagIcon,
   StorageIcon,
   TasksIcon,
   AnalyticsIcon,
@@ -43,12 +40,10 @@ import {
 
 const primaryNav = [
   { to: '/board', label: 'All tasks', icon: TasksIcon },
-  { to: '/knowledge', label: 'Knowledge', icon: KnowledgeIcon },
   { to: '/diagrams', label: 'Diagrams', icon: DiagramsIcon },
   { to: '/wireframes', label: 'Wireframes', icon: WireframesIcon },
   { to: '/names', label: 'Names', icon: NamesIcon },
   { to: '/seo', label: 'SEO', icon: SeoIcon },
-  { to: '/people', label: 'People', icon: PeopleIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
   { to: '/download', label: 'Download', icon: DownloadIcon },
 ] as const;
@@ -63,20 +58,10 @@ export function Layout() {
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [collapsed, setCollapsed] = useState(getSidebarCollapsed);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [ragMenuOpen, setRagMenuOpen] = useState(
-    () => location.pathname.startsWith('/settings/rag'),
-  );
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isAdminUsersPage = location.pathname.startsWith('/admin/users');
   const isAnalyticsPage = location.pathname.startsWith('/analytics');
-  const isRagSettingsPage = location.pathname.startsWith('/settings/rag');
   const isBoardShell = isBoardShellPath(location.pathname);
-
-  useEffect(() => {
-    if (location.pathname.startsWith('/settings/rag')) {
-      setRagMenuOpen(true);
-    }
-  }, [location.pathname]);
 
   useEffect(() => {
     const sidebar = sidebarRef.current;
@@ -365,62 +350,6 @@ export function Layout() {
                     <SeoIcon className="sidebar-menu-item-icon" />
                     SEO
                   </NavLink>
-                  <p className="sidebar-settings-category">RAG</p>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={`sidebar-settings-menu-item sidebar-settings-submenu-trigger${
-                      ragMenuOpen ? ' is-open' : ''
-                    }${isRagSettingsPage ? ' active' : ''}`}
-                    aria-expanded={ragMenuOpen}
-                    onClick={() => setRagMenuOpen((open) => !open)}
-                  >
-                    <RagIcon className="sidebar-menu-item-icon" />
-                    RAG
-                    <span className="sidebar-settings-submenu-chevron" aria-hidden="true">
-                      {ragMenuOpen ? '▾' : '▸'}
-                    </span>
-                  </button>
-                  {ragMenuOpen ? (
-                    <div className="sidebar-settings-submenu">
-                      <NavLink
-                        to="/settings/rag/settings"
-                        role="menuitem"
-                        className={({ isActive }) =>
-                          isActive
-                            ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                            : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                        }
-                        onClick={closeSettingsMenu}
-                      >
-                        Settings
-                      </NavLink>
-                      <NavLink
-                        to="/settings/rag/chunks"
-                        role="menuitem"
-                        className={({ isActive }) =>
-                          isActive
-                            ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                            : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                        }
-                        onClick={closeSettingsMenu}
-                      >
-                        Chunks
-                      </NavLink>
-                      <NavLink
-                        to="/settings/rag/testing"
-                        role="menuitem"
-                        className={({ isActive }) =>
-                          isActive
-                            ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
-                            : 'sidebar-settings-menu-item sidebar-settings-submenu-item'
-                        }
-                        onClick={closeSettingsMenu}
-                      >
-                        Testing
-                      </NavLink>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
             </div>

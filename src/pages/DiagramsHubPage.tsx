@@ -447,7 +447,7 @@ export function DiagramsHubPage() {
           />
         </label>
         {createError && <ErrorAlert>{createError}</ErrorAlert>}
-        <div className="knowledge-actions">
+        <div className="hub-actions">
           <button
             type="button"
             className="btn btn-primary"

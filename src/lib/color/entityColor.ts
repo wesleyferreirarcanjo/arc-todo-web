@@ -1,5 +1,3 @@
-import type { KnowledgeEntryWithContext } from '../../types/knowledge';
-
 const ENTITY_ACCENTS = [
   '#6b8fa8',
   '#8778a3',
@@ -42,16 +40,4 @@ export function getOrganizationColor(organization: {
     return organization.color;
   }
   return getEntityAccent(organization.id);
-}
-
-export function getKnowledgeAccentColor(
-  entry: KnowledgeEntryWithContext,
-): string | undefined {
-  if (entry.scope === 'project' && entry.project) {
-    return getProjectColor(entry.project);
-  }
-  if (entry.scope === 'organization' && entry.organization) {
-    return getOrganizationColor(entry.organization);
-  }
-  return undefined;
 }

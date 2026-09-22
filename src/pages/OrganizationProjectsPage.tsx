@@ -2,7 +2,6 @@ import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
-import { fetchOrganizationKnowledgeAccess } from '../lib/api/knowledge';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
 import { OrganizationsIcon } from '../components/icons';
@@ -25,7 +24,6 @@ export function OrganizationProjectsPage() {
   } = useWorkspace();
   const { color } = useWorkspaceAccent();
   const [error, setError] = useState<string | null>(null);
-  const [hasKnowledgeAccess, setHasKnowledgeAccess] = useState(isAdmin);
 
   useEffect(() => {
     if (!orgId) return;
@@ -33,25 +31,6 @@ export function OrganizationProjectsPage() {
       setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this organization' }));
     });
   }, [orgId, refreshProjects]);
-
-  useEffect(() => {
-    if (!orgId) return;
-    if (isAdmin) {
-      setHasKnowledgeAccess(true);
-      return;
-    }
-    let cancelled = false;
-    void fetchOrganizationKnowledgeAccess(orgId)
-      .then((status) => {
-        if (!cancelled) setHasKnowledgeAccess(status.hasAccess);
-      })
-      .catch(() => {
-        if (!cancelled) setHasKnowledgeAccess(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [orgId, isAdmin]);
 
   const handleCreate = useCallback(
     async (input: CreateProjectInput) => {
@@ -88,14 +67,6 @@ export function OrganizationProjectsPage() {
           </Link>
           <Link to={`/organizations/${orgId}/activity`} className="text-link">
             Activity log
-          </Link>
-          {hasKnowledgeAccess && (
-            <Link to={`/organizations/${orgId}/knowledge`} className="text-link">
-              Organization knowledge
-            </Link>
-          )}
-          <Link to={`/organizations/${orgId}/persons`} className="text-link">
-            People
           </Link>
         </div>
       </header>

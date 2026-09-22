@@ -29,7 +29,6 @@ export function ProjectQaInfoPage() {
         <h2>{currentProject?.name ?? 'Project'} QA info</h2>
         <p className="page-subtitle">
           Environment URLs, test users, and how to sign in for this project.
-          This is not Knowledge.
         </p>
         <div className="page-links">
           <Link to="/organizations" className="text-link">

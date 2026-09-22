@@ -119,12 +119,10 @@ describe('MobileBoardFab Navigate labels', () => {
     expect(items.map((item) => item.textContent?.trim())).toEqual([
       'Back',
       'All tasks',
-      'Knowledge',
       'Diagrams',
       'Wireframes',
       'Names',
       'SEO',
-      'People',
       'Organizations',
       'Download',
     ]);
@@ -154,12 +152,10 @@ describe('MobileBoardFab Navigate labels', () => {
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
       'Back',
       'All tasks',
-      'Knowledge',
       'Diagrams',
       'Wireframes',
       'Names',
       'SEO',
-      'People',
       'Organizations',
       'Download',
       'Analytics',
@@ -205,14 +201,14 @@ describe('MobileBoardFab route change', () => {
 });
 
 describe('MobileBoardFab Navigate from All tasks', () => {
-  it('shows Knowledge and hides leftover status tabs on the same click', async () => {
+  it('shows Diagrams and hides leftover status tabs on the same click', async () => {
     shellState.statusTabs = leftoverStatusTabs;
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/board']}>
         <Routes>
           <Route path="/board" element={<div>All tasks page</div>} />
-          <Route path="/knowledge" element={<div>Knowledge page</div>} />
+          <Route path="/diagrams" element={<div>Diagrams page</div>} />
         </Routes>
         <MobileBoardFab />
       </MemoryRouter>,
@@ -223,9 +219,9 @@ describe('MobileBoardFab Navigate from All tasks', () => {
 
     await user.click(screen.getByRole('button', { name: 'Open actions' }));
     await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Knowledge' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Diagrams' }));
 
-    expect(screen.getByText('Knowledge page')).toBeInTheDocument();
+    expect(screen.getByText('Diagrams page')).toBeInTheDocument();
     expect(screen.queryByText('All tasks page')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('tablist', { name: 'Task status' }),

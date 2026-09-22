@@ -72,7 +72,7 @@ export function OrganizationsPage() {
             </span>
             <p className="status-message">
               {isAdmin
-                ? 'No organizations yet. Create your first workspace above to group projects, people, and knowledge.'
+                ? 'No organizations yet. Create your first workspace above to group projects.'
                 : 'No organizations yet. An admin can assign you to projects in an organization.'}
             </p>
           </div>

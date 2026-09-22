@@ -144,21 +144,6 @@ export function TasksIcon({ className = 'arc-icon' }: ArcIconProps) {
   );
 }
 
-export function KnowledgeIcon({ className = 'arc-icon' }: ArcIconProps) {
-  return (
-    <DuotoneIcon className={className}>
-      <path
-        {...mass}
-        d="M4.2 6.4c0-.9.7-1.6 1.6-1.6H12v13.4H5.8c-.9 0-1.6-.7-1.6-1.6V6.4Z"
-      />
-      <path d="M12 4.8h6.2c.9 0 1.6.7 1.6 1.6V16c0 .9-.7 1.6-1.6 1.6H12" />
-      <path d="M12 4.8H5.8c-.9 0-1.6.7-1.6 1.6V16c0 .9.7 1.6 1.6 1.6H12" />
-      <path d="M12 4.8v13.4" />
-      <path d="M14.4 8.2h3M14.4 11h2.4" />
-    </DuotoneIcon>
-  );
-}
-
 export function DiagramsIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>
@@ -201,18 +186,6 @@ export function SeoIcon({ className = 'arc-icon' }: ArcIconProps) {
       <circle cx="11" cy="11" r="6.2" />
       <path d="M15.4 15.4 20.2 20.2" />
       <path d="M8.4 11h5.2M11 8.4v5.2" />
-    </DuotoneIcon>
-  );
-}
-
-export function PeopleIcon({ className = 'arc-icon' }: ArcIconProps) {
-  return (
-    <DuotoneIcon className={className}>
-      <circle {...mass} cx="9" cy="7.1" r="3.1" />
-      <circle cx="9" cy="7.1" r="3.1" />
-      <path d="M3.4 19.4v-1.5A4.2 4.2 0 0 1 7.6 13.7h2.8a4.2 4.2 0 0 1 4.2 4.2v1.5" />
-      <circle cx="17.1" cy="8.1" r="2.35" />
-      <path d="M20.6 19.4v-1.3a3.6 3.6 0 0 0-3-3.55" />
     </DuotoneIcon>
   );
 }
@@ -274,19 +247,6 @@ export function McpIcon({ className = 'arc-icon' }: ArcIconProps) {
       <path d="M12 3.6 4.2 8.2 12 12.6l7.8-4.4Z" />
       <path d="M4.2 12.2 12 16.6l7.8-4.4" />
       <path d="M4.2 16.2 12 20.6l7.8-4.4" />
-    </DuotoneIcon>
-  );
-}
-
-export function RagIcon({ className = 'arc-icon' }: ArcIconProps) {
-  return (
-    <DuotoneIcon className={className}>
-      <path
-        {...mass}
-        d="M4.2 6.2c0-.8.7-1.5 1.5-1.5H19.5v13.6H5.7c-.8 0-1.5-.7-1.5-1.5V6.2Z"
-      />
-      <path d="M5.7 4.7H19.5v13.6H5.7A1.5 1.5 0 0 1 4.2 16.8V6.2A1.5 1.5 0 0 1 5.7 4.7Z" />
-      <path d="M8 8.4h8M8 11.4h6.4M8 14.4h4.4" />
     </DuotoneIcon>
   );
 }
