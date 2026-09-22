@@ -220,6 +220,7 @@ export function Layout() {
                   const namesActive =
                     to === '/names' &&
                     (location.pathname === '/names' ||
+                      location.pathname.startsWith('/names/') ||
                       /\/projects\/[^/]+\/names(?:\/|$)/.test(
                         location.pathname,
                       ));

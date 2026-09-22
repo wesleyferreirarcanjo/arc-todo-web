@@ -277,11 +277,11 @@ describe('MobileBoardFab Names session bar', () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter
-        initialEntries={['/organizations/org-1/projects/proj-1/names/sess-1']}
+        initialEntries={['/names/sess-1']}
       >
         <Routes>
           <Route
-            path="/organizations/:orgId/projects/:projectId/names/:sessionId"
+            path="/names/:sessionId"
             element={<div>Session page</div>}
           />
         </Routes>

@@ -78,8 +78,6 @@ function peopleAnswered(count: number) {
 
 export function FeedbackSection(props: {
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   onSession: (session: ProjectNameSession) => void;
   onNotice: (value: string | null) => void;
@@ -186,12 +184,7 @@ export function FeedbackSection(props: {
                   props.onNotice('Pick at least two names.');
                   return;
                 }
-                const updated = await startNameFeedbackRound(
-                  props.orgId,
-                  props.projectId,
-                  props.sessionId,
-                  pick,
-                );
+                const updated = await startNameFeedbackRound(props.sessionId, pick);
                 props.onSession(updated);
               }}
             >
@@ -269,17 +262,11 @@ export function FeedbackSection(props: {
                 type="button"
                 className="btn btn-primary"
                 onClick={async () => {
-                  const updated = await upsertNameFeedback(
-                    props.orgId,
-                    props.projectId,
-                    props.sessionId,
-                    open.id,
-                    {
+                  const updated = await upsertNameFeedback(props.sessionId, open.id, {
                       candidateId: currentId,
                       firstImpression: currentDraft.firstImpression,
                       concern: currentDraft.concern,
-                    },
-                  );
+                    });
                   props.onSession(updated);
                 }}
               >
@@ -292,12 +279,7 @@ export function FeedbackSection(props: {
               type="button"
               className="btn btn-secondary"
               onClick={async () => {
-                const updated = await closeNameFeedbackRound(
-                  props.orgId,
-                  props.projectId,
-                  props.sessionId,
-                  open.id,
-                );
+                const updated = await closeNameFeedbackRound(props.sessionId, open.id);
                 props.onSession(updated);
               }}
             >

@@ -47,11 +47,11 @@ describe('createNameSessionBasics', () => {
 describe('setNameCandidateFavorite', () => {
   it('PUTs favorited on the candidate favorite route', async () => {
     apiRequest.mockResolvedValue({});
-    await setNameCandidateFavorite('org', 'proj', 'sess', 'cand', {
+    await setNameCandidateFavorite('sess', 'cand', {
       favorited: true,
     });
     expect(apiRequest).toHaveBeenCalledWith(
-      '/organizations/org/projects/proj/name-sessions/sess/candidates/cand/favorite',
+      '/name-sessions/sess/candidates/cand/favorite',
       { method: 'PUT', body: { favorited: true } },
     );
   });

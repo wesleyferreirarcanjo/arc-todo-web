@@ -2,7 +2,7 @@ import { ErrorAlert } from '../ErrorAlert';
 import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createProjectNameSession } from '../../lib/api/names';
+import { createNameSession } from '../../lib/api/names';
 import { fetchSeoOfferings, saveSeoOfferings } from '../../lib/api/seo';
 import {
   createNameSessionFromOfferings,
@@ -93,14 +93,8 @@ export function SeoKeywordsResearch({
     try {
       const saved = await persistOfferings();
       if (!saved) return;
-      const created = await createProjectNameSession(
-        orgId,
-        projectId,
-        createNameSessionFromOfferings(siteTitle, saved),
-      );
-      navigate(
-        `/organizations/${orgId}/projects/${projectId}/names/${created.id}`,
-      );
+      const created = await createNameSession(createNameSessionFromOfferings(siteTitle, saved));
+      navigate(`/names/${created.id}`);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming session' }));
     } finally {

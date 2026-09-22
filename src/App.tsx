@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
@@ -34,7 +34,6 @@ import { ProjectWireframePreviewPage } from './pages/ProjectWireframePreviewPage
 import { ProjectWireframesPage } from './pages/ProjectWireframesPage';
 import { WireframesHubPage } from './pages/WireframesHubPage';
 import { NamesHubPage } from './pages/NamesHubPage';
-import { ProjectNamesPage } from './pages/ProjectNamesPage';
 import { NameSessionPage } from './pages/NameSessionPage';
 import { SeoHubPage } from './pages/SeoHubPage';
 import { ProjectSeoPage } from './pages/ProjectSeoPage';
@@ -43,6 +42,11 @@ import { SeoSettingsPage } from './pages/SeoSettingsPage';
 import { ProjectKnowledgePage } from './pages/ProjectKnowledgePage';
 import { ProjectQaInfoPage } from './pages/ProjectQaInfoPage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
+
+function LegacyNameSessionRedirect() {
+  const { sessionId } = useParams();
+  return <Navigate to={sessionId ? `/names/${sessionId}` : '/names'} replace />;
+}
 
 export default function App() {
   return (
@@ -81,6 +85,7 @@ export default function App() {
                 <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/wireframes" element={<WireframesHubPage />} />
                 <Route path="/names" element={<NamesHubPage />} />
+                <Route path="/names/:sessionId" element={<NameSessionPage />} />
                 <Route path="/seo" element={<SeoHubPage />} />
                 <Route path="/people" element={<GeneralPersonsPage />} />
                 <Route
@@ -179,11 +184,11 @@ export default function App() {
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/names"
-                  element={<ProjectNamesPage />}
+                  element={<Navigate to="/names" replace />}
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/names/:sessionId"
-                  element={<NameSessionPage />}
+                  element={<LegacyNameSessionRedirect />}
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/seo"

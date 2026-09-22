@@ -7,7 +7,7 @@ import type { NameCandidate, ProjectNameSession } from '../../types/name-session
 const setNameCandidateReaction = vi.hoisted(() => vi.fn());
 const startNameBatch = vi.hoisted(() => vi.fn());
 const addNameCandidates = vi.hoisted(() => vi.fn());
-const updateProjectNameSession = vi.hoisted(() => vi.fn());
+const updateNameSession = vi.hoisted(() => vi.fn());
 const checkNameCandidate = vi.hoisted(() => vi.fn());
 const checkNameCandidatesBatch = vi.hoisted(() => vi.fn());
 const checkNameHistory = vi.hoisted(() => vi.fn());
@@ -17,7 +17,7 @@ vi.mock('../../lib/api/names', () => ({
   setNameCandidateReaction,
   startNameBatch,
   addNameCandidates,
-  updateProjectNameSession,
+  updateNameSession,
   checkNameCandidate,
   checkNameCandidatesBatch,
   checkNameHistory,
@@ -91,8 +91,6 @@ function Harness(props: {
   return (
     <ExploreMode
       session={current}
-      orgId="org-1"
-      projectId="proj-1"
       sessionId="sess-1"
       onSession={(next) => {
         setCurrent(next);
@@ -111,12 +109,12 @@ beforeEach(() => {
   setNameCandidateReaction.mockReset();
   startNameBatch.mockReset();
   addNameCandidates.mockReset();
-  updateProjectNameSession.mockReset();
+  updateNameSession.mockReset();
   checkNameCandidate.mockReset();
   checkNameCandidatesBatch.mockReset();
   checkNameHistory.mockReset();
   checkNameHandles.mockReset();
-  setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) =>
+  setNameCandidateReaction.mockImplementation(async (_s, id, input) =>
     applyReaction(session(), id, input.reaction),
   );
 });
@@ -151,6 +149,29 @@ describe('ExploreMode', () => {
       }),
     );
     expect(deck.map((item) => item.id)).toEqual(['wave', 'rift']);
+  });
+
+  it('does not deal remaining Shortlist likes after one rejected or removed name returns to Explore', () => {
+    const afterUndo = exploreDeck(
+      session({
+        candidates: [
+          candidate({ id: 'nova', name: 'Nova', reaction: 'liked' }),
+          candidate({ id: 'halo', name: 'Halo', reaction: 'loved' }),
+          candidate({ id: 'rift', name: 'Rift' }),
+        ],
+      }),
+    );
+    expect(afterUndo.map((item) => item.id)).toEqual(['rift']);
+
+    const afterRemove = exploreDeck(
+      session({
+        candidates: [
+          candidate({ id: 'nova', name: 'Nova' }),
+          candidate({ id: 'halo', name: 'Halo', reaction: 'loved' }),
+        ],
+      }),
+    );
+    expect(afterRemove.map((item) => item.id)).toEqual(['nova']);
   });
 
   it('shows a restored batched name as the next Explore card', () => {
@@ -202,7 +223,7 @@ describe('ExploreMode', () => {
       ],
     });
     const snapshot = { current: initial };
-    setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) => {
+    setNameCandidateReaction.mockImplementation(async (_s, id, input) => {
       snapshot.current = applyReaction(snapshot.current, id, input.reaction);
       return snapshot.current;
     });
@@ -214,8 +235,6 @@ describe('ExploreMode', () => {
       expect(screen.getByRole('heading', { name: 'Rift' })).toBeTruthy();
     });
     expect(setNameCandidateReaction).toHaveBeenCalledWith(
-      'org-1',
-      'proj-1',
       'sess-1',
       'nova',
       { reaction: 'passed' },
@@ -225,7 +244,7 @@ describe('ExploreMode', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Wave' })).toBeTruthy();
     });
-    expect(setNameCandidateReaction.mock.calls[1][4]).toEqual({
+    expect(setNameCandidateReaction.mock.calls[1][2]).toEqual({
       reaction: 'liked',
     });
 
@@ -233,7 +252,7 @@ describe('ExploreMode', () => {
     await waitFor(() => {
       expect(screen.getByText('You have gone through this batch.')).toBeTruthy();
     });
-    expect(setNameCandidateReaction.mock.calls[2][4]).toEqual({
+    expect(setNameCandidateReaction.mock.calls[2][2]).toEqual({
       reaction: 'loved',
     });
     expect(screen.getByText('Rift')).toBeTruthy();
@@ -252,7 +271,7 @@ describe('ExploreMode', () => {
     const resolvers: Array<() => void> = [];
     const snapshot = { current: initial };
     setNameCandidateReaction.mockImplementation(
-      (_o, _p, _s, id: string, input: { reaction: 'passed' | 'liked' | 'loved' | null }) =>
+      (_s, id: string, input: { reaction: 'passed' | 'liked' | 'loved' | null }) =>
         new Promise<ProjectNameSession>((resolve) => {
           resolvers.push(() => {
             snapshot.current = applyReaction(snapshot.current, id, input.reaction);
@@ -305,8 +324,6 @@ describe('ExploreMode', () => {
       expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
     });
     expect(setNameCandidateReaction.mock.calls[1]).toEqual([
-      'org-1',
-      'proj-1',
       'sess-1',
       'nova',
       { reaction: null },
@@ -337,7 +354,7 @@ describe('ExploreMode', () => {
       ],
     });
     const snapshot = { current: initial };
-    setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) => {
+    setNameCandidateReaction.mockImplementation(async (_s, id, input) => {
       snapshot.current = applyReaction(snapshot.current, id, input.reaction);
       return snapshot.current;
     });
@@ -347,7 +364,7 @@ describe('ExploreMode', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Rift' })).toBeTruthy();
     });
-    expect(setNameCandidateReaction.mock.calls[0][4]).toEqual({
+    expect(setNameCandidateReaction.mock.calls[0][2]).toEqual({
       reaction: 'passed',
     });
 
@@ -355,7 +372,7 @@ describe('ExploreMode', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Wave' })).toBeTruthy();
     });
-    expect(setNameCandidateReaction.mock.calls[1][4]).toEqual({
+    expect(setNameCandidateReaction.mock.calls[1][2]).toEqual({
       reaction: 'liked',
     });
 
@@ -370,7 +387,7 @@ describe('ExploreMode', () => {
     await waitFor(() => {
       expect(screen.getByText('You have gone through this batch.')).toBeTruthy();
     });
-    expect(setNameCandidateReaction.mock.calls[2][4]).toEqual({
+    expect(setNameCandidateReaction.mock.calls[2][2]).toEqual({
       reaction: 'loved',
     });
   });
@@ -424,7 +441,7 @@ describe('ExploreMode', () => {
     addNameCandidates.mockResolvedValue({
       candidates: [candidate({ id: 'novaly', name: 'novaly', domainChecks: [] })],
     });
-    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => ({
+    updateNameSession.mockImplementation(async (_s, input) => ({
       ...initial,
       ...input,
       candidates: input.candidates ?? initial.candidates,
@@ -437,7 +454,7 @@ describe('ExploreMode', () => {
       expect(addNameCandidates).toHaveBeenCalled();
     });
     expect(screen.getByRole('heading', { name: 'Nova' })).toBeTruthy();
-    expect(updateProjectNameSession.mock.calls[0][3].candidates).toEqual(
+    expect(updateNameSession.mock.calls[0][1].candidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           name: 'novaly',

@@ -5,8 +5,9 @@ export function isBoardShellPath(pathname: string): boolean {
 
 /** One naming session — not the Names hub or a project session list. */
 export function isNamesSessionPath(pathname: string): boolean {
-  return /^\/organizations\/[^/]+\/projects\/[^/]+\/names\/[^/]+$/.test(
-    pathname,
+  return (
+    /^\/names\/[^/]+$/.test(pathname) ||
+    /^\/organizations\/[^/]+\/projects\/[^/]+\/names\/[^/]+$/.test(pathname)
   );
 }
 

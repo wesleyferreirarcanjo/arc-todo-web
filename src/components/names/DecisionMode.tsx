@@ -161,8 +161,6 @@ function peopleSubmitted(submitted: number, eligible?: number | null) {
 
 export function DecisionMode(props: {
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   onSession: (session: ProjectNameSession) => void;
   onNotice?: (value: string | null) => void;
@@ -256,12 +254,7 @@ export function DecisionMode(props: {
     setError(null);
     setErrorCode(undefined);
     try {
-      const updated = await upsertNameFeedback(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        openRound.id,
-        {
+      const updated = await upsertNameFeedback(props.sessionId, openRound.id, {
           responses: openRound.candidateIds.map((id) => {
             const entry = entries[id];
             return {
@@ -271,8 +264,7 @@ export function DecisionMode(props: {
               perceivedPurpose: entry.perceivedPurpose,
             };
           }),
-        },
-      );
+        });
       setEditingBallot(false);
       props.onSession(updated);
     } catch (err) {
@@ -320,13 +312,7 @@ export function DecisionMode(props: {
     setBusy(true);
     setError(null);
     try {
-      const updated = await setNameBatchFinalists(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        batch.number,
-        { candidateIds: finalistPick },
-      );
+      const updated = await setNameBatchFinalists(props.sessionId, batch.number, { candidateIds: finalistPick });
       props.onSession(updated);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'these finalists' }));
@@ -348,16 +334,10 @@ export function DecisionMode(props: {
     setBusy(true);
     setError(null);
     try {
-      const updated = await crownNameBatchWinner(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        batch.number,
-        {
+      const updated = await crownNameBatchWinner(props.sessionId, batch.number, {
           candidateId: winnerId,
           decisionNote: winnerNote.trim() || undefined,
-        },
-      );
+        });
       props.onSession(updated);
       props.onNotice?.(
         'This name carries into the next batch as the reigning champion.',
@@ -381,13 +361,7 @@ export function DecisionMode(props: {
     setBusy(true);
     setError(null);
     try {
-      const updated = await recommendNameCandidate(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        candidateId,
-        winnerNote.trim() || undefined,
-      );
+      const updated = await recommendNameCandidate(props.sessionId, candidateId, winnerNote.trim() || undefined);
       props.onSession(updated);
       props.onNotice?.('Your pick is saved.');
     } catch (err) {
@@ -403,12 +377,7 @@ export function DecisionMode(props: {
     setBusy(true);
     setError(null);
     try {
-      const updated = await closeNameFeedbackRound(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        openRound.id,
-      );
+      const updated = await closeNameFeedbackRound(props.sessionId, openRound.id);
       props.onSession(updated);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this team round' }));

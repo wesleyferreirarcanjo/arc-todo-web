@@ -12,8 +12,6 @@ const LANGUAGE_OPTIONS = [
 
 export function LanguageJudgmentBlock(props: {
   candidate: NameCandidate;
-  orgId: string;
-  projectId: string;
   onUpdate: (candidate: NameCandidate) => void;
 }) {
   const { candidate } = props;
@@ -71,8 +69,6 @@ export function LanguageJudgmentBlock(props: {
                   content: languagePrompt(candidate.name, ['Português', 'Inglês']),
                 },
               ],
-              organizationId: props.orgId,
-              projectId: props.projectId,
             });
             props.onUpdate({
               ...candidate,

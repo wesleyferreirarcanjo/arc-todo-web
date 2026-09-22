@@ -18,8 +18,6 @@ import { LanguageJudgmentBlock } from './LanguageJudgmentBlock';
 export function CandidateCard(props: {
   candidate: NameCandidate;
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   isBlind: boolean;
   busy: string | null;
@@ -99,8 +97,6 @@ export function CandidateCard(props: {
         <AutomatedEvidence
           candidate={candidate}
           session={props.session}
-          orgId={props.orgId}
-          projectId={props.projectId}
           sessionId={props.sessionId}
           busy={props.busy}
           onBusy={props.onBusy}
@@ -119,8 +115,6 @@ export function CandidateCard(props: {
         <summary>Language judgment</summary>
         <LanguageJudgmentBlock
           candidate={candidate}
-          orgId={props.orgId}
-          projectId={props.projectId}
           onUpdate={props.onUpdate}
         />
       </details>

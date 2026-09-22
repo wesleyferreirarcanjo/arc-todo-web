@@ -10,11 +10,11 @@ import {
   checkNameCandidatesBatch,
   checkNameHandles,
   checkNameHistory,
-  fetchProjectNameSession,
+  fetchNameSession,
   setNameCandidateFavorite,
   setNameCandidateReaction,
   startNameFeedbackRound,
-  updateProjectNameSession,
+  updateNameSession,
 } from '../../lib/api/names';
 import { resolveSessionParticipation } from '../../lib/names/hubList';
 import { normalizeNameKey } from '../../lib/names/catalog';
@@ -79,15 +79,10 @@ function needsHistory(candidate: NameCandidate): boolean {
   );
 }
 
-async function followUpHistory(
-  orgId: string,
-  projectId: string,
-  sessionId: string,
-  candidate: NameCandidate,
-) {
+async function followUpHistory(sessionId: string, candidate: NameCandidate) {
   if (!needsHistory(candidate)) return;
   try {
-    await checkNameHistory(orgId, projectId, sessionId, candidate.name);
+    await checkNameHistory(sessionId, candidate.name);
   } catch {
     // History stays Unknown when the probe fails (BR-NAME-03).
   }
@@ -95,8 +90,6 @@ async function followUpHistory(
 
 export function ShortlistMode(props: {
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   resolvingKeys: string[];
   isBlind: boolean;
@@ -167,11 +160,7 @@ export function ShortlistMode(props: {
   }
 
   async function refresh() {
-    const latest = await fetchProjectNameSession(
-      props.orgId,
-      props.projectId,
-      props.sessionId,
-    );
+    const latest = await fetchNameSession(props.sessionId);
     props.onSession(latest);
     return latest;
   }
@@ -180,13 +169,7 @@ export function ShortlistMode(props: {
     setError(null);
     setErrorCode(undefined);
     try {
-      const updated = await setNameCandidateReaction(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        id,
-        { reaction: null },
-      );
+      const updated = await setNameCandidateReaction(props.sessionId, id, { reaction: null });
       props.onSession(updated);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this shortlist' }));
@@ -201,13 +184,7 @@ export function ShortlistMode(props: {
     try {
       let latest = session;
       if (candidate.reaction) {
-        latest = await setNameCandidateReaction(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          id,
-          { reaction: null },
-        );
+        latest = await setNameCandidateReaction(props.sessionId, id, { reaction: null });
         props.onSession(latest);
       }
       const current = latest.candidates.find((item) => item.id === id) ?? candidate;
@@ -217,12 +194,7 @@ export function ShortlistMode(props: {
         typeof current.batchNumber === 'number';
       if (needsPatch) {
         // Only this name. A full GET-shaped candidates array clobbers other Like/Love.
-        latest = await updateProjectNameSession(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          { candidates: [restoredExploreCandidate(current)] },
-        );
+        latest = await updateNameSession(props.sessionId, { candidates: [restoredExploreCandidate(current)] });
         props.onSession(latest);
       }
     } catch (err) {
@@ -234,13 +206,7 @@ export function ShortlistMode(props: {
     setError(null);
     setErrorCode(undefined);
     try {
-      const updated = await setNameCandidateFavorite(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        id,
-        { favorited },
-      );
+      const updated = await setNameCandidateFavorite(props.sessionId, id, { favorited });
       props.onSession(updated);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this favorite' }));
@@ -260,23 +226,13 @@ export function ShortlistMode(props: {
       ? session.shortlistIds.filter((item) => item !== id)
       : [...session.shortlistIds, id];
     try {
-      const updated = await updateProjectNameSession(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        { shortlistIds: ids },
-      );
+      const updated = await updateNameSession(props.sessionId, { shortlistIds: ids });
       props.onSession(updated);
       if (!already) {
         const kept = updated.candidates.find((item) => item.id === id);
         if (kept) {
           try {
-            await checkNameHandles(
-              props.orgId,
-              props.projectId,
-              props.sessionId,
-              kept.name,
-            );
+            await checkNameHandles(props.sessionId, kept.name);
           } catch {
             // Handle probes stay unknown when they fail (BR-NAME-19).
           }
@@ -295,15 +251,8 @@ export function ShortlistMode(props: {
     setErrorCode(undefined);
     markResolving([candidate.name], true);
     try {
-      const checked = await checkNameCandidate(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        candidate.name,
-      );
+      const checked = await checkNameCandidate(props.sessionId, candidate.name);
       await followUpHistory(
-        props.orgId,
-        props.projectId,
         props.sessionId,
         checked,
       );
@@ -322,19 +271,9 @@ export function ShortlistMode(props: {
     setErrorCode(undefined);
     markResolving(names, true);
     try {
-      const { candidates } = await checkNameCandidatesBatch(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        names,
-      );
+      const { candidates } = await checkNameCandidatesBatch(props.sessionId, names);
       for (const checked of candidates) {
-        await followUpHistory(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          checked,
-        );
+        await followUpHistory(props.sessionId, checked);
       }
       await refresh();
     } catch (err) {
@@ -355,12 +294,7 @@ export function ShortlistMode(props: {
       return;
     }
     try {
-      await checkNameHandles(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        candidate.name,
-      );
+      await checkNameHandles(props.sessionId, candidate.name);
       await refresh();
     } catch (err) {
       const code =
@@ -380,19 +314,13 @@ export function ShortlistMode(props: {
     setVariationBusy(true);
     setError(null);
     try {
-      const { candidates: added } = await addNameCandidates(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        [
+      const { candidates: added } = await addNameCandidates(props.sessionId, [
           {
             name,
             family: origin.family ?? undefined,
             rationale: `Variation of ${origin.name}`,
           },
-        ],
-        'human',
-      );
+        ], 'human');
       const created = added[0];
       if (!created) return;
       const others = session.candidates.filter(
@@ -407,12 +335,7 @@ export function ShortlistMode(props: {
         family: origin.family ?? created.family,
         rationale: created.rationale || `Variation of ${origin.name}`,
       };
-      const updated = await updateProjectNameSession(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        { candidates: [...others, linked] },
-      );
+      const updated = await updateNameSession(props.sessionId, { candidates: [...others, linked] });
       props.onSession(updated);
       setVariationId(null);
     } catch (err) {
@@ -427,12 +350,7 @@ export function ShortlistMode(props: {
     setRoundBusy(true);
     setError(null);
     try {
-      const updated = await startNameFeedbackRound(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        session.shortlistIds,
-      );
+      const updated = await startNameFeedbackRound(props.sessionId, session.shortlistIds);
       props.onSession(updated);
       props.onGoToDecision();
     } catch (err) {

@@ -22,9 +22,9 @@ import {
   checkNameCandidate,
   checkNameCandidatesBatch,
   checkNameHandles,
-  fetchProjectNameSession,
+  fetchNameSession,
   recommendNameCandidate,
-  updateProjectNameSession,
+  updateNameSession,
   upsertNameCandidateRating,
 } from '../lib/api/names';
 import { mergeCheckedCandidate } from '../lib/names/funnel';
@@ -97,7 +97,7 @@ function isSessionMode(id: string): id is NamesSessionMode {
 }
 
 export function NameSessionPage() {
-  const { orgId, projectId, sessionId } = useParams();
+  const { sessionId } = useParams();
   const { user } = useAuth();
   const [session, setSession] = useState<ProjectNameSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,12 +152,12 @@ export function NameSessionPage() {
   );
 
   const load = useCallback(async () => {
-    if (!orgId || !projectId || !sessionId) return;
+    if (!sessionId) return;
     setLoading(true);
     setError(null);
     setForbidden(false);
     try {
-      const loaded = await fetchProjectNameSession(orgId, projectId, sessionId);
+      const loaded = await fetchNameSession(sessionId);
       setSession(loaded);
       savedBriefRef.current = JSON.stringify({
         title: loaded.title,
@@ -173,7 +173,7 @@ export function NameSessionPage() {
     } finally {
       setLoading(false);
     }
-  }, [orgId, projectId, sessionId]);
+  }, [sessionId]);
 
   useEffect(() => {
     void load();
@@ -208,9 +208,9 @@ export function NameSessionPage() {
         ?.name
     : null;
 
-  async function patch(input: Parameters<typeof updateProjectNameSession>[3]) {
-    if (!orgId || !projectId || !sessionId) return null;
-    const updated = await updateProjectNameSession(orgId, projectId, sessionId, input);
+  async function patch(input: Parameters<typeof updateNameSession>[1]) {
+    if (!sessionId) return null;
+    const updated = await updateNameSession(sessionId, input);
     setSession(updated);
     return updated;
   }
@@ -261,7 +261,7 @@ export function NameSessionPage() {
   }
 
   async function handleCheckName(name = typedName, source: 'human' | 'chatbot' = 'human') {
-    if (!orgId || !projectId || !sessionId || !session) return;
+    if (!sessionId || !session) return;
     const trimmed = name.trim();
     if (!trimmed) return;
     const key = normalizeNameKey(trimmed);
@@ -272,7 +272,7 @@ export function NameSessionPage() {
     setBusy('check');
     try {
       if (existing && source === 'human') {
-        const checked = await checkNameCandidate(orgId, projectId, sessionId, trimmed);
+        const checked = await checkNameCandidate(sessionId, trimmed);
         const merged = mergeCheckedCandidate(
           session.candidates.map((item) =>
             normalizeNameKey(item.name) === key
@@ -291,18 +291,12 @@ export function NameSessionPage() {
         return;
       }
       if (!existing) {
-        await addNameCandidates(
-          orgId,
-          projectId,
-          sessionId,
-          [{ name: trimmed }],
-          source,
-        );
+        await addNameCandidates(sessionId, [{ name: trimmed }], source);
       }
-      const checked = await checkNameCandidate(orgId, projectId, sessionId, trimmed);
-      const latest = await fetchProjectNameSession(orgId, projectId, sessionId);
+      const checked = await checkNameCandidate(sessionId, trimmed);
+      const latest = await fetchNameSession(sessionId);
       const merged = mergeCheckedCandidate(latest.candidates, checked);
-      const updated = await updateProjectNameSession(orgId, projectId, sessionId, {
+      const updated = await updateNameSession(sessionId, {
         candidates: merged,
       });
       setSession(updated);
@@ -336,7 +330,7 @@ export function NameSessionPage() {
     source: CandidateSource,
     opts?: { retry?: boolean },
   ) {
-    if (!orgId || !projectId || !sessionId || !names.length) return;
+    if (!sessionId || !names.length) return;
     if (busy === 'check' || busy === 'save') return;
     const payloads = names.map((item) =>
       typeof item === 'string' ? { name: item } : item,
@@ -347,9 +341,9 @@ export function NameSessionPage() {
     try {
       if (!opts?.retry) {
         setBusy('save');
-        await addNameCandidates(orgId, projectId, sessionId, payloads, source);
+        await addNameCandidates(sessionId, payloads, source);
         added = true;
-        setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
+        setSession(await fetchNameSession(sessionId));
       }
       setBusy('check');
       const waveNames = payloads.map((item) => item.name);
@@ -357,12 +351,7 @@ export function NameSessionPage() {
         names: waveNames,
         add: async () => undefined,
         checkBatch: async (waveNames) => {
-          const { candidates } = await checkNameCandidatesBatch(
-            orgId,
-            projectId,
-            sessionId,
-            waveNames,
-          );
+          const { candidates } = await checkNameCandidatesBatch(sessionId, waveNames);
           setSession((prev) =>
             prev
               ? {
@@ -374,7 +363,7 @@ export function NameSessionPage() {
           return candidates;
         },
       });
-      setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
+      setSession(await fetchNameSession(sessionId));
       setTypedName('');
       setRetryNames([]);
     } catch (err) {
@@ -433,7 +422,7 @@ export function NameSessionPage() {
   }
 
   async function handleGenerate() {
-    if (!orgId || !projectId || !sessionId || !session) return;
+    if (!sessionId || !session) return;
     if (busy) return;
     if (!canvasHasProduct(desc)) {
       setNotice(PRODUCT_GATE);
@@ -448,8 +437,6 @@ export function NameSessionPage() {
     setNotice(null);
     try {
       const result = await generateNameSuggestions({
-        organizationId: orgId,
-        projectId: projectId,
         sessionId,
         title: session.title,
         namingGoal: session.namingGoal,
@@ -524,12 +511,12 @@ export function NameSessionPage() {
   }
 
   async function handleKeep(id: string) {
-    if (!orgId || !projectId || !sessionId || !session) return;
+    if (!sessionId || !session) return;
     const already = session.shortlistIds.includes(id);
     const ids = already
       ? session.shortlistIds.filter((item) => item !== id)
       : [...session.shortlistIds, id];
-    const updated = await updateProjectNameSession(orgId, projectId, sessionId, {
+    const updated = await updateNameSession(sessionId, {
       shortlistIds: ids,
     });
     setSession(updated);
@@ -537,11 +524,11 @@ export function NameSessionPage() {
       const kept = updated.candidates.find((item) => item.id === id);
       if (kept) {
         try {
-          await checkNameHandles(orgId, projectId, sessionId, kept.name);
+          await checkNameHandles(sessionId, kept.name);
         } catch {
           // Handle probes stay unknown when they fail (BR-NAME-19).
         }
-        setSession(await fetchProjectNameSession(orgId, projectId, sessionId));
+        setSession(await fetchNameSession(sessionId));
       }
     }
   }
@@ -558,7 +545,7 @@ export function NameSessionPage() {
   }
 
   async function handlePick(id: string, note = pickNote) {
-    if (!orgId || !projectId || !sessionId || !session) return;
+    if (!sessionId || !session) return;
     const scope = winnerScopeIds(session, id);
     const points = reactionPointsForSession(session, scope);
     if (needsWinnerReason(id, scope, points, note)) {
@@ -569,13 +556,7 @@ export function NameSessionPage() {
     }
     setBusy('pick');
     try {
-      const updated = await recommendNameCandidate(
-        orgId,
-        projectId,
-        sessionId,
-        id,
-        note.trim() || undefined,
-      );
+      const updated = await recommendNameCandidate(sessionId, id, note.trim() || undefined);
       setSession(updated);
       setPendingPickId(null);
       setPickNote('');
@@ -594,22 +575,16 @@ export function NameSessionPage() {
     overall: number | undefined,
     notes: string,
   ) {
-    if (!orgId || !projectId || !sessionId) return;
+    if (!sessionId) return;
     try {
-      const updated = await upsertNameCandidateRating(
-        orgId,
-        projectId,
-        sessionId,
-        id,
-        { overall, notes },
-      );
+      const updated = await upsertNameCandidateRating(sessionId, id, { overall, notes });
       setSession(updated);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this score' }));
     }
   }
 
-  if (!orgId || !projectId || !sessionId) {
+  if (!sessionId) {
     return <Navigate to="/names" replace />;
   }
   if (forbidden) {
@@ -680,7 +655,7 @@ export function NameSessionPage() {
         <div>
           <div className="page-links names-session-back">
             <Link
-              to={`/organizations/${orgId}/projects/${projectId}/names`}
+              to="/names"
               className="text-link"
             >
               ← Names
@@ -851,8 +826,6 @@ export function NameSessionPage() {
             {mode === 'explore' && (
               <ExploreMode
                 session={session}
-                orgId={orgId}
-                projectId={projectId}
                 sessionId={sessionId}
                 onSession={setSession}
                 onGoToShortlist={() => setMode('shortlist')}
@@ -861,8 +834,6 @@ export function NameSessionPage() {
             {mode === 'shortlist' && (
               <ShortlistMode
                 session={session}
-                orgId={orgId}
-                projectId={projectId}
                 sessionId={sessionId}
                 resolvingKeys={resolvingKeys}
                 isBlind={Boolean(isBlind)}
@@ -883,8 +854,6 @@ export function NameSessionPage() {
             {mode === 'decision' && (
               <DecisionMode
                 session={session}
-                orgId={orgId}
-                projectId={projectId}
                 sessionId={sessionId}
                 onSession={setSession}
                 onNotice={setNotice}
@@ -950,8 +919,6 @@ export function NameSessionPage() {
           <CandidateCard
             candidate={inspector}
             session={session}
-            orgId={orgId}
-            projectId={projectId}
             sessionId={sessionId}
             isBlind={Boolean(
               isBlind && openRound?.candidateIds.includes(inspector.id),
@@ -966,8 +933,6 @@ export function NameSessionPage() {
         {inspectorView === 'compare' && session && (
           <CompareSection
             session={session}
-            orgId={orgId}
-            projectId={projectId}
             sessionId={sessionId}
             onSession={setSession}
             onNotice={setNotice}
@@ -977,8 +942,6 @@ export function NameSessionPage() {
           feedbackReady ? (
             <FeedbackSection
               session={session}
-              orgId={orgId}
-              projectId={projectId}
               sessionId={sessionId}
               onSession={setSession}
               onNotice={setNotice}

@@ -303,7 +303,7 @@ export interface ProjectNameSessionSummary {
 
 export interface ProjectNameSession {
   id: string;
-  projectId: string;
+  projectId: string | null;
   title: string;
   brief: string;
   namingGoal: NamingGoal | string | null;

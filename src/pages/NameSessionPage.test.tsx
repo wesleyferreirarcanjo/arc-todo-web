@@ -6,8 +6,8 @@ import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { ApiError } from '../lib/api/client';
 import type { ProjectNameSession } from '../types/name-session';
 
-const fetchProjectNameSession = vi.hoisted(() => vi.fn());
-const updateProjectNameSession = vi.hoisted(() => vi.fn());
+const fetchNameSession = vi.hoisted(() => vi.fn());
+const updateNameSession = vi.hoisted(() => vi.fn());
 const upsertNameCandidateRating = vi.hoisted(() => vi.fn());
 const setNameCandidateReaction = vi.hoisted(() => vi.fn());
 const startNameBatch = vi.hoisted(() => vi.fn());
@@ -53,8 +53,8 @@ vi.mock('../lib/api/names', async () => {
   );
   return {
     ...actual,
-    fetchProjectNameSession,
-    updateProjectNameSession,
+    fetchNameSession,
+    updateNameSession,
     upsertNameCandidateRating,
     setNameCandidateReaction,
     startNameBatch,
@@ -103,13 +103,13 @@ function renderPage() {
   return render(
     <MemoryRouter
       initialEntries={[
-        '/organizations/org-1/projects/proj-1/names/sess-1',
+        '/names/sess-1',
       ]}
     >
       <BoardMobileShellProvider>
         <Routes>
           <Route
-            path="/organizations/:orgId/projects/:projectId/names/:sessionId"
+            path="/names/:sessionId"
             element={<NameSessionPage />}
           />
         </Routes>
@@ -130,8 +130,8 @@ describe('NameSessionPage shortlist chrome', () => {
   });
 
   beforeEach(() => {
-    fetchProjectNameSession.mockResolvedValue(emptySession);
-    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => ({
+    fetchNameSession.mockResolvedValue(emptySession);
+    updateNameSession.mockImplementation(async (_s, input) => ({
       ...emptySession,
       ...input,
       productDescription: {
@@ -225,7 +225,7 @@ describe('NameSessionPage shortlist chrome', () => {
 
   it('reviews generated names before adding them', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       productDescription: { whatItIs: 'A coffee club for offices.' },
     });
@@ -250,14 +250,14 @@ describe('NameSessionPage shortlist chrome', () => {
     expect(generateNameSuggestions.mock.calls[0][0].productDescription.whatItIs).toBe(
       'A coffee club for offices.',
     );
-    expect(addNameCandidates.mock.calls[0][3]).toEqual([
+    expect(addNameCandidates.mock.calls[0][1]).toEqual([
       { name: 'Helio', rationale: 'sun', family: 'metaphor' },
     ]);
-    expect(addNameCandidates.mock.calls[0][4]).toBe('chatbot');
+    expect(addNameCandidates.mock.calls[0][2]).toBe('chatbot');
   });
 
   it('shows the personal favorites count on the Shortlist tab, not every name', async () => {
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [
         {
@@ -305,7 +305,7 @@ describe('NameSessionPage shortlist chrome', () => {
       domainChecks: [] as [],
       googleQueryUrl: '',
     };
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [nova],
     });
@@ -342,16 +342,16 @@ describe('NameSessionPage shortlist chrome', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save brief' }));
     await waitFor(() => {
-      expect(updateProjectNameSession).toHaveBeenCalled();
+      expect(updateNameSession).toHaveBeenCalled();
     });
-    expect(updateProjectNameSession.mock.calls[0][3]).toMatchObject({
+    expect(updateNameSession.mock.calls[0][1]).toMatchObject({
       title: 'Project G',
     });
   });
 
   it('opens Checks, Compare, and Feedback in a modal from Shortlist', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [
         {
@@ -396,7 +396,7 @@ describe('NameSessionPage shortlist chrome', () => {
 
   it('saves a 1–10 shortlist score in a mini modal without opening the inspector', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [
         {
@@ -441,8 +441,8 @@ describe('NameSessionPage shortlist chrome', () => {
     await waitFor(() => {
       expect(upsertNameCandidateRating).toHaveBeenCalled();
     });
-    expect(upsertNameCandidateRating.mock.calls[0][3]).toBe('nova');
-    expect(upsertNameCandidateRating.mock.calls[0][4]).toEqual({
+    expect(upsertNameCandidateRating.mock.calls[0][1]).toBe('nova');
+    expect(upsertNameCandidateRating.mock.calls[0][2]).toEqual({
       overall: 8,
       notes: '',
     });
@@ -450,7 +450,7 @@ describe('NameSessionPage shortlist chrome', () => {
   });
 
   it('renders the existing forbidden state', async () => {
-    fetchProjectNameSession.mockRejectedValue(new ApiError('Forbidden', 403));
+    fetchNameSession.mockRejectedValue(new ApiError('Forbidden', 403));
     renderPage();
 
     await waitFor(() => {
@@ -463,7 +463,7 @@ describe('NameSessionPage shortlist chrome', () => {
   });
 
   it('hides Team views on a solo session', async () => {
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       participationMode: 'solo',
     });
@@ -477,7 +477,7 @@ describe('NameSessionPage shortlist chrome', () => {
 
   it('shows a read-only Team views tab for team sessions', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       participationMode: 'team',
       memberShortlists: [
@@ -532,7 +532,7 @@ describe('NameSessionPage Explore', () => {
   }
 
   beforeEach(() => {
-    updateProjectNameSession.mockImplementation(async (_o, _p, _s, input) => ({
+    updateNameSession.mockImplementation(async (_s, input) => ({
       ...emptySession,
       ...input,
     }));
@@ -544,7 +544,7 @@ describe('NameSessionPage Explore', () => {
     checkNameHistory.mockReset();
     checkNameHandles.mockReset();
     recommendNameCandidate.mockReset();
-    setNameCandidateReaction.mockImplementation(async (_o, _p, _s, id, input) => ({
+    setNameCandidateReaction.mockImplementation(async (_s, id, input) => ({
       ...emptySession,
       candidates: [named(id, id === 'nova' ? 'Nova' : 'Rift', { reaction: input.reaction })],
     }));
@@ -552,7 +552,7 @@ describe('NameSessionPage Explore', () => {
 
   it('persists Pass from Explore and does not fire check requests', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [named('nova', 'Nova'), named('rift', 'Rift')],
     });
@@ -564,8 +564,6 @@ describe('NameSessionPage Explore', () => {
     await user.click(screen.getByRole('button', { name: 'Pass' }));
     await waitFor(() => {
       expect(setNameCandidateReaction).toHaveBeenCalledWith(
-        'org-1',
-        'proj-1',
         'sess-1',
         'nova',
         { reaction: 'passed' },
@@ -578,7 +576,7 @@ describe('NameSessionPage Explore', () => {
   });
 
   it('hides Start a new batch for a non-manager and disables it below 10 names', async () => {
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       canManageFeedback: false,
       candidates: [named('nova', 'Nova')],
@@ -590,7 +588,7 @@ describe('NameSessionPage Explore', () => {
     expect(screen.queryByRole('button', { name: 'Start a new batch' })).toBeNull();
 
     cleanup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       canManageFeedback: true,
       candidates: [named('nova', 'Nova'), named('rift', 'Rift')],
@@ -606,7 +604,7 @@ describe('NameSessionPage Explore', () => {
   });
 
   it('shows not-yet-checked web fit on Explore and never reads as Available', async () => {
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [
         named('nova', 'Nova', {
@@ -639,12 +637,12 @@ describe('NameSessionPage Decision', () => {
 
   beforeEach(() => {
     recommendNameCandidate.mockReset();
-    fetchProjectNameSession.mockReset();
+    fetchNameSession.mockReset();
   });
 
   it('opens Decision on the ballot when the API phase is ballot', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       decisionPhase: 'ballot',
       batches: [
@@ -703,7 +701,7 @@ describe('NameSessionPage Decision', () => {
 
   it('requires a below-top reason on the shortlist Pick path before recommend', async () => {
     const user = userEvent.setup();
-    fetchProjectNameSession.mockResolvedValue({
+    fetchNameSession.mockResolvedValue({
       ...emptySession,
       candidates: [
         {
@@ -760,7 +758,7 @@ describe('NameSessionPage Decision', () => {
     await waitFor(() => {
       expect(recommendNameCandidate).toHaveBeenCalled();
     });
-    expect(recommendNameCandidate.mock.calls[0][3]).toBe('rift');
-    expect(recommendNameCandidate.mock.calls[0][4]).toBe('Fits the spoken test.');
+    expect(recommendNameCandidate.mock.calls[0][1]).toBe('rift');
+    expect(recommendNameCandidate.mock.calls[0][2]).toBe('Fits the spoken test.');
   });
 });

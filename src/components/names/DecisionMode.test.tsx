@@ -105,8 +105,6 @@ function Harness(props: { initial: ProjectNameSession }) {
   return (
     <DecisionMode
       session={current}
-      orgId="org-1"
-      projectId="proj-1"
       sessionId="sess-1"
       onSession={setCurrent}
     />
@@ -213,7 +211,7 @@ describe('DecisionMode', () => {
   it('submits, then updates the same ballot instead of duplicating', async () => {
     const user = userEvent.setup();
     const filled = session();
-    upsertNameFeedback.mockImplementation(async (_o, _p, _s, _r, input) => {
+    upsertNameFeedback.mockImplementation(async (_s, _r, input) => {
       const nova = input.responses.find((row: { candidateId: string }) => row.candidateId === 'nova');
       return {
         ...filled,
@@ -281,7 +279,7 @@ describe('DecisionMode', () => {
 
     expect(await screen.findByRole('heading', { name: 'Team result' })).toBeTruthy();
     expect(upsertNameFeedback).toHaveBeenCalledTimes(1);
-    expect(upsertNameFeedback.mock.calls[0][4].responses).toHaveLength(2);
+    expect(upsertNameFeedback.mock.calls[0][2].responses).toHaveLength(2);
 
     await user.click(screen.getByRole('button', { name: 'Update ballot' }));
     await vote(user, 'Nova', 'Love');
@@ -289,9 +287,9 @@ describe('DecisionMode', () => {
     await user.click(screen.getByRole('button', { name: 'Update ballot' }));
 
     expect(upsertNameFeedback).toHaveBeenCalledTimes(2);
-    expect(upsertNameFeedback.mock.calls[1][4].responses).toHaveLength(2);
+    expect(upsertNameFeedback.mock.calls[1][2].responses).toHaveLength(2);
     expect(
-      upsertNameFeedback.mock.calls[1][4].responses.find(
+      upsertNameFeedback.mock.calls[1][2].responses.find(
         (row: { candidateId: string }) => row.candidateId === 'nova',
       ).reaction,
     ).toBe('loved');
@@ -429,8 +427,6 @@ describe('DecisionMode', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Crown winner' }));
     expect(crownNameBatchWinner).toHaveBeenCalledWith(
-      'org-1',
-      'proj-1',
       'sess-1',
       1,
       {
@@ -515,8 +511,6 @@ describe('DecisionMode', () => {
     expect(screen.queryByText(/Start a batch in Explore/)).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Choose this name' }));
     expect(recommendNameCandidate).toHaveBeenCalledWith(
-      'org-1',
-      'proj-1',
       'sess-1',
       'nova',
       undefined,
@@ -570,8 +564,6 @@ describe('DecisionMode', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Choose this name' }));
     expect(recommendNameCandidate).toHaveBeenCalledWith(
-      'org-1',
-      'proj-1',
       'sess-1',
       'rift',
       'Fits the spoken test.',
@@ -676,8 +668,6 @@ describe('DecisionMode', () => {
     expect(screen.getByText('2 of 4 project members have submitted.')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Close team round' }));
     expect(closeNameFeedbackRound).toHaveBeenCalledWith(
-      'org-1',
-      'proj-1',
       'sess-1',
       'round-1',
     );

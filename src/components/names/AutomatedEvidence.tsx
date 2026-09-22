@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   checkNameHandles,
   checkNameHistory,
-  fetchProjectNameSession,
+  fetchNameSession,
 } from '../../lib/api/names';
 import { VISUAL_FLAGS } from '../../lib/names/catalog';
 import { nameQuality } from '../../lib/names/score';
@@ -49,8 +49,6 @@ function historySummary(items: DomainHistory[]): string {
 export function AutomatedEvidence(props: {
   candidate: NameCandidate;
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   busy: string | null;
   onBusy: (value: string | null) => void;
@@ -140,21 +138,12 @@ export function AutomatedEvidence(props: {
           props.onBusy('handles');
           setHandlesRecheck({ phase: 'checking', detail: 'Checking handles…' });
           try {
-            const checked = await checkNameHandles(
-              props.orgId,
-              props.projectId,
-              props.sessionId,
-              candidate.name,
-            );
+            const checked = await checkNameHandles(props.sessionId, candidate.name);
             setHandlesRecheck({
               phase: 'done',
               detail: handleSummary(checked.handleChecks ?? []),
             });
-            const latest = await fetchProjectNameSession(
-              props.orgId,
-              props.projectId,
-              props.sessionId,
-            );
+            const latest = await fetchNameSession(props.sessionId);
             props.onSession(latest);
           } catch {
             setHandlesRecheck({
@@ -193,21 +182,12 @@ export function AutomatedEvidence(props: {
           props.onBusy('history');
           setHistoryRecheck({ phase: 'checking', detail: 'Checking history…' });
           try {
-            const checked = await checkNameHistory(
-              props.orgId,
-              props.projectId,
-              props.sessionId,
-              candidate.name,
-            );
+            const checked = await checkNameHistory(props.sessionId, candidate.name);
             setHistoryRecheck({
               phase: 'done',
               detail: historySummary(checked.domainHistory ?? []),
             });
-            const latest = await fetchProjectNameSession(
-              props.orgId,
-              props.projectId,
-              props.sessionId,
-            );
+            const latest = await fetchNameSession(props.sessionId);
             props.onSession(latest);
           } catch {
             setHistoryRecheck({

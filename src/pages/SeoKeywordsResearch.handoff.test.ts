@@ -21,7 +21,7 @@ describe('SEO Keywords research handoff (#arc-475)', () => {
     expect(research).toContain('OFFERINGS_REQUIRED_COPY');
     expect(research).toContain('createNameSessionFromOfferings');
     expect(research).toContain(
-      '`/organizations/${orgId}/projects/${projectId}/names/${created.id}`',
+      '`/names/${created.id}`',
     );
     expect(research).not.toContain('createProject(');
     expect(research).not.toContain('candidates');

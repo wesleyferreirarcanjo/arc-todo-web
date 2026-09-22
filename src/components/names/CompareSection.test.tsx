@@ -3,20 +3,20 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NameCandidate, ProjectNameSession } from '../../types/name-session';
 
-const updateProjectNameSession = vi.hoisted(() => vi.fn());
+const updateNameSession = vi.hoisted(() => vi.fn());
 const recommendNameCandidate = vi.hoisted(() => vi.fn());
 const checkNameHandles = vi.hoisted(() => vi.fn());
 const checkNameCandidate = vi.hoisted(() => vi.fn());
 const checkNameHistory = vi.hoisted(() => vi.fn());
-const fetchProjectNameSession = vi.hoisted(() => vi.fn());
+const fetchNameSession = vi.hoisted(() => vi.fn());
 
 vi.mock('../../lib/api/names', () => ({
-  updateProjectNameSession,
+  updateNameSession,
   recommendNameCandidate,
   checkNameHandles,
   checkNameCandidate,
   checkNameHistory,
-  fetchProjectNameSession,
+  fetchNameSession,
 }));
 
 import { CompareSection } from './CompareSection';
@@ -148,8 +148,6 @@ function renderCompare(current = compared) {
   render(
     <CompareSection
       session={current}
-      orgId="org-1"
-      projectId="proj-1"
       sessionId="s1"
       onSession={onSession}
       onNotice={onNotice}
@@ -160,12 +158,12 @@ function renderCompare(current = compared) {
 
 describe('CompareSection', () => {
   beforeEach(() => {
-    updateProjectNameSession.mockReset().mockResolvedValue(compared);
+    updateNameSession.mockReset().mockResolvedValue(compared);
     recommendNameCandidate.mockReset().mockResolvedValue(compared);
     checkNameHandles.mockReset().mockResolvedValue(wave);
     checkNameCandidate.mockReset().mockResolvedValue(wave);
     checkNameHistory.mockReset().mockResolvedValue(wave);
-    fetchProjectNameSession.mockReset().mockResolvedValue(compared);
+    fetchNameSession.mockReset().mockResolvedValue(compared);
   });
 
   it('compares selected names in a criteria matrix and keeps evidence behind drill-in', async () => {
@@ -196,7 +194,7 @@ describe('CompareSection', () => {
     expect(screen.getByText('Select names to compare.')).toBeInTheDocument();
     const group = screen.getByRole('group', { name: 'Names to compare' });
     await user.click(within(group).getByRole('checkbox', { name: 'Wave' }));
-    expect(updateProjectNameSession).not.toHaveBeenCalled();
+    expect(updateNameSession).not.toHaveBeenCalled();
     expect(screen.getByRole('columnheader', { name: 'Wave' })).toBeTruthy();
   });
 
@@ -207,7 +205,7 @@ describe('CompareSection', () => {
     const waveCard = screen.getByRole('article', { name: 'Wave' });
     const brandFit = within(waveCard).getByRole('radiogroup', { name: 'Brand fit' });
     await user.click(within(brandFit).getByRole('radio', { name: '5' }));
-    expect(updateProjectNameSession).not.toHaveBeenCalled();
+    expect(updateNameSession).not.toHaveBeenCalled();
     expect(recommendNameCandidate).not.toHaveBeenCalled();
   });
 

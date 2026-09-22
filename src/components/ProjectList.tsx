@@ -251,9 +251,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                     type="button"
                     className="btn btn-secondary"
                     onClick={() =>
-                      navigate(
-                        `/organizations/${orgId}/projects/${project.id}/names`,
-                      )
+                      navigate('/names')
                     }
                   >
                     Names

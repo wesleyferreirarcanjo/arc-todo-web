@@ -1,36 +1,23 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
 import { NamesIcon } from '../components/icons';
 import { NamesParticipationChoice } from '../components/names/NamesParticipationChoice';
 import { NameSessionRow } from '../components/names/NameSessionRow';
-import { useAuth } from '../context/AuthContext';
-import { ApiError } from '../lib/api/client';
 import {
+  createNameSession,
   createNameSessionBasics,
-  createProjectNameSession,
-  deleteProjectNameSession,
-  fetchProjectNameSessions,
-  updateProjectNameSession,
+  deleteNameSession,
+  fetchNameSessions,
+  updateNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
-import { hubOrgProjectFiltersVisible, NAMES_JOURNEY_COPY } from '../lib/names/hubList';
-import { fetchOrganizations } from '../lib/api/organizations';
-import { createProject, fetchProjects } from '../lib/api/projects';
-import { DEFAULT_PROJECT_COLOR, getProjectColor } from '../lib/color/entityColor';
+import { NAMES_JOURNEY_COPY } from '../lib/names/hubList';
 import type { NamingGoal, ParticipationMode, ProjectNameSessionSummary } from '../types/name-session';
-import type { Organization } from '../types/organization';
-import type { Project } from '../types/project';
-
-interface HubSession {
-  session: ProjectNameSessionSummary;
-  org: Organization;
-  project: Project;
-}
 
 type NameSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
 
@@ -43,14 +30,9 @@ const SORT_OPTIONS: { value: NameSort; label: string }[] = [
 
 export function NamesHubPage() {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [items, setItems] = useState<HubSession[]>([]);
+  const [items, setItems] = useState<ProjectNameSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [orgFilter, setOrgFilter] = useState('');
-  const [projectFilter, setProjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<NameSort>('updated_desc');
   const [createOpen, setCreateOpen] = useState(false);
@@ -60,11 +42,11 @@ export function NamesHubPage() {
   const [createMode, setCreateMode] = useState<ParticipationMode>('solo');
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<HubSession | null>(null);
+  const [renameTarget, setRenameTarget] = useState<ProjectNameSessionSummary | null>(null);
   const [renameTitle, setRenameTitle] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<HubSession | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectNameSessionSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -73,25 +55,8 @@ export function NamesHubPage() {
       setLoading(true);
       setError(null);
       try {
-        const orgs = await fetchOrganizations();
-        const projectsByOrg = await Promise.all(
-          orgs.map(async (org) => {
-            const orgProjects = await fetchProjects(org.id);
-            return orgProjects.map((project) => ({ org, project }));
-          }),
-        );
-        const projectEntries = projectsByOrg.flat();
-        const sessionsByProject = await Promise.all(
-          projectEntries.map(async ({ org, project }) => {
-            const sessions = await fetchProjectNameSessions(org.id, project.id);
-            return sessions.map((session) => ({ session, org, project }));
-          }),
-        );
-        if (!cancelled) {
-          setOrganizations(orgs);
-          setProjects(projectEntries.map((entry) => entry.project));
-          setItems(sessionsByProject.flat());
-        }
+        const sessions = await fetchNameSessions();
+        if (!cancelled) setItems(sessions);
       } catch (err) {
         if (!cancelled) setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'name sessions' }));
       } finally {
@@ -104,52 +69,26 @@ export function NamesHubPage() {
     };
   }, []);
 
-  const projectOptions = useMemo(
-    () =>
-      orgFilter
-        ? projects.filter((project) => project.organizationId === orgFilter)
-        : projects,
-    [projects, orgFilter],
-  );
   const visibleItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    const filtered = items.filter(({ session, org, project }) => {
-      if (orgFilter && org.id !== orgFilter) return false;
-      if (projectFilter && project.id !== projectFilter) return false;
-      if (query && !session.title.toLowerCase().includes(query)) return false;
-      return true;
-    });
+    const filtered = items.filter(
+      (session) => !query || session.title.toLowerCase().includes(query),
+    );
     const sorted = [...filtered];
     sorted.sort((a, b) => {
       switch (sort) {
         case 'title_asc':
-          return a.session.title.localeCompare(b.session.title, undefined, {
-            sensitivity: 'base',
-          });
+          return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
         case 'title_desc':
-          return b.session.title.localeCompare(a.session.title, undefined, {
-            sensitivity: 'base',
-          });
+          return b.title.localeCompare(a.title, undefined, { sensitivity: 'base' });
         case 'updated_asc':
-          return Date.parse(a.session.updatedAt) - Date.parse(b.session.updatedAt);
+          return Date.parse(a.updatedAt) - Date.parse(b.updatedAt);
         default:
-          return Date.parse(b.session.updatedAt) - Date.parse(a.session.updatedAt);
+          return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
       }
     });
     return sorted;
-  }, [items, orgFilter, projectFilter, searchQuery, sort]);
-
-  const { org: showOrgFilter, project: showProjectFilter } = useMemo(
-    () =>
-      hubOrgProjectFiltersVisible(
-        items.map((item) => ({ orgId: item.org.id, projectId: item.project.id })),
-      ),
-    [items],
-  );
-
-  const canCreate = isAdmin
-    ? organizations.length > 0
-    : organizations.length > 0 && projects.length > 0;
+  }, [items, searchQuery, sort]);
 
   function openCreate() {
     setNewTitle('');
@@ -166,50 +105,16 @@ export function NamesHubPage() {
       setCreateError(catalogMessage(WEB_ERROR.VAL_WORKING));
       return;
     }
-    const createOrgId = orgFilter || organizations[0]?.id || '';
-    if (!createOrgId) {
-      setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
-      return;
-    }
-    const projectsForOrg = projects.filter(
-      (project) => project.organizationId === createOrgId,
-    );
-    const createProjectId =
-      projectFilter && projectsForOrg.some((project) => project.id === projectFilter)
-        ? projectFilter
-        : projectsForOrg[0]?.id ?? '';
-    if (!isAdmin && !createProjectId) {
-      setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
-      return;
-    }
     setCreating(true);
     setCreateError(null);
     try {
-      let projectId = createProjectId;
-      if (isAdmin) {
-        const project = await createProject(createOrgId, {
-          name: title,
-          color: DEFAULT_PROJECT_COLOR,
-        });
-        projectId = project.id;
-      }
-      const created = await createProjectNameSession(
-        createOrgId,
-        projectId,
+      const created = await createNameSession(
         createNameSessionBasics(title, whatItIs, createGoal, createMode),
       );
       setCreateOpen(false);
-      navigate(
-        `/organizations/${createOrgId}/projects/${projectId}/names/${created.id}`,
-      );
+      navigate(`/names/${created.id}`);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        setCreateError(
-          'Creating a new product workspace is admin-only. Open a project you already belong to to start a session there.',
-        );
-      } else {
-        setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming workspace' }));
-      }
+      setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming workspace' }));
     } finally {
       setCreating(false);
     }
@@ -225,23 +130,11 @@ export function NamesHubPage() {
     setRenaming(true);
     setRenameError(null);
     try {
-      const updated = await updateProjectNameSession(
-        renameTarget.org.id,
-        renameTarget.project.id,
-        renameTarget.session.id,
-        { title },
-      );
+      const updated = await updateNameSession(renameTarget.id, { title });
       setItems((prev) =>
         prev.map((item) =>
-          item.session.id === updated.id
-            ? {
-                ...item,
-                session: {
-                  ...item.session,
-                  title: updated.title,
-                  updatedAt: updated.updatedAt,
-                },
-              }
+          item.id === updated.id
+            ? { ...item, title: updated.title, updatedAt: updated.updatedAt }
             : item,
         ),
       );
@@ -257,14 +150,8 @@ export function NamesHubPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deleteProjectNameSession(
-        deleteTarget.org.id,
-        deleteTarget.project.id,
-        deleteTarget.session.id,
-      );
-      setItems((prev) =>
-        prev.filter((item) => item.session.id !== deleteTarget.session.id),
-      );
+      await deleteNameSession(deleteTarget.id);
+      setItems((prev) => prev.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this session' }));
@@ -289,7 +176,7 @@ export function NamesHubPage() {
             )}
           </p>
         </div>
-        {!loading && !error && canCreate && (
+        {!loading && !error && (
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             New name session
           </button>
@@ -305,24 +192,11 @@ export function NamesHubPage() {
             <NamesIcon className="arc-icon-empty" />
           </span>
           <p className="status-message">
-            {canCreate ? (
-              'No name sessions yet. Describe the tool, then add names yourself or copy the brief for an AI assistant.'
-            ) : (
-              <>
-                Join an organization, then start with a working name like project-g
-                — or{' '}
-                <Link to="/organizations" className="text-link">
-                  open a project
-                </Link>{' '}
-                you already belong to.
-              </>
-            )}
+            No name sessions yet. Describe the tool, then add names yourself or copy the brief for an AI assistant.
           </p>
-          {canCreate && (
-            <button type="button" className="btn btn-primary" onClick={openCreate}>
-              New name session
-            </button>
-          )}
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            New name session
+          </button>
         </div>
       )}
 
@@ -339,43 +213,6 @@ export function NamesHubPage() {
                 aria-label="Filter name sessions by title"
               />
             </label>
-            {showOrgFilter ? (
-                <label className="board-filter-field">
-                  Organization
-                  <Select
-                    value={orgFilter}
-                    placeholder="All organizations"
-                    onChange={(value) => {
-                      setOrgFilter(value);
-                      setProjectFilter('');
-                    }}
-                    options={[
-                      { value: '', label: 'All organizations' },
-                      ...organizations.map((org) => ({
-                        value: org.id,
-                        label: org.name,
-                      })),
-                    ]}
-                  />
-                </label>
-            ) : null}
-            {showProjectFilter ? (
-                <label className="board-filter-field">
-                  Project
-                  <Select
-                    value={projectFilter}
-                    placeholder="All projects"
-                    onChange={setProjectFilter}
-                    options={[
-                      { value: '', label: 'All projects' },
-                      ...projectOptions.map((project) => ({
-                        value: project.id,
-                        label: project.name,
-                      })),
-                    ]}
-                  />
-                </label>
-            ) : null}
             <label className="board-filter-field">
               Sort by
               <Select
@@ -391,11 +228,7 @@ export function NamesHubPage() {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => {
-                  setOrgFilter('');
-                  setProjectFilter('');
-                  setSearchQuery('');
-                }}
+                onClick={() => setSearchQuery('')}
               >
                 Clear filters
               </button>
@@ -403,27 +236,22 @@ export function NamesHubPage() {
           ) : (
             <div className="names-session-list-wrap">
               <ul className="names-session-list">
-                {visibleItems.map((item) => (
+                {visibleItems.map((session) => (
                   <NameSessionRow
-                    key={item.session.id}
-                    title={item.session.title}
-                    href={`/organizations/${item.org.id}/projects/${item.project.id}/names/${item.session.id}`}
-                    recommendedName={item.session.recommendedName}
-                    candidateCount={item.session.candidateCount}
-                    participationMode={item.session.participationMode}
-                    updatedAt={item.session.updatedAt}
-                    namingGoal={item.session.namingGoal}
-                    accent={getProjectColor(item.project)}
-                    badges={[
-                      { label: item.org.name, kind: 'org' },
-                      { label: item.project.name, kind: 'project' },
-                    ]}
+                    key={session.id}
+                    title={session.title}
+                    href={`/names/${session.id}`}
+                    recommendedName={session.recommendedName}
+                    candidateCount={session.candidateCount}
+                    participationMode={session.participationMode}
+                    updatedAt={session.updatedAt}
+                    namingGoal={session.namingGoal}
                     onRename={() => {
-                      setRenameTarget(item);
-                      setRenameTitle(item.session.title);
+                      setRenameTarget(session);
+                      setRenameTitle(session.title);
                       setRenameError(null);
                     }}
-                    onDelete={() => setDeleteTarget(item)}
+                    onDelete={() => setDeleteTarget(session)}
                   />
                 ))}
               </ul>
@@ -476,11 +304,6 @@ export function NamesHubPage() {
             />
           </div>
           <NamesParticipationChoice value={createMode} onChange={setCreateMode} />
-          <p className="page-subtitle">
-            {isAdmin
-              ? 'This also creates a project with the working name.'
-              : 'Stored on a project you belong to.'}
-          </p>
           {createError && <ErrorAlert>{createError}</ErrorAlert>}
           <div className="knowledge-actions">
             <button
@@ -542,7 +365,7 @@ export function NamesHubPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete session"
-        description={`Delete "${deleteTarget?.session.title ?? 'this session'}"? This cannot be undone.`}
+        description={`Delete "${deleteTarget?.title ?? 'this session'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}

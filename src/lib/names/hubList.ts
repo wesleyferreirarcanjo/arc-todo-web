@@ -61,10 +61,3 @@ export function resolveSessionParticipation(session: {
   return (session.feedback?.length ?? 0) > 0 ? 'team' : 'solo';
 }
 
-export function hubOrgProjectFiltersVisible(
-  items: Array<{ orgId: string; projectId: string }>,
-): { org: boolean; project: boolean } {
-  const orgs = new Set(items.map((item) => item.orgId));
-  const projects = new Set(items.map((item) => item.projectId));
-  return { org: orgs.size > 1, project: projects.size > 1 };
-}

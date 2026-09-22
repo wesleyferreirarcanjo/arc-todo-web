@@ -5,7 +5,7 @@ import {
   addNameCandidates,
   setNameCandidateReaction,
   startNameBatch,
-  updateProjectNameSession,
+  updateNameSession,
 } from '../../lib/api/names';
 import { normalizeNameKey } from '../../lib/names/catalog';
 import { emptyCandidate, exploreVariations } from '../../lib/names/variations';
@@ -52,7 +52,9 @@ export function exploreDeck(session: ProjectNameSession): NameCandidate[] {
     );
     return extra.length ? [...fromBatch, ...extra] : fromBatch;
   }
-  const waiting = active.filter((item) => !isBatched(item));
+  // Liked/loved/passed stay off this deck (Shortlist / Rejected). Including them
+  // made Undo/Remove of one name look like the whole shortlist returned to Explore.
+  const waiting = active.filter((item) => !isBatched(item) && unevaluated(item));
   const extra = active.filter((item) => isBatched(item) && unevaluated(item));
   return extra.length ? [...waiting, ...extra] : waiting;
 }
@@ -91,8 +93,6 @@ function typingTarget(target: EventTarget | null): boolean {
 
 export function ExploreMode(props: {
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   onSession: (session: ProjectNameSession) => void;
   onGoToShortlist: () => void;
@@ -131,10 +131,14 @@ export function ExploreMode(props: {
   indexRef.current = index;
 
   const current = index < deck.length ? deck[index] : undefined;
-  const exhausted = deck.length > 0 && index >= deck.length;
-  const survivors = deck.filter(
+  const survivors = session.candidates.filter(
     (item) => item.reaction === 'liked' || item.reaction === 'loved',
   );
+  const hasActive = session.candidates.some((item) => item.status !== 'rejected');
+  const exhausted =
+    hasActive &&
+    ((deck.length > 0 && index >= deck.length) ||
+      (deck.length === 0 && !current));
   const champion = session.recommendedCandidateId
     ? session.candidates.find((item) => item.id === session.recommendedCandidateId)
         ?.name ?? null
@@ -195,14 +199,8 @@ export function ExploreMode(props: {
 
   const persistReaction = useCallback(
     (id: string, reaction: CandidateReaction | null) =>
-      setNameCandidateReaction(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-        id,
-        { reaction },
-      ),
-    [props.orgId, props.projectId, props.sessionId],
+      setNameCandidateReaction(props.sessionId, id, { reaction }),
+    [props.sessionId],
   );
 
   function react(reaction: CandidateReaction) {
@@ -220,8 +218,14 @@ export function ExploreMode(props: {
     pendingReactions.current.set(id, reaction);
     patchLocal(id, reaction);
     setUndoStack((stack) => [...stack, { id, previous, index: fromIndex }]);
-    indexRef.current = fromIndex + 1;
-    setIndex(fromIndex + 1);
+    const nextDeck = exploreDeck(sessionRef.current);
+    // Open-batch cards stay in the deck after a reaction, so step forward.
+    // Unbatched likes/passes leave the deck; the next unevaluated occupies this slot.
+    const nextIndex = nextDeck.some((item) => item.id === id)
+      ? fromIndex + 1
+      : firstOpenIndex(nextDeck);
+    indexRef.current = nextIndex;
+    setIndex(nextIndex);
     void enqueue(async () => {
       try {
         const updated = await persistReaction(id, reaction);
@@ -230,8 +234,10 @@ export function ExploreMode(props: {
       } catch (err) {
         pendingReactions.current.delete(id);
         patchLocal(id, previous);
-        indexRef.current = fromIndex;
-        setIndex(fromIndex);
+        const restoredDeck = exploreDeck(sessionRef.current);
+        const restoredIndex = restoredDeck.findIndex((item) => item.id === id);
+        indexRef.current = restoredIndex >= 0 ? restoredIndex : fromIndex;
+        setIndex(indexRef.current);
         setUndoStack((stack) =>
           stack[stack.length - 1]?.id === id ? stack.slice(0, -1) : stack,
         );
@@ -245,10 +251,12 @@ export function ExploreMode(props: {
     if (!entry) return;
     setError(null);
     setUndoStack((stack) => stack.slice(0, -1));
-    indexRef.current = entry.index;
-    setIndex(entry.index);
     patchLocal(entry.id, undefined);
     pendingReactions.current.set(entry.id, undefined);
+    const restoredDeck = exploreDeck(sessionRef.current);
+    const restoredIndex = restoredDeck.findIndex((item) => item.id === entry.id);
+    indexRef.current = restoredIndex >= 0 ? restoredIndex : entry.index;
+    setIndex(indexRef.current);
     void enqueue(async () => {
       try {
         const updated = await persistReaction(entry.id, null);
@@ -257,6 +265,10 @@ export function ExploreMode(props: {
       } catch (err) {
         pendingReactions.current.delete(entry.id);
         patchLocal(entry.id, entry.previous);
+        const failedDeck = exploreDeck(sessionRef.current);
+        const failedIndex = failedDeck.findIndex((item) => item.id === entry.id);
+        indexRef.current = failedIndex >= 0 ? failedIndex : entry.index;
+        setIndex(indexRef.current);
         setUndoStack((stack) => [...stack, entry]);
         setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this undo' }));
       }
@@ -275,19 +287,13 @@ export function ExploreMode(props: {
     setError(null);
     void enqueue(async () => {
       try {
-        const { candidates: added } = await addNameCandidates(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          [
+        const { candidates: added } = await addNameCandidates(props.sessionId, [
             {
               name,
               family: current.family ?? undefined,
               rationale: `Variation of ${current.name}`,
             },
-          ],
-          'human',
-        );
+          ], 'human');
         const created = added[0];
         if (!created) return;
         const others = sessionRef.current.candidates.filter(
@@ -303,12 +309,7 @@ export function ExploreMode(props: {
           family: current.family ?? created.family,
           rationale: created.rationale || `Variation of ${current.name}`,
         };
-        const updated = await updateProjectNameSession(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          { candidates: [...others, linked] },
-        );
+        const updated = await updateNameSession(props.sessionId, { candidates: [...others, linked] });
         applyServerSession(updated);
         const nextDeck = exploreDeck(updated);
         const kept = nextDeck.findIndex((item) => item.id === originId);
@@ -331,12 +332,7 @@ export function ExploreMode(props: {
     setError(null);
     void enqueue(async () => {
       try {
-        const updated = await startNameBatch(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          { candidateIds: ids },
-        );
+        const updated = await startNameBatch(props.sessionId, { candidateIds: ids });
         applyServerSession(updated);
         setUndoStack([]);
       } catch (err) {

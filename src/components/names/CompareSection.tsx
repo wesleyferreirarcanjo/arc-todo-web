@@ -7,9 +7,9 @@ import {
   checkNameCandidate,
   checkNameHandles,
   checkNameHistory,
-  fetchProjectNameSession,
+  fetchNameSession,
   recommendNameCandidate,
-  updateProjectNameSession,
+  updateNameSession,
 } from '../../lib/api/names';
 import { BRAND_SOURCES } from '../../lib/names/brandSources';
 import { VISUAL_FLAGS } from '../../lib/names/catalog';
@@ -226,8 +226,6 @@ function canRetry(item: NameCandidate): boolean {
 
 export function CompareSection(props: {
   session: ProjectNameSession;
-  orgId: string;
-  projectId: string;
   sessionId: string;
   onSession: (session: ProjectNameSession) => void;
   onNotice: (value: string | null) => void;
@@ -273,12 +271,7 @@ export function CompareSection(props: {
   }
 
   async function persistSession(input: UpdateNameSessionInput = {}) {
-    const updated = await updateProjectNameSession(
-      props.orgId,
-      props.projectId,
-      props.sessionId,
-      { candidates: overlayCandidates(), ...input },
-    );
+    const updated = await updateNameSession(props.sessionId, { candidates: overlayCandidates(), ...input });
     props.onSession(updated);
     return updated;
   }
@@ -309,34 +302,15 @@ export function CompareSection(props: {
         (check) => check.availability === 'unknown',
       );
       if (domainUnknown) {
-        await checkNameCandidate(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          item.name,
-        );
+        await checkNameCandidate(props.sessionId, item.name);
       }
       if (organicUnknown) {
-        await checkNameHistory(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          item.name,
-        );
+        await checkNameHistory(props.sessionId, item.name);
       }
       if (handleUnknown) {
-        await checkNameHandles(
-          props.orgId,
-          props.projectId,
-          props.sessionId,
-          item.name,
-        );
+        await checkNameHandles(props.sessionId, item.name);
       }
-      const latest = await fetchProjectNameSession(
-        props.orgId,
-        props.projectId,
-        props.sessionId,
-      );
+      const latest = await fetchNameSession(props.sessionId);
       props.onSession(latest);
     } finally {
       setRetryingId(null);
@@ -354,13 +328,7 @@ export function CompareSection(props: {
       return;
     }
     await persistSession({ decisionNote: winnerNote });
-    const updated = await recommendNameCandidate(
-      props.orgId,
-      props.projectId,
-      props.sessionId,
-      id,
-      winnerNote,
-    );
+    const updated = await recommendNameCandidate(props.sessionId, id, winnerNote);
     props.onSession(updated);
   }
 

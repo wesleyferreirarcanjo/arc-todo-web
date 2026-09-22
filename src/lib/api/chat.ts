@@ -31,8 +31,8 @@ export interface ChatResponse {
 }
 
 export interface NamingGenerateRequest {
-  organizationId: string;
-  projectId: string;
+  organizationId?: string;
+  projectId?: string;
   sessionId: string;
   title: string;
   namingGoal?: string | null;

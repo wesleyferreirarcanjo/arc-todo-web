@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  hubOrgProjectFiltersVisible,
   resolveSessionParticipation,
   sessionHubModeLabel,
   sessionHubNextAction,
@@ -71,34 +70,5 @@ describe('session hub stage and next action', () => {
         participationMode: 'team',
       }),
     ).toBe('Review with the team');
-  });
-});
-
-describe('hubOrgProjectFiltersVisible', () => {
-  it('hides both filters when one org and one project own the list', () => {
-    expect(
-      hubOrgProjectFiltersVisible([
-        { orgId: 'o1', projectId: 'p1' },
-        { orgId: 'o1', projectId: 'p1' },
-      ]),
-    ).toEqual({ org: false, project: false });
-  });
-
-  it('shows only the project filter when one org has several projects', () => {
-    expect(
-      hubOrgProjectFiltersVisible([
-        { orgId: 'o1', projectId: 'p1' },
-        { orgId: 'o1', projectId: 'p2' },
-      ]),
-    ).toEqual({ org: false, project: true });
-  });
-
-  it('shows both filters when sessions span more than one org', () => {
-    expect(
-      hubOrgProjectFiltersVisible([
-        { orgId: 'o1', projectId: 'p1' },
-        { orgId: 'o2', projectId: 'p2' },
-      ]),
-    ).toEqual({ org: true, project: true });
   });
 });

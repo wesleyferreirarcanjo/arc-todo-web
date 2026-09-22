@@ -6,7 +6,7 @@ import { CandidateCard } from './CandidateCard';
 
 const checkNameHandles = vi.hoisted(() => vi.fn());
 const checkNameHistory = vi.hoisted(() => vi.fn());
-const fetchProjectNameSession = vi.hoisted(() => vi.fn());
+const fetchNameSession = vi.hoisted(() => vi.fn());
 
 vi.mock('../../lib/api/names', async () => {
   const actual = await vi.importActual<typeof import('../../lib/api/names')>(
@@ -16,7 +16,7 @@ vi.mock('../../lib/api/names', async () => {
     ...actual,
     checkNameHandles,
     checkNameHistory,
-    fetchProjectNameSession,
+    fetchNameSession,
   };
 });
 
@@ -70,8 +70,6 @@ function renderCard(
         shortlistIds: [item.id],
         namingGoal,
       })}
-      orgId="org-1"
-      projectId="proj-1"
       sessionId="sess-1"
       isBlind={false}
       busy={null}
@@ -176,7 +174,7 @@ describe('CandidateCard verdict, evidence, judgment', () => {
         ],
       }),
     );
-    fetchProjectNameSession.mockResolvedValue(
+    fetchNameSession.mockResolvedValue(
       session({ candidates: [item], shortlistIds: [item.id] }),
     );
     renderCard(item);

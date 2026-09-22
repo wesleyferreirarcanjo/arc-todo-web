@@ -36,6 +36,7 @@ describe('isBoardShellPath', () => {
 
 describe('isNamesSessionPath', () => {
   it('locks only a session, not the hub or project list', () => {
+    expect(isNamesSessionPath('/names/sess-1')).toBe(true);
     expect(
       isNamesSessionPath('/organizations/org-1/projects/proj-1/names/sess-1'),
     ).toBe(true);

@@ -96,8 +96,6 @@ function renderFeedback(current: ProjectNameSession) {
   const view = render(
     <FeedbackSection
       session={current}
-      orgId="org-1"
-      projectId="proj-1"
       sessionId={current.id}
       onSession={onSession}
       onNotice={onNotice}
