@@ -115,27 +115,30 @@ export async function copyTaskSmartToClipboard(
   await copyTextToClipboard(formatTaskSmartCopyText(task, context));
 }
 
-/** Max tasks in one batch Smart Copy packet (matches batch skill concurrency). */
-export const BATCH_SMART_COPY_MAX = 5;
-
 export interface TaskBatchSmartCopyItem {
   task: Task;
   context: TaskSmartCopyContext;
 }
 
 function formatBatchTaskRow(
-  task: Task,
-  context: TaskSmartCopyContext,
+  item: TaskBatchSmartCopyItem,
   index: number,
+  extraFlag?: string,
 ): string {
-  const hasSubtasks = (context.subtasks ?? []).length > 0;
-  return `${index + 1}. ${task.displayId} — ${task.title} — is_bug: ${Boolean(task.isBug)} — has_subtasks: ${hasSubtasks}`;
+  const hasSubtasks = (item.context.subtasks ?? []).length > 0;
+  const flags = [`has_subtasks: ${hasSubtasks}`];
+  if (extraFlag) {
+    flags.push(extraFlag);
+  }
+  return `${index + 1}. ${item.task.displayId} — ${item.task.title} — ${flags.join(' — ')}`;
 }
 
 /**
  * Multi-task Smart Copy for batch skills.
- * Pointer packet: IDs + flags; retrieve live plans via MCP.
- * Throws if `items.length` is 0 or greater than {@link BATCH_SMART_COPY_MAX}.
+ * Manager-brief packet: the receiving agent runs one subagent per task,
+ * grouped by command — execute features, execute bugs, improve tasks that
+ * lack a QA checklist (empty `testDescription`).
+ * Throws if `items.length` is 0. No upper cap.
  */
 export function formatTasksBatchSmartCopyText(
   items: TaskBatchSmartCopyItem[],
@@ -143,32 +146,55 @@ export function formatTasksBatchSmartCopyText(
   if (items.length === 0) {
     throw new Error('Batch Smart Copy requires at least one task');
   }
-  if (items.length > BATCH_SMART_COPY_MAX) {
-    throw new Error(
-      `Batch Smart Copy is limited to ${BATCH_SMART_COPY_MAX} tasks`,
-    );
-  }
 
-  const hasBug = items.some((item) => item.task.isBug);
+  const needsImprove = (item: TaskBatchSmartCopyItem) =>
+    !item.task.testDescription?.trim();
+  const improve = items.filter(needsImprove);
+  const features = items.filter(
+    (item) => !needsImprove(item) && !item.task.isBug,
+  );
+  const bugs = items.filter((item) => !needsImprove(item) && item.task.isBug);
+
   const lines: string[] = [
     '# Arc Todo Batch Smart Copy',
     '',
-    'Paste into Cursor and run the batch skill that matches the work:',
-    '- Features / mixed work: `arc-todo-batch-execute-tasks`',
-    '- Bug fixes / retests: `arc-todo-batch-execute-bugs`',
+    'You are the manager agent for this batch. Each task below runs in its own subagent — you know what each subagent is doing and report a combined index when they return.',
+    'Run as many subagents in parallel as possible without conflicts: tasks whose plans touch the same files, modules, or parent run in separate waves.',
+    'Run every section below together; each section names the command its subagents use.',
+    'Finish with `arc-todo-execute-batch-all-waves` for the feature batch — it runs every wave unattended, reconciles each wave, and ships at the end.',
     '',
-    'Do not treat this as a single-task Smart Copy. Explicit IDs below win for skill recovery.',
-    '',
-    '## Selected tasks',
-    ...items.map((item, index) => formatBatchTaskRow(item.task, item.context, index)),
-    '',
-    'Retrieve each live plan with Arc Todo MCP. Do not treat this paste as the execution plan.',
+    'Do not treat this paste as the execution plan. Each subagent retrieves its live plan with Arc Todo MCP:',
     'get_task(task_id="<display_id>", include="plan")',
   ];
 
-  if (hasBug) {
+  if (features.length > 0) {
     lines.push(
-      'If is_bug: also fetch include="qa" plus comments/evidence as needed before fixing.',
+      '',
+      '## Execute — features / tasks',
+      'Command: `arc-todo-execute-batch-all-waves`',
+      ...features.map((item, index) => formatBatchTaskRow(item, index)),
+    );
+  }
+
+  if (bugs.length > 0) {
+    lines.push(
+      '',
+      '## Execute — bug fixes / retests',
+      'Command: `arc-todo-batch-execute-bugs`',
+      ...bugs.map((item, index) => formatBatchTaskRow(item, index)),
+      '',
+      'Bug subagents also fetch include="qa" plus comments/evidence before fixing.',
+    );
+  }
+
+  if (improve.length > 0) {
+    lines.push(
+      '',
+      '## Improve — missing QA checklist',
+      'Command: `arc-todo-improve-task` (one subagent per task)',
+      ...improve.map((item, index) =>
+        formatBatchTaskRow(item, index, 'missing: qa_checklist'),
+      ),
     );
   }
 

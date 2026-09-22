@@ -1133,11 +1133,6 @@
   color: var(--text);
 }
 
-.smart-copy-basket-tray-cap {
-  color: var(--danger-text);
-  font-weight: 600;
-}
-
 .smart-copy-basket-tray-list {
   display: flex;
   flex-wrap: wrap;

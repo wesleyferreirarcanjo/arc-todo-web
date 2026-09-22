@@ -26,7 +26,6 @@ vi.mock('../context/AuthContext', () => ({
 vi.mock('../context/SmartCopyBasketContext', () => ({
   useSmartCopyBasket: () => ({
     items: [],
-    capMessage: null,
     isInBasket: () => false,
     toggleTask: vi.fn(),
     removeTask: vi.fn(),

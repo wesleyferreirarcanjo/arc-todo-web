@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { BATCH_SMART_COPY_MAX } from '../lib/taskCopy';
 import { useSmartCopyBasket } from '../context/SmartCopyBasketContext';
 
 export function SmartCopyBasketTray() {
-  const { items, capMessage, removeTask, clear, copyBatch } = useSmartCopyBasket();
+  const { items, removeTask, clear, copyBatch } = useSmartCopyBasket();
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   if (items.length === 0) {
@@ -32,14 +31,7 @@ export function SmartCopyBasketTray() {
     <div className="smart-copy-basket-tray" role="region" aria-label="Smart Copy batch">
       <div className="smart-copy-basket-tray-main">
         <div className="smart-copy-basket-tray-header">
-          <strong>
-            Smart Copy batch ({items.length}/{BATCH_SMART_COPY_MAX})
-          </strong>
-          {capMessage && (
-            <span className="smart-copy-basket-tray-cap" role="status">
-              {capMessage}
-            </span>
-          )}
+          <strong>Smart Copy batch ({items.length})</strong>
         </div>
         <ul className="smart-copy-basket-tray-list">
           {items.map((item) => (

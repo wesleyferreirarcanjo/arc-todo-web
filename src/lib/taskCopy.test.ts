@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BATCH_SMART_COPY_MAX,
   formatTaskCopyText,
   formatTaskSmartCopyText,
   formatTasksBatchSmartCopyText,
@@ -118,8 +117,16 @@ describe('formatTasksBatchSmartCopyText', () => {
     taskNumber: 3,
     displayId: '#arc-3',
   };
+  const unplannedTask: Task = {
+    ...parentTask,
+    id: '77777777-7777-7777-7777-777777777777',
+    title: 'Task without QA checklist',
+    taskNumber: 7,
+    displayId: '#arc-7',
+    testDescription: null,
+  };
 
-  it('builds a multi-task pointer packet with ids and flags', () => {
+  it('briefs a manager agent that runs one subagent per task, grouped by command', () => {
     const text = formatTasksBatchSmartCopyText([
       {
         task: { ...parentTask, isBug: true },
@@ -139,14 +146,31 @@ describe('formatTasksBatchSmartCopyText', () => {
           projectName: 'Frontend',
         },
       },
+      {
+        task: unplannedTask,
+        context: {
+          organizationId: orgId,
+          projectId: unplannedTask.projectId,
+        },
+      },
     ]);
 
     expect(text).toContain('# Arc Todo Batch Smart Copy');
-    expect(text).toContain('arc-todo-batch-execute-tasks');
-    expect(text).toContain('arc-todo-batch-execute-bugs');
-    expect(text).toContain('## Selected tasks');
-    expect(text).toContain('1. #arc-1 — Add smart copy — is_bug: true — has_subtasks: true');
-    expect(text).toContain('2. #arc-3 — Second batch task — is_bug: false — has_subtasks: false');
+    expect(text).toContain('manager agent');
+    expect(text).toContain('own subagent');
+    expect(text).toContain('in parallel');
+    expect(text).toContain('## Execute — features / tasks');
+    expect(text).toContain('Command: `arc-todo-execute-batch-all-waves`');
+    expect(text).toContain('ships at the end');
+    expect(text).toContain('## Execute — bug fixes / retests');
+    expect(text).toContain('Command: `arc-todo-batch-execute-bugs`');
+    expect(text).toContain('## Improve — missing QA checklist');
+    expect(text).toContain('Command: `arc-todo-improve-task`');
+    expect(text).toContain('1. #arc-3 — Second batch task — has_subtasks: false');
+    expect(text).toContain('1. #arc-1 — Add smart copy — has_subtasks: true');
+    expect(text).toContain(
+      '1. #arc-7 — Task without QA checklist — has_subtasks: false — missing: qa_checklist',
+    );
     expect(text).toContain('get_task(task_id="<display_id>", include="plan")');
     expect(text).toContain('include="qa"');
     expect(text).not.toContain('# Arc Todo Smart Copy');
@@ -156,12 +180,25 @@ describe('formatTasksBatchSmartCopyText', () => {
     expect(text).not.toContain('Wire UI button');
   });
 
-  it('rejects empty and over-cap batches', () => {
+  it('omits the Execute sections when every task needs improving', () => {
+    const text = formatTasksBatchSmartCopyText([
+      {
+        task: unplannedTask,
+        context: { organizationId: orgId, projectId: unplannedTask.projectId },
+      },
+    ]);
+
+    expect(text).toContain('## Improve — missing QA checklist');
+    expect(text).not.toContain('## Execute');
+    expect(text).not.toContain('include="qa"');
+  });
+
+  it('rejects an empty batch but has no upper cap', () => {
     expect(() => formatTasksBatchSmartCopyText([])).toThrow(
       /at least one task/i,
     );
 
-    const items = Array.from({ length: BATCH_SMART_COPY_MAX + 1 }, (_, i) => ({
+    const items = Array.from({ length: 8 }, (_, i) => ({
       task: {
         ...parentTask,
         id: `44444444-4444-4444-4444-${String(i).padStart(12, '0')}`,
@@ -174,28 +211,8 @@ describe('formatTasksBatchSmartCopyText', () => {
       },
     }));
 
-    expect(() => formatTasksBatchSmartCopyText(items)).toThrow(
-      new RegExp(`limited to ${BATCH_SMART_COPY_MAX}`, 'i'),
-    );
-  });
-
-  it('accepts exactly the max batch size', () => {
-    const items = Array.from({ length: BATCH_SMART_COPY_MAX }, (_, i) => ({
-      task: {
-        ...parentTask,
-        id: `55555555-5555-5555-5555-${String(i).padStart(12, '0')}`,
-        displayId: `#arc-${200 + i}`,
-        taskNumber: 200 + i,
-      },
-      context: {
-        organizationId: orgId,
-        projectId: parentTask.projectId,
-      },
-    }));
-
     const text = formatTasksBatchSmartCopyText(items);
-    expect(text).toContain(`1. #arc-200`);
-    expect(text).toContain(`5. #arc-204`);
-    expect(text).not.toContain('## Task 5 of 5: #arc-204');
+    expect(text).toContain('1. #arc-100');
+    expect(text).toContain('8. #arc-107');
   });
 });
