@@ -2,6 +2,7 @@ import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createProjectTask,
+  deleteTaskEvidence,
   downloadTaskEvidence,
   downloadTaskLog,
   fetchTaskEvidence,
@@ -686,6 +687,21 @@ export function TaskQaChecklistModal({
     }
   }
 
+  async function handleDeleteItemEvidence(evidenceId: string) {
+    try {
+      await deleteTaskEvidence(organizationId, projectId, task.id, evidenceId);
+      setEvidence((current) => {
+        const next = current.filter((row) => row.id !== evidenceId);
+        onEvidenceChange?.(next);
+        return next;
+      });
+    } catch (error: unknown) {
+      onError?.(
+        userMessage(error, WEB_ERROR.DELETE, { thing: 'this evidence' }),
+      );
+    }
+  }
+
   async function handleOpenLog(item: TaskLog) {
     try {
       const { blob } = await downloadTaskLog(
@@ -956,6 +972,16 @@ export function TaskQaChecklistModal({
                                   />
                                 ) : null}
                                 <span>{row.originalFilename}</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                disabled={saving}
+                                onClick={() =>
+                                  void handleDeleteItemEvidence(row.id)
+                                }
+                              >
+                                Remover
                               </button>
                             </li>
                           );

@@ -1,14 +1,17 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import type { Task } from '../types/todo';
 
+const fetchTaskEvidence = vi.fn();
+const deleteTaskEvidence = vi.fn();
 const uploadTaskEvidence = vi.fn();
 const updateProjectTask = vi.fn();
 
 vi.mock('../lib/api/todos', () => ({
-  fetchTaskEvidence: vi.fn(async () => []),
+  fetchTaskEvidence: (...args: unknown[]) => fetchTaskEvidence(...args),
+  deleteTaskEvidence: (...args: unknown[]) => deleteTaskEvidence(...args),
   fetchTaskLogs: vi.fn(async () => []),
   downloadTaskEvidence: vi.fn(async () => ({
     blob: new Blob(['png'], { type: 'image/png' }),
@@ -79,6 +82,10 @@ function renderModal() {
 
 describe('TaskQaChecklistModal idle item evidence', () => {
   beforeEach(() => {
+    fetchTaskEvidence.mockReset();
+    fetchTaskEvidence.mockResolvedValue([]);
+    deleteTaskEvidence.mockReset();
+    deleteTaskEvidence.mockResolvedValue(undefined);
     uploadTaskEvidence.mockReset();
     updateProjectTask.mockReset();
     uploadTaskEvidence.mockResolvedValue({
@@ -148,6 +155,52 @@ describe('TaskQaChecklistModal idle item evidence', () => {
         'item-0',
       );
     });
+    expect(updateProjectTask).not.toHaveBeenCalled();
+  });
+
+  it('removes checklist item image or video evidence via Remover', async () => {
+    const user = userEvent.setup();
+    fetchTaskEvidence.mockResolvedValue([
+      {
+        id: 'ev-image',
+        taskId: task.id,
+        originalFilename: 'shot.png',
+        mimeType: 'image/png',
+        sizeBytes: 12,
+        uploadedById: 'user-1',
+        checklistItemId: 'item-0',
+        createdAt: '2026-08-25T00:00:00.000Z',
+      },
+      {
+        id: 'ev-video',
+        taskId: task.id,
+        originalFilename: 'clip.webm',
+        mimeType: 'video/webm',
+        sizeBytes: 34,
+        uploadedById: 'user-1',
+        checklistItemId: 'item-0',
+        createdAt: '2026-08-25T00:01:00.000Z',
+      },
+    ]);
+    renderModal();
+
+    const clipButton = await screen.findByText('clip.webm');
+    const row = clipButton.closest('li');
+    expect(row).not.toBeNull();
+    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Remover' }));
+
+    await waitFor(() => {
+      expect(deleteTaskEvidence).toHaveBeenCalledWith(
+        'org-1',
+        'proj-1',
+        task.id,
+        'ev-video',
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('clip.webm')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('shot.png')).toBeInTheDocument();
     expect(updateProjectTask).not.toHaveBeenCalled();
   });
 });
