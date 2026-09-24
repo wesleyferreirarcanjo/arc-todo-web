@@ -6,6 +6,8 @@ import { AdminRoute } from './components/AdminRoute';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminUsersPage } from './pages/AdminUsersPage';
+import { DesktopConnectPage } from './pages/DesktopConnectPage';
+import { DeviceControlPage } from './pages/DeviceControlPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
@@ -46,6 +48,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
+              <Route path="/desktop/connect" element={<DesktopConnectPage />} />
               <Route
                 path="/organizations/:orgId/projects/:projectId/diagrams/:diagramId"
                 element={
@@ -85,6 +88,7 @@ export default function App() {
                 <Route element={<AdminRoute />}>
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/devices" element={<DeviceControlPage />} />
                   <Route
                     path="/settings/chatbot"
                     element={<ChatbotSettingsPage />}

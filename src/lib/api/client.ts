@@ -207,6 +207,13 @@ export async function apiDownload(
   return { blob, filename };
 }
 
+export function authorizeDesktop(body: { state: string; codeChallenge: string }) {
+  return apiRequest<{ callbackUrl: string }>('/auth/desktop/authorize', {
+    method: 'POST',
+    body,
+  });
+}
+
 export function triggerBrowserDownload(blob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement('a');

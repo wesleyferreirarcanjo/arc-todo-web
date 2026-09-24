@@ -21,6 +21,7 @@ import {
   BellIcon,
   ChatIcon,
   DiagramsIcon,
+  DownloadIcon,
   FilterIcon,
   FlaskIcon,
   InstallIcon,
@@ -36,7 +37,6 @@ import {
   StorageIcon,
   SunIcon,
   AnalyticsIcon,
-  DownloadIcon,
   TasksIcon,
   UsersIcon,
   WireframesIcon,
@@ -317,6 +317,12 @@ export function MobileBoardFab() {
         label: 'Analytics',
         icon: <AnalyticsIcon />,
         onClick: () => go('/analytics'),
+      });
+      items.push({
+        id: 'nav-machines',
+        label: 'Machines',
+        icon: <DownloadIcon />,
+        onClick: () => go('/admin/devices'),
       });
       items.push({
         id: 'nav-users',

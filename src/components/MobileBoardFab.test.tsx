@@ -159,6 +159,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'Organizations',
       'Download',
       'Analytics',
+      'Machines',
       'Users',
     ]);
   });

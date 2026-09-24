@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { BrandMarkIcon } from '../components/icons';
 import { ApiError } from '../lib/api/client';
@@ -11,6 +11,7 @@ const GSI_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
 export function LoginPage() {
   const { isAuthenticated, loginWithGoogle } = useAuth();
+  const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -106,6 +107,16 @@ export function LoginPage() {
   }, [isAuthenticated, loginWithGoogle]);
 
   if (isAuthenticated) {
+    const from = (location.state as { from?: string } | null)?.from;
+    const saved = sessionStorage.getItem('arc-desktop-connect');
+    if (from?.startsWith('/desktop/connect')) {
+      sessionStorage.removeItem('arc-desktop-connect');
+      return <Navigate to={from} replace />;
+    }
+    if (saved) {
+      sessionStorage.removeItem('arc-desktop-connect');
+      return <Navigate to={`/desktop/connect${saved}`} replace />;
+    }
     return <Navigate to="/board" replace />;
   }
 

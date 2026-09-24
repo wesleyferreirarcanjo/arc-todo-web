@@ -246,6 +246,19 @@ export function Layout() {
             )}
             {isAdmin && (
               <NavLink
+                to="/admin/devices"
+                aria-label="Machines"
+                data-tooltip={collapsed ? 'Machines' : undefined}
+                className={({ isActive }) =>
+                  isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
+                }
+              >
+                <DownloadIcon className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">Machines</span>
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
                 to="/admin/users"
                 aria-label="Users"
                 data-tooltip={collapsed ? 'Users' : undefined}
