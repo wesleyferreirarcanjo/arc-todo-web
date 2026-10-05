@@ -6,6 +6,7 @@ export type MetricsServerStatus = 'online' | 'stale' | 'revoked';
 
 export interface MetricsServerCurrent {
   cpuPct: number | null;
+  cpuStealPct: number | null;
   memUsedBytes: number | null;
   diskUsedBytes: number | null;
   diskTotalBytes: number | null;
@@ -65,6 +66,7 @@ export interface MetricsSeriesPoint {
   diskUsedBytes: number | null;
   restarts: number | null;
   oomKills: number | null;
+  cpuStealMcores: number | null;
 }
 
 export interface MetricsSeries {

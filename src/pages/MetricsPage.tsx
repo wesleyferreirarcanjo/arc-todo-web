@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { AnalyticsIcon } from '../components/icons';
+import { MetricsCpuBreakdown } from '../components/metrics/MetricsCpuBreakdown';
 import { MetricsHostSummary } from '../components/metrics/MetricsHostSummary';
 import { MetricsResourceTable } from '../components/metrics/MetricsResourceTable';
 import { MetricsSeriesChart } from '../components/metrics/MetricsSeriesChart';
@@ -54,6 +55,7 @@ export function MetricsPage() {
     : METRICS_DEFAULT_WINDOW;
   const serverId = searchParams.get('server');
   const resourceId = readResource(searchParams.get('resource'));
+  const allColumns = searchParams.get('columns') === 'all';
 
   const [servers, setServers] = useState<MetricsServer[]>([]);
   const [resources, setResources] = useState<MetricsResource[]>([]);
@@ -353,15 +355,29 @@ export function MetricsPage() {
               />
               <div className="metrics-detail">
                 {selectedServer ? <MetricsHostSummary server={selectedServer} /> : null}
+                <MetricsCpuBreakdown
+                  series={serverSeries}
+                  resources={resources}
+                  cpuCount={selectedServer?.cpuCount ?? null}
+                />
                 <MetricsResourceTable
                   resources={resources}
                   selectedId={resourceId}
+                  allColumns={allColumns}
+                  onToggleColumns={() =>
+                    patchParams({ columns: allColumns ? null : 'all' })
+                  }
                   onSelect={(id) =>
                     patchParams({ resource: id === resourceId ? null : String(id) })
                   }
                 />
                 <h3>Server totals</h3>
-                <MetricsSeriesChart title="CPU" series={serverSeries} kind="cpu" />
+                <MetricsSeriesChart
+                  title="CPU"
+                  series={serverSeries}
+                  kind="cpu"
+                  cpuCount={selectedServer?.cpuCount ?? null}
+                />
                 <MetricsSeriesChart
                   title="Memory"
                   series={serverSeries}
@@ -377,7 +393,12 @@ export function MetricsPage() {
                 {resourceId != null ? (
                   <>
                     <h3>App</h3>
-                    <MetricsSeriesChart title="CPU" series={resourceSeries} kind="cpu" />
+                    <MetricsSeriesChart
+                      title="CPU"
+                      series={resourceSeries}
+                      kind="cpu"
+                      cpuCount={selectedServer?.cpuCount ?? null}
+                    />
                     <MetricsSeriesChart title="Memory" series={resourceSeries} kind="memory" />
                     <MetricsSeriesChart title="Network" series={resourceSeries} kind="network" />
                     <MetricsSeriesChart title="Disk" series={resourceSeries} kind="disk" />

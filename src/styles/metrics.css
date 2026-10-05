@@ -80,6 +80,101 @@
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
+.metrics-cpu-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.metrics-cpu-breakdown h3 {
+  margin: 0;
+}
+
+.metrics-cpu-bar {
+  display: flex;
+  height: 0.7rem;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  background: var(--bg-elevated);
+}
+
+.metrics-cpu-bar-seg {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.metrics-cpu-bar-seg.is-apps {
+  background: var(--accent);
+}
+
+.metrics-cpu-bar-seg.is-system {
+  background: var(--accent-secondary);
+}
+
+.metrics-cpu-bar-seg.is-other {
+  background: var(--text-muted);
+}
+
+.metrics-cpu-bar-seg.is-steal {
+  background: var(--danger);
+}
+
+.metrics-cpu-breakdown dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.metrics-cpu-breakdown dt {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.metrics-cpu-breakdown dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.metrics-server-card-bar {
+  display: block;
+  height: 0.35rem;
+  margin-top: 0.15rem;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  background: var(--bg-elevated);
+}
+
+.metrics-server-card-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.metrics-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.metrics-table-toolbar input {
+  width: auto;
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (hover: none) {
+  .metrics-table-toolbar input,
+  .metrics-table-toolbar .board-view-toggle-btn {
+    min-height: 2.75rem;
+  }
+}
+
 .metrics-token-once,
 .metrics-token-form {
   display: flex;

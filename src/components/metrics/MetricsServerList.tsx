@@ -29,8 +29,17 @@ export function MetricsServerList({
               <span className="metrics-server-card-status">
                 {serverStatusLabel(server.status, server.lastSeenAt)}
               </span>
+              <span className="metrics-server-card-bar" aria-hidden>
+                <span
+                  className="metrics-server-card-bar-fill"
+                  style={{ width: `${server.current?.cpuPct ?? 0}%` }}
+                />
+              </span>
               <span className="metrics-server-card-stats">
                 CPU {formatCpuOfCores(server.current?.cpuPct, server.cpuCount)}
+                {server.current?.cpuPct != null && server.current.cpuPct >= 90
+                  ? ' · Busy'
+                  : null}
                 {' · '}
                 Mem {formatUsedOfTotal(server.current?.memUsedBytes, server.memTotalBytes)}
                 {' · '}

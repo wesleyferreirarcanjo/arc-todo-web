@@ -1,5 +1,15 @@
 const EMPTY = '—';
 
+export function mcoresToMachinePct(
+  mcores: number | null | undefined,
+  cpuCount: number | null | undefined,
+): number | null {
+  if (mcores == null || cpuCount == null || cpuCount <= 0) {
+    return null;
+  }
+  return (mcores / (cpuCount * 1000)) * 100;
+}
+
 export function formatCores(mcores: number | null | undefined): string {
   if (mcores == null) {
     return EMPTY;

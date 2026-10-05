@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { MetricsServer } from '../../types/metrics';
 import { formatBinary, formatPercent } from './format';
 
@@ -19,10 +20,12 @@ function HostKpi({
   title,
   value,
   unit,
+  extra,
 }: {
   title: string;
   value: string;
   unit: string | null;
+  extra?: ReactNode;
 }) {
   return (
     <article className="analytics-kpi">
@@ -33,6 +36,7 @@ function HostKpi({
         {value}
         {unit ? <span className="analytics-kpi-unit">{unit}</span> : null}
       </p>
+      {extra}
     </article>
   );
 }
@@ -48,6 +52,11 @@ export function MetricsHostSummary({ server }: { server: MetricsServer }) {
           title="CPU"
           value={formatPercent(current?.cpuPct ?? null)}
           unit={coresUnit(server.cpuCount)}
+          extra={
+            <p className="metrics-host-steal">
+              Stolen by VPS {formatPercent(current?.cpuStealPct ?? null)}
+            </p>
+          }
         />
         <HostKpi
           title="Memory"
