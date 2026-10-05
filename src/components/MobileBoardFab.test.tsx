@@ -135,9 +135,12 @@ describe('MobileBoardFab Navigate labels', () => {
     expect(
       screen.queryByRole('menuitem', { name: 'Analytics' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: 'Metrics' }),
+    ).not.toBeInTheDocument();
   });
 
-  it('includes Analytics then Users for an administrator', async () => {
+  it('includes Analytics then Metrics then Machines then Users for an administrator', async () => {
     shellState.isAdmin = true;
     const user = userEvent.setup();
     render(
@@ -159,6 +162,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'Organizations',
       'Download',
       'Analytics',
+      'Metrics',
       'Machines',
       'Users',
     ]);

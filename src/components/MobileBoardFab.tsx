@@ -319,6 +319,12 @@ export function MobileBoardFab() {
         onClick: () => go('/analytics'),
       });
       items.push({
+        id: 'nav-metrics',
+        label: 'Metrics',
+        icon: <AnalyticsIcon />,
+        onClick: () => go('/metrics'),
+      });
+      items.push({
         id: 'nav-machines',
         label: 'Machines',
         icon: <DownloadIcon />,

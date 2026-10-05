@@ -61,6 +61,7 @@ export function Layout() {
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isAdminUsersPage = location.pathname.startsWith('/admin/users');
   const isAnalyticsPage = location.pathname.startsWith('/analytics');
+  const isMetricsPage = location.pathname.startsWith('/metrics');
   const isBoardShell = isBoardShellPath(location.pathname);
 
   useEffect(() => {
@@ -242,6 +243,21 @@ export function Layout() {
               >
                 <AnalyticsIcon className="sidebar-nav-icon" />
                 <span className="sidebar-nav-label">Analytics</span>
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/metrics"
+                aria-label="Metrics"
+                data-tooltip={collapsed ? 'Metrics' : undefined}
+                className={({ isActive }) =>
+                  isActive || isMetricsPage
+                    ? 'sidebar-nav-link active'
+                    : 'sidebar-nav-link'
+                }
+              >
+                <AnalyticsIcon className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">Metrics</span>
               </NavLink>
             )}
             {isAdmin && (
