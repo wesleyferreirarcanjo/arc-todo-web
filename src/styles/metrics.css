@@ -138,6 +138,12 @@
   text-align: right;
 }
 
+.metrics-other-tasks {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 .metrics-server-card-bar {
   display: block;
   height: 0.35rem;

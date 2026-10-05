@@ -359,6 +359,7 @@ export function MetricsPage() {
                   series={serverSeries}
                   resources={resources}
                   cpuCount={selectedServer?.cpuCount ?? null}
+                  otherTasks={selectedServer?.current?.otherTasks}
                 />
                 <MetricsResourceTable
                   resources={resources}

@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { cpuBreakdown } from './cpuBreakdown';
-import { formatPercent } from './format';
-import type { MetricsResource, MetricsSeries } from '../../types/metrics';
+import { formatPercent, mcoresToMachinePct } from './format';
+import type { MetricsOtherTask, MetricsResource, MetricsSeries } from '../../types/metrics';
 
 const PARTS = [
   { key: 'apps', label: 'Apps', className: 'is-apps' },
@@ -14,10 +14,12 @@ export function MetricsCpuBreakdown({
   series,
   resources,
   cpuCount,
+  otherTasks,
 }: {
   series: MetricsSeries | null;
   resources: MetricsResource[];
   cpuCount: number | null;
+  otherTasks?: MetricsOtherTask[] | null;
 }) {
   const breakdown = cpuBreakdown({ series, resources, cpuCount });
   if (!breakdown) {
@@ -45,7 +47,18 @@ export function MetricsCpuBreakdown({
       <dl>
         {PARTS.map((part) => (
           <Fragment key={part.key}>
-            <dt>{part.label}</dt>
+            <dt>
+              {part.label}
+              {part.key === 'other' && otherTasks && otherTasks.length > 0 ? (
+                <ul className="metrics-other-tasks">
+                  {otherTasks.map((task, index) => (
+                    <li key={`${task.comm}-${index}`}>
+                      {task.comm} {formatPercent(mcoresToMachinePct(task.cpuMcores, cpuCount))}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </dt>
             <dd>{formatPercent(percents[part.key])}</dd>
           </Fragment>
         ))}

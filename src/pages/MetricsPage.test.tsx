@@ -56,6 +56,7 @@ const server: MetricsServer = {
     memUsedBytes: 8 * 1024 ** 3,
     diskUsedBytes: 120 * 1024 ** 3,
     diskTotalBytes: 500 * 1024 ** 3,
+    otherTasks: [{ comm: 'sshd', cpuMcores: 200 }],
   },
 };
 
@@ -186,6 +187,7 @@ describe('MetricsPage', () => {
     expect(within(breakdown).getByText('Apps')).toBeInTheDocument();
     expect(within(breakdown).getByText('Coolify and system')).toBeInTheDocument();
     expect(within(breakdown).getByText('Other on this machine')).toBeInTheDocument();
+    expect(within(breakdown).getByText('sshd 10.0%')).toBeInTheDocument();
     expect(within(breakdown).getByText('Stolen by VPS')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Last 7 days' }));

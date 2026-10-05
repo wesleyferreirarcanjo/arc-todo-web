@@ -4,12 +4,18 @@ export type MetricsWindow = (typeof METRICS_WINDOWS)[number];
 
 export type MetricsServerStatus = 'online' | 'stale' | 'revoked';
 
+export interface MetricsOtherTask {
+  comm: string;
+  cpuMcores: number;
+}
+
 export interface MetricsServerCurrent {
   cpuPct: number | null;
   cpuStealPct: number | null;
   memUsedBytes: number | null;
   diskUsedBytes: number | null;
   diskTotalBytes: number | null;
+  otherTasks?: MetricsOtherTask[] | null;
 }
 
 export interface MetricsServer {
