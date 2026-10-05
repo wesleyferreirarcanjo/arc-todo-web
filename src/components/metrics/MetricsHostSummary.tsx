@@ -62,6 +62,7 @@ export function MetricsHostSummary({ server }: { server: MetricsServer }) {
           title="Memory"
           value={formatBinary(current?.memUsedBytes ?? null)}
           unit={totalUnit(server.memTotalBytes)}
+          extra={<p className="metrics-host-steal">Excludes cache</p>}
         />
         <HostKpi
           title="Disk"

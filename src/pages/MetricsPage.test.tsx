@@ -170,6 +170,7 @@ describe('MetricsPage', () => {
     expect(screen.getByText('Stolen by VPS 41.2%')).toBeInTheDocument();
     expect(screen.getByText(/Busy/)).toBeInTheDocument();
     expect(screen.getByText('of 16 GiB')).toBeInTheDocument();
+    expect(screen.getByText('Excludes cache')).toBeInTheDocument();
     expect(screen.getByText('of 500 GiB')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('table').querySelectorAll('tbody tr')).toHaveLength(3);
