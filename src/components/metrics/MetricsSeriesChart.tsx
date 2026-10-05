@@ -33,14 +33,21 @@ export function MetricsSeriesChart({
   title,
   series,
   kind,
+  memoryLimitName = 'Memory limit',
+  capacityBytes = null,
 }: {
   title: string;
   series: MetricsSeries | null;
-  kind: 'cpu' | 'memory' | 'network' | 'disk';
+  kind: 'cpu' | 'memory' | 'network' | 'disk' | 'hostDisk';
+  memoryLimitName?: string;
+  capacityBytes?: number | null;
 }) {
   const colors = useChartColors();
-  const points = series?.points ?? [];
+  const points = (series?.points ?? []).map((point) =>
+    kind === 'hostDisk' ? { ...point, diskTotalBytes: capacityBytes } : point,
+  );
   const hasLimit = kind === 'memory' && points.some((point) => point.memLimitBytes != null);
+  const hasCapacity = kind === 'hostDisk' && capacityBytes != null;
 
   return (
     <section className="analytics-panel-wide metrics-chart-panel" aria-label={title}>
@@ -89,7 +96,7 @@ export function MetricsSeriesChart({
                 <Line
                   type="monotone"
                   dataKey="memLimitBytes"
-                  name="Memory limit"
+                  name={memoryLimitName}
                   stroke={colors.muted}
                   strokeDasharray="6 4"
                   dot={false}
@@ -123,6 +130,34 @@ export function MetricsSeriesChart({
                 stroke={colors.secondary}
                 dot={false}
               />
+            </LineChart>
+          ) : kind === 'hostDisk' ? (
+            <LineChart data={points}>
+              <CartesianGrid stroke={colors.grid} vertical={false} />
+              <XAxis dataKey="t" tickFormatter={tickLabel} stroke={colors.muted} />
+              <YAxis tickFormatter={(value) => formatBinary(Number(value))} stroke={colors.muted} />
+              <Tooltip
+                labelFormatter={(label) => tickLabel(String(label))}
+                formatter={(value) => formatBinary(Number(value))}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="diskUsedBytes"
+                name="Disk used"
+                stroke={colors.accent}
+                dot={false}
+              />
+              {hasCapacity ? (
+                <Line
+                  type="monotone"
+                  dataKey="diskTotalBytes"
+                  name="Disk total"
+                  stroke={colors.muted}
+                  strokeDasharray="6 4"
+                  dot={false}
+                />
+              ) : null}
             </LineChart>
           ) : (
             <LineChart data={points}>

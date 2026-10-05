@@ -5,20 +5,20 @@ export type MetricsWindow = (typeof METRICS_WINDOWS)[number];
 export type MetricsServerStatus = 'online' | 'stale' | 'revoked';
 
 export interface MetricsServerCurrent {
-  cpuPct: number;
-  memUsedBytes: number;
-  diskUsedBytes: number;
-  diskTotalBytes: number;
+  cpuPct: number | null;
+  memUsedBytes: number | null;
+  diskUsedBytes: number | null;
+  diskTotalBytes: number | null;
 }
 
 export interface MetricsServer {
   id: string;
   name: string;
-  hostname: string;
+  hostname: string | null;
   status: MetricsServerStatus;
   lastSeenAt: string | null;
-  cpuCount: number;
-  memTotalBytes: number;
+  cpuCount: number | null;
+  memTotalBytes: number | null;
   current: MetricsServerCurrent | null;
 }
 

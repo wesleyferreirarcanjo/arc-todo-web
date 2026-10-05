@@ -21,6 +21,28 @@ export function formatPercent(pct: number | null | undefined): string {
   return `${pct.toFixed(1)}%`;
 }
 
+export function formatCpuOfCores(
+  pct: number | null | undefined,
+  cores: number | null | undefined,
+): string {
+  const cpu = formatPercent(pct);
+  if (cores == null || cores <= 0) {
+    return cpu;
+  }
+  return `${cpu} of ${cores} ${cores === 1 ? 'core' : 'cores'}`;
+}
+
+export function formatUsedOfTotal(
+  used: number | null | undefined,
+  total: number | null | undefined,
+): string {
+  const left = formatBinary(used);
+  if (total == null) {
+    return left;
+  }
+  return `${left} of ${formatBinary(total)}`;
+}
+
 export function formatBinary(
   bytes: number | null | undefined,
   perSecond = false,

@@ -122,6 +122,10 @@ describe('MetricsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Online')).toBeInTheDocument();
     });
+    expect(screen.getAllByText('dropic-1').length).toBeGreaterThan(0);
+    expect(screen.getByText('of 8 cores')).toBeInTheDocument();
+    expect(screen.getByText('of 16 GiB')).toBeInTheDocument();
+    expect(screen.getByText('of 500 GiB')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('table').querySelectorAll('tbody tr')).toHaveLength(2);
     });

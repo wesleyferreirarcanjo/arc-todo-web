@@ -1,5 +1,5 @@
 import type { MetricsServer } from '../../types/metrics';
-import { formatBinary, formatPercent, serverStatusLabel } from './format';
+import { formatCpuOfCores, formatUsedOfTotal, serverStatusLabel } from './format';
 
 export function MetricsServerList({
   servers,
@@ -23,15 +23,22 @@ export function MetricsServerList({
               onClick={() => onSelect(server.id)}
             >
               <span className="metrics-server-card-name">{server.name}</span>
+              <span className="metrics-server-card-host">
+                {server.hostname?.trim() || '—'}
+              </span>
               <span className="metrics-server-card-status">
                 {serverStatusLabel(server.status, server.lastSeenAt)}
               </span>
               <span className="metrics-server-card-stats">
-                CPU {formatPercent(server.current?.cpuPct ?? null)}
+                CPU {formatCpuOfCores(server.current?.cpuPct, server.cpuCount)}
                 {' · '}
-                Mem {formatBinary(server.current?.memUsedBytes ?? null)}
+                Mem {formatUsedOfTotal(server.current?.memUsedBytes, server.memTotalBytes)}
                 {' · '}
-                Disk {formatBinary(server.current?.diskUsedBytes ?? null)}
+                Disk{' '}
+                {formatUsedOfTotal(
+                  server.current?.diskUsedBytes,
+                  server.current?.diskTotalBytes,
+                )}
               </span>
             </button>
           </li>

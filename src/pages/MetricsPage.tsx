@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { AnalyticsIcon } from '../components/icons';
+import { MetricsHostSummary } from '../components/metrics/MetricsHostSummary';
 import { MetricsResourceTable } from '../components/metrics/MetricsResourceTable';
 import { MetricsSeriesChart } from '../components/metrics/MetricsSeriesChart';
 import { MetricsServerList } from '../components/metrics/MetricsServerList';
@@ -94,6 +95,11 @@ export function MetricsPage() {
     }
     return servers[0]?.id ?? null;
   }, [servers, serverId]);
+
+  const selectedServer = useMemo(
+    () => servers.find((server) => server.id === selectedServerId) ?? null,
+    [servers, selectedServerId],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -346,6 +352,7 @@ export function MetricsPage() {
                 onSelect={(id) => patchParams({ server: id, resource: null })}
               />
               <div className="metrics-detail">
+                {selectedServer ? <MetricsHostSummary server={selectedServer} /> : null}
                 <MetricsResourceTable
                   resources={resources}
                   selectedId={resourceId}
@@ -355,9 +362,18 @@ export function MetricsPage() {
                 />
                 <h3>Server totals</h3>
                 <MetricsSeriesChart title="CPU" series={serverSeries} kind="cpu" />
-                <MetricsSeriesChart title="Memory" series={serverSeries} kind="memory" />
-                <MetricsSeriesChart title="Network" series={serverSeries} kind="network" />
-                <MetricsSeriesChart title="Disk" series={serverSeries} kind="disk" />
+                <MetricsSeriesChart
+                  title="Memory"
+                  series={serverSeries}
+                  kind="memory"
+                  memoryLimitName="Memory total"
+                />
+                <MetricsSeriesChart
+                  title="Disk"
+                  series={serverSeries}
+                  kind="hostDisk"
+                  capacityBytes={selectedServer?.current?.diskTotalBytes ?? null}
+                />
                 {resourceId != null ? (
                   <>
                     <h3>App</h3>

@@ -39,8 +39,15 @@
   font-weight: 600;
 }
 
+.metrics-server-card-host,
 .metrics-server-card-status,
 .metrics-server-card-stats {
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+}
+
+.metrics-host-hostname {
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--type-meta);
 }
@@ -57,6 +64,16 @@
   font-family: var(--font-display);
   font-size: var(--type-page);
   font-style: italic;
+}
+
+.metrics-detail .analytics-kpi h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-meta);
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
 }
 
 .analytics-table tbody tr.is-selected {
