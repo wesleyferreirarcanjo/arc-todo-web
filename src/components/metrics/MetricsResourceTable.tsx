@@ -12,6 +12,8 @@ const ALL_COLUMNS = [
   'App',
   'Project',
   'Service',
+  'CPU now',
+  'Memory now',
   'CPU avg',
   'CPU p95',
   'CPU peak',
@@ -32,11 +34,11 @@ const ALL_COLUMNS = [
 const COMPACT_COLUMNS = [
   'App',
   'Project',
-  'CPU avg',
-  'CPU peak',
+  'CPU now',
+  'Memory now',
   'Share of CPU',
-  'Memory avg',
   'Share of memory',
+  'CPU peak',
   'Restarts',
 ] as const;
 
@@ -52,6 +54,10 @@ function cell(row: MetricsResource, column: Column): string {
       return row.project == null ? 'Coolify / system' : emptyMetric(row.project);
     case 'Service':
       return emptyMetric(row.service);
+    case 'CPU now':
+      return formatCores(row.cpuNowMcores);
+    case 'Memory now':
+      return formatBinary(row.memNowBytes);
     case 'CPU avg':
       return formatCores(row.cpu.avgMcores);
     case 'CPU p95':
@@ -67,9 +73,9 @@ function cell(row: MetricsResource, column: Column): string {
     case 'Memory limit':
       return formatBinary(row.mem.limitBytes);
     case 'Share of CPU':
-      return formatShare(row.cpuSharePct);
+      return formatShare(row.cpuNowSharePct);
     case 'Share of memory':
-      return formatShare(row.memSharePct);
+      return formatShare(row.memNowSharePct);
     case 'Network in':
       return formatBinary(row.net.rxBps, true);
     case 'Network out':

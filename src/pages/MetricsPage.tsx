@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { AnalyticsIcon } from '../components/icons';
@@ -18,6 +18,7 @@ import {
   getServerSeries,
   isMetricsWindow,
   METRICS_DEFAULT_WINDOW,
+  METRICS_LIVE_REFRESH_MS,
   METRICS_WINDOW_OPTIONS,
   revokeAgentToken,
 } from '../lib/api/metrics';
@@ -237,30 +238,77 @@ export function MetricsPage() {
     };
   }, [tab]);
 
+  const liveRef = useRef({ selectedServerId, windowKey, resourceId });
+  liveRef.current = { selectedServerId, windowKey, resourceId };
+
   useEffect(() => {
-    if (windowKey !== '1h') {
+    if (tab !== 'servers') {
       return;
     }
+    let serverTicket = 0;
+    let resourcesBusy = false;
+    let seriesBusy = false;
     const timer = window.setInterval(() => {
+      const snap = liveRef.current;
+      const ticket = ++serverTicket;
       void getServers()
-        .then((next) => setServers(next))
+        .then((next) => {
+          if (ticket === serverTicket) {
+            setServers(next);
+          }
+        })
         .catch(() => setError(UNAVAILABLE));
-      if (selectedServerId) {
-        void getServerResources(selectedServerId, '1h')
-          .then((next) => setResources(next))
-          .catch(() => setError(UNAVAILABLE));
-        void getServerSeries(selectedServerId, '1h')
-          .then((next) => setServerSeries(next))
-          .catch(() => setError(UNAVAILABLE));
+      if (snap.selectedServerId && !resourcesBusy) {
+        resourcesBusy = true;
+        const serverId = snap.selectedServerId;
+        const selectedWindow = snap.windowKey;
+        void getServerResources(serverId, selectedWindow)
+          .then((next) => {
+            const current = liveRef.current;
+            if (current.selectedServerId === serverId && current.windowKey === selectedWindow) {
+              setResources(next);
+            }
+          })
+          .catch(() => setError(UNAVAILABLE))
+          .finally(() => {
+            resourcesBusy = false;
+          });
       }
-      if (resourceId != null) {
-        void getResourceSeries(resourceId, '1h')
-          .then((next) => setResourceSeries(next))
-          .catch(() => setError(UNAVAILABLE));
+      if (snap.windowKey !== '1h' || seriesBusy) {
+        return;
       }
-    }, 30_000);
+      seriesBusy = true;
+      const seriesServerId = snap.selectedServerId;
+      const seriesResourceId = snap.resourceId;
+      const pending: Promise<unknown>[] = [];
+      if (seriesServerId) {
+        pending.push(
+          getServerSeries(seriesServerId, '1h').then((next) => {
+            const current = liveRef.current;
+            if (current.windowKey === '1h' && current.selectedServerId === seriesServerId) {
+              setServerSeries(next);
+            }
+          }),
+        );
+      }
+      if (seriesResourceId != null) {
+        pending.push(
+          getResourceSeries(seriesResourceId, '1h').then((next) => {
+            const current = liveRef.current;
+            if (current.windowKey === '1h' && current.resourceId === seriesResourceId) {
+              setResourceSeries(next);
+            }
+          }),
+        );
+      }
+      void Promise.all(pending)
+        .catch(() => setError(UNAVAILABLE))
+        .finally(() => {
+          seriesBusy = false;
+        });
+    }, METRICS_LIVE_REFRESH_MS);
     return () => window.clearInterval(timer);
-  }, [windowKey, selectedServerId, resourceId]);
+  }, [tab]);
 
   async function handleCreateToken(serverName: string) {
     const created = await createAgentToken(serverName);

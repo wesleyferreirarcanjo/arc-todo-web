@@ -38,6 +38,7 @@ vi.mock('recharts', async () => {
   };
 });
 
+import { METRICS_LIVE_REFRESH_MS } from '../lib/api/metrics';
 import { MetricsPage } from './MetricsPage';
 
 const serverId = '11111111-1111-4111-8111-111111111111';
@@ -81,6 +82,10 @@ function resource(partial: Partial<MetricsResource> & { resource: string }): Met
     restarts: 0,
     oomKills: 0,
     lastSeenAt: '2026-10-05T12:00:00.000Z',
+    cpuNowMcores: 420,
+    memNowBytes: 80 * 1024 ** 2,
+    cpuNowSharePct: 21,
+    memNowSharePct: 0.5,
     ...partial,
   };
 }
@@ -179,6 +184,9 @@ describe('MetricsPage', () => {
 
     const rows = [...screen.getByRole('table').querySelectorAll('tbody tr')];
     expect(rows[0]).toHaveTextContent('api');
+    expect(rows[0]).toHaveTextContent('0.42');
+    expect(rows[0]).toHaveTextContent('80 MiB');
+    expect(rows[0]).toHaveTextContent('21.0%');
     expect(rows[1]).toHaveTextContent('web');
     expect(rows[2]).toHaveTextContent('Coolify / system');
 
@@ -222,7 +230,7 @@ describe('MetricsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'All columns' }));
     await waitFor(() => {
-      expect(screen.getByRole('table').querySelectorAll('thead th')).toHaveLength(18);
+      expect(screen.getByRole('table').querySelectorAll('thead th')).toHaveLength(20);
       expect(screen.getByTestId('location').textContent).toContain('columns=all');
     });
     expect(screen.getByRole('button', { name: 'Fewer columns' })).toBeInTheDocument();
@@ -294,6 +302,58 @@ describe('MetricsPage', () => {
       expect(screen.queryByText('amt_secret')).not.toBeInTheDocument();
     });
     expect(screen.getByText('slave-1')).toBeInTheDocument();
+  });
+
+  it('refreshes server cards on the sample cadence without a window change', async () => {
+    getServers.mockResolvedValue([server]);
+    getServerResources.mockResolvedValue(resources);
+    getServerSeries.mockResolvedValue(twoPointSeries);
+    getResourceSeries.mockResolvedValue(emptySeries);
+
+    const liveTimers = new Map<number, () => void>();
+    let nextId = 1;
+    const realSetInterval = window.setInterval.bind(window);
+    const realClearInterval = window.clearInterval.bind(window);
+    vi.spyOn(window, 'setInterval').mockImplementation((handler, timeout, ...args) => {
+      if (timeout !== METRICS_LIVE_REFRESH_MS) {
+        return realSetInterval(handler, timeout, ...args);
+      }
+      const id = nextId++;
+      liveTimers.set(id, handler as () => void);
+      return id;
+    });
+    vi.spyOn(window, 'clearInterval').mockImplementation((id) => {
+      if (typeof id === 'number' && liveTimers.delete(id)) {
+        return;
+      }
+      realClearInterval(id);
+    });
+
+    try {
+      const user = userEvent.setup();
+      renderPage();
+      await screen.findByText('Online');
+      const liveId = [...liveTimers.keys()].at(-1);
+      expect(liveId).toBeDefined();
+      const initialCalls = getServers.mock.calls.length;
+
+      liveTimers.get(liveId!)!();
+      await waitFor(() => {
+        expect(getServers).toHaveBeenCalledTimes(initialCalls + 1);
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Last 7 days' }));
+      expect(liveTimers.has(liveId!)).toBe(true);
+      const afterClick = getServers.mock.calls.length;
+
+      liveTimers.get(liveId!)!();
+      await waitFor(() => {
+        expect(getServers).toHaveBeenCalledTimes(afterClick + 1);
+      });
+    } finally {
+      vi.mocked(window.setInterval).mockRestore();
+      vi.mocked(window.clearInterval).mockRestore();
+    }
   });
 
   it('renders Metrics service is unavailable. when the API rejects', async () => {

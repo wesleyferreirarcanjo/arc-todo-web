@@ -22,6 +22,9 @@ export const METRICS_WINDOW_OPTIONS: { value: MetricsWindow; label: string }[] =
 
 export const METRICS_DEFAULT_WINDOW: MetricsWindow = '24h';
 
+/** Matches raw ingest (BR-MET-01). Polling faster repeats the same sample. */
+export const METRICS_LIVE_REFRESH_MS = 15_000;
+
 export function isMetricsWindow(value: string | null): value is MetricsWindow {
   return METRICS_WINDOWS.some((window) => window === value);
 }

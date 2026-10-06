@@ -52,6 +52,10 @@ function resource(project: string | null, avgMcores: number): MetricsResource {
     restarts: null,
     oomKills: null,
     lastSeenAt: null,
+    cpuNowMcores: null,
+    memNowBytes: null,
+    cpuNowSharePct: null,
+    memNowSharePct: null,
   };
 }
 

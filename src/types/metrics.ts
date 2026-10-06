@@ -58,6 +58,10 @@ export interface MetricsResource {
   restarts: number | null;
   oomKills: number | null;
   lastSeenAt: string | null;
+  cpuNowMcores: number | null;
+  memNowBytes: number | null;
+  cpuNowSharePct: number | null;
+  memNowSharePct: number | null;
 }
 
 export interface MetricsSeriesPoint {
