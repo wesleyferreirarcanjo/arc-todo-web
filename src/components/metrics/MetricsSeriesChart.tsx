@@ -66,6 +66,7 @@ export function MetricsSeriesChart({
   memoryLimitName = 'Memory limit',
   capacityBytes = null,
   cpuCount = null,
+  emptyLabel,
 }: {
   title: string;
   series: MetricsSeries | null;
@@ -73,6 +74,7 @@ export function MetricsSeriesChart({
   memoryLimitName?: string;
   capacityBytes?: number | null;
   cpuCount?: number | null;
+  emptyLabel?: string;
 }) {
   const colors = useChartColors();
   const cpuAsPct = kind === 'cpu' && cpuCount != null && cpuCount > 0;
@@ -255,7 +257,7 @@ export function MetricsSeriesChart({
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="status-message">{EMPTY_HISTORY}</p>
+        <p className="status-message">{emptyLabel ?? EMPTY_HISTORY}</p>
       )}
     </section>
   );

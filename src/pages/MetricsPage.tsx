@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { AnalyticsIcon } from '../components/icons';
+import { serverStatusLabel } from '../components/metrics/format';
 import { MetricsCpuBreakdown } from '../components/metrics/MetricsCpuBreakdown';
 import { MetricsHostSummary } from '../components/metrics/MetricsHostSummary';
 import { MetricsResourceTable } from '../components/metrics/MetricsResourceTable';
@@ -102,6 +103,10 @@ export function MetricsPage() {
     () => servers.find((server) => server.id === selectedServerId) ?? null,
     [servers, selectedServerId],
   );
+  const emptyLabel =
+    selectedServer && selectedServer.status !== 'online'
+      ? serverStatusLabel(selectedServer.status, selectedServer.lastSeenAt)
+      : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -365,6 +370,7 @@ export function MetricsPage() {
                   resources={resources}
                   selectedId={resourceId}
                   allColumns={allColumns}
+                  emptyLabel={emptyLabel}
                   onToggleColumns={() =>
                     patchParams({ columns: allColumns ? null : 'all' })
                   }
@@ -378,18 +384,21 @@ export function MetricsPage() {
                   series={serverSeries}
                   kind="cpu"
                   cpuCount={selectedServer?.cpuCount ?? null}
+                  emptyLabel={emptyLabel}
                 />
                 <MetricsSeriesChart
                   title="Memory"
                   series={serverSeries}
                   kind="memory"
                   memoryLimitName="Memory total"
+                  emptyLabel={emptyLabel}
                 />
                 <MetricsSeriesChart
                   title="Disk"
                   series={serverSeries}
                   kind="hostDisk"
                   capacityBytes={selectedServer?.current?.diskTotalBytes ?? null}
+                  emptyLabel={emptyLabel}
                 />
                 {resourceId != null ? (
                   <>
@@ -399,10 +408,26 @@ export function MetricsPage() {
                       series={resourceSeries}
                       kind="cpu"
                       cpuCount={selectedServer?.cpuCount ?? null}
+                      emptyLabel={emptyLabel}
                     />
-                    <MetricsSeriesChart title="Memory" series={resourceSeries} kind="memory" />
-                    <MetricsSeriesChart title="Network" series={resourceSeries} kind="network" />
-                    <MetricsSeriesChart title="Disk" series={resourceSeries} kind="disk" />
+                    <MetricsSeriesChart
+                      title="Memory"
+                      series={resourceSeries}
+                      kind="memory"
+                      emptyLabel={emptyLabel}
+                    />
+                    <MetricsSeriesChart
+                      title="Network"
+                      series={resourceSeries}
+                      kind="network"
+                      emptyLabel={emptyLabel}
+                    />
+                    <MetricsSeriesChart
+                      title="Disk"
+                      series={resourceSeries}
+                      kind="disk"
+                      emptyLabel={emptyLabel}
+                    />
                   </>
                 ) : null}
               </div>

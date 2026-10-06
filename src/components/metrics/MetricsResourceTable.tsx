@@ -101,12 +101,14 @@ export function MetricsResourceTable({
   onSelect,
   allColumns,
   onToggleColumns,
+  emptyLabel,
 }: {
   resources: MetricsResource[];
   selectedId: number | null;
   onSelect: (resourceId: number) => void;
   allColumns: boolean;
   onToggleColumns: () => void;
+  emptyLabel?: string;
 }) {
   const [filter, setFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -143,7 +145,11 @@ export function MetricsResourceTable({
         ) : null}
       </div>
       {filtered.length === 0 ? (
-        <p className="status-message">No apps match this filter.</p>
+        <p className="status-message">
+          {resources.length === 0 && emptyLabel
+            ? emptyLabel
+            : 'No apps match this filter.'}
+        </p>
       ) : (
         <div className="analytics-table-wrap">
           <table className="analytics-table">

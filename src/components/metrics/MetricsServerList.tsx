@@ -14,6 +14,7 @@ export function MetricsServerList({
     <ul className="metrics-server-list">
       {servers.map((server) => {
         const selected = server.id === selectedId;
+        const live = server.status === 'online' ? server.current : null;
         return (
           <li key={server.id}>
             <button
@@ -32,22 +33,17 @@ export function MetricsServerList({
               <span className="metrics-server-card-bar" aria-hidden>
                 <span
                   className="metrics-server-card-bar-fill"
-                  style={{ width: `${server.current?.cpuPct ?? 0}%` }}
+                  style={{ width: `${live?.cpuPct ?? 0}%` }}
                 />
               </span>
               <span className="metrics-server-card-stats">
-                CPU {formatCpuOfCores(server.current?.cpuPct, server.cpuCount)}
-                {server.current?.cpuPct != null && server.current.cpuPct >= 90
-                  ? ' · Busy'
-                  : null}
+                CPU {formatCpuOfCores(live?.cpuPct, server.cpuCount)}
+                {live?.cpuPct != null && live.cpuPct >= 90 ? ' · Busy' : null}
                 {' · '}
-                Mem {formatUsedOfTotal(server.current?.memUsedBytes, server.memTotalBytes)}
+                Mem {formatUsedOfTotal(live?.memUsedBytes, server.memTotalBytes)}
                 {' · '}
                 Disk{' '}
-                {formatUsedOfTotal(
-                  server.current?.diskUsedBytes,
-                  server.current?.diskTotalBytes,
-                )}
+                {formatUsedOfTotal(live?.diskUsedBytes, server.current?.diskTotalBytes)}
               </span>
             </button>
           </li>

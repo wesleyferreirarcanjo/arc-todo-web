@@ -42,7 +42,7 @@ function HostKpi({
 }
 
 export function MetricsHostSummary({ server }: { server: MetricsServer }) {
-  const current = server.current;
+  const live = server.status === 'online' ? server.current : null;
   return (
     <section className="metrics-host" aria-label={server.name}>
       <h3>{server.name}</h3>
@@ -50,24 +50,24 @@ export function MetricsHostSummary({ server }: { server: MetricsServer }) {
       <div className="analytics-kpis">
         <HostKpi
           title="CPU"
-          value={formatPercent(current?.cpuPct ?? null)}
+          value={formatPercent(live?.cpuPct ?? null)}
           unit={coresUnit(server.cpuCount)}
           extra={
             <p className="metrics-host-steal">
-              Stolen by VPS {formatPercent(current?.cpuStealPct ?? null)}
+              Stolen by VPS {formatPercent(live?.cpuStealPct ?? null)}
             </p>
           }
         />
         <HostKpi
           title="Memory"
-          value={formatBinary(current?.memUsedBytes ?? null)}
+          value={formatBinary(live?.memUsedBytes ?? null)}
           unit={totalUnit(server.memTotalBytes)}
           extra={<p className="metrics-host-steal">Excludes cache</p>}
         />
         <HostKpi
           title="Disk"
-          value={formatBinary(current?.diskUsedBytes ?? null)}
-          unit={totalUnit(current?.diskTotalBytes)}
+          value={formatBinary(live?.diskUsedBytes ?? null)}
+          unit={totalUnit(server.current?.diskTotalBytes)}
         />
       </div>
     </section>

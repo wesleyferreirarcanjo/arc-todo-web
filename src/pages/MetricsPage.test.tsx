@@ -246,6 +246,29 @@ describe('MetricsPage', () => {
     ).toBeGreaterThan(0);
   });
 
+  it('hides a stale current percent and repeats No data for in the charts', async () => {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    getServers.mockResolvedValue([
+      {
+        ...server,
+        status: 'stale',
+        lastSeenAt: twoHoursAgo,
+        cpuCount: 4,
+        current: { ...server.current!, cpuPct: 86.8 },
+      },
+    ]);
+    getServerResources.mockResolvedValue([]);
+    getServerSeries.mockResolvedValue(onePointSeries);
+
+    renderPage();
+
+    expect((await screen.findAllByText(/No data for/)).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/86\.8%/)).toHaveLength(0);
+    const cpuChart = screen.getByRole('region', { name: 'CPU' });
+    expect(within(cpuChart).getByText(/No data for/)).toBeInTheDocument();
+    expect(screen.queryByText('Not enough history for this window yet.')).not.toBeInTheDocument();
+  });
+
   it('shows a created token once, then hides it after close while keeping the server name', async () => {
     getServers.mockResolvedValue([]);
     getAgentTokens.mockResolvedValue([]);
