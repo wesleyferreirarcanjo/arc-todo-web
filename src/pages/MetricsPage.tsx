@@ -8,6 +8,7 @@ import { MetricsHostSummary } from '../components/metrics/MetricsHostSummary';
 import { MetricsResourceTable } from '../components/metrics/MetricsResourceTable';
 import { MetricsSeriesChart } from '../components/metrics/MetricsSeriesChart';
 import { MetricsServerList } from '../components/metrics/MetricsServerList';
+import { MetricsAppPanel } from '../components/metrics/MetricsAppPanel';
 import { MetricsTokenPanel } from '../components/metrics/MetricsTokenPanel';
 import {
   createAgentToken,
@@ -34,10 +35,13 @@ const UNAVAILABLE = 'Metrics service is unavailable.';
 const EMPTY_SERVERS =
   'No servers yet. Create an agent token and install the agent on a server.';
 
-type MetricsTab = 'servers' | 'tokens';
+type MetricsTab = 'servers' | 'apps' | 'tokens';
 
 function readTab(value: string | null): MetricsTab {
-  return value === 'tokens' ? 'tokens' : 'servers';
+  if (value === 'tokens') {
+    return 'tokens';
+  }
+  return value === 'apps' ? 'apps' : 'servers';
 }
 
 function readResource(value: string | null): number | null {
@@ -132,7 +136,7 @@ export function MetricsPage() {
               if (!isMetricsWindow(params.get('window'))) {
                 params.set('window', METRICS_DEFAULT_WINDOW);
               }
-              if (params.get('tab') !== 'tokens') {
+              if (params.get('tab') === null) {
                 params.set('tab', 'servers');
               }
               return params;
@@ -359,6 +363,15 @@ export function MetricsPage() {
             <button
               type="button"
               role="tab"
+              className={`board-view-toggle-btn${tab === 'apps' ? ' is-active' : ''}`}
+              aria-selected={tab === 'apps'}
+              onClick={() => patchParams({ tab: 'apps' })}
+            >
+              Custom metrics
+            </button>
+            <button
+              type="button"
+              role="tab"
               className={`board-view-toggle-btn${tab === 'tokens' ? ' is-active' : ''}`}
               aria-selected={tab === 'tokens'}
               onClick={() => patchParams({ tab: 'tokens' })}
@@ -366,7 +379,7 @@ export function MetricsPage() {
               Agent tokens
             </button>
           </div>
-          {tab === 'servers' ? (
+          {tab === 'servers' || tab === 'apps' ? (
             <div className="board-view-toggle analytics-period-toggle" role="group" aria-label="Time window">
               {METRICS_WINDOW_OPTIONS.map((option) => (
                 <button
@@ -482,6 +495,8 @@ export function MetricsPage() {
             </div>
           ) : null}
         </>
+      ) : tab === 'apps' ? (
+        <MetricsAppPanel window={windowKey} />
       ) : (
         <MetricsTokenPanel
           tokens={tokens}

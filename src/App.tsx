@@ -10,6 +10,8 @@ import { DesktopConnectPage } from './pages/DesktopConnectPage';
 import { DeviceControlPage } from './pages/DeviceControlPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MetricsPage } from './pages/MetricsPage';
+import { CloudPage } from './pages/CloudPage';
+import { LogsPage } from './pages/LogsPage';
 import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
@@ -89,6 +91,8 @@ export default function App() {
                 <Route element={<AdminRoute />}>
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/metrics" element={<MetricsPage />} />
+                  <Route path="/cloud" element={<CloudPage />} />
+                  <Route path="/logs" element={<LogsPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />
                   <Route path="/admin/devices" element={<DeviceControlPage />} />
                   <Route

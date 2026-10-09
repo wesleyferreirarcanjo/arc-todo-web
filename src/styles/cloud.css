@@ -1,0 +1,177 @@
+.cloud-page .cloud-server-table tr.is-selected td {
+  background: color-mix(in srgb, var(--accent, #6c8cff) 8%, transparent);
+}
+
+.cloud-page .cloud-server-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent, #6c8cff);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cloud-page .cloud-server-name:hover {
+  text-decoration: underline;
+}
+
+.cloud-page .cloud-status {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.cloud-page .cloud-status-online {
+  background: color-mix(in srgb, #34c759 18%, transparent);
+  color: #1f9d43;
+}
+
+.cloud-page .cloud-status-offline {
+  background: color-mix(in srgb, #8e8e93 18%, transparent);
+  color: #8e8e93;
+}
+
+.cloud-page .cloud-proxy-running {
+  background: color-mix(in srgb, #34c759 18%, transparent);
+  color: #1f9d43;
+}
+
+.cloud-page .cloud-proxy-error {
+  background: color-mix(in srgb, #ff453a 18%, transparent);
+  color: #d7332c;
+}
+
+.cloud-page .cloud-proxy-not_installed {
+  background: color-mix(in srgb, #8e8e93 18%, transparent);
+  color: #8e8e93;
+}
+
+.cloud-page .cloud-fingerprint {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cloud-page .cloud-panel-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: color-mix(in srgb, var(--accent, #6c8cff) 16%, transparent);
+  color: var(--accent, #6c8cff);
+}
+
+.cloud-page .cloud-server-actions {
+  white-space: nowrap;
+}
+
+.cloud-page .cloud-server-actions .btn + .btn {
+  margin-inline-start: 0.4rem;
+}
+
+.cloud-page .cloud-containers {
+  margin-top: 1.25rem;
+}
+
+.cloud-page .cloud-add-form,
+.cloud-page .cloud-agent-once {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cloud-page .cloud-add-form textarea {
+  width: 100%;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  resize: vertical;
+}
+
+.cloud-page .cloud-build-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.cloud-page .cloud-agent-command {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  word-break: break-all;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent, #6c8cff) 10%, transparent);
+}
+
+/* Apps tab */
+
+.cloud-page .cloud-apps-toolbar {
+  justify-content: flex-end;
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.cloud-page .cloud-app-status-running {
+  background: color-mix(in srgb, #34c759 18%, transparent);
+  color: #1f9d43;
+}
+
+.cloud-page .cloud-app-status-deploying {
+  background: color-mix(in srgb, #ff9f0a 18%, transparent);
+  color: #c77700;
+}
+
+.cloud-page .cloud-app-status-failed {
+  background: color-mix(in srgb, #ff453a 18%, transparent);
+  color: #d7332c;
+}
+
+.cloud-page .cloud-app-status-stopped {
+  background: color-mix(in srgb, #8e8e93 18%, transparent);
+  color: #8e8e93;
+}
+
+.cloud-page .cloud-app-detail h3 {
+  margin: 0 0 0.75rem;
+}
+
+.cloud-page .cloud-app-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.cloud-page .cloud-app-facts dt {
+  font-weight: 600;
+}
+
+.cloud-page .cloud-app-facts dd {
+  margin: 0;
+}
+
+.cloud-page .cloud-app-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.cloud-page .cloud-log-view {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  max-height: 24rem;
+  overflow: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: color-mix(in srgb, #000 6%, transparent);
+}

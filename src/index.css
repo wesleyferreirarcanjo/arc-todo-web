@@ -22,3 +22,5 @@
 @import './styles/seo.css';
 @import './styles/analytics.css';
 @import './styles/metrics.css';
+@import './styles/cloud.css';
+@import './styles/observer.css';

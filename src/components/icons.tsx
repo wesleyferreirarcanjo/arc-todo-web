@@ -204,6 +204,28 @@ export function AnalyticsIcon({ className = 'arc-icon' }: ArcIconProps) {
   );
 }
 
+export function CloudIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <path
+        {...mass}
+        d="M7 18.4h10.2a3.4 3.4 0 0 0 .6-6.7 5 5 0 0 0-9.8-1A3.9 3.9 0 0 0 7 18.4Z"
+      />
+      <path d="M7 18.4h10.2a3.4 3.4 0 0 0 .6-6.7 5 5 0 0 0-9.8-1A3.9 3.9 0 0 0 7 18.4Z" />
+    </DuotoneIcon>
+  );
+}
+
+export function LogsIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <rect {...mass} x="5" y="3.5" width="14" height="17" rx="2" />
+      <rect x="5" y="3.5" width="14" height="17" rx="2" />
+      <path d="M8 8.5h8M8 12h8M8 15.5h5" />
+    </DuotoneIcon>
+  );
+}
+
 export function UsersIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>

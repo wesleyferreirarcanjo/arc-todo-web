@@ -51,7 +51,16 @@ function cell(row: MetricsResource, column: Column): string {
     case 'App':
       return emptyMetric(row.resource);
     case 'Project':
-      return row.project == null ? 'Coolify / system' : emptyMetric(row.project);
+      if (row.project != null) {
+        return emptyMetric(row.project);
+      }
+      if (row.type === 'arccloud') {
+        return 'arc-cloud';
+      }
+      if (row.type === 'swarm') {
+        return 'Docker Swarm';
+      }
+      return 'Coolify / system';
     case 'Service':
       return emptyMetric(row.service);
     case 'CPU now':

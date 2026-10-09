@@ -20,11 +20,13 @@ import {
   BackIcon,
   BellIcon,
   ChatIcon,
+  CloudIcon,
   DiagramsIcon,
   DownloadIcon,
   FilterIcon,
   FlaskIcon,
   InstallIcon,
+  LogsIcon,
   LogoutIcon,
   McpIcon,
   MoonIcon,
@@ -323,6 +325,18 @@ export function MobileBoardFab() {
         label: 'Metrics',
         icon: <AnalyticsIcon />,
         onClick: () => go('/metrics'),
+      });
+      items.push({
+        id: 'nav-cloud',
+        label: 'Cloud',
+        icon: <CloudIcon />,
+        onClick: () => go('/cloud'),
+      });
+      items.push({
+        id: 'nav-logs',
+        label: 'Logs',
+        icon: <LogsIcon />,
+        onClick: () => go('/logs'),
       });
       items.push({
         id: 'nav-machines',

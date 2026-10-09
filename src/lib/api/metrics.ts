@@ -1,5 +1,7 @@
 import type {
   MetricsAgentToken,
+  MetricsAppMetric,
+  MetricsAppSeries,
   MetricsCreatedToken,
   MetricsResource,
   MetricsSeries,
@@ -76,4 +78,18 @@ export function revokeAgentToken(id: string): Promise<void> {
   return apiRequest<void>(`/metrics/agent-tokens/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
+}
+
+export function getAppMetrics(app?: string): Promise<MetricsAppMetric[]> {
+  const qs = app ? `?app=${encodeURIComponent(app)}` : '';
+  return apiRequest<MetricsAppMetric[]>(`/metrics/app-metrics${qs}`);
+}
+
+export function getAppSeries(
+  app: string,
+  metric: string,
+  window: MetricsWindow,
+): Promise<MetricsAppSeries> {
+  const params = new URLSearchParams({ app, metric, window });
+  return apiRequest<MetricsAppSeries>(`/metrics/app-series?${params}`);
 }

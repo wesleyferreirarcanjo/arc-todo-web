@@ -97,3 +97,28 @@ export interface MetricsCreatedToken {
   serverName: string;
   token: string;
 }
+
+
+export interface MetricsAppMetric {
+  app: string;
+  metric: string;
+  series: number;
+  lastSeenAt: string | null;
+}
+
+export interface MetricsAppSeriesPoint {
+  t: string;
+  value: number | null;
+  min: number | null;
+  max: number | null;
+}
+
+export interface MetricsAppSeriesLine {
+  labels: Record<string, string>;
+  points: MetricsAppSeriesPoint[];
+}
+
+export interface MetricsAppSeries {
+  resolutionSecs: number;
+  series: MetricsAppSeriesLine[];
+}

@@ -23,8 +23,10 @@ import {
   BrandMarkIcon,
   ChatbotIcon,
   ChevronIcon,
+  CloudIcon,
   ConfigIcon,
   DiagramsIcon,
+  LogsIcon,
   LogoutIcon,
   McpIcon,
   NamesIcon,
@@ -62,6 +64,8 @@ export function Layout() {
   const isAdminUsersPage = location.pathname.startsWith('/admin/users');
   const isAnalyticsPage = location.pathname.startsWith('/analytics');
   const isMetricsPage = location.pathname.startsWith('/metrics');
+  const isCloudPage = location.pathname.startsWith('/cloud');
+  const isLogsPage = location.pathname.startsWith('/logs');
   const isBoardShell = isBoardShellPath(location.pathname);
 
   useEffect(() => {
@@ -258,6 +262,36 @@ export function Layout() {
               >
                 <AnalyticsIcon className="sidebar-nav-icon" />
                 <span className="sidebar-nav-label">Metrics</span>
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/cloud"
+                aria-label="Cloud"
+                data-tooltip={collapsed ? 'Cloud' : undefined}
+                className={({ isActive }) =>
+                  isActive || isCloudPage
+                    ? 'sidebar-nav-link active'
+                    : 'sidebar-nav-link'
+                }
+              >
+                <CloudIcon className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">Cloud</span>
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/logs"
+                aria-label="Logs"
+                data-tooltip={collapsed ? 'Logs' : undefined}
+                className={({ isActive }) =>
+                  isActive || isLogsPage
+                    ? 'sidebar-nav-link active'
+                    : 'sidebar-nav-link'
+                }
+              >
+                <LogsIcon className="sidebar-nav-icon" />
+                <span className="sidebar-nav-label">Logs</span>
               </NavLink>
             )}
             {isAdmin && (

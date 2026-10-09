@@ -8,10 +8,15 @@ export function MetricsTokenPanel({
   tokens,
   onCreate,
   onRevoke,
+  envVarName = 'METRICS_AGENT_TOKEN',
+  unavailable = 'Metrics service is unavailable.',
 }: {
   tokens: MetricsAgentToken[];
   onCreate: (serverName: string) => Promise<MetricsCreatedToken>;
   onRevoke: (id: string) => Promise<void>;
+  /** Agent env var shown in the one-time-token hint (observer uses OBSERVER_AGENT_TOKEN). */
+  envVarName?: string;
+  unavailable?: string;
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [serverName, setServerName] = useState('');
@@ -37,7 +42,7 @@ export function MetricsTokenPanel({
       const next = await onCreate(serverName.trim());
       setCreated(next);
     } catch {
-      setFormError('Metrics service is unavailable.');
+      setFormError(unavailable);
     } finally {
       setSaving(false);
     }
@@ -130,7 +135,7 @@ export function MetricsTokenPanel({
               Copy token
             </button>
             <p className="status-message">
-              This token is shown only once. Paste it into the agent's METRICS_AGENT_TOKEN in
+              This token is shown only once. Paste it into the agent's {envVarName} in
               Coolify now.
             </p>
           </div>

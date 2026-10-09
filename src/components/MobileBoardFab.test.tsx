@@ -140,7 +140,7 @@ describe('MobileBoardFab Navigate labels', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('includes Analytics then Metrics then Machines then Users for an administrator', async () => {
+  it('includes Analytics then Metrics then Cloud then Logs then Machines then Users for an administrator', async () => {
     shellState.isAdmin = true;
     const user = userEvent.setup();
     render(
@@ -163,6 +163,8 @@ describe('MobileBoardFab Navigate labels', () => {
       'Download',
       'Analytics',
       'Metrics',
+      'Cloud',
+      'Logs',
       'Machines',
       'Users',
     ]);
