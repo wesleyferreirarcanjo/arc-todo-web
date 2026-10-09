@@ -169,21 +169,24 @@ export function MetricsPage() {
     const selectedWindow = windowKey;
     let cancelled = false;
     async function loadWindow() {
-      try {
-        const [nextResources, nextSeries] = await Promise.all([
-          getServerResources(selectedId, selectedWindow),
-          getServerSeries(selectedId, selectedWindow),
-        ]);
-        if (!cancelled) {
-          setResources(nextResources);
-          setServerSeries(nextSeries);
-        }
-      } catch {
-        if (!cancelled) {
-          setResources([]);
-          setServerSeries(null);
-          setError(UNAVAILABLE);
-        }
+      const [resourcesResult, seriesResult] = await Promise.allSettled([
+        getServerResources(selectedId, selectedWindow),
+        getServerSeries(selectedId, selectedWindow),
+      ]);
+      if (cancelled) {
+        return;
+      }
+      if (resourcesResult.status === 'fulfilled') {
+        setResources(resourcesResult.value);
+      } else {
+        setResources([]);
+        setError(UNAVAILABLE);
+      }
+      if (seriesResult.status === 'fulfilled') {
+        setServerSeries(seriesResult.value);
+      } else {
+        setServerSeries(null);
+        setError(UNAVAILABLE);
       }
     }
     void loadWindow();

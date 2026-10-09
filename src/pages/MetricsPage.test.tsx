@@ -242,6 +242,20 @@ describe('MetricsPage', () => {
     expect(screen.getByText('No apps match this filter.')).toBeInTheDocument();
   });
 
+  it('keeps host history when the app list request fails', async () => {
+    getServers.mockResolvedValue([server]);
+    getServerResources.mockRejectedValue(new Error('down'));
+    getServerSeries.mockResolvedValue(twoPointSeries);
+
+    renderPage();
+
+    expect(await screen.findByText('Metrics service is unavailable.')).toBeInTheDocument();
+    const cpuChart = screen.getByRole('region', { name: 'CPU' });
+    expect(
+      within(cpuChart).queryByText('Not enough history for this window yet.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('says Not enough history for this window yet. when a series has one point', async () => {
     getServers.mockResolvedValue([server]);
     getServerResources.mockResolvedValue(resources);
