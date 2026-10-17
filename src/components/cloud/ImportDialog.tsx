@@ -33,6 +33,7 @@ interface Picked {
   key: string;
   label: string;
   detail: string;
+  imported?: boolean;
   coolifyUuid?: string;
   project?: string;
   service?: string;
@@ -70,12 +71,14 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
               key: a.uuid,
               label: a.name || a.uuid,
               detail: `${a.buildPack ?? 'app'} — ${a.fqdn ?? 'no domain'}`,
+              imported: a.imported,
               coolifyUuid: a.uuid,
             }))
           : (await listEasypanelApps()).map((a: CloudEasypanelApp) => ({
               key: `${a.project}/${a.service}`,
               label: `${a.project} / ${a.service}`,
               detail: a.type,
+              imported: a.imported,
               project: a.project,
               service: a.service,
             }));
@@ -226,8 +229,9 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
                 <select value={picked} onChange={(e) => setPicked(e.target.value)}>
                   <option value="">Pick an app…</option>
                   {list.map((i) => (
-                    <option key={i.key} value={i.key}>
+                    <option key={i.key} value={i.key} disabled={i.imported}>
                       {i.label} ({i.detail})
+                      {i.imported ? ' — already imported' : ''}
                     </option>
                   ))}
                 </select>

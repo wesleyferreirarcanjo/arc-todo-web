@@ -85,6 +85,7 @@ const server: CloudServer = {
   panel: 'coolify',
   swarmActive: false,
   lastSeenAt: '2026-10-05T12:00:00.000Z',
+  lastError: null,
   fingerprint: 'SHA256:abc123',
   proxyState: 'not_installed',
   proxyVersion: null,
@@ -320,6 +321,31 @@ describe('CloudPage', () => {
 
     expect(screen.queryByRole('button', { name: 'Install proxy' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Roll back proxy' })).toBeNull();
+  });
+
+  it('shows the stored last error on the row and the real containers failure', async () => {
+    const failing = {
+      ...server,
+      status: 'offline' as const,
+      lastError: 'unreachable: ssh auth refused',
+    };
+    getServers.mockResolvedValue([failing]);
+    getContainers.mockRejectedValue(new Error('unreachable: ssh auth refused'));
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('arc-lab-1');
+
+    // The row itself names the cause next to the Offline badge.
+    expect(screen.getByText('unreachable: ssh auth refused')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'arc-lab-1' }));
+
+    // The containers section ends in an error state, never a spinner.
+    expect(
+      await screen.findByText(/Could not load containers/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Loading containers...')).toBeNull();
   });
 
   it('renders Cloud service is unavailable. when the API rejects', async () => {

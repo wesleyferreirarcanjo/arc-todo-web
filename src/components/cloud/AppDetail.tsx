@@ -9,6 +9,7 @@ import {
   deployApp,
   getAppEnv,
   getAppLogs,
+  getAppStats,
   getDeployment,
   getDeployments,
   rollbackApp,
@@ -22,6 +23,7 @@ import {
 } from '../../lib/api/cloud';
 import type {
   CloudApp,
+  CloudAppStats,
   CloudDeployment,
   CloudGitProvider,
   CloudServer,
@@ -41,6 +43,19 @@ interface Props {
 
 function fmt(value: string | null): string {
   return value ? new Date(value).toLocaleString() : '—';
+}
+
+/** Bytes → "12.3 MiB" (IEC). */
+function fmtBytes(bytes?: number): string {
+  if (bytes === undefined) return '—';
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(value >= 100 || unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
 /** Parse `KEY=value` lines; returns null when a line has no '='. */
@@ -98,6 +113,9 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
   const [tail, setTail] = useState(200);
   const [appLogLines, setAppLogLines] = useState<string[] | null>(null);
 
+  // Overview tab — one-shot CPU/memory sample.
+  const [stats, setStats] = useState<CloudAppStats | null>(null);
+
   const server = servers.find((s) => s.id === app.serverId);
   const buildMachines = servers.filter((s) => s.role === 'build');
   const isDraft = app.importState === 'draft';
@@ -133,11 +151,22 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     }
   }, [app.id, tail]);
 
+  // Stats failures stay inside the row — a stopped/offline server is a
+  // normal state, not a page error.
+  const loadStats = useCallback(async () => {
+    try {
+      setStats(await getAppStats(app.id));
+    } catch {
+      setStats({ running: false, detail: 'stats unavailable' });
+    }
+  }, [app.id]);
+
   useEffect(() => {
     if (tab === 'deployments') void loadDeployments();
     if (tab === 'environment') void loadEnv();
     if (tab === 'logs') void loadAppLogs();
-  }, [tab, loadDeployments, loadEnv, loadAppLogs]);
+    if (tab === 'overview' && !isDraft) void loadStats();
+  }, [tab, isDraft, loadDeployments, loadEnv, loadAppLogs, loadStats]);
 
   // Follow one deployment live until it reaches a terminal status.
   useEffect(() => {
@@ -168,6 +197,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     try {
       const next = await updateApp(app.id, {});
       onChanged(next);
+      void loadStats();
     } catch {
       // Best-effort refresh — status errors surface on the next poll.
     }
@@ -478,7 +508,30 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
             <dd>{app.healthPath}</dd>
             <dt>Status</dt>
             <dd>{app.status}</dd>
+            {!isDraft ? (
+              <>
+                <dt>CPU</dt>
+                <dd>
+                  {stats === null
+                    ? '…'
+                    : stats.running
+                      ? `${(stats.cpuPercent ?? 0).toFixed(1)}%`
+                      : '—'}
+                </dd>
+                <dt>Memory</dt>
+                <dd>
+                  {stats === null
+                    ? '…'
+                    : stats.running
+                      ? `${fmtBytes(stats.memUsedBytes)} / ${fmtBytes(stats.memLimitBytes)} (${(stats.memPercent ?? 0).toFixed(1)}%)`
+                      : '—'}
+                </dd>
+              </>
+            ) : null}
           </dl>
+          {!isDraft && stats && !stats.running && stats.detail ? (
+            <p className="status-message">{stats.detail}</p>
+          ) : null}
 
           {app.gitProvider ? (
             <label className="board-filter-field">

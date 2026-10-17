@@ -47,11 +47,26 @@ function labelName(labels: Record<string, string>, index: number): string {
   return pairs || `series ${index + 1}`;
 }
 
+interface MetricsAppPanelProps {
+  window: MetricsWindow;
+  selectedApp: string | null;
+  selectedMetric: string | null;
+  onSelect: (row: MetricsAppMetric | null) => void;
+}
+
 /** Custom app metrics ingested through the SDK (aap_ tokens, BR-MET-09). */
-export function MetricsAppPanel({ window }: { window: MetricsWindow }) {
+export function MetricsAppPanel({
+  window,
+  selectedApp,
+  selectedMetric,
+  onSelect,
+}: MetricsAppPanelProps) {
   const colors = useChartColors();
   const [metrics, setMetrics] = useState<MetricsAppMetric[]>([]);
-  const [selected, setSelected] = useState<MetricsAppMetric | null>(null);
+  const selected =
+    selectedApp && selectedMetric
+      ? { app: selectedApp, metric: selectedMetric }
+      : null;
   const [series, setSeries] = useState<MetricsAppSeries | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,12 +89,12 @@ export function MetricsAppPanel({ window }: { window: MetricsWindow }) {
   }, []);
 
   useEffect(() => {
-    if (!selected) {
+    if (!selectedApp || !selectedMetric) {
       setSeries(null);
       return;
     }
     let cancelled = false;
-    void getAppSeries(selected.app, selected.metric, window)
+    void getAppSeries(selectedApp, selectedMetric, window)
       .then((next) => {
         if (!cancelled) {
           setSeries(next);
@@ -94,7 +109,7 @@ export function MetricsAppPanel({ window }: { window: MetricsWindow }) {
     return () => {
       cancelled = true;
     };
-  }, [selected, window]);
+  }, [selectedApp, selectedMetric, window]);
 
   // Merge every label set into one recharts row set keyed by timestamp.
   const chart = useMemo(() => {
@@ -145,7 +160,7 @@ export function MetricsAppPanel({ window }: { window: MetricsWindow }) {
                     <button
                       type="button"
                       className="btn btn-link"
-                      onClick={() => setSelected(isSelected ? null : row)}
+                      onClick={() => onSelect(isSelected ? null : row)}
                     >
                       {row.app}
                     </button>

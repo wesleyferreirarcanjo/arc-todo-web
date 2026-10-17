@@ -54,6 +54,7 @@ export function CloudPage() {
   const [servers, setServers] = useState<CloudServer[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [containers, setContainers] = useState<CloudContainer[] | null>(null);
+  const [containersError, setContainersError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
@@ -129,20 +130,24 @@ export function CloudPage() {
   useEffect(() => {
     if (!selectedId) {
       setContainers(null);
+      setContainersError(null);
       return;
     }
     const id = selectedId;
     let cancelled = false;
     async function loadContainers() {
+      setContainersError(null);
       try {
         const next = await getContainers(id);
         if (!cancelled) {
           setContainers(next);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setContainers(null);
-          setError(UNAVAILABLE);
+          // The API forwards the master's message (SSH auth refused, agent
+          // offline…) — show the real cause, not a generic "unavailable".
+          setContainersError(err instanceof Error ? err.message : UNAVAILABLE);
         }
       }
     }
@@ -470,6 +475,11 @@ export function CloudPage() {
                     >
                       {server.status === 'online' ? 'Online' : 'Offline'}
                     </span>
+                    {server.lastError ? (
+                      <span className="cloud-server-error">
+                        {server.lastError}
+                      </span>
+                    ) : null}
                   </td>
                   <td>{server.dockerVersion || '—'}</td>
                   <td className="cloud-fingerprint">
@@ -595,7 +605,11 @@ export function CloudPage() {
           aria-label={`Containers on ${selectedServer.name}`}
         >
           <h3>Containers on {selectedServer.name}</h3>
-          {containers === null ? (
+          {containersError ? (
+            <p className="status-message" role="alert">
+              Could not load containers: {containersError}
+            </p>
+          ) : containers === null ? (
             <p className="status-message">Loading containers...</p>
           ) : containers.length === 0 ? (
             <p className="status-message">No containers on this server.</p>

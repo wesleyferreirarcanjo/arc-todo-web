@@ -61,6 +61,8 @@ export function MetricsPage() {
     : METRICS_DEFAULT_WINDOW;
   const serverId = searchParams.get('server');
   const resourceId = readResource(searchParams.get('resource'));
+  const appName = searchParams.get('app');
+  const appMetric = searchParams.get('metric');
   const allColumns = searchParams.get('columns') === 'all';
 
   const [servers, setServers] = useState<MetricsServer[]>([]);
@@ -499,7 +501,17 @@ export function MetricsPage() {
           ) : null}
         </>
       ) : tab === 'apps' ? (
-        <MetricsAppPanel window={windowKey} />
+        <MetricsAppPanel
+          window={windowKey}
+          selectedApp={appName}
+          selectedMetric={appMetric}
+          onSelect={(row) =>
+            patchParams({
+              app: row ? row.app : null,
+              metric: row ? row.metric : null,
+            })
+          }
+        />
       ) : (
         <MetricsTokenPanel
           tokens={tokens}

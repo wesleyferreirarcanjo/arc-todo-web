@@ -1,5 +1,6 @@
 import type {
   CloudApp,
+  CloudAppStats,
   CloudContainer,
   CloudCoolifyApp,
   CloudCreatedAgentServer,
@@ -176,6 +177,13 @@ export function getAppLogs(
 ): Promise<{ lines: string[] }> {
   return apiRequest<{ lines: string[] }>(
     `/cloud/apps/${encodeURIComponent(appId)}/logs?tail=${tail}`,
+  );
+}
+
+/** One-shot CPU/memory sample; `running: false` carries a `detail` reason. */
+export function getAppStats(appId: string): Promise<CloudAppStats> {
+  return apiRequest<CloudAppStats>(
+    `/cloud/apps/${encodeURIComponent(appId)}/stats`,
   );
 }
 

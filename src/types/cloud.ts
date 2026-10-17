@@ -14,6 +14,8 @@ export interface CloudServer {
   panel: CloudPanel;
   swarmActive: boolean;
   lastSeenAt: string | null;
+  /** Last transport failure (e.g. "unreachable: ssh auth refused"), if any. */
+  lastError: string | null;
   fingerprint: string | null;
   proxyState: CloudProxyState;
   proxyVersion: string | null;
@@ -152,12 +154,32 @@ export interface CloudCoolifyApp {
   fqdn: string | null;
   buildPack: string | null;
   status: string | null;
+  /** True when this panel app already exists as an arc-cloud app. */
+  imported: boolean;
+  /** The arc-cloud app id it was imported as (drafts count too). */
+  importedAppId: string | null;
 }
 
 export interface CloudEasypanelApp {
   project: string;
   service: string;
   type: string;
+  /** True when this panel service already exists as an arc-cloud app. */
+  imported: boolean;
+  /** The arc-cloud app id it was imported as (drafts count too). */
+  importedAppId: string | null;
+}
+
+/** GET /cloud/apps/:id/stats — one-shot CPU/memory sample. `running: false`
+ * covers stopped/never-deployed/unreachable; `detail` names the cause. */
+export interface CloudAppStats {
+  running: boolean;
+  detail?: string;
+  container?: string;
+  cpuPercent?: number;
+  memUsedBytes?: number;
+  memLimitBytes?: number;
+  memPercent?: number;
 }
 
 export interface CloudImportResult {

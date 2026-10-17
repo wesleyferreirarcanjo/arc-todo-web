@@ -11,6 +11,8 @@ const getResourceSeries = vi.hoisted(() => vi.fn());
 const getAgentTokens = vi.hoisted(() => vi.fn());
 const createAgentToken = vi.hoisted(() => vi.fn());
 const revokeAgentToken = vi.hoisted(() => vi.fn());
+const getAppMetrics = vi.hoisted(() => vi.fn());
+const getAppSeries = vi.hoisted(() => vi.fn());
 
 vi.mock('../lib/api/metrics', async () => {
   const actual = await vi.importActual<typeof import('../lib/api/metrics')>(
@@ -25,6 +27,8 @@ vi.mock('../lib/api/metrics', async () => {
     getAgentTokens,
     createAgentToken,
     revokeAgentToken,
+    getAppMetrics,
+    getAppSeries,
   };
 });
 
@@ -316,6 +320,63 @@ describe('MetricsPage', () => {
       expect(screen.queryByText('amt_secret')).not.toBeInTheDocument();
     });
     expect(screen.getByText('slave-1')).toBeInTheDocument();
+  });
+
+  it('persists the selected custom metric in the URL and restores it on load', async () => {
+    getServers.mockResolvedValue([]);
+    getAppMetrics.mockResolvedValue([
+      {
+        app: 'qa567-test2',
+        metric: 'qa567.latency_ms',
+        series: 1,
+        lastSeenAt: '2026-10-05T12:00:00.000Z',
+      },
+    ]);
+    getAppSeries.mockResolvedValue({
+      resolutionSecs: 60,
+      series: [
+        {
+          labels: {},
+          points: [
+            { t: '2026-10-05T11:00:00.000Z', value: 10, min: 10, max: 10 },
+            { t: '2026-10-05T11:01:00.000Z', value: 12, min: 12, max: 12 },
+          ],
+        },
+      ],
+    });
+
+    const user = userEvent.setup();
+    const { unmount } = renderPage('/metrics?tab=apps');
+
+    await waitFor(() => {
+      expect(screen.getByRole('table').querySelectorAll('tbody tr')).toHaveLength(1);
+    });
+    await user.click(screen.getByRole('button', { name: 'qa567-test2' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toContain('app=qa567-test2');
+      expect(screen.getByTestId('location').textContent).toContain(
+        'metric=qa567.latency_ms',
+      );
+      expect(getAppSeries).toHaveBeenCalledWith(
+        'qa567-test2',
+        'qa567.latency_ms',
+        '24h',
+      );
+    });
+    unmount();
+
+    renderPage('/metrics?tab=apps&app=qa567-test2&metric=qa567.latency_ms&window=1h');
+    await waitFor(() => {
+      expect(getAppSeries).toHaveBeenCalledWith(
+        'qa567-test2',
+        'qa567.latency_ms',
+        '1h',
+      );
+    });
+    expect(
+      screen.getByRole('region', { name: 'qa567-test2 qa567.latency_ms' }),
+    ).toBeInTheDocument();
   });
 
   it('refreshes server cards on the sample cadence without a window change', async () => {

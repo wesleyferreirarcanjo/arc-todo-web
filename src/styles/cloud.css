@@ -48,6 +48,14 @@
   color: #8e8e93;
 }
 
+.cloud-page .cloud-server-error {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: #d7332c;
+  max-width: 40ch;
+}
+
 .cloud-page .cloud-fingerprint {
   font-family: var(--font-mono, monospace);
   font-size: 0.78rem;
