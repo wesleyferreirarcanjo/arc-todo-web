@@ -262,7 +262,15 @@ describe('CloudPage', () => {
 
   it('shows the proxy column and installs after confirmation', async () => {
     getServers.mockResolvedValue([server]);
+    // Install is async: POST answers 202 + `installing`, the status poll
+    // then observes the terminal `running` state.
     installProxy.mockResolvedValue({
+      state: 'installing',
+      version: null,
+      detail: 'installing arc-cloud-proxy',
+      hosts: [],
+    });
+    getProxyStatus.mockResolvedValue({
       state: 'running',
       version: '3.5.0',
       detail: 'arc-cloud-proxy running',
@@ -282,7 +290,10 @@ describe('CloudPage', () => {
     await waitFor(() => {
       expect(installProxy).toHaveBeenCalledWith(serverId);
     });
-    expect(await screen.findByText(/Running 3\.5\.0/)).toBeInTheDocument();
+    expect(await screen.findByText('Installing…')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Running 3\.5\.0/, undefined, { timeout: 5000 }),
+    ).toBeInTheDocument();
     expect(
       await screen.findByRole('button', { name: 'Roll back proxy' }),
     ).toBeInTheDocument();
@@ -293,6 +304,12 @@ describe('CloudPage', () => {
       { ...server, proxyState: 'running', proxyVersion: '3.5.0' },
     ]);
     rollbackProxy.mockResolvedValue({
+      state: 'restoring',
+      version: null,
+      detail: 'restoring the previous proxy',
+      hosts: [],
+    });
+    getProxyStatus.mockResolvedValue({
       state: 'not_installed',
       version: null,
       detail: 'restored stop:coolify-proxy',
@@ -310,7 +327,24 @@ describe('CloudPage', () => {
     await waitFor(() => {
       expect(rollbackProxy).toHaveBeenCalledWith(serverId);
     });
-    expect(await screen.findByText('Not installed')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Not installed', undefined, { timeout: 5000 }),
+    ).toBeInTheDocument();
+  });
+
+  it('names the real cause when a refresh fails instead of a generic outage', async () => {
+    getServers.mockResolvedValue([server]);
+    refreshServer.mockRejectedValue(new Error('unreachable: ssh auth refused'));
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('arc-lab-1');
+
+    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    expect(
+      await screen.findByText('unreachable: ssh auth refused'),
+    ).toBeInTheDocument();
   });
 
   it('shows the refusal message and never offers proxy actions on build machines', async () => {

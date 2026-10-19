@@ -2,7 +2,12 @@ export type CloudServerRole = 'target' | 'build';
 export type CloudTransport = 'ssh' | 'agent';
 export type CloudServerStatus = 'online' | 'offline';
 export type CloudPanel = 'coolify' | 'easypanel' | 'none';
-export type CloudProxyState = 'not_installed' | 'running' | 'error';
+export type CloudProxyState =
+  | 'not_installed'
+  | 'installing'
+  | 'running'
+  | 'restoring'
+  | 'error';
 
 export interface CloudServer {
   id: string;

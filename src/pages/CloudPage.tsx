@@ -10,6 +10,7 @@ import {
   createSshServer,
   getContainers,
   getGithubAppStatus,
+  getProxyStatus,
   getServers,
   installProxy,
   refreshServer,
@@ -42,8 +43,20 @@ function panelLabel(panel: CloudServer['panel']): string | null {
 
 function proxyLabel(state: CloudProxyState): string {
   if (state === 'running') return 'Running';
+  if (state === 'installing') return 'Installing…';
+  if (state === 'restoring') return 'Restoring…';
   if (state === 'error') return 'Error';
   return 'Not installed';
+}
+
+function isProxyBusy(state: CloudProxyState): boolean {
+  return state === 'installing' || state === 'restoring';
+}
+
+/** Surface the API's real message (install refusal, timeout, …); fall back
+ *  to the generic outage text only when there is none. */
+function errorMessage(err: unknown): string {
+  return err instanceof Error && err.message ? err.message : UNAVAILABLE;
 }
 
 type ProxyAction = 'install' | 'rollback';
@@ -157,6 +170,41 @@ export function CloudPage() {
     };
   }, [selectedId]);
 
+  // Proxy install/rollback run in a master-side background task (the POST
+  // answers 202 immediately) — poll the status route until the row settles
+  // on a terminal state.
+  useEffect(() => {
+    const busy = servers.filter((server) => isProxyBusy(server.proxyState));
+    if (busy.length === 0) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      for (const server of busy) {
+        void getProxyStatus(server.id)
+          .then((view) => {
+            setServers((current) =>
+              current.map((item) =>
+                item.id === server.id
+                  ? {
+                      ...item,
+                      proxyState: view.state,
+                      proxyVersion: view.version,
+                    }
+                  : item,
+              ),
+            );
+            if (!isProxyBusy(view.state)) {
+              setError(view.state === 'error' ? (view.detail ?? 'Proxy operation failed.') : null);
+            }
+          })
+          .catch(() => {
+            // Keep polling — a transient API failure must not wedge the row.
+          });
+      }
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [servers]);
+
   function resetForm() {
     setFormName('');
     setBuildMachine(false);
@@ -225,8 +273,9 @@ export function CloudPage() {
       setServers((current) =>
         current.map((item) => (item.id === next.id ? next : item)),
       );
-    } catch {
-      setError(UNAVAILABLE);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setRefreshingId(null);
     }
@@ -246,8 +295,9 @@ export function CloudPage() {
         setSelectedId(null);
       }
       setRemoveTarget(null);
-    } catch {
-      setError(UNAVAILABLE);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setRemoving(false);
     }
@@ -272,10 +322,11 @@ export function CloudPage() {
         ),
       );
       setProxyConfirm(null);
+      setError(null);
     } catch (err) {
       // Refusals (build machine, unsafe routing) and post-check rollbacks
       // come back as the master's message — show it verbatim.
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(errorMessage(err));
       setProxyConfirm(null);
     } finally {
       setProxyBusy(false);
@@ -313,8 +364,8 @@ export function CloudPage() {
         ),
       );
       setError(null);
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setBuildBusy(false);
     }
@@ -507,8 +558,13 @@ export function CloudPage() {
                     )}
                   </td>
                   <td className="cloud-server-actions">
-                    {server.role === 'build' ? null : server.proxyState ===
-                      'running' ? (
+                    {server.role === 'build' ? null : isProxyBusy(
+                        server.proxyState,
+                      ) ? (
+                      <button type="button" className="btn btn-secondary" disabled>
+                        Working…
+                      </button>
+                    ) : server.proxyState === 'running' ? (
                       <button
                         type="button"
                         className="btn btn-secondary"
