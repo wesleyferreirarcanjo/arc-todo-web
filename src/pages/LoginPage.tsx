@@ -109,13 +109,22 @@ export function LoginPage() {
   if (isAuthenticated) {
     const from = (location.state as { from?: string } | null)?.from;
     const saved = sessionStorage.getItem('arc-desktop-connect');
-    if (from?.startsWith('/desktop/connect')) {
+    const savedMachine = sessionStorage.getItem('arc-machine-connect');
+    if (
+      from?.startsWith('/desktop/connect') ||
+      from?.startsWith('/connect-machine')
+    ) {
       sessionStorage.removeItem('arc-desktop-connect');
+      sessionStorage.removeItem('arc-machine-connect');
       return <Navigate to={from} replace />;
     }
     if (saved) {
       sessionStorage.removeItem('arc-desktop-connect');
       return <Navigate to={`/desktop/connect${saved}`} replace />;
+    }
+    if (savedMachine) {
+      sessionStorage.removeItem('arc-machine-connect');
+      return <Navigate to={`/connect-machine${savedMachine}`} replace />;
     }
     return <Navigate to="/board" replace />;
   }

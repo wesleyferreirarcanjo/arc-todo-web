@@ -25,6 +25,7 @@ import {
   ChevronIcon,
   CloudIcon,
   ConfigIcon,
+  ConnectedPcsIcon,
   DiagramsIcon,
   LogsIcon,
   LogoutIcon,
@@ -47,6 +48,7 @@ const primaryNav = [
   { to: '/names', label: 'Names', icon: NamesIcon },
   { to: '/seo', label: 'SEO', icon: SeoIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
+  { to: '/connected-machines', label: 'Connected PCs', icon: ConnectedPcsIcon },
   { to: '/download', label: 'Download', icon: DownloadIcon },
   { to: '/browsers', label: 'Browsers', icon: LogsIcon },
 ] as const;

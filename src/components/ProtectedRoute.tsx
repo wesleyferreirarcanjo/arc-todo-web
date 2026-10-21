@@ -10,6 +10,9 @@ export function ProtectedRoute() {
     if (location.pathname === '/desktop/connect') {
       sessionStorage.setItem('arc-desktop-connect', location.search);
     }
+    if (location.pathname === '/connect-machine') {
+      sessionStorage.setItem('arc-machine-connect', location.search);
+    }
     return <Navigate to="/login" replace state={{ from: next }} />;
   }
 

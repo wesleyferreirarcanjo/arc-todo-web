@@ -21,6 +21,7 @@ import {
   BellIcon,
   ChatIcon,
   CloudIcon,
+  ConnectedPcsIcon,
   DiagramsIcon,
   DownloadIcon,
   FilterIcon,
@@ -305,6 +306,12 @@ export function MobileBoardFab() {
         label: 'Organizations',
         icon: <OrganizationsIcon />,
         onClick: () => go('/organizations'),
+      },
+      {
+        id: 'nav-connected-machines',
+        label: 'Connected PCs',
+        icon: <ConnectedPcsIcon />,
+        onClick: () => go('/connected-machines'),
       },
       {
         id: 'nav-download',

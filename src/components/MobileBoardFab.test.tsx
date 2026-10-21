@@ -124,6 +124,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'Names',
       'SEO',
       'Organizations',
+      'Connected PCs',
       'Download',
       'Browsers',
     ]);
@@ -161,6 +162,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'Names',
       'SEO',
       'Organizations',
+      'Connected PCs',
       'Download',
       'Browsers',
       'Analytics',

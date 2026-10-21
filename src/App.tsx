@@ -6,6 +6,8 @@ import { AdminRoute } from './components/AdminRoute';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminUsersPage } from './pages/AdminUsersPage';
+import { ConnectMachinePage } from './pages/ConnectMachinePage';
+import { ConnectedMachinesPage } from './pages/ConnectedMachinesPage';
 import { DesktopConnectPage } from './pages/DesktopConnectPage';
 import { DeviceControlPage } from './pages/DeviceControlPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
@@ -53,6 +55,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/desktop/connect" element={<DesktopConnectPage />} />
+              <Route path="/connect-machine" element={<ConnectMachinePage />} />
               <Route
                 path="/organizations/:orgId/projects/:projectId/diagrams/:diagramId"
                 element={
@@ -84,6 +87,10 @@ export default function App() {
                 <Route path="/names/:sessionId" element={<NameSessionPage />} />
                 <Route path="/seo" element={<SeoHubPage />} />
                 <Route path="/organizations" element={<OrganizationsPage />} />
+                <Route
+                  path="/connected-machines"
+                  element={<ConnectedMachinesPage />}
+                />
                 <Route path="/download" element={<DownloadPage />} />
                 <Route
                   path="/download/extension-lab"

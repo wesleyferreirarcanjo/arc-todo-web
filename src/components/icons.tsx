@@ -11,6 +11,7 @@ import {
   ChatCircle,
   ClipboardText,
   Copy,
+  Desktop,
   DotsThreeVertical,
   DownloadSimple,
   Eye,
@@ -324,6 +325,7 @@ export const FlaskIcon = phosphor(Flask);
 export const InfoIcon = phosphor(Info);
 export const InstallIcon = phosphor(DownloadSimple);
 export const DownloadIcon = phosphor(PuzzlePiece);
+export const ConnectedPcsIcon = phosphor(Desktop);
 export const BellIcon = phosphor(Bell);
 export const MoreVerticalIcon = phosphor(DotsThreeVertical);
 export const PencilIcon = phosphor(PencilSimple);
