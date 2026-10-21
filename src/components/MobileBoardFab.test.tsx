@@ -125,6 +125,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'SEO',
       'Organizations',
       'Download',
+      'Browsers',
     ]);
     expect(screen.getByRole('menuitem', { name: 'All tasks' })).toHaveTextContent(
       'All tasks',
@@ -161,6 +162,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'SEO',
       'Organizations',
       'Download',
+      'Browsers',
       'Analytics',
       'Metrics',
       'Cloud',

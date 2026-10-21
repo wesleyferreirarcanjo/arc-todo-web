@@ -16,6 +16,7 @@ import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
 import { DiagramsHubPage } from './pages/DiagramsHubPage';
+import { BrowsersPage } from './pages/BrowsersPage';
 import { DownloadPage } from './pages/DownloadPage';
 import { ExtensionLabPage } from './pages/ExtensionLabPage';
 import { LoginPage } from './pages/LoginPage';
@@ -88,6 +89,7 @@ export default function App() {
                   path="/download/extension-lab"
                   element={<ExtensionLabPage />}
                 />
+                <Route path="/browsers" element={<BrowsersPage />} />
                 <Route element={<AdminRoute />}>
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/metrics" element={<MetricsPage />} />

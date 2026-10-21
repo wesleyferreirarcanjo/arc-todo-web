@@ -48,6 +48,7 @@ const primaryNav = [
   { to: '/seo', label: 'SEO', icon: SeoIcon },
   { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
   { to: '/download', label: 'Download', icon: DownloadIcon },
+  { to: '/browsers', label: 'Browsers', icon: LogsIcon },
 ] as const;
 
 export function Layout() {

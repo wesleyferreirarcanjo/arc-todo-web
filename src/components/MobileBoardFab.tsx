@@ -312,6 +312,12 @@ export function MobileBoardFab() {
         icon: <DownloadIcon />,
         onClick: () => go('/download'),
       },
+      {
+        id: 'nav-browsers',
+        label: 'Browsers',
+        icon: <LogsIcon />,
+        onClick: () => go('/browsers'),
+      },
     ];
     if (isAdmin) {
       items.push({

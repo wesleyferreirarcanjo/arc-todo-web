@@ -129,7 +129,8 @@ describe('Layout sidebar identity', () => {
     expect(labels).toContain('Analytics');
     expect(labels).toContain('Users');
     expect(labels.indexOf('Analytics')).toBeLessThan(labels.indexOf('Users'));
-    expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Analytics'));
+    expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Browsers'));
+    expect(labels.indexOf('Browsers')).toBeLessThan(labels.indexOf('Analytics'));
   });
 
   it('hides Analytics from a project member', () => {
@@ -162,6 +163,21 @@ describe('Layout sidebar identity', () => {
       'href',
       '/download',
     );
+  });
+
+  it('shows Browsers after Download for a project member', () => {
+    renderLayout();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
+      (node) => node.textContent,
+    );
+    expect(labels).toContain('Browsers');
+    expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Browsers'));
+    expect(screen.getByRole('link', { name: 'Browsers' })).toHaveAttribute(
+      'href',
+      '/browsers',
+    );
+    expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
   });
 
   it('keeps Download current on the evidence lab', () => {
