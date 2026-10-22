@@ -9,6 +9,7 @@ import type {
   CloudEasypanelApp,
   CloudGithubAppStatus,
   CloudImportResult,
+  CloudPanelRemoveResult,
   CloudPanelStatus,
   CloudProxyView,
   CloudServer,
@@ -79,6 +80,14 @@ export function rollbackProxy(serverId: string): Promise<CloudProxyView> {
   return apiRequest<CloudProxyView>(
     `/cloud/servers/${encodeURIComponent(serverId)}/proxy/rollback`,
     { method: 'POST' },
+  );
+}
+
+/** Full wipe of the panel installed on the host (Coolify today). */
+export function removePanel(serverId: string): Promise<CloudPanelRemoveResult> {
+  return apiRequest<CloudPanelRemoveResult>(
+    `/cloud/servers/${encodeURIComponent(serverId)}/panel`,
+    { method: 'DELETE' },
   );
 }
 

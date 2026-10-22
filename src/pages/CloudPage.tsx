@@ -14,6 +14,7 @@ import {
   getServers,
   installProxy,
   refreshServer,
+  removePanel,
   removeServer,
   rollbackProxy,
   setBuildSettings,
@@ -73,6 +74,8 @@ export function CloudPage() {
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<CloudServer | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [panelRemove, setPanelRemove] = useState<CloudServer | null>(null);
+  const [panelBusy, setPanelBusy] = useState(false);
   const [proxyConfirm, setProxyConfirm] = useState<{
     server: CloudServer;
     action: ProxyAction;
@@ -300,6 +303,35 @@ export function CloudPage() {
       setError(errorMessage(err));
     } finally {
       setRemoving(false);
+    }
+  }
+
+  async function handleRemovePanel() {
+    if (!panelRemove) {
+      return;
+    }
+    setPanelBusy(true);
+    try {
+      const { server: updated } = await removePanel(panelRemove.id);
+      setServers((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      // The containers table was a snapshot of the pre-wipe host — reload it
+      // when this server's section is open.
+      if (selectedId === updated.id) {
+        try {
+          setContainers(await getContainers(updated.id));
+        } catch {
+          setContainers(null);
+        }
+      }
+      setPanelRemove(null);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err));
+      setPanelRemove(null);
+    } finally {
+      setPanelBusy(false);
     }
   }
 
@@ -541,7 +573,9 @@ export function CloudPage() {
                       <span className="cloud-panel-badge">
                         {panelLabel(server.panel)}
                       </span>
-                    ) : null}
+                    ) : (
+                      '—'
+                    )}
                   </td>
                   <td>
                     {server.role === 'build' ? (
@@ -593,6 +627,16 @@ export function CloudPage() {
                     >
                       {refreshingId === server.id ? 'Refreshing…' : 'Refresh'}
                     </button>
+                    {server.panel === 'coolify' ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={panelBusy || isProxyBusy(server.proxyState)}
+                        onClick={() => setPanelRemove(server)}
+                      >
+                        Remove Coolify
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="btn btn-secondary"
@@ -847,6 +891,17 @@ export function CloudPage() {
         loading={removing}
         onConfirm={() => void handleRemove()}
         onCancel={() => setRemoveTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(panelRemove)}
+        title="Remove Coolify"
+        description={`Completely remove Coolify from ${panelRemove?.name ?? ''}? Every coolify* container — including the apps Coolify deployed — its networks and volumes, and /data/coolify are permanently deleted. This cannot be undone.`}
+        confirmLabel="Remove Coolify"
+        variant="danger"
+        loading={panelBusy}
+        onConfirm={() => void handleRemovePanel()}
+        onCancel={() => setPanelRemove(null)}
       />
 
       <ConfirmDialog

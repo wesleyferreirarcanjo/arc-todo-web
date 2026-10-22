@@ -38,6 +38,13 @@ export interface CloudProxyView {
   hosts: string[];
 }
 
+/** DELETE /cloud/servers/:id/panel — the wiped server's updated view plus
+ *  the remote summary of what was removed. */
+export interface CloudPanelRemoveResult {
+  server: CloudServer;
+  detail: string;
+}
+
 export interface CloudContainer {
   id: string;
   name: string;

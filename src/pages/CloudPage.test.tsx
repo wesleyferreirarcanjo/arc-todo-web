@@ -12,6 +12,7 @@ const refreshServer = vi.hoisted(() => vi.fn());
 const removeServer = vi.hoisted(() => vi.fn());
 const installProxy = vi.hoisted(() => vi.fn());
 const rollbackProxy = vi.hoisted(() => vi.fn());
+const removePanel = vi.hoisted(() => vi.fn());
 const getProxyStatus = vi.hoisted(() => vi.fn());
 const getApps = vi.hoisted(() => vi.fn());
 const createApp = vi.hoisted(() => vi.fn());
@@ -47,6 +48,7 @@ vi.mock('../lib/api/cloud', async () => {
     removeServer,
     installProxy,
     rollbackProxy,
+    removePanel,
     getProxyStatus,
     getApps,
     createApp,
@@ -330,6 +332,48 @@ describe('CloudPage', () => {
     expect(
       await screen.findByText('Not installed', undefined, { timeout: 5000 }),
     ).toBeInTheDocument();
+  });
+
+  it('wipes Coolify from the server after confirmation', async () => {
+    getServers.mockResolvedValue([server]);
+    removePanel.mockResolvedValue({
+      server: { ...server, panel: 'none' },
+      detail: 'removed 9 containers, 1 networks, 0 volumes, /data/coolify',
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('arc-lab-1');
+
+    await user.click(screen.getByRole('button', { name: 'Remove Coolify' }));
+    expect(removePanel).not.toHaveBeenCalled();
+
+    const dialog = await screen.findByRole('dialog');
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Remove Coolify' }),
+    );
+
+    await waitFor(() => {
+      expect(removePanel).toHaveBeenCalledWith(serverId);
+    });
+    // The badge and the action disappear once the row reports panel `none`.
+    await waitFor(() => {
+      expect(screen.queryByText('Coolify')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Remove Coolify' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('does not offer the Coolify wipe on a panel-less server', async () => {
+    getServers.mockResolvedValue([{ ...server, panel: 'none' }]);
+
+    renderPage();
+    await screen.findByText('arc-lab-1');
+
+    expect(
+      screen.queryByRole('button', { name: 'Remove Coolify' }),
+    ).not.toBeInTheDocument();
   });
 
   it('names the real cause when a refresh fails instead of a generic outage', async () => {
