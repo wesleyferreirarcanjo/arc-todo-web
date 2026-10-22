@@ -31,6 +31,7 @@ export const WEB_ERROR = {
   CHAT_AUTH: 'ERR-ARC-WEB-20',
   CHAT_STREAM: 'ERR-ARC-WEB-21',
   CHAT_REQUEST: 'ERR-ARC-WEB-22',
+  VAL_VIDEO: 'ERR-ARC-WEB-23',
   SESSION: 'ERR-ARC-AUTH-10',
   NET: 'ERR-ARC-NET-01',
 } as const;
@@ -65,6 +66,7 @@ const MESSAGES: Record<string, string> = {
   [WEB_ERROR.VAL_WIREFRAME]: 'Enter a wireframe name to continue.',
   [WEB_ERROR.VAL_SESSION]: 'Enter a session name to continue.',
   [WEB_ERROR.VAL_WORKING]: 'Enter a working name to continue.',
+  [WEB_ERROR.VAL_VIDEO]: 'Enter a video name to continue.',
   [WEB_ERROR.EXPORT_EMPTY]: 'There are no tasks to export yet.',
   [WEB_ERROR.IMPORT_EMPTY]: 'That file does not contain any tasks to import.',
   [WEB_ERROR.CHAT_AUTH]: 'Sign in again to keep chatting.',

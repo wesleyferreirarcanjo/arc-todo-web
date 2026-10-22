@@ -251,6 +251,17 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                     type="button"
                     className="btn btn-secondary"
                     onClick={() =>
+                      navigate(
+                        `/organizations/${orgId}/projects/${project.id}/videos`,
+                      )
+                    }
+                  >
+                    Videos
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() =>
                       navigate('/names')
                     }
                   >

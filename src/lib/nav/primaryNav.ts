@@ -15,6 +15,7 @@ import {
   SeoIcon,
   TasksIcon,
   UsersIcon,
+  VideosIcon,
   WireframesIcon,
 } from '../../components/icons';
 
@@ -80,6 +81,13 @@ export const primaryNav: PrimaryNavEntry[] = [
         icon: WireframesIcon,
         active: (pathname) =>
           pathname === '/wireframes' || projectHub('wireframes', pathname),
+      }),
+      link({
+        to: '/videos',
+        label: 'Videos',
+        icon: VideosIcon,
+        active: (pathname) =>
+          pathname === '/videos' || projectHub('videos', pathname),
       }),
       link({
         to: '/names',

@@ -204,6 +204,16 @@ export function WireframesIcon({ className = 'arc-icon' }: ArcIconProps) {
   );
 }
 
+export function VideosIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <rect {...mass} x="3.4" y="6.2" width="12.2" height="11.6" rx="2" />
+      <rect x="3.4" y="6.2" width="12.2" height="11.6" rx="2" />
+      <path d="M15.6 10.4 20.6 7.6v8.8l-5-2.8" />
+    </DuotoneIcon>
+  );
+}
+
 export function NamesIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>

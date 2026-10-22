@@ -5,6 +5,7 @@ import { WorkspaceProvider } from './context/WorkspaceContext';
 import { AdminRoute } from './components/AdminRoute';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RecordingIndicator } from './components/videos/RecordingIndicator';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { ConnectMachinePage } from './pages/ConnectMachinePage';
 import { ConnectedMachinesPage } from './pages/ConnectedMachinesPage';
@@ -31,6 +32,9 @@ import { ProjectDiagramEditorPage } from './pages/ProjectDiagramEditorPage';
 import { ProjectDiagramsPage } from './pages/ProjectDiagramsPage';
 import { ProjectWireframePreviewPage } from './pages/ProjectWireframePreviewPage';
 import { ProjectWireframesPage } from './pages/ProjectWireframesPage';
+import { ProjectVideoEditorPage } from './pages/ProjectVideoEditorPage';
+import { ProjectVideosPage } from './pages/ProjectVideosPage';
+import { VideosHubPage } from './pages/VideosHubPage';
 import { WireframesHubPage } from './pages/WireframesHubPage';
 import { NamesHubPage } from './pages/NamesHubPage';
 import { NameSessionPage } from './pages/NameSessionPage';
@@ -53,7 +57,14 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route element={<ProtectedRoute />}>
+            <Route
+              element={
+                <>
+                  <ProtectedRoute />
+                  <RecordingIndicator />
+                </>
+              }
+            >
               <Route path="/desktop/connect" element={<DesktopConnectPage />} />
               <Route path="/connect-machine" element={<ConnectMachinePage />} />
               <Route
@@ -73,6 +84,14 @@ export default function App() {
                 }
               />
               <Route
+                path="/organizations/:orgId/projects/:projectId/videos/:videoId"
+                element={
+                  <WorkspaceProvider>
+                    <ProjectVideoEditorPage />
+                  </WorkspaceProvider>
+                }
+              />
+              <Route
                 element={
                   <WorkspaceProvider>
                     <Layout />
@@ -83,6 +102,7 @@ export default function App() {
                 <Route path="/board" element={<AllTasksBoardPage />} />
                 <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/wireframes" element={<WireframesHubPage />} />
+                <Route path="/videos" element={<VideosHubPage />} />
                 <Route path="/names" element={<NamesHubPage />} />
                 <Route path="/names/:sessionId" element={<NameSessionPage />} />
                 <Route path="/seo" element={<SeoHubPage />} />
@@ -148,6 +168,10 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/wireframes"
                   element={<ProjectWireframesPage />}
+                />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/videos"
+                  element={<ProjectVideosPage />}
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/names"

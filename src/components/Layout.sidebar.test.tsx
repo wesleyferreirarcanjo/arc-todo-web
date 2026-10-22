@@ -221,6 +221,7 @@ describe('Layout sidebar identity', () => {
     expect(make).toHaveClass('active');
     expect(screen.getByRole('link', { name: 'Diagrams' })).toHaveClass('active');
     expect(screen.getByRole('link', { name: 'Wireframes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Videos' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Names' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'SEO' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Organizations' })).toHaveAttribute(
@@ -271,7 +272,7 @@ describe('Layout sidebar identity', () => {
     renderLayout('/board');
     await user.click(screen.getByRole('button', { name: 'Make' }));
     expect(screen.getByTestId('outlet-path')).toHaveTextContent('/board');
-    for (const label of ['Diagrams', 'Wireframes', 'Names', 'SEO']) {
+    for (const label of ['Diagrams', 'Wireframes', 'Videos', 'Names', 'SEO']) {
       expect(screen.getByText(label)).toBeVisible();
     }
   });

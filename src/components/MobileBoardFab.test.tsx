@@ -139,6 +139,7 @@ describe('MobileBoardFab Navigate labels', () => {
       'Back',
       'Diagrams',
       'Wireframes',
+      'Videos',
       'Names',
       'SEO',
     ]);
