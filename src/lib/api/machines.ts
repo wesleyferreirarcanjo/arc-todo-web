@@ -79,6 +79,16 @@ export function renameMachine(
   });
 }
 
+export function setMachineRemote(
+  machineId: string,
+  on: boolean,
+): Promise<ConnectedMachine> {
+  return apiRequest(`/machines/${encodeURIComponent(machineId)}`, {
+    method: 'PATCH',
+    body: { remoteEnabled: on },
+  });
+}
+
 export function revokeMachine(machineId: string): Promise<{ revoked: boolean }> {
   return apiRequest(`/machines/${encodeURIComponent(machineId)}/revoke`, {
     method: 'POST',

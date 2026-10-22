@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   fetchMachineUsage: vi.fn(),
   renameMachine: vi.fn(),
   revokeMachine: vi.fn(),
+  setMachineRemote: vi.fn(),
 }));
 
 vi.mock('../context/AuthContext', () => ({
@@ -119,6 +120,27 @@ describe('ConnectedMachinesPage', () => {
     await user.type(input, 'Studio PC');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(api.renameMachine).toHaveBeenCalledWith('m-1', 'Studio PC');
+  });
+
+  it('toggles remote control on an owned PC', async () => {
+    api.fetchMachines.mockResolvedValue([machine]);
+    api.fetchMachineSessions.mockResolvedValue([]);
+    api.fetchMachineToolCalls.mockResolvedValue([]);
+    api.fetchMachineUsage.mockResolvedValue([]);
+    api.setMachineRemote.mockResolvedValue({ ...machine, remoteEnabled: true });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ConnectedMachinesPage />
+      </MemoryRouter>,
+    );
+    const toggle = await screen.findByRole('checkbox', {
+      name: 'Remote control',
+    });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    expect(api.setMachineRemote).toHaveBeenCalledWith('m-1', true);
+    expect(await screen.findByRole('checkbox', { name: 'Remote control' })).toBeChecked();
   });
 
   it('asks for confirmation before revoking', async () => {

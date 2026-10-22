@@ -9,6 +9,7 @@ import {
   machineStatusLabel,
   renameMachine,
   revokeMachine,
+  setMachineRemote,
   type ConnectedMachine,
   type ControlSessionRow,
   type ControlToolCallRow,
@@ -36,6 +37,7 @@ export function ConnectedMachinesPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
   const [revoking, setRevoking] = useState<ConnectedMachine | null>(null);
+  const [remoteBusyId, setRemoteBusyId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +96,20 @@ export function ConnectedMachinesPage() {
     }
   }
 
+  async function toggleRemote(machine: ConnectedMachine) {
+    setRemoteBusyId(machine.id);
+    try {
+      const updated = await setMachineRemote(machine.id, !machine.remoteEnabled);
+      setMachines((rows) =>
+        rows.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)),
+      );
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'remote control' }));
+    } finally {
+      setRemoteBusyId(null);
+    }
+  }
+
   async function confirmRevoke() {
     if (!revoking) return;
     setBusy(true);
@@ -134,6 +150,17 @@ export function ConnectedMachinesPage() {
                 ? ` · owner ${machine.ownerUsername}`
                 : ''}
             </span>
+            {machine.ownerUserId === user?.id && !machine.revokedAt && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={machine.remoteEnabled}
+                  disabled={remoteBusyId === machine.id}
+                  onChange={() => void toggleRemote(machine)}
+                />
+                Remote control
+              </label>
+            )}
             {renamingId === machine.id ? (
               <span>
                 <input
