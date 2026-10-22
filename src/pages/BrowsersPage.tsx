@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { AnalyticsTable } from '../components/AnalyticsTable';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
 import {
@@ -81,38 +82,36 @@ function ToolCalls({ calls }: { calls: BrowserToolCall[] }) {
     return <p className="status-message">No tool calls.</p>;
   }
   return (
-    <div className="analytics-table-wrap">
-      <table className="analytics-table">
-        <thead>
-          <tr>
-            <th scope="col">Tool</th>
-            <th scope="col">Arguments</th>
-            <th scope="col">URL</th>
-            <th scope="col">Duration</th>
-            <th scope="col">Result size</th>
-            <th scope="col">Browser tokens</th>
-            <th scope="col">Error</th>
-          </tr>
-        </thead>
-        <tbody>
-          {calls.map((call) => (
-            <tr key={call.id}>
-              <td>{call.toolName}</td>
-              <td>{formatArgs(call.arguments)}</td>
-              <td>{call.url || '—'}</td>
-              <td>{formatMs(call.durationMs)}</td>
-              <td>
-                {call.resultSizeBytes == null
-                  ? '—'
-                  : `${call.resultSizeBytes} B`}
-              </td>
-              <td>{formatCount(call.browserTokens)}</td>
-              <td>{call.error || '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <AnalyticsTable
+      rows={calls}
+      rowKey={(call) => call.id}
+      columns={[
+        { id: 'tool', header: 'Tool', cell: (call) => call.toolName },
+        {
+          id: 'arguments',
+          header: 'Arguments',
+          cell: (call) => formatArgs(call.arguments),
+        },
+        { id: 'url', header: 'URL', cell: (call) => call.url || '—' },
+        {
+          id: 'duration',
+          header: 'Duration',
+          cell: (call) => formatMs(call.durationMs),
+        },
+        {
+          id: 'resultSize',
+          header: 'Result size',
+          cell: (call) =>
+            call.resultSizeBytes == null ? '—' : `${call.resultSizeBytes} B`,
+        },
+        {
+          id: 'browserTokens',
+          header: 'Browser tokens',
+          cell: (call) => formatCount(call.browserTokens),
+        },
+        { id: 'error', header: 'Error', cell: (call) => call.error || '—' },
+      ]}
+    />
   );
 }
 
@@ -182,40 +181,49 @@ export function BrowsersPage() {
       {browsers.length > 0 ? (
         <section aria-labelledby="browsers-heading">
           <h3 id="browsers-heading">Browsers</h3>
-          <div className="analytics-table-wrap">
-            <table className="analytics-table">
-              <thead>
-                <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Consent</th>
-                  <th scope="col">Last seen</th>
-                  <th scope="col"> </th>
-                </tr>
-              </thead>
-              <tbody>
-                {browsers.map((browser) => (
-                  <tr key={browser.id}>
-                    <td>{browser.name}</td>
-                    <td>{browser.browserType || '—'}</td>
-                    <td>{browser.online ? 'Online' : 'Offline'}</td>
-                    <td>{consentLabel(browser.consentMode)}</td>
-                    <td>{formatTime(browser.lastSeenAt)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-danger"
-                        onClick={() => setRevoking(browser)}
-                      >
-                        Revoke
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AnalyticsTable
+            rows={browsers}
+            rowKey={(browser) => browser.id}
+            columns={[
+              { id: 'name', header: 'Name', cell: (browser) => browser.name },
+              {
+                id: 'type',
+                header: 'Type',
+                cell: (browser) => browser.browserType || '—',
+              },
+              {
+                id: 'status',
+                header: 'Status',
+                cell: (browser) => (browser.online ? 'Online' : 'Offline'),
+              },
+              {
+                id: 'consent',
+                header: 'Consent',
+                cell: (browser) => consentLabel(browser.consentMode),
+              },
+              {
+                id: 'lastSeen',
+                header: 'Last seen',
+                cell: (browser) => formatTime(browser.lastSeenAt),
+              },
+              {
+                id: 'actions',
+                header: ' ',
+                cell: (browser) => (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setRevoking(browser);
+                    }}
+                  >
+                    Revoke
+                  </button>
+                ),
+              },
+            ]}
+          />
         </section>
       ) : null}
 
@@ -225,41 +233,48 @@ export function BrowsersPage() {
           <p className="status-message">{SESSIONS_EMPTY}</p>
         ) : null}
         {sessions.length > 0 ? (
-          <div className="analytics-table-wrap">
-            <table className="analytics-table">
-              <thead>
-                <tr>
-                  <th scope="col">Client</th>
-                  <th scope="col">Browser</th>
-                  <th scope="col">Duration</th>
-                  <th scope="col">Tool calls</th>
-                  <th scope="col">Browser tokens</th>
-                  <th scope="col">Model tokens</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session) => (
-                  <tr key={session.id}>
-                    <td>{session.clientName || '—'}</td>
-                    <td>{browserName(browsers, session.browserId)}</td>
-                    <td>
-                      {formatDuration(session.startedAt, session.endedAt)}
-                    </td>
-                    <td>
-                      <details>
-                        <summary>
-                          {formatCount(session.toolCallCount)}
-                        </summary>
-                        <ToolCalls calls={session.calls ?? []} />
-                      </details>
-                    </td>
-                    <td>{formatCount(session.browserTokens)}</td>
-                    <td>{formatCount(session.reportedModelTokens)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AnalyticsTable
+            rows={sessions}
+            rowKey={(session) => session.id}
+            columns={[
+              {
+                id: 'client',
+                header: 'Client',
+                cell: (session) => session.clientName || '—',
+              },
+              {
+                id: 'browser',
+                header: 'Browser',
+                cell: (session) => browserName(browsers, session.browserId),
+              },
+              {
+                id: 'duration',
+                header: 'Duration',
+                cell: (session) =>
+                  formatDuration(session.startedAt, session.endedAt),
+              },
+              {
+                id: 'toolCalls',
+                header: 'Tool calls',
+                cell: (session) => (
+                  <details>
+                    <summary>{formatCount(session.toolCallCount)}</summary>
+                    <ToolCalls calls={session.calls ?? []} />
+                  </details>
+                ),
+              },
+              {
+                id: 'browserTokens',
+                header: 'Browser tokens',
+                cell: (session) => formatCount(session.browserTokens),
+              },
+              {
+                id: 'modelTokens',
+                header: 'Model tokens',
+                cell: (session) => formatCount(session.reportedModelTokens),
+              },
+            ]}
+          />
         ) : null}
       </section>
 

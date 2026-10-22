@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConnectedMachinesPage } from './ConnectedMachinesPage';
-import type { ConnectedMachine } from '../lib/api/machines';
+import type { ConnectedMachine, TokenUsageRow } from '../lib/api/machines';
 
 const api = vi.hoisted(() => ({
   fetchMachines: vi.fn(),
@@ -42,6 +42,28 @@ const machine: ConnectedMachine = {
   revokedAt: null,
 };
 
+const emptyUsage: TokenUsageRow = {
+  id: 'u-1',
+  turnId: 'turn-1',
+  controlSessionId: null,
+  estimatedInputTokens: null,
+  estimatedOutputTokens: null,
+  reportedInputTokens: null,
+  reportedOutputTokens: null,
+  costDelta: null,
+  costCurrency: null,
+  source: 'arc-ide',
+  createdAt: '2026-10-21T12:00:00Z',
+};
+
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <ConnectedMachinesPage />
+    </MemoryRouter>,
+  );
+}
+
 describe('ConnectedMachinesPage', () => {
   afterEach(() => {
     cleanup();
@@ -50,17 +72,13 @@ describe('ConnectedMachinesPage', () => {
 
   it('shows an honest empty state', async () => {
     api.fetchMachines.mockResolvedValue([]);
-    render(
-      <MemoryRouter>
-        <ConnectedMachinesPage />
-      </MemoryRouter>,
-    );
+    renderPage();
     expect(
       await screen.findByText(/No connected PCs yet/),
     ).toBeInTheDocument();
   });
 
-  it('lists own PCs with status and loads detail panels', async () => {
+  it('lists own PCs with sessions nested in the selected row', async () => {
     api.fetchMachines.mockResolvedValue([machine]);
     api.fetchMachineSessions.mockResolvedValue([]);
     api.fetchMachineToolCalls.mockResolvedValue([
@@ -75,31 +93,69 @@ describe('ConnectedMachinesPage', () => {
         createdAt: '2026-10-21T12:00:00Z',
       },
     ]);
+    api.fetchMachineUsage.mockResolvedValue([emptyUsage]);
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByText('Office PC')).toBeInTheDocument();
+    expect(screen.getByText('Office PC').closest('tr')).toHaveClass('is-selected');
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument();
+    expect(screen.getByText(/offline/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument();
+    expect(await screen.findByText('No session')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Opened' })).toBeInTheDocument();
+    const summary = screen.getByText('1');
+    await user.click(summary);
+    expect(screen.getByText('click')).toBeInTheDocument();
+    expect(screen.getByText('Ok')).toBeInTheDocument();
+    expect(screen.queryByText(/"x":1/)).not.toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Latest 200 turns. Estimated input not reported. Estimated output not reported. Reported input not reported. Reported output not reported. Reported cost not reported.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Cost' })).toBeInTheDocument();
+    const usageTable = screen.getByRole('columnheader', { name: 'Cost' }).closest('table');
+    expect(usageTable).not.toBeNull();
+    expect(within(usageTable as HTMLElement).getByText('not reported')).toBeInTheDocument();
+  });
+
+  it('summarizes estimated tokens separately from reported figures', async () => {
+    api.fetchMachines.mockResolvedValue([machine]);
+    api.fetchMachineSessions.mockResolvedValue([]);
+    api.fetchMachineToolCalls.mockResolvedValue([]);
     api.fetchMachineUsage.mockResolvedValue([
       {
+        ...emptyUsage,
         id: 'u-1',
-        turnId: 'turn-1',
-        controlSessionId: null,
-        estimatedInputTokens: null,
-        estimatedOutputTokens: null,
-        reportedInputTokens: null,
-        reportedOutputTokens: null,
-        costDelta: null,
-        costCurrency: null,
-        source: 'arc-ide',
-        createdAt: '2026-10-21T12:00:00Z',
+        estimatedInputTokens: 10,
+        costDelta: 0.5,
+        costCurrency: 'USD',
+      },
+      {
+        ...emptyUsage,
+        id: 'u-2',
+        turnId: 'turn-2',
       },
     ]);
-    render(
-      <MemoryRouter>
-        <ConnectedMachinesPage />
-      </MemoryRouter>,
-    );
+    renderPage();
+    expect(
+      await screen.findByText(/Estimated input 10 \(1 not reported\)/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Reported cost 0\.5 USD \(1 not reported\)/)).toBeInTheDocument();
+    expect(screen.getByText('Latest 200 turns. Estimated input 10 (1 not reported). Estimated output not reported. Reported input not reported. Reported output not reported. Reported cost 0.5 USD (1 not reported).')).toBeInTheDocument();
+  });
+
+  it("hides sessions and usage on someone else's PC", async () => {
+    api.fetchMachines.mockResolvedValue([
+      { ...machine, ownerUserId: 'u-other' },
+    ]);
+    renderPage();
     expect(await screen.findByText('Office PC')).toBeInTheDocument();
-    expect(screen.getByText(/offline/)).toBeInTheDocument();
-    expect(await screen.findByText(/turn turn-1/)).toBeInTheDocument();
-    // Cost not reported by the agent → "not reported", never invented.
-    expect(screen.getByText(/not reported/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Revoke' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Sessions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Usage' })).not.toBeInTheDocument();
+    expect(api.fetchMachineSessions).not.toHaveBeenCalled();
+    expect(api.fetchMachineUsage).not.toHaveBeenCalled();
   });
 
   it('renames a PC', async () => {
@@ -109,11 +165,7 @@ describe('ConnectedMachinesPage', () => {
     api.fetchMachineUsage.mockResolvedValue([]);
     api.renameMachine.mockResolvedValue({ ...machine, name: 'Studio PC' });
     const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <ConnectedMachinesPage />
-      </MemoryRouter>,
-    );
+    renderPage();
     await user.click(await screen.findByRole('button', { name: 'Rename' }));
     const input = screen.getByLabelText('PC name');
     await user.clear(input);
@@ -129,11 +181,7 @@ describe('ConnectedMachinesPage', () => {
     api.fetchMachineUsage.mockResolvedValue([]);
     api.setMachineRemote.mockResolvedValue({ ...machine, remoteEnabled: true });
     const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <ConnectedMachinesPage />
-      </MemoryRouter>,
-    );
+    renderPage();
     const toggle = await screen.findByRole('checkbox', {
       name: 'Remote control',
     });
@@ -150,11 +198,7 @@ describe('ConnectedMachinesPage', () => {
     api.fetchMachineUsage.mockResolvedValue([]);
     api.revokeMachine.mockResolvedValue({ revoked: true });
     const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <ConnectedMachinesPage />
-      </MemoryRouter>,
-    );
+    renderPage();
     await user.click(await screen.findByRole('button', { name: 'Revoke' }));
     expect(
       await screen.findByText(/disconnects Office PC immediately/),
