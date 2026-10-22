@@ -23,6 +23,36 @@ export type SeoAuditPage = {
   robotsAllowed: boolean;
   inSitemap: boolean;
   brokenLink: boolean;
+  h1Count: number | null;
+  canonical: string | null;
+  wordCount: number | null;
+  noindex: boolean | null;
+};
+
+export type SeoFindingBucket = 'fix-now' | 'watch' | 'passed' | 'not-evaluated';
+
+export type SeoFinding = {
+  ruleId: string;
+  bucket: SeoFindingBucket;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  why: string;
+  fix: string;
+  affected: Array<{ url: string; detail: string }>;
+  note: string | null;
+};
+
+export type SeoAddressVariant = {
+  url: string;
+  finalUrl: string | null;
+  status: number | null;
+  ok: boolean | null;
+};
+
+export type SeoSiteProbe = {
+  llmsTxt: 'found' | 'missing' | 'unknown';
+  canonicalOrigin: string | null;
+  addressVariants: SeoAddressVariant[] | null;
 };
 
 export type SeoLighthouseRun = {
@@ -47,9 +77,11 @@ export type SeoAudit = {
   finishedAt: string | null;
   robotsTxt: string | null;
   sitemapUrls: string[];
+  siteProbe: SeoSiteProbe | null;
   createdAt: string;
   pages: SeoAuditPage[];
   lighthouse: SeoLighthouseRun | null;
+  findings?: SeoFinding[];
 };
 
 export type SeoGscDimension = 'query' | 'page';

@@ -2,6 +2,7 @@ import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { SeoFindings } from '../components/seo/SeoFindings';
 import { SeoKeywordsResearch } from '../components/seo/SeoKeywordsResearch';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -229,7 +230,9 @@ export function SeoSitePage() {
         finishedAt: null,
         robotsTxt: null,
         sitemapUrls: [],
+        siteProbe: null,
         createdAt: new Date().toISOString(),
+        findings: [],
         pages: [],
         lighthouse: null,
       });
@@ -343,6 +346,7 @@ export function SeoSitePage() {
                     Status: {audit.status}
                     {audit.errorMessage ? ` — ${audit.errorMessage}` : ''}
                   </p>
+                  {audit.status === 'complete' && <SeoFindings audit={audit} />}
                   <h3>Pages</h3>
                   {audit.pages.length === 0 ? (
                     <p className="status-message">
