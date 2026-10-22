@@ -104,45 +104,56 @@ describe('MobileBoardFab logout order', () => {
 });
 
 describe('MobileBoardFab Navigate labels', () => {
-  it('shows All tasks as visible text in the Navigate list', async () => {
+  it('pins All tasks on the main dial and groups Navigate', async () => {
     const user = userEvent.setup();
     render(
-      <MemoryRouter initialEntries={['/board']}>
+      <MemoryRouter initialEntries={['/organizations']}>
+        <Routes>
+          <Route path="/organizations" element={<div>Organizations page</div>} />
+          <Route path="/board" element={<div>All tasks page</div>} />
+        </Routes>
         <MobileBoardFab />
       </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: 'Open actions' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+    const main = screen.getAllByRole('menuitem');
+    expect(main[0]).toHaveAttribute('aria-label', 'Logout');
+    expect(main[1]).toHaveAttribute('aria-label', 'All tasks');
 
-    const items = screen.getAllByRole('menuitem');
-    expect(items.map((item) => item.textContent?.trim())).toEqual([
+    await user.click(screen.getByRole('menuitem', { name: 'All tasks' }));
+    expect(screen.getByText('All tasks page')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
       'Back',
-      'All tasks',
+      'Make',
+      'Organizations',
+      'Devices',
+    ]);
+    expect(screen.queryByRole('menuitem', { name: 'Operate' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('menuitem', { name: 'Make' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
+      'Back',
       'Diagrams',
       'Wireframes',
       'Names',
       'SEO',
-      'Organizations',
+    ]);
+
+    await user.click(screen.getByRole('menuitem', { name: 'Back' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Devices' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
+      'Back',
       'Connected PCs',
       'Download',
       'Browsers',
     ]);
-    expect(screen.getByRole('menuitem', { name: 'All tasks' })).toHaveTextContent(
-      'All tasks',
-    );
-    expect(
-      screen.queryByRole('menuitem', { name: 'Users' }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('menuitem', { name: 'Analytics' }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('menuitem', { name: 'Metrics' }),
-    ).not.toBeInTheDocument();
   });
 
-  it('includes Analytics then Metrics then Cloud then Logs then Machines then Users for an administrator', async () => {
+  it('shows Operate and Machines for an administrator', async () => {
     shellState.isAdmin = true;
     const user = userEvent.setup();
     render(
@@ -153,23 +164,31 @@ describe('MobileBoardFab Navigate labels', () => {
 
     await user.click(screen.getByRole('button', { name: 'Open actions' }));
     await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
-
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
       'Back',
-      'All tasks',
-      'Diagrams',
-      'Wireframes',
-      'Names',
-      'SEO',
+      'Make',
       'Organizations',
+      'Devices',
+      'Operate',
+    ]);
+
+    await user.click(screen.getByRole('menuitem', { name: 'Devices' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
+      'Back',
       'Connected PCs',
       'Download',
       'Browsers',
+      'Machines',
+    ]);
+
+    await user.click(screen.getByRole('menuitem', { name: 'Back' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Operate' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
+      'Back',
       'Analytics',
       'Metrics',
       'Cloud',
       'Logs',
-      'Machines',
       'Users',
     ]);
   });
@@ -230,6 +249,7 @@ describe('MobileBoardFab Navigate from All tasks', () => {
 
     await user.click(screen.getByRole('button', { name: 'Open actions' }));
     await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Make' }));
     await user.click(screen.getByRole('menuitem', { name: 'Diagrams' }));
 
     expect(screen.getByText('Diagrams page')).toBeInTheDocument();
@@ -252,7 +272,6 @@ describe('MobileBoardFab Navigate from All tasks', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Open actions' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Navigate' }));
     await user.click(screen.getByRole('menuitem', { name: 'All tasks' }));
 
     expect(screen.getByText('All tasks page')).toBeInTheDocument();

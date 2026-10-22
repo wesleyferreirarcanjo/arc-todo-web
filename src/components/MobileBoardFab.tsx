@@ -17,35 +17,29 @@ import { MobileQuickCreateSheet } from './MobileQuickCreateSheet';
 import { BoardStatusTabs } from './BoardStatusTabs';
 import { IosHapticHit } from './IosHapticHit';
 import {
+  primaryNav,
+  type NavGroupId,
+  type NavLinkEntry,
+} from '../lib/nav/primaryNav';
+import {
   BackIcon,
   BellIcon,
   ChatIcon,
-  CloudIcon,
-  ConnectedPcsIcon,
-  DiagramsIcon,
-  DownloadIcon,
   FilterIcon,
   FlaskIcon,
   InstallIcon,
-  LogsIcon,
   LogoutIcon,
   McpIcon,
   MoonIcon,
-  NamesIcon,
   NavigateIcon,
   SeoIcon,
   NewTaskIcon,
-  OrganizationsIcon,
   SettingsIcon,
   StorageIcon,
   SunIcon,
-  AnalyticsIcon,
-  TasksIcon,
-  UsersIcon,
-  WireframesIcon,
 } from './icons';
 
-type DialLevel = 'main' | 'nav' | 'settings';
+type DialLevel = 'main' | 'nav' | 'settings' | NavGroupId;
 
 type DialAction = {
   id: string;
@@ -142,8 +136,9 @@ export function MobileBoardFab() {
   }, [menuOpen, dialLevel]);
 
   const mainActions = useMemo((): DialAction[] => {
-    // Logout is first in the array so column-reverse CSS paints it last
-    // (bottom, closest to +). Do not flip `.mobile-board-fab-dial` flex-direction.
+    // Logout stays index 0 so column-reverse paints it closest to +.
+    // All tasks is index 1 so it paints just above Logout.
+    // Do not flip `.mobile-board-fab-dial` flex-direction.
     const items: DialAction[] = [
       {
         id: 'logout',
@@ -155,13 +150,29 @@ export function MobileBoardFab() {
           logout();
         },
       },
-      {
-        id: 'navigate',
-        label: 'Navigate',
-        icon: <NavigateIcon />,
-        onClick: () => setDialLevel('nav'),
-      },
     ];
+    const allTasks = primaryNav.find(
+      (entry): entry is NavLinkEntry =>
+        entry.kind === 'link' && entry.isolated === true,
+    );
+    if (allTasks) {
+      const AllTasksIcon = allTasks.icon;
+      items.push({
+        id: 'board',
+        label: allTasks.label,
+        icon: <AllTasksIcon />,
+        onClick: () => {
+          setMenuOpen(false);
+          navigate(allTasks.to);
+        },
+      });
+    }
+    items.push({
+      id: 'navigate',
+      label: 'Navigate',
+      icon: <NavigateIcon />,
+      onClick: () => setDialLevel('nav'),
+    });
     if (isBoardPage && actions?.openFilters) {
       items.push({
         id: 'filter',
@@ -252,6 +263,7 @@ export function MobileBoardFab() {
     isIos,
     isStandalone,
     logout,
+    navigate,
     optedIn,
     pushLoading,
     setChatOpen,
@@ -259,112 +271,50 @@ export function MobileBoardFab() {
     toggleTheme,
   ]);
 
-  const navActions = useMemo((): DialAction[] => {
+  const navLevels = useMemo(() => {
     const go = (path: string) => {
       setMenuOpen(false);
       navigate(path);
     };
-    const items: DialAction[] = [
-      {
-        id: 'nav-back',
-        label: 'Back',
-        icon: <BackIcon />,
-        onClick: () => setDialLevel('main'),
-      },
-      {
-        id: 'nav-board',
-        label: 'All tasks',
-        icon: <TasksIcon />,
-        onClick: () => go('/board'),
-      },
-      {
-        id: 'nav-diagrams',
-        label: 'Diagrams',
-        icon: <DiagramsIcon />,
-        onClick: () => go('/diagrams'),
-      },
-      {
-        id: 'nav-wireframes',
-        label: 'Wireframes',
-        icon: <WireframesIcon />,
-        onClick: () => go('/wireframes'),
-      },
-      {
-        id: 'nav-names',
-        label: 'Names',
-        icon: <NamesIcon />,
-        onClick: () => go('/names'),
-      },
-      {
-        id: 'nav-seo',
-        label: 'SEO',
-        icon: <SeoIcon />,
-        onClick: () => go('/seo'),
-      },
-      {
-        id: 'nav-organizations',
-        label: 'Organizations',
-        icon: <OrganizationsIcon />,
-        onClick: () => go('/organizations'),
-      },
-      {
-        id: 'nav-connected-machines',
-        label: 'Connected PCs',
-        icon: <ConnectedPcsIcon />,
-        onClick: () => go('/connected-machines'),
-      },
-      {
-        id: 'nav-download',
-        label: 'Download',
-        icon: <DownloadIcon />,
-        onClick: () => go('/download'),
-      },
-      {
-        id: 'nav-browsers',
-        label: 'Browsers',
-        icon: <LogsIcon />,
-        onClick: () => go('/browsers'),
-      },
-    ];
-    if (isAdmin) {
-      items.push({
-        id: 'nav-analytics',
-        label: 'Analytics',
-        icon: <AnalyticsIcon />,
-        onClick: () => go('/analytics'),
+    const back = (level: DialLevel): DialAction => ({
+      id: 'nav-back',
+      label: 'Back',
+      icon: <BackIcon />,
+      onClick: () => setDialLevel(level),
+    });
+    const linkAction = (entry: NavLinkEntry): DialAction => {
+      const Icon = entry.icon;
+      return {
+        id: `nav-${entry.to}`,
+        label: entry.label,
+        icon: <Icon />,
+        onClick: () => go(entry.to),
+      };
+    };
+    const nav: DialAction[] = [back('main')];
+    const groups: Partial<Record<NavGroupId, DialAction[]>> = {};
+    for (const entry of primaryNav) {
+      if (entry.adminOnly && !isAdmin) continue;
+      if (entry.kind === 'link') {
+        if (entry.isolated) continue;
+        nav.push(linkAction(entry));
+        continue;
+      }
+      const Icon = entry.icon;
+      nav.push({
+        id: `nav-${entry.id}`,
+        label: entry.label,
+        icon: <Icon />,
+        onClick: () => setDialLevel(entry.id),
       });
-      items.push({
-        id: 'nav-metrics',
-        label: 'Metrics',
-        icon: <AnalyticsIcon />,
-        onClick: () => go('/metrics'),
-      });
-      items.push({
-        id: 'nav-cloud',
-        label: 'Cloud',
-        icon: <CloudIcon />,
-        onClick: () => go('/cloud'),
-      });
-      items.push({
-        id: 'nav-logs',
-        label: 'Logs',
-        icon: <LogsIcon />,
-        onClick: () => go('/logs'),
-      });
-      items.push({
-        id: 'nav-machines',
-        label: 'Machines',
-        icon: <DownloadIcon />,
-        onClick: () => go('/admin/devices'),
-      });
-      items.push({
-        id: 'nav-users',
-        label: 'Users',
-        icon: <UsersIcon />,
-        onClick: () => go('/admin/users'),
-      });
+      groups[entry.id] = [
+        back('nav'),
+        ...entry.children
+          .filter((child) => !child.adminOnly || isAdmin)
+          .map(linkAction),
+      ];
     }
-    return items;
+    return { nav, groups };
   }, [isAdmin, navigate]);
 
   const settingsActions = useMemo((): DialAction[] => {
@@ -430,19 +380,32 @@ export function MobileBoardFab() {
   const visibleStatusTabs = isBoardShell ? statusTabs : null;
   const visibleModeTabs = isNamesSession ? modeTabs : null;
   const hasBarTabs = Boolean(visibleStatusTabs || visibleModeTabs);
+  const isListLevel =
+    dialLevel === 'nav' ||
+    dialLevel === 'make' ||
+    dialLevel === 'devices' ||
+    dialLevel === 'operate';
   const dialActions =
     dialLevel === 'nav'
-      ? navActions
+      ? navLevels.nav
       : dialLevel === 'settings'
         ? settingsActions
-        : mainActions;
+        : dialLevel === 'make' || dialLevel === 'devices' || dialLevel === 'operate'
+          ? navLevels.groups[dialLevel] ?? []
+          : mainActions;
   const dialKey = dialLevel;
   const dialAriaLabel =
     dialLevel === 'nav'
       ? 'Main navigation'
-      : dialLevel === 'settings'
-        ? 'Settings actions'
-        : 'Board actions';
+      : dialLevel === 'make'
+        ? 'Make'
+        : dialLevel === 'devices'
+          ? 'Devices'
+          : dialLevel === 'operate'
+            ? 'Operate'
+            : dialLevel === 'settings'
+              ? 'Settings actions'
+              : 'Board actions';
 
   return (
     <>
@@ -496,9 +459,7 @@ export function MobileBoardFab() {
         }${visibleModeTabs ? ' has-mode-tabs' : ''}`}
       >
         <div
-          className={`mobile-board-fab-dial${
-            dialLevel === 'nav' ? ' is-nav-list' : ''
-          }`}
+          className={`mobile-board-fab-dial${isListLevel ? ' is-nav-list' : ''}`}
           role="menu"
           aria-label={dialAriaLabel}
         >
@@ -507,7 +468,7 @@ export function MobileBoardFab() {
                 <DialActionButton
                   key={`${dialKey}-${action.id}`}
                   action={action}
-                  labeled={dialLevel === 'nav'}
+                  labeled={isListLevel}
                 />
               ))
             : null}

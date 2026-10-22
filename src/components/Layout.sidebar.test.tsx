@@ -1,5 +1,6 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const authState = vi.hoisted(() => ({
@@ -51,8 +52,19 @@ vi.mock('./ThemeToggle', () => ({ ThemeToggle: () => null }));
 
 import { Layout } from './Layout';
 
+function OutletProbe() {
+  const location = useLocation();
+  return <div data-testid="outlet-path">{location.pathname}</div>;
+}
+
+function navLabels() {
+  const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+  return [...nav.querySelectorAll('.sidebar-nav-label')].map((node) => node.textContent);
+}
+
 afterEach(() => {
   cleanup();
+  localStorage.removeItem('arc_todo_sidebar_collapsed');
   authState.isAdmin = false;
   workspace.organizations = [];
   workspace.projects = [];
@@ -62,12 +74,13 @@ afterEach(() => {
   workspace.currentProject = null;
 });
 
-function renderLayout(path = '/board') {
+function renderLayout(path = '/board', expanded = false) {
+  localStorage.setItem('arc_todo_sidebar_collapsed', expanded ? 'false' : 'true');
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/board" element={<div>Board</div>} />
+          <Route path="*" element={<OutletProbe />} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -121,30 +134,28 @@ describe('Layout sidebar identity', () => {
 
   it('shows Analytics before Users for an administrator', () => {
     authState.isAdmin = true;
-    renderLayout();
-    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
-    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
-      (node) => node.textContent,
-    );
+    renderLayout('/analytics', true);
+    const labels = navLabels();
     expect(labels).toContain('Analytics');
     expect(labels).toContain('Users');
     expect(labels.indexOf('Analytics')).toBeLessThan(labels.indexOf('Users'));
-    expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Browsers'));
-    expect(labels.indexOf('Browsers')).toBeLessThan(labels.indexOf('Analytics'));
+    expect(screen.getByRole('button', { name: 'Operate' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
   });
 
   it('hides Analytics from a project member', () => {
     renderLayout();
     expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Operate' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Machines' })).not.toBeInTheDocument();
   });
 
   it('shows SEO after Names for a project member', () => {
-    renderLayout();
-    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
-    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
-      (node) => node.textContent,
-    );
+    renderLayout('/diagrams', true);
+    const labels = navLabels();
     expect(labels).toContain('SEO');
     expect(labels.indexOf('Names')).toBeLessThan(labels.indexOf('SEO'));
     expect(labels.indexOf('SEO')).toBeLessThan(labels.indexOf('Organizations'));
@@ -152,11 +163,8 @@ describe('Layout sidebar identity', () => {
   });
 
   it('shows Download after Organizations for a project member', () => {
-    renderLayout();
-    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
-    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
-      (node) => node.textContent,
-    );
+    renderLayout('/download', true);
+    const labels = navLabels();
     expect(labels).toContain('Download');
     expect(labels.indexOf('Organizations')).toBeLessThan(labels.indexOf('Download'));
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
@@ -166,11 +174,8 @@ describe('Layout sidebar identity', () => {
   });
 
   it('shows Browsers after Download for a project member', () => {
-    renderLayout();
-    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
-    const labels = [...nav.querySelectorAll('.sidebar-nav-label')].map(
-      (node) => node.textContent,
-    );
+    renderLayout('/browsers', true);
+    const labels = navLabels();
     expect(labels).toContain('Browsers');
     expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Browsers'));
     expect(screen.getByRole('link', { name: 'Browsers' })).toHaveAttribute(
@@ -178,9 +183,11 @@ describe('Layout sidebar identity', () => {
       '/browsers',
     );
     expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Machines' })).not.toBeInTheDocument();
   });
 
   it('keeps Download current on the evidence lab', () => {
+    localStorage.setItem('arc_todo_sidebar_collapsed', 'false');
     render(
       <MemoryRouter initialEntries={['/download/extension-lab']}>
         <Routes>
@@ -198,5 +205,80 @@ describe('Layout sidebar identity', () => {
       'sidebar-nav-link',
       'active',
     );
+  });
+
+  it('opens Make on diagrams and hides Operate for a member', async () => {
+    const user = userEvent.setup();
+    renderLayout('/diagrams', true);
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const allTasks = within(nav).getByRole('link', { name: 'All tasks' });
+    const separator = within(nav).getByRole('separator');
+    expect(
+      allTasks.compareDocumentPosition(separator) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const make = screen.getByRole('button', { name: 'Make' });
+    expect(make).toHaveAttribute('aria-expanded', 'true');
+    expect(make).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'Diagrams' })).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'Wireframes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Names' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'SEO' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Organizations' })).toHaveAttribute(
+      'href',
+      '/organizations',
+    );
+    expect(screen.queryByRole('button', { name: 'Operate' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Connected PCs' })).not.toBeInTheDocument();
+
+    await user.click(make);
+    expect(screen.getByRole('button', { name: 'Make' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Make' })).toHaveClass('active');
+    expect(screen.queryByRole('link', { name: 'Diagrams' })).not.toBeInTheDocument();
+  });
+
+  it('keeps groups closed on All tasks', () => {
+    renderLayout('/board', true);
+    expect(screen.getByRole('link', { name: 'All tasks' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: 'Make' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Devices' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByRole('link', { name: 'Diagrams' })).not.toBeInTheDocument();
+  });
+
+  it('opens Operate on Cloud for an administrator', () => {
+    authState.isAdmin = true;
+    renderLayout('/cloud', true);
+    const operate = screen.getByRole('button', { name: 'Operate' });
+    expect(operate).toHaveAttribute('aria-expanded', 'true');
+    expect(operate).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'Cloud' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: 'Make' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('opens a labeled Make list from the collapsed rail without navigating', async () => {
+    const user = userEvent.setup();
+    renderLayout('/board');
+    await user.click(screen.getByRole('button', { name: 'Make' }));
+    expect(screen.getByTestId('outlet-path')).toHaveTextContent('/board');
+    for (const label of ['Diagrams', 'Wireframes', 'Names', 'SEO']) {
+      expect(screen.getByText(label)).toBeVisible();
+    }
+  });
+
+  it('keeps Diagrams current on a project hub', () => {
+    renderLayout('/organizations/org-1/projects/proj-1/diagrams', true);
+    expect(screen.getByRole('button', { name: 'Make' })).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'Diagrams' })).toHaveClass('active');
   });
 });

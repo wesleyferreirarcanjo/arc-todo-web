@@ -145,6 +145,40 @@ export function TasksIcon({ className = 'arc-icon' }: ArcIconProps) {
   );
 }
 
+export function MakeIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <rect {...mass} x="3.2" y="3.2" width="7.2" height="7.2" rx="1.8" />
+      <rect x="3.2" y="3.2" width="7.2" height="7.2" rx="1.8" />
+      <rect x="13.6" y="3.2" width="7.2" height="7.2" rx="1.8" />
+      <rect x="3.2" y="13.6" width="7.2" height="7.2" rx="1.8" />
+      <rect x="13.6" y="13.6" width="7.2" height="7.2" rx="1.8" />
+    </DuotoneIcon>
+  );
+}
+
+export function DevicesIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <rect {...mass} x="3.5" y="4" width="17" height="11" rx="1.6" />
+      <rect x="3.5" y="4" width="17" height="11" rx="1.6" />
+      <path d="M12 15v4.2M9 19.2h6" />
+    </DuotoneIcon>
+  );
+}
+
+export function OperateIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <path {...mass} d="M4.6 15.8a7.4 7.4 0 0 1 14.8 0" />
+      <path d="M4.6 15.8a7.4 7.4 0 0 1 14.8 0" />
+      <path d="M12 15.8 16.2 8.8" />
+      <circle {...mass} cx="12" cy="15.8" r="1.35" />
+      <circle cx="12" cy="15.8" r="1.35" />
+    </DuotoneIcon>
+  );
+}
+
 export function DiagramsIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>

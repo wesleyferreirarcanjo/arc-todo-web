@@ -20,38 +20,52 @@ import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { isBoardShellPath } from '../lib/board/boardShellPath';
 import { contrastInk } from '../lib/brand/brandMark';
 import {
+  groupForPath,
+  isEntryActive,
+  isLinkActive,
+  visibleNav,
+  type NavGroupId,
+  type NavLinkEntry,
+  type PrimaryNavEntry,
+} from '../lib/nav/primaryNav';
+import {
   BrandMarkIcon,
   ChatbotIcon,
   ChevronIcon,
-  CloudIcon,
   ConfigIcon,
-  ConnectedPcsIcon,
-  DiagramsIcon,
-  LogsIcon,
   LogoutIcon,
   McpIcon,
-  NamesIcon,
-  OrganizationsIcon,
   SeoIcon,
   StorageIcon,
-  TasksIcon,
-  AnalyticsIcon,
-  DownloadIcon,
-  UsersIcon,
-  WireframesIcon,
 } from './icons';
 
-const primaryNav = [
-  { to: '/board', label: 'All tasks', icon: TasksIcon },
-  { to: '/diagrams', label: 'Diagrams', icon: DiagramsIcon },
-  { to: '/wireframes', label: 'Wireframes', icon: WireframesIcon },
-  { to: '/names', label: 'Names', icon: NamesIcon },
-  { to: '/seo', label: 'SEO', icon: SeoIcon },
-  { to: '/organizations', label: 'Organizations', icon: OrganizationsIcon, end: true as const },
-  { to: '/connected-machines', label: 'Connected PCs', icon: ConnectedPcsIcon },
-  { to: '/download', label: 'Download', icon: DownloadIcon },
-  { to: '/browsers', label: 'Browsers', icon: LogsIcon },
-] as const;
+function SidebarNavLink({
+  entry,
+  pathname,
+  tooltip,
+  onNavigate,
+}: {
+  entry: NavLinkEntry;
+  pathname: string;
+  tooltip: boolean;
+  onNavigate?: () => void;
+}) {
+  const Icon = entry.icon;
+  const active = isLinkActive(entry, pathname);
+  return (
+    <NavLink
+      to={entry.to}
+      end={entry.end}
+      aria-label={entry.label}
+      data-tooltip={tooltip ? entry.label : undefined}
+      className={() => (active ? 'sidebar-nav-link active' : 'sidebar-nav-link')}
+      onClick={onNavigate}
+    >
+      <Icon className="sidebar-nav-icon" />
+      <span className="sidebar-nav-label">{entry.label}</span>
+    </NavLink>
+  );
+}
 
 export function Layout() {
   useDocumentChrome();
@@ -60,16 +74,30 @@ export function Layout() {
   const location = useLocation();
   const settingsRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [collapsed, setCollapsed] = useState(getSidebarCollapsed);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [navPath, setNavPath] = useState(location.pathname);
+  const [groupOverride, setGroupOverride] = useState<NavGroupId | null | undefined>(
+    undefined,
+  );
+  const [collapsedFlyout, setCollapsedFlyout] = useState<NavGroupId | null>(null);
   const isSettingsPage = location.pathname.startsWith('/settings');
-  const isAdminUsersPage = location.pathname.startsWith('/admin/users');
-  const isAnalyticsPage = location.pathname.startsWith('/analytics');
-  const isMetricsPage = location.pathname.startsWith('/metrics');
-  const isCloudPage = location.pathname.startsWith('/cloud');
-  const isLogsPage = location.pathname.startsWith('/logs');
   const isBoardShell = isBoardShellPath(location.pathname);
+  const entries = visibleNav(isAdmin);
+
+  if (navPath !== location.pathname) {
+    // A route change drops the manual open/closed choice so the current page's group starts open.
+    setNavPath(location.pathname);
+    setGroupOverride(undefined);
+    setCollapsedFlyout(null);
+  }
+
+  const openGroupId =
+    groupOverride === undefined
+      ? groupForPath(location.pathname, isAdmin)
+      : groupOverride;
 
   useEffect(() => {
     const sidebar = sidebarRef.current;
@@ -118,19 +146,24 @@ export function Layout() {
   }, [collapsed]);
 
   useEffect(() => {
-    if (!settingsOpen) {
+    if (!settingsOpen && !collapsedFlyout) {
       return;
     }
 
     function handlePointerDown(event: MouseEvent) {
-      if (!settingsRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (settingsOpen && !settingsRef.current?.contains(target)) {
         closeSettingsMenu();
+      }
+      if (collapsedFlyout && !navRef.current?.contains(target)) {
+        setCollapsedFlyout(null);
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         closeSettingsMenu();
+        setCollapsedFlyout(null);
       }
     }
 
@@ -140,7 +173,7 @@ export function Layout() {
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [settingsOpen]);
+  }, [settingsOpen, collapsedFlyout]);
 
   function toggleSidebar() {
     setCollapsed((prev) => {
@@ -148,9 +181,68 @@ export function Layout() {
       setSidebarCollapsed(next);
       if (next) {
         closeSettingsMenu();
+        setCollapsedFlyout(null);
       }
       return next;
     });
+  }
+
+  function toggleGroup(id: NavGroupId) {
+    if (collapsed) {
+      closeSettingsMenu();
+      setCollapsedFlyout((current) => (current === id ? null : id));
+      return;
+    }
+    setGroupOverride(openGroupId === id ? null : id);
+  }
+
+  function renderNavEntry(entry: PrimaryNavEntry) {
+    if (entry.kind === 'link') {
+      return (
+        <SidebarNavLink
+          key={entry.to}
+          entry={entry}
+          pathname={location.pathname}
+          tooltip={collapsed}
+        />
+      );
+    }
+
+    const open = collapsed ? collapsedFlyout === entry.id : openGroupId === entry.id;
+    const active = isEntryActive(entry, location.pathname);
+    const Icon = entry.icon;
+    return (
+      <div key={entry.id} className="sidebar-nav-group">
+        <button
+          type="button"
+          className={`sidebar-nav-link${active ? ' active' : ''}`}
+          aria-expanded={open}
+          aria-label={entry.label}
+          data-tooltip={collapsed && !open ? entry.label : undefined}
+          onClick={() => toggleGroup(entry.id)}
+        >
+          <Icon className="sidebar-nav-icon" />
+          <span className="sidebar-nav-label">{entry.label}</span>
+        </button>
+        {open ? (
+          <div
+            className={collapsed ? 'sidebar-nav-flyout' : 'sidebar-nav-group-children'}
+            role={collapsed ? 'group' : undefined}
+            aria-label={collapsed ? entry.label : undefined}
+          >
+            {entry.children.map((child) => (
+              <SidebarNavLink
+                key={child.to}
+                entry={child}
+                pathname={location.pathname}
+                tooltip={false}
+                onNavigate={collapsed ? () => setCollapsedFlyout(null) : undefined}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -190,141 +282,18 @@ export function Layout() {
             </button>
           </div>
 
-          <nav className="sidebar-primary-nav" aria-label="Main navigation">
-            {primaryNav.map(({ to, label, icon: NavIcon, ...rest }) => (
-              <NavLink
-                key={to}
-                to={to}
-                aria-label={label}
-                data-tooltip={collapsed ? label : undefined}
-                className={({ isActive }) => {
-                  const diagramsActive =
-                    to === '/diagrams' &&
-                    (location.pathname === '/diagrams' ||
-                      /\/projects\/[^/]+\/diagrams(?:\/|$)/.test(
-                        location.pathname,
-                      ));
-                  const wireframesActive =
-                    to === '/wireframes' &&
-                    (location.pathname === '/wireframes' ||
-                      /\/projects\/[^/]+\/wireframes(?:\/|$)/.test(
-                        location.pathname,
-                      ));
-                  const namesActive =
-                    to === '/names' &&
-                    (location.pathname === '/names' ||
-                      location.pathname.startsWith('/names/') ||
-                      /\/projects\/[^/]+\/names(?:\/|$)/.test(
-                        location.pathname,
-                      ));
-                  const seoActive =
-                    to === '/seo' &&
-                    (location.pathname === '/seo' ||
-                      /\/projects\/[^/]+\/seo(?:\/|$)/.test(
-                        location.pathname,
-                      ));
-                  return isActive ||
-                    diagramsActive ||
-                    wireframesActive ||
-                    namesActive ||
-                    seoActive
-                    ? 'sidebar-nav-link active'
-                    : 'sidebar-nav-link';
-                }}
-                {...rest}
-              >
-                <NavIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">{label}</span>
-              </NavLink>
-            ))}
-            {isAdmin && (
-              <NavLink
-                to="/analytics"
-                aria-label="Analytics"
-                data-tooltip={collapsed ? 'Analytics' : undefined}
-                className={({ isActive }) =>
-                  isActive || isAnalyticsPage
-                    ? 'sidebar-nav-link active'
-                    : 'sidebar-nav-link'
-                }
-              >
-                <AnalyticsIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">Analytics</span>
-              </NavLink>
-            )}
-            {isAdmin && (
-              <NavLink
-                to="/metrics"
-                aria-label="Metrics"
-                data-tooltip={collapsed ? 'Metrics' : undefined}
-                className={({ isActive }) =>
-                  isActive || isMetricsPage
-                    ? 'sidebar-nav-link active'
-                    : 'sidebar-nav-link'
-                }
-              >
-                <AnalyticsIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">Metrics</span>
-              </NavLink>
-            )}
-            {isAdmin && (
-              <NavLink
-                to="/cloud"
-                aria-label="Cloud"
-                data-tooltip={collapsed ? 'Cloud' : undefined}
-                className={({ isActive }) =>
-                  isActive || isCloudPage
-                    ? 'sidebar-nav-link active'
-                    : 'sidebar-nav-link'
-                }
-              >
-                <CloudIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">Cloud</span>
-              </NavLink>
-            )}
-            {isAdmin && (
-              <NavLink
-                to="/logs"
-                aria-label="Logs"
-                data-tooltip={collapsed ? 'Logs' : undefined}
-                className={({ isActive }) =>
-                  isActive || isLogsPage
-                    ? 'sidebar-nav-link active'
-                    : 'sidebar-nav-link'
-                }
-              >
-                <LogsIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">Logs</span>
-              </NavLink>
-            )}
-            {isAdmin && (
-              <NavLink
-                to="/admin/devices"
-                aria-label="Machines"
-                data-tooltip={collapsed ? 'Machines' : undefined}
-                className={({ isActive }) =>
-                  isActive ? 'sidebar-nav-link active' : 'sidebar-nav-link'
-                }
-              >
-                <DownloadIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">Machines</span>
-              </NavLink>
-            )}
-            {isAdmin && (
-              <NavLink
-                to="/admin/users"
-                aria-label="Users"
-                data-tooltip={collapsed ? 'Users' : undefined}
-                className={({ isActive }) =>
-                  isActive || isAdminUsersPage
-                    ? 'sidebar-nav-link active'
-                    : 'sidebar-nav-link'
-                }
-              >
-                <UsersIcon className="sidebar-nav-icon" />
-                <span className="sidebar-nav-label">Users</span>
-              </NavLink>
-            )}
+          <nav
+            ref={navRef}
+            className="sidebar-primary-nav"
+            aria-label="Main navigation"
+          >
+            {entries
+              .filter((entry) => entry.kind === 'link' && entry.isolated)
+              .map((entry) => renderNavEntry(entry))}
+            <hr className="sidebar-nav-divider" />
+            {entries
+              .filter((entry) => !(entry.kind === 'link' && entry.isolated))
+              .map((entry) => renderNavEntry(entry))}
           </nav>
 
           <div className="sidebar-footer">
@@ -341,7 +310,10 @@ export function Layout() {
                 aria-haspopup="menu"
                 aria-label="Settings"
                 data-tooltip={collapsed ? 'Settings' : undefined}
-                onClick={() => setSettingsOpen((open) => !open)}
+                onClick={() => {
+                  setCollapsedFlyout(null);
+                  setSettingsOpen((open) => !open);
+                }}
               >
                 <ConfigIcon className="sidebar-settings-icon" />
                 {!collapsed && <span className="sidebar-nav-label">Settings</span>}
