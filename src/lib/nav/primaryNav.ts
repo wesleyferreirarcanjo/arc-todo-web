@@ -153,7 +153,7 @@ export function isEntryActive(entry: PrimaryNavEntry, pathname: string): boolean
 }
 
 export function visibleNav(isAdmin: boolean): PrimaryNavEntry[] {
-  return primaryNav.flatMap((entry) => {
+  return primaryNav.flatMap((entry): PrimaryNavEntry[] => {
     if (entry.adminOnly && !isAdmin) return [];
     if (entry.kind === 'link') return [entry];
     return [
