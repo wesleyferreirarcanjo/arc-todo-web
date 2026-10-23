@@ -1,7 +1,7 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { SeoFindings } from '../components/seo/SeoFindings';
 import { SeoKeywordsResearch } from '../components/seo/SeoKeywordsResearch';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
@@ -17,23 +17,24 @@ import {
 } from '../lib/api/seo';
 import type { SeoAudit, SeoGscRow, SeoSite } from '../types/seo';
 
-const TABS = [
-  'audit',
-  'keywords',
-  'rank',
-  'backlinks',
-  'competitors',
-  'ai',
-] as const;
+const TABS = ['audit', 'keywords', 'rank'] as const;
+const HIDDEN_TABS = ['backlinks', 'competitors', 'ai'] as const;
 
-const TAB_LABELS: Record<(typeof TABS)[number], string> = {
+type SeoTab = (typeof TABS)[number];
+
+const TAB_LABELS: Record<SeoTab, string> = {
   audit: 'Audit',
   keywords: 'Keywords',
   rank: 'Rank tracking',
-  backlinks: 'Backlinks',
-  competitors: 'Competitors',
-  ai: 'AI visibility',
 };
+
+function isVisibleTab(value: string | null): value is SeoTab {
+  return value != null && (TABS as readonly string[]).includes(value);
+}
+
+function isHiddenTab(value: string | null): boolean {
+  return value != null && (HIDDEN_TABS as readonly string[]).includes(value);
+}
 
 const KEYWORD_SEGMENTS = ['research', 'gsc'] as const;
 
@@ -124,12 +125,16 @@ function GscTable({
 
 export function SeoSitePage() {
   const { orgId, projectId, siteId } = useParams();
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const { currentProject } = useWorkspace();
   const [site, setSite] = useState<SeoSite | null>(null);
   const [audit, setAudit] = useState<SeoAudit | null>(null);
   const [keywords, setKeywords] = useState<SeoGscRow[]>([]);
   const [pages, setPages] = useState<SeoGscRow[]>([]);
-  const [tab, setTab] = useState<(typeof TABS)[number]>('audit');
+  const [tab, setTab] = useState<SeoTab>(() =>
+    isVisibleTab(requestedTab) ? requestedTab : 'audit',
+  );
   const [keywordSegment, setKeywordSegment] =
     useState<(typeof KEYWORD_SEGMENTS)[number]>('research');
   const [loading, setLoading] = useState(true);
@@ -262,6 +267,12 @@ export function SeoSitePage() {
 
   if (!orgId || !projectId || !siteId) {
     return <Navigate to="/seo" replace />;
+  }
+
+  if (isHiddenTab(requestedTab)) {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', 'audit');
+    return <Navigate to={{ search: `?${next.toString()}` }} replace />;
   }
 
   if (forbidden) {
@@ -489,33 +500,6 @@ export function SeoSitePage() {
                   empty="No Search Console page positions in this range yet."
                 />
               )}
-            </section>
-          )}
-
-          {tab === 'backlinks' && (
-            <section className="names-panel">
-              <p className="status-message">
-                Backlink data is not configured yet. This tab does not invent
-                referring domains or fake authority scores.
-              </p>
-            </section>
-          )}
-
-          {tab === 'competitors' && (
-            <section className="names-panel">
-              <p className="status-message">
-                Competitor tracking is not configured yet. No invented competitor
-                lists or overlap scores.
-              </p>
-            </section>
-          )}
-
-          {tab === 'ai' && (
-            <section className="names-panel">
-              <p className="status-message">
-                AI visibility is not configured yet. This tab does not invent
-                citations or answer-engine rankings.
-              </p>
             </section>
           )}
         </>

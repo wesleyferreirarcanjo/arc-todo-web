@@ -19,13 +19,21 @@ describe('SEO hub, workspace, and settings (#arc-392)', () => {
     expect(hub).toContain('Select project');
   });
 
-  it('opens a six-tab workspace with Run audit and Connect Search Console', () => {
+  it('opens a three-tab workspace with Run audit and Connect Search Console', () => {
+    const tabsBlock = site.match(/const TABS = \[([\s\S]*?)\] as const/)?.[1] ?? '';
+    expect(tabsBlock).toContain("'audit'");
+    expect(tabsBlock).toContain("'keywords'");
+    expect(tabsBlock).toContain("'rank'");
+    expect(tabsBlock).not.toContain('backlinks');
+    expect(tabsBlock).not.toContain('competitors');
+    expect(tabsBlock).not.toContain("'ai'");
     expect(site).toContain("audit: 'Audit'");
     expect(site).toContain("keywords: 'Keywords'");
     expect(site).toContain("rank: 'Rank tracking'");
-    expect(site).toContain("backlinks: 'Backlinks'");
-    expect(site).toContain("competitors: 'Competitors'");
-    expect(site).toContain("ai: 'AI visibility'");
+    expect(site).not.toContain("backlinks: 'Backlinks'");
+    expect(site).not.toContain("competitors: 'Competitors'");
+    expect(site).not.toContain("ai: 'AI visibility'");
+    expect(site).toContain("set('tab', 'audit')");
     expect(site).toContain('Run audit');
     expect(site).toContain('Connect Search Console');
     expect(site).toContain('does not invent');
