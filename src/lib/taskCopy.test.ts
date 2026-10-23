@@ -160,12 +160,18 @@ describe('formatTasksBatchSmartCopyText', () => {
     expect(text).toContain('own subagent');
     expect(text).toContain('in parallel');
     expect(text).toContain('## Execute — features / tasks');
-    expect(text).toContain('Command: `arc-todo-execute-batch-all-waves`');
-    expect(text).toContain('ships at the end');
+    expect(text).toContain('Command: `arc-todo-batch-execute`');
+    expect(text).toContain('no confirm step');
+    expect(text).toContain('same-file overlap is allowed');
+    expect(text).toContain('/push-deploy');
     expect(text).toContain('## Execute — bug fixes / retests');
-    expect(text).toContain('Command: `arc-todo-batch-execute-bugs`');
     expect(text).toContain('## Improve — missing QA checklist');
-    expect(text).toContain('Command: `arc-todo-improve-task`');
+    expect(text).not.toContain('arc-todo-execute-batch-all-waves');
+    expect(text).not.toContain('arc-todo-batch-execute-bugs');
+    expect(text).not.toContain('arc-todo-batch-execute-tasks');
+    expect(text).not.toContain('arc-todo-improve-task');
+    expect(text).not.toContain('separate waves');
+    expect(text).not.toContain('ships at the end');
     expect(text).toContain('1. #arc-3 — Second batch task — has_subtasks: false');
     expect(text).toContain('1. #arc-1 — Add smart copy — has_subtasks: true');
     expect(text).toContain(

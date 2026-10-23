@@ -134,10 +134,9 @@ function formatBatchTaskRow(
 }
 
 /**
- * Multi-task Smart Copy for batch skills.
+ * Multi-task Smart Copy for `arc-todo-batch-execute`.
  * Manager-brief packet: the receiving agent runs one subagent per task,
- * grouped by command — execute features, execute bugs, improve tasks that
- * lack a QA checklist (empty `testDescription`).
+ * grouped into feature, bug, and improve sections (empty `testDescription`).
  * Throws if `items.length` is 0. No upper cap.
  */
 export function formatTasksBatchSmartCopyText(
@@ -159,9 +158,8 @@ export function formatTasksBatchSmartCopyText(
     '# Arc Todo Batch Smart Copy',
     '',
     'You are the manager agent for this batch. Each task below runs in its own subagent — you know what each subagent is doing and report a combined index when they return.',
-    'Run as many subagents in parallel as possible without conflicts: tasks whose plans touch the same files, modules, or parent run in separate waves.',
-    'Run every section below together; each section names the command its subagents use.',
-    'Finish with `arc-todo-execute-batch-all-waves` for the feature batch — it runs every wave unattended, reconciles each wave, and ships at the end.',
+    'Run `arc-todo-batch-execute` for any mix of sections. Invocation is the go-ahead: no confirm step, no continue.',
+    'Spawn every independent card in parallel at once, each worker in its own git worktree. Only hard dependencies (`[after #N]`, `Depends on #...`) wait; same-file overlap is allowed. Parent merges via one merge worker. Bugs stay flagged until a successful /push-deploy.',
     '',
     'Do not treat this paste as the execution plan. Each subagent retrieves its live plan with Arc Todo MCP:',
     'get_task(task_id="<display_id>", include="plan")',
@@ -171,7 +169,7 @@ export function formatTasksBatchSmartCopyText(
     lines.push(
       '',
       '## Execute — features / tasks',
-      'Command: `arc-todo-execute-batch-all-waves`',
+      'Command: `arc-todo-batch-execute`',
       ...features.map((item, index) => formatBatchTaskRow(item, index)),
     );
   }
@@ -180,7 +178,7 @@ export function formatTasksBatchSmartCopyText(
     lines.push(
       '',
       '## Execute — bug fixes / retests',
-      'Command: `arc-todo-batch-execute-bugs`',
+      'Command: `arc-todo-batch-execute`',
       ...bugs.map((item, index) => formatBatchTaskRow(item, index)),
       '',
       'Bug subagents also fetch include="qa" plus comments/evidence before fixing.',
@@ -191,7 +189,7 @@ export function formatTasksBatchSmartCopyText(
     lines.push(
       '',
       '## Improve — missing QA checklist',
-      'Command: `arc-todo-improve-task` (one subagent per task)',
+      'Command: `arc-todo-batch-execute`',
       ...improve.map((item, index) =>
         formatBatchTaskRow(item, index, 'missing: qa_checklist'),
       ),
