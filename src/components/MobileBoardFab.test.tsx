@@ -148,13 +148,12 @@ describe('MobileBoardFab Navigate labels', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Devices' }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
       'Back',
-      'Connected PCs',
+      'Devices',
       'Download',
-      'Browsers',
     ]);
   });
 
-  it('shows Operate and Machines for an administrator', async () => {
+  it('shows Operate for an administrator and hides Machines', async () => {
     shellState.isAdmin = true;
     const user = userEvent.setup();
     render(
@@ -176,10 +175,8 @@ describe('MobileBoardFab Navigate labels', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Devices' }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
       'Back',
-      'Connected PCs',
+      'Devices',
       'Download',
-      'Browsers',
-      'Machines',
     ]);
 
     await user.click(screen.getByRole('menuitem', { name: 'Back' }));

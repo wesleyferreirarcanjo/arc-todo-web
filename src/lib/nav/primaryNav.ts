@@ -3,7 +3,6 @@ import type { ArcIconProps } from '../../components/icons';
 import {
   AnalyticsIcon,
   CloudIcon,
-  ConnectedPcsIcon,
   DevicesIcon,
   DiagramsIcon,
   DownloadIcon,
@@ -118,19 +117,8 @@ export const primaryNav: PrimaryNavEntry[] = [
     label: 'Devices',
     icon: DevicesIcon,
     children: [
-      link({
-        to: '/connected-machines',
-        label: 'Connected PCs',
-        icon: ConnectedPcsIcon,
-      }),
+      link({ to: '/devices', label: 'Devices', icon: DevicesIcon }),
       link({ to: '/download', label: 'Download', icon: DownloadIcon }),
-      link({ to: '/browsers', label: 'Browsers', icon: LogsIcon }),
-      link({
-        to: '/admin/devices',
-        label: 'Machines',
-        icon: DownloadIcon,
-        adminOnly: true,
-      }),
     ],
   },
   {

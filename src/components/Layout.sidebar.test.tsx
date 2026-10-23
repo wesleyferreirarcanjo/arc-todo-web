@@ -173,17 +173,23 @@ describe('Layout sidebar identity', () => {
     );
   });
 
-  it('shows Browsers after Download for a project member', () => {
-    renderLayout('/browsers', true);
+  it('shows Devices then Download for a project member', () => {
+    renderLayout('/devices', true);
     const labels = navLabels();
-    expect(labels).toContain('Browsers');
-    expect(labels.indexOf('Download')).toBeLessThan(labels.indexOf('Browsers'));
-    expect(screen.getByRole('link', { name: 'Browsers' })).toHaveAttribute(
+    expect(labels).toContain('Devices');
+    expect(labels).toContain('Download');
+    expect(screen.getByRole('link', { name: 'Devices' })).toHaveAttribute(
       'href',
-      '/browsers',
+      '/devices',
     );
-    expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
+      'href',
+      '/download',
+    );
+    expect(screen.queryByRole('link', { name: 'Browsers' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Connected PCs' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Machines' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
   });
 
   it('keeps Download current on the evidence lab', () => {

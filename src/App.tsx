@@ -8,9 +8,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { RecordingIndicator } from './components/videos/RecordingIndicator';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { ConnectMachinePage } from './pages/ConnectMachinePage';
-import { ConnectedMachinesPage } from './pages/ConnectedMachinesPage';
 import { DesktopConnectPage } from './pages/DesktopConnectPage';
-import { DeviceControlPage } from './pages/DeviceControlPage';
+import { DevicesPage } from './pages/DevicesPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MetricsPage } from './pages/MetricsPage';
 import { CloudPage } from './pages/CloudPage';
@@ -19,7 +18,6 @@ import { AllTasksBoardPage } from './pages/AllTasksBoardPage';
 import { ChatbotSettingsPage } from './pages/ChatbotSettingsPage';
 import { ChatbotTestingPage } from './pages/ChatbotTestingPage';
 import { DiagramsHubPage } from './pages/DiagramsHubPage';
-import { BrowsersPage } from './pages/BrowsersPage';
 import { DownloadPage } from './pages/DownloadPage';
 import { ExtensionLabPage } from './pages/ExtensionLabPage';
 import { LoginPage } from './pages/LoginPage';
@@ -107,23 +105,30 @@ export default function App() {
                 <Route path="/names/:sessionId" element={<NameSessionPage />} />
                 <Route path="/seo" element={<SeoHubPage />} />
                 <Route path="/organizations" element={<OrganizationsPage />} />
+                <Route path="/devices" element={<DevicesPage />} />
+                <Route
+                  path="/browsers"
+                  element={<Navigate to="/devices" replace />}
+                />
                 <Route
                   path="/connected-machines"
-                  element={<ConnectedMachinesPage />}
+                  element={<Navigate to="/devices" replace />}
                 />
                 <Route path="/download" element={<DownloadPage />} />
                 <Route
                   path="/download/extension-lab"
                   element={<ExtensionLabPage />}
                 />
-                <Route path="/browsers" element={<BrowsersPage />} />
                 <Route element={<AdminRoute />}>
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/metrics" element={<MetricsPage />} />
                   <Route path="/cloud" element={<CloudPage />} />
                   <Route path="/logs" element={<LogsPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />
-                  <Route path="/admin/devices" element={<DeviceControlPage />} />
+                  <Route
+                    path="/admin/devices"
+                    element={<Navigate to="/devices" replace />}
+                  />
                   <Route
                     path="/settings/chatbot"
                     element={<ChatbotSettingsPage />}
