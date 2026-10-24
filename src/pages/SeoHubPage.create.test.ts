@@ -52,3 +52,25 @@ describe('SEO hub, workspace, and settings (#arc-392)', () => {
     expect(settings).not.toContain('DataForSEO');
   });
 });
+
+describe('SEO hub board standard (#arc-695)', () => {
+  it('starts Filters closed and reports a miss with role=status', () => {
+    expect(hub).toContain('PageFiltersToolbar');
+    expect(hub).toContain('const [filtersOpen, setFiltersOpen] = useState(false)');
+    expect(hub).toContain("searchParams.get('q')");
+    expect(hub).toContain('useDeferredDelete');
+    expect(hub).toContain('role="status"');
+    expect(hub).toContain('Clear filters');
+    expect(app).toContain('<Layout tightPage />');
+    expect(app).toContain('path="/seo"');
+  });
+
+  it('uses the 3px card rail token on hub rows', () => {
+    const css = readFileSync(resolve(here, '../styles/names-hub.css'), 'utf8');
+    const start = css.indexOf('.names-session-row.has-accent');
+    expect(start).toBeGreaterThan(-1);
+    const rule = css.slice(start, start + 240);
+    expect(rule).toContain('--entity-rail-card-width');
+    expect(rule).not.toContain('--entity-rail-width');
+  });
+});

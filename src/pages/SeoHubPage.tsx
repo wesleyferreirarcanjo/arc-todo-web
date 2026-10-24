@@ -1,15 +1,19 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { SeoIcon } from '../components/icons';
+import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import { createSeoSite, deleteSeoSite, fetchProjectSeoSites } from '../lib/api/seo';
 import { getProjectColor } from '../lib/color/entityColor';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
 import type { SeoSite } from '../types/seo';
@@ -22,11 +26,15 @@ interface HubSite {
 
 export function SeoHubPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q') ?? '';
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [items, setItems] = useState<HubSite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createOrgId, setCreateOrgId] = useState('');
   const [createProjectId, setCreateProjectId] = useState('');
@@ -35,6 +43,7 @@ export function SeoHubPage() {
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<HubSite | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteTargetRef = useRef<HubSite | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +90,57 @@ export function SeoHubPage() {
     [projects, createOrgId],
   );
 
+  const visibleItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) => {
+      const title = (item.site.title || item.site.hostname).toLowerCase();
+      return title.includes(query);
+    });
+  }, [items, searchQuery]);
+
   const canCreate = organizations.length > 0 && projects.length > 0;
+  const searchActive = Boolean(searchQuery.trim());
+
+  useRegisterBoardMobileActions(
+    !loading && !error && items.length > 0
+      ? {
+          // ponytail: FAB Filter requires BoardMobileShellActions.onCreated; hub create stays on the header button.
+          onCreated: async () => undefined,
+          openFilters: () => setMobileFiltersOpen(true),
+        }
+      : null,
+  );
+
+  const commitDelete = useCallback(async () => {
+    const row = deleteTargetRef.current;
+    if (!row) return;
+    setDeleting(true);
+    try {
+      await deleteSeoSite(row.org.id, row.project.id, row.site.id);
+      setItems((prev) => prev.filter((item) => item.site.id !== row.site.id));
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this SEO site' }));
+    } finally {
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+      setDeleting(false);
+    }
+  }, []);
+
+  const deferredDelete = useDeferredDelete(commitDelete);
+
+  function setSearchQuery(value: string) {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (value) next.set('q', value);
+        else next.delete('q');
+        return next;
+      },
+      { replace: true },
+    );
+  }
 
   function openCreate() {
     const defaultOrg = organizations.length === 1 ? organizations[0].id : '';
@@ -126,24 +185,24 @@ export function SeoHubPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteSeoSite(
-        deleteTarget.org.id,
-        deleteTarget.project.id,
-        deleteTarget.site.id,
-      );
-      setItems((prev) => prev.filter((item) => item.site.id !== deleteTarget.site.id));
-      setDeleteTarget(null);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this SEO site' }));
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
+  function requestHubDelete(row: HubSite) {
+    deleteTargetRef.current = row;
+    setDeleteTarget(row);
+    deferredDelete.requestDelete();
   }
+
+  const filterPanel = (
+    <label className="board-filter-field board-filter-search">
+      Search
+      <input
+        type="search"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        placeholder="Filter by title"
+        aria-label="Filter SEO sites by title"
+      />
+    </label>
+  );
 
   return (
     <div className="page-shell seo-hub-page">
@@ -197,41 +256,67 @@ export function SeoHubPage() {
       )}
 
       {!loading && !error && items.length > 0 && (
-        <div className="names-session-list-wrap">
-          <ul className="names-session-list">
-            {items.map((item) => (
-              <li
-                key={item.site.id}
-                className="names-session-row entity-card has-accent"
-                style={{ '--entity-accent': getProjectColor(item.project) } as CSSProperties}
+        <>
+          <PageFiltersToolbar
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            activeFilterCount={searchActive ? 1 : 0}
+            panel={filterPanel}
+            mobileOverlayOpen={mobileFiltersOpen}
+            onMobileOverlayOpenChange={setMobileFiltersOpen}
+          />
+
+          {visibleItems.length === 0 ? (
+            <div className="diagrams-empty" role="status">
+              <p className="status-message">
+                No SEO sites match these filters. {visibleItems.length} of {items.length}
+              </p>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setSearchQuery('')}
               >
-                <div className="names-session-row-main">
-                  <h3 className="names-session-row-title">
-                    <Link
-                      to={`/organizations/${item.org.id}/projects/${item.project.id}/seo/${item.site.id}`}
-                    >
-                      {item.site.title || item.site.hostname}
-                    </Link>
-                  </h3>
-                  <p className="names-session-row-subtitle">{item.site.hostname}</p>
-                  <p className="names-session-row-meta">
-                    {item.org.name} · {item.project.name}
-                    {item.site.gscConnected ? ' · Search Console connected' : ''}
-                  </p>
-                </div>
-                <div className="names-session-row-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => setDeleteTarget(item)}
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="names-session-list-wrap">
+              <ul className="names-session-list">
+                {visibleItems.map((item) => (
+                  <li
+                    key={item.site.id}
+                    className="names-session-row entity-card has-accent"
+                    style={{ '--entity-accent': getProjectColor(item.project) } as CSSProperties}
                   >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                    <div className="names-session-row-main">
+                      <h3 className="names-session-row-title">
+                        <Link
+                          to={`/organizations/${item.org.id}/projects/${item.project.id}/seo/${item.site.id}`}
+                        >
+                          {item.site.title || item.site.hostname}
+                        </Link>
+                      </h3>
+                      <p className="names-session-row-subtitle">{item.site.hostname}</p>
+                      <p className="names-session-row-meta">
+                        {item.org.name} · {item.project.name}
+                        {item.site.gscConnected ? ' · Search Console connected' : ''}
+                      </p>
+                    </div>
+                    <div className="names-session-row-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => requestHubDelete(item)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
       <Modal
@@ -309,14 +394,31 @@ export function SeoHubPage() {
       </Modal>
 
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
+        open={deferredDelete.confirmOpen}
         title="Delete SEO site"
         description={`Delete "${deleteTarget?.site.hostname ?? 'this site'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void deferredDelete.confirm()}
+        onCancel={() => {
+          deferredDelete.cancel();
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+        }}
+      />
+
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="SEO site deleted"
+        onUndo={() => {
+          deferredDelete.undo();
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+        }}
+        onDismiss={() => {
+          void deferredDelete.dismiss();
+        }}
       />
     </div>
   );
