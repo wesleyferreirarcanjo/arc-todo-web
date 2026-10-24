@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
-import { AnalyticsIcon } from '../components/icons';
+import { MetricsIcon } from '../components/icons';
 import { serverStatusLabel } from '../components/metrics/format';
 import { MetricsCpuBreakdown } from '../components/metrics/MetricsCpuBreakdown';
 import { MetricsHostSummary } from '../components/metrics/MetricsHostSummary';
@@ -412,7 +412,7 @@ export function MetricsPage() {
           {!loading && servers.length === 0 && !error ? (
             <div className="diagrams-empty">
               <div className="hub-empty-glyph">
-                <AnalyticsIcon className="arc-icon arc-icon-empty" />
+                <MetricsIcon className="arc-icon arc-icon-empty" />
               </div>
               <p className="status-message">{EMPTY_SERVERS}</p>
             </div>

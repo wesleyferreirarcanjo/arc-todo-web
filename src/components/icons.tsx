@@ -148,11 +148,9 @@ export function TasksIcon({ className = 'arc-icon' }: ArcIconProps) {
 export function MakeIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>
-      <rect {...mass} x="3.2" y="3.2" width="7.2" height="7.2" rx="1.8" />
-      <rect x="3.2" y="3.2" width="7.2" height="7.2" rx="1.8" />
-      <rect x="13.6" y="3.2" width="7.2" height="7.2" rx="1.8" />
-      <rect x="3.2" y="13.6" width="7.2" height="7.2" rx="1.8" />
-      <rect x="13.6" y="13.6" width="7.2" height="7.2" rx="1.8" />
+      <path {...mass} d="M14.2 4.6 19.4 9.8 9.2 20H4v-5.2Z" />
+      <path d="M14.2 4.6 19.4 9.8 9.2 20H4v-5.2Z" />
+      <path d="M12.4 6.4 17.6 11.6" />
     </DuotoneIcon>
   );
 }
@@ -245,6 +243,15 @@ export function AnalyticsIcon({ className = 'arc-icon' }: ArcIconProps) {
       <path {...mass} d="M16.4 5.6h3.2V20.2h-3.2Z" />
       <path d="M16.4 5.6h3.2V20.2h-3.2Z" />
       <path d="M3.4 20.5h17.2" />
+    </DuotoneIcon>
+  );
+}
+
+export function MetricsIcon({ className = 'arc-icon' }: ArcIconProps) {
+  return (
+    <DuotoneIcon className={className}>
+      <path {...mass} d="M3.5 13.5h3.2l2-6 3.2 9.2 2.2-3.2h6.4" />
+      <path d="M3.5 13.5h3.2l2-6 3.2 9.2 2.2-3.2h6.4" />
     </DuotoneIcon>
   );
 }
