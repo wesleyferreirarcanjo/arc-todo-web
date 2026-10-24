@@ -67,7 +67,7 @@ function SidebarNavLink({
   );
 }
 
-export function Layout() {
+export function Layout({ tightPage = false }: { tightPage?: boolean }) {
   useDocumentChrome();
   const { logout, isAdmin } = useAuth();
   const { color: workspaceColor } = useWorkspaceAccent();
@@ -412,7 +412,7 @@ export function Layout() {
           <BoardMobileShellProvider>
             <SmartCopyBasketProvider>
               <div
-                className={`content-area${isBoardShell ? ' is-board-page' : ''}`}
+                className={`content-area${isBoardShell ? ' is-board-page' : tightPage ? ' is-tight-page' : ''}`}
                 key={isBoardShell ? 'board-shell' : 'page-shell'}
               >
                 <OfflineBanner />
