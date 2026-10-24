@@ -1,7 +1,7 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
 import { SettingsPageShell } from '../components/SettingsPageShell';
-import { userMessage, WEB_ERROR } from '../lib/errors/messages';
+import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchSeoSettings, updateSeoSettings } from '../lib/api/seo';
 
@@ -10,11 +10,13 @@ export function SeoSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [saved, setSaved] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setErrorCode(undefined);
     try {
       const data = await fetchSeoSettings();
       setMaxPages(String(data.maxPagesPerAudit));
@@ -32,11 +34,14 @@ export function SeoSettingsPage() {
   async function handleSave() {
     const parsed = Number(maxPages);
     if (!Number.isInteger(parsed) || parsed < 1) {
-      setError('Enter a maximum pages-per-audit of at least 1.');
+      setError(catalogMessage(WEB_ERROR.VAL_SEO_MAX_PAGES));
+      setErrorCode(WEB_ERROR.VAL_SEO_MAX_PAGES);
+      setSaved(null);
       return;
     }
     setSaving(true);
     setError(null);
+    setErrorCode(undefined);
     setSaved(null);
     try {
       const updated = await updateSeoSettings({ maxPagesPerAudit: parsed });
@@ -70,8 +75,12 @@ export function SeoSettingsPage() {
               onChange={(event) => setMaxPages(event.target.value)}
             />
           </label>
-          {error && <ErrorAlert>{error}</ErrorAlert>}
-          {saved && <p className="status-message">{saved}</p>}
+          {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
+          {saved && (
+            <p className="status-message" role="status">
+              {saved}
+            </p>
+          )}
           <div className="hub-actions">
             <button
               type="button"

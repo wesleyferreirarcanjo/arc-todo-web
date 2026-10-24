@@ -25,4 +25,11 @@ describe('userMessage', () => {
       "Couldn't load tasks. Check your connection and try again.",
     );
   });
+
+  it('maps invalid SEO max pages to ERR-ARC-SEO-13', () => {
+    expect(WEB_ERROR.VAL_SEO_MAX_PAGES).toBe('ERR-ARC-SEO-13');
+    expect(catalogMessage(WEB_ERROR.VAL_SEO_MAX_PAGES)).toBe(
+      'Enter a maximum pages-per-audit of at least 1.',
+    );
+  });
 });
