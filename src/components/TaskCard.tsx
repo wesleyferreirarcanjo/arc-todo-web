@@ -28,6 +28,7 @@ import {
 } from '../lib/tasks/taskStatus';
 import { vibrateSafe } from '../lib/ui/haptics';
 import { scatterBounceFromId, type ScatterStage } from '../lib/ui/scatterLights';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
@@ -316,8 +317,6 @@ export function TaskCard({
   const [selectedParentId, setSelectedParentId] = useState(task.parentTaskId ?? '');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [swipeHint, setSwipeHint] = useState<string | null>(null);
   const swipeRef = useRef<{
@@ -328,6 +327,17 @@ export function TaskCard({
   } | null>(null);
   const scatterRafRef = useRef<number | null>(null);
   const isMobileBoard = useMediaQuery(BOARD_MOBILE_QUERY);
+
+  async function finalizeDelete() {
+    setDeleting(true);
+    try {
+      await onDelete(task.id);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const deferredDelete = useDeferredDelete(finalizeDelete);
 
   const showQaExtension = qaExtensionOpen && !isSubtask;
   const isSelected = selected;
@@ -580,24 +590,9 @@ export function TaskCard({
     }
   }
 
-  async function finalizeDelete() {
-    setDeleting(true);
-    try {
-      await onDelete(task.id);
-    } finally {
-      setDeleting(false);
-      setPendingDelete(false);
-      setConfirmDeleteOpen(false);
-    }
-  }
-
   function handleDelete() {
     closeActionMenus();
-    if (isMobileBoard) {
-      setPendingDelete(true);
-      return;
-    }
-    setConfirmDeleteOpen(true);
+    deferredDelete.requestDelete();
   }
 
   async function handleSwipeStatus(direction: 'next' | 'previous') {
@@ -1078,7 +1073,7 @@ export function TaskCard({
 
   return (
     <>
-      {!pendingDelete ? (
+      {!deferredDelete.toastOpen ? (
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
@@ -1604,23 +1599,21 @@ export function TaskCard({
       </Modal>
 
       <ConfirmDialog
-        open={confirmDeleteOpen}
+        open={deferredDelete.confirmOpen}
         title="Delete task"
         description="Delete this task? This cannot be undone."
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void finalizeDelete()}
-        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={deferredDelete.confirm}
+        onCancel={deferredDelete.cancel}
       />
 
       <UndoToast
-        open={pendingDelete}
+        open={deferredDelete.toastOpen}
         message="Task deleted"
-        onUndo={() => setPendingDelete(false)}
-        onDismiss={() => {
-          void finalizeDelete();
-        }}
+        onUndo={deferredDelete.undo}
+        onDismiss={deferredDelete.dismiss}
       />
     </>
   );
