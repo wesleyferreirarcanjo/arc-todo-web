@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
-import { ApiError, authorizeDesktop } from '../lib/api/client';
+import { BrandMarkIcon } from '../components/icons';
+import { authorizeDesktop } from '../lib/api/client';
+import { catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 
 const CALLBACK = 'arc-ide://arc-todo/callback';
 
@@ -46,8 +48,10 @@ export function DesktopConnectPage() {
     try {
       const result = await authorizeDesktop({ state, codeChallenge });
       window.location.assign(desktopCallbackTarget(result.callbackUrl));
-    } catch (err) {
-      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not continue to Arc IDE.');
+    } catch {
+      // ponytail: userMessage prefers Error.message, so ENOENT from authorizeDesktop would leak.
+      // Pairing always uses the LOAD catalog; upgrade: treat errno-style copy as generic in userMessage.
+      setError(catalogMessage(WEB_ERROR.LOAD, { thing: 'Arc IDE' }));
       setBusy(false);
     }
   }
@@ -55,18 +59,26 @@ export function DesktopConnectPage() {
   return (
     <div className="login-page">
       <div className="login-card">
+        <BrandMarkIcon className="arc-icon login-mark" />
         <h1>Connect Arc IDE</h1>
         <p className="subtitle">
           Continue only if you just started this from Arc IDE on this computer.
         </p>
-        {error && <ErrorAlert>{error}</ErrorAlert>}
+        {error && (
+          <ErrorAlert code={ready ? WEB_ERROR.LOAD : undefined}>{error}</ErrorAlert>
+        )}
+        {busy ? (
+          <p className="status-message" aria-live="polite">
+            Opening Arc IDE…
+          </p>
+        ) : null}
         <button
           className="btn btn-primary"
           type="button"
           disabled={!ready || busy}
           onClick={() => void continueToIde()}
         >
-          {busy ? 'Opening Arc IDE…' : 'Continue to Arc IDE'}
+          Continue to Arc IDE
         </button>
       </div>
     </div>
