@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import {
@@ -67,6 +67,10 @@ export function useWorkspaceAccent(): {
   };
 }
 
+export function WorkspaceEyebrowShell({ children }: { children: ReactNode }) {
+  return <p className="workspace-eyebrow">{children}</p>;
+}
+
 export function WorkspaceEyebrow({
   requireProject = true,
 }: {
@@ -77,10 +81,10 @@ export function WorkspaceEyebrow({
   if (requireProject && !projectId) return null;
 
   return (
-    <p className="workspace-eyebrow">
+    <WorkspaceEyebrowShell>
       <Link to={`/organizations/${orgId}`} className="text-link">
         {orgName}
       </Link>
-    </p>
+    </WorkspaceEyebrowShell>
   );
 }

@@ -191,10 +191,6 @@
   color: var(--text-muted);
 }
 
-.extension-lab-tape-empty {
-  color: var(--text-muted);
-}
-
 @media (max-width: 640px) {
   .extension-lab-probe {
     grid-template-columns: 2.25rem minmax(0, 1fr);

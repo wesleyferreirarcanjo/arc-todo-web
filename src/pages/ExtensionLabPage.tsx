@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ErrorAlert } from '../components/ErrorAlert';
+import { WorkspaceEyebrowShell } from '../components/WorkspaceChrome';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import {
   fireAllLabFailures,
   fireLabProbe,
@@ -45,6 +48,7 @@ function formatClock(now = new Date()): string {
 export function ExtensionLabPage() {
   const [log, setLog] = useState<LabLogEntry[]>([]);
   const [busyId, setBusyId] = useState<LabProbeId | 'all' | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const grouped = useMemo(
     () =>
@@ -72,6 +76,7 @@ export function ExtensionLabPage() {
     async (id: LabProbeId | 'all') => {
       if (busyId) return;
       setBusyId(id);
+      setError(null);
       try {
         if (id === 'all') {
           await fireAllLabFailures();
@@ -83,6 +88,8 @@ export function ExtensionLabPage() {
         const probe = LAB_PROBES.find((item) => item.id === id);
         await fireLabProbe(id);
         if (probe) record(probe);
+      } catch (err) {
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this probe' }));
       } finally {
         setBusyId(null);
       }
@@ -93,11 +100,11 @@ export function ExtensionLabPage() {
   return (
     <div className="page-shell download-page extension-lab-page">
       <header className="page-header">
-        <p className="workspace-eyebrow">
+        <WorkspaceEyebrowShell>
           <Link className="text-link" to="/download">
             Download
           </Link>
-        </p>
+        </WorkspaceEyebrowShell>
         <h2>Evidence lab</h2>
         <p className="page-subtitle">
           Stay on this tab. In the Arc Todo extension, pick a Fila de QA card,{' '}
@@ -106,6 +113,13 @@ export function ExtensionLabPage() {
           2 minutes should land on that step.
         </p>
       </header>
+
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
+      {busyId ? (
+        <p className="status-message" aria-live="polite">
+          {busyId === 'all' ? 'Firing all failures...' : 'Firing this probe...'}
+        </p>
+      ) : null}
 
       <div className="extension-lab-toolbar">
         <button
@@ -157,11 +171,13 @@ export function ExtensionLabPage() {
 
       <section className="extension-lab-log" aria-labelledby="extension-lab-log">
         <h3 id="extension-lab-log">Fired just now</h3>
-        <ol className="extension-lab-tape" role="status">
-          {log.length === 0 ? (
-            <li className="extension-lab-tape-empty">No probes yet.</li>
-          ) : (
-            log.map((entry) => (
+        {log.length === 0 ? (
+          <div className="diagrams-empty">
+            <p className="status-message">No probes yet.</p>
+          </div>
+        ) : (
+          <ol className="extension-lab-tape" role="status">
+            {log.map((entry) => (
               <li key={entry.id}>
                 <time dateTime={entry.at}>{entry.at}</time>
                 <span className="extension-lab-tape-label">{entry.probe.label}</span>
@@ -169,9 +185,9 @@ export function ExtensionLabPage() {
                   {entry.probe.expected}
                 </span>
               </li>
-            ))
-          )}
-        </ol>
+            ))}
+          </ol>
+        )}
       </section>
     </div>
   );
