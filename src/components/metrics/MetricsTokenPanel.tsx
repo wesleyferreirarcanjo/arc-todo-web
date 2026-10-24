@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { useDeferredDelete } from '../../hooks/useDeferredDelete';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { ErrorAlert } from '../ErrorAlert';
+import { AnalyticsIcon } from '../icons';
 import { Modal } from '../Modal';
+import { UndoToast } from '../UndoToast';
 import type { MetricsAgentToken, MetricsCreatedToken } from '../../types/metrics';
 
 export function MetricsTokenPanel({
@@ -22,6 +26,7 @@ export function MetricsTokenPanel({
   const [serverName, setServerName] = useState('');
   const [created, setCreated] = useState<MetricsCreatedToken | null>(null);
   const [saving, setSaving] = useState(false);
+  const pendingRevokeRef = useRef<MetricsAgentToken | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<MetricsAgentToken | null>(null);
   const [revoking, setRevoking] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -55,17 +60,32 @@ export function MetricsTokenPanel({
     await navigator.clipboard.writeText(created.token);
   }
 
-  async function handleRevoke() {
-    if (!revokeTarget) {
+  const commitRevoke = useCallback(async () => {
+    const target = pendingRevokeRef.current;
+    if (!target) {
       return;
     }
     setRevoking(true);
     try {
-      await onRevoke(revokeTarget.id);
-      setRevokeTarget(null);
+      await onRevoke(target.id);
     } finally {
       setRevoking(false);
+      pendingRevokeRef.current = null;
+      setRevokeTarget(null);
     }
+  }, [onRevoke]);
+
+  const deferredRevoke = useDeferredDelete(commitRevoke);
+
+  function requestRevoke(token: MetricsAgentToken) {
+    pendingRevokeRef.current = token;
+    setRevokeTarget(token);
+    deferredRevoke.requestDelete();
+  }
+
+  function clearPendingRevoke() {
+    pendingRevokeRef.current = null;
+    setRevokeTarget(null);
   }
 
   return (
@@ -87,9 +107,14 @@ export function MetricsTokenPanel({
       </div>
 
       {tokens.length === 0 ? (
-        <p className="status-message">
-          No servers yet. Create an agent token and install the agent on a server.
-        </p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <AnalyticsIcon className="arc-icon arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            No servers yet. Create an agent token and install the agent on a server.
+          </p>
+        </div>
       ) : (
         <div className="analytics-table-wrap">
           <table className="analytics-table">
@@ -114,7 +139,7 @@ export function MetricsTokenPanel({
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={() => setRevokeTarget(token)}
+                        onClick={() => requestRevoke(token)}
                       >
                         Revoke
                       </button>
@@ -141,7 +166,7 @@ export function MetricsTokenPanel({
           </div>
         ) : formOpen ? (
           <div className="metrics-token-form">
-            {formError ? <p className="alert alert-error">{formError}</p> : null}
+            {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
             <label className="board-filter-field">
               Server name
               <input
@@ -167,14 +192,26 @@ export function MetricsTokenPanel({
       </Modal>
 
       <ConfirmDialog
-        open={Boolean(revokeTarget)}
+        open={deferredRevoke.confirmOpen}
         title="Revoke"
         description={`Revoke token for ${revokeTarget?.serverName ?? ''}? Its agent will stop reporting.`}
         confirmLabel="Revoke"
         variant="danger"
         loading={revoking}
-        onConfirm={() => void handleRevoke()}
-        onCancel={() => setRevokeTarget(null)}
+        onConfirm={deferredRevoke.confirm}
+        onCancel={() => {
+          deferredRevoke.cancel();
+          clearPendingRevoke();
+        }}
+      />
+      <UndoToast
+        open={deferredRevoke.toastOpen}
+        message="Token revoked"
+        onUndo={() => {
+          deferredRevoke.undo();
+          clearPendingRevoke();
+        }}
+        onDismiss={deferredRevoke.dismiss}
       />
     </section>
   );
