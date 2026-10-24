@@ -1,5 +1,6 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   createProjectTask,
   deleteTaskEvidence,
@@ -208,6 +209,7 @@ export function TaskQaChecklistModal({
     itemId: string;
     noteIndex: number;
   } | null>(null);
+  const [qaInfoOpen, setQaInfoOpen] = useState(false);
   const reportingItemIdRef = useRef<string | null>(null);
   reportingItemIdRef.current = reportingItemId;
   const lastIdleItemIdRef = useRef<string | null>(null);
@@ -289,6 +291,10 @@ export function TaskQaChecklistModal({
     setOpenLogId(null);
     setLogView(null);
     setLoadingLogId(null);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) setQaInfoOpen(false);
   }, [open]);
 
   const itemEvidenceIds = useMemo(
@@ -774,12 +780,32 @@ export function TaskQaChecklistModal({
       accentColor={accentColor}
     >
       <section className="task-qa-checklist-help" aria-label="QA info">
-        <h4 className="task-qa-checklist-help-title">QA info</h4>
-        <ProjectQaInfoForm
-          organizationId={organizationId}
-          projectId={projectId}
-          compact
-        />
+        <div className="task-qa-checklist-help-summary">
+          <button
+            type="button"
+            className="task-qa-checklist-help-toggle"
+            aria-expanded={qaInfoOpen}
+            onClick={() => setQaInfoOpen((current) => !current)}
+          >
+            QA info
+          </button>
+          <p className="qa-info-form-lede">
+            Saved for this whole project, not only this task.{' '}
+            <Link
+              to={`/organizations/${organizationId}/projects/${projectId}/qa-info`}
+            >
+              Open full page
+            </Link>
+          </p>
+        </div>
+        <div hidden={!qaInfoOpen}>
+          <ProjectQaInfoForm
+            organizationId={organizationId}
+            projectId={projectId}
+            compact
+            showLede={false}
+          />
+        </div>
       </section>
       {helpMarkdown && (
         <section className="task-qa-checklist-help" aria-label="Test description">
