@@ -1,9 +1,20 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BrowserExtensionDownload } from '../components/BrowserExtensionDownload';
 
 export function DownloadPage() {
+  // ponytail: shared Layout cannot take tightPage per nested route without
+  // splitting WorkspaceProvider; hoist #arc-654's is-tight-page onto
+  // .content-area. Upgrade: Layout pathname / tightPage once that card lands.
+  useEffect(() => {
+    const area = document.querySelector('.content-area');
+    if (!area) return;
+    area.classList.add('is-tight-page');
+    return () => area.classList.remove('is-tight-page');
+  }, []);
+
   return (
-    <div className="page-shell download-page">
+    <div className="page-shell download-page is-tight-page">
       <header className="page-header">
         <h2>Download</h2>
         <p className="page-subtitle">
