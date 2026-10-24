@@ -3,11 +3,14 @@ import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { DiagramsIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { ApiError } from '../lib/api/client';
 import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -61,9 +64,11 @@ export function ProjectDiagramsPage() {
   const { orgId, projectId } = useParams();
   const navigate = useNavigate();
   const { currentProject } = useWorkspace();
+  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [diagrams, setDiagrams] = useState<ProjectDiagramSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState(WEB_ERROR.LOAD);
   const [forbidden, setForbidden] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -78,14 +83,19 @@ export function ProjectDiagramsPage() {
   const [deleteTarget, setDeleteTarget] = useState<ProjectDiagramSummary | null>(
     null,
   );
+  const [pendingDelete, setPendingDelete] = useState<ProjectDiagramSummary | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<DiagramSort>('updated_desc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const loadDiagrams = useCallback(async () => {
     if (!orgId || !projectId) return;
     setLoading(true);
     setError(null);
+    setErrorCode(WEB_ERROR.LOAD);
     setForbidden(false);
     try {
       const data = await fetchProjectDiagrams(orgId, projectId);
@@ -181,21 +191,28 @@ export function ProjectDiagramsPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!orgId || !projectId || !deleteTarget) return;
+  async function commitDelete(diagram: ProjectDiagramSummary) {
+    if (!orgId || !projectId) return;
     setDeleting(true);
     try {
-      await deleteProjectDiagram(orgId, projectId, deleteTarget.id);
-      setDiagrams((prev) =>
-        prev.filter((diagram) => diagram.id !== deleteTarget.id),
-      );
-      setDeleteTarget(null);
+      await deleteProjectDiagram(orgId, projectId, diagram.id);
+      setDiagrams((prev) => prev.filter((item) => item.id !== diagram.id));
     } catch (err) {
+      setErrorCode(WEB_ERROR.DELETE);
       setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this diagram' }));
-      setDeleteTarget(null);
     } finally {
       setDeleting(false);
+      setDeleteTarget(null);
+      setPendingDelete(null);
     }
+  }
+
+  function requestDelete(diagram: ProjectDiagramSummary) {
+    if (isMobileShell) {
+      setPendingDelete(diagram);
+      return;
+    }
+    setDeleteTarget(diagram);
   }
 
   if (!orgId || !projectId) {
@@ -207,9 +224,9 @@ export function ProjectDiagramsPage() {
       <div className="page-shell">
         <header className="page-header">
           <h2>Diagrams</h2>
-          <p className="page-subtitle">
-            You do not have access to this project&apos;s diagrams.
-          </p>
+          <ErrorAlert code="ERR-ARC-ACL-02">
+            {catalogMessage('ERR-ARC-ACL-02')}
+          </ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
               Back to organizations
@@ -219,6 +236,49 @@ export function ProjectDiagramsPage() {
       </div>
     );
   }
+
+  const activeFilterCount =
+    Number(searchQuery.trim() !== '') + Number(sort !== 'updated_desc');
+
+  const filterFields = (
+    <>
+      <label className="board-filter-field board-filter-search">
+        Search
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter by title"
+          aria-label="Filter diagrams by title"
+        />
+      </label>
+      <label className="board-filter-field">
+        Sort by
+        <Select
+          value={sort}
+          onChange={(value) => setSort(value as DiagramSort)}
+          options={SORT_OPTIONS}
+        />
+      </label>
+    </>
+  );
+
+  const filtersButton = (
+    <button
+      type="button"
+      className={`btn btn-secondary board-chrome-toggle${filtersOpen ? ' is-open' : ''}`}
+      aria-expanded={filtersOpen}
+      aria-controls={filtersOpen && !isMobileShell ? 'board-chrome-panel' : undefined}
+      onClick={() => setFiltersOpen((open) => !open)}
+    >
+      Filters
+      {activeFilterCount > 0 ? (
+        <span className="board-chrome-count" aria-hidden="true">
+          {activeFilterCount}
+        </span>
+      ) : null}
+    </button>
+  );
 
   return (
     <div
@@ -253,21 +313,23 @@ export function ProjectDiagramsPage() {
             </Link>
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => {
-            setCreateOpen(true);
-            setNewTitle('');
-            setCreateError(null);
-          }}
-        >
-          New diagram
-        </button>
+        {!loading && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setCreateOpen(true);
+              setNewTitle('');
+              setCreateError(null);
+            }}
+          >
+            New diagram
+          </button>
+        )}
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && canvasDiagrams.length === 0 && (
         <div className="diagrams-empty">
@@ -292,35 +354,42 @@ export function ProjectDiagramsPage() {
       )}
 
       {!loading && !error && canvasDiagrams.length > 0 && (
-        <div className="board-filters diagrams-filters">
-          <label className="board-filter-field board-filter-search">
-            Search
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Filter by title"
-              aria-label="Filter diagrams by title"
-            />
-          </label>
-          <label className="board-filter-field">
-            Sort by
-            <Select
-              value={sort}
-              onChange={(value) => setSort(value as DiagramSort)}
-              options={SORT_OPTIONS}
-            />
-          </label>
-        </div>
+        <>
+          <div className="board-chrome-toolbar">
+            <div className="board-chrome-actions">{filtersButton}</div>
+          </div>
+          {filtersOpen && !isMobileShell ? (
+            <div
+              id="board-chrome-panel"
+              className="board-filters board-filters-inline diagrams-filters"
+              role="region"
+              aria-label="Filters"
+            >
+              {filterFields}
+            </div>
+          ) : null}
+          <MobileBoardFiltersOverlay
+            open={isMobileShell && filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+          >
+            <div className="diagrams-filters">{filterFields}</div>
+          </MobileBoardFiltersOverlay>
+        </>
       )}
 
       {!loading && !error && canvasDiagrams.length > 0 && visibleDiagrams.length === 0 && (
-        <div className="diagrams-empty">
-          <p className="status-message">No diagrams match "{searchQuery}".</p>
+        <div className="diagrams-empty" role="status">
+          <p className="status-message">
+            No diagrams match "{searchQuery}". {visibleDiagrams.length} of{' '}
+            {canvasDiagrams.length}.
+          </p>
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => setSearchQuery('')}
+            onClick={() => {
+              setSearchQuery('');
+              setSort('updated_desc');
+            }}
           >
             Clear filters
           </button>
@@ -330,7 +399,15 @@ export function ProjectDiagramsPage() {
       {!loading && !error && visibleDiagrams.length > 0 && (
         <ul className="diagrams-grid">
           {visibleDiagrams.map((diagram) => (
-            <li key={diagram.id} className="diagram-card entity-card">
+            <li
+              key={diagram.id}
+              className="diagram-card entity-card has-accent"
+              style={
+                currentProject
+                  ? ({ '--entity-accent': getProjectColor(currentProject) } as CSSProperties)
+                  : undefined
+              }
+            >
               <Link
                 to={`/organizations/${orgId}/projects/${projectId}/diagrams/${diagram.id}`}
                 className="diagram-card-preview-link"
@@ -371,7 +448,7 @@ export function ProjectDiagramsPage() {
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"
-                    onClick={() => setDeleteTarget(diagram)}
+                    onClick={() => requestDelete(diagram)}
                   >
                     Delete
                   </button>
@@ -404,7 +481,17 @@ export function ProjectDiagramsPage() {
             }}
           />
         </label>
-        {createError && <ErrorAlert>{createError}</ErrorAlert>}
+        {createError && (
+          <ErrorAlert
+            code={
+              createError === catalogMessage(WEB_ERROR.VAL_DIAGRAM)
+                ? WEB_ERROR.VAL_DIAGRAM
+                : WEB_ERROR.CREATE
+            }
+          >
+            {createError}
+          </ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -446,7 +533,17 @@ export function ProjectDiagramsPage() {
             }}
           />
         </label>
-        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
+        {renameError && (
+          <ErrorAlert
+            code={
+              renameError === catalogMessage(WEB_ERROR.VAL_DIAGRAM)
+                ? WEB_ERROR.VAL_DIAGRAM
+                : WEB_ERROR.RENAME
+            }
+          >
+            {renameError}
+          </ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -474,8 +571,18 @@ export function ProjectDiagramsPage() {
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
+        onConfirm={() => {
+          if (deleteTarget) void commitDelete(deleteTarget);
+        }}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <UndoToast
+        open={Boolean(pendingDelete)}
+        message="Diagram deleted"
+        onUndo={() => setPendingDelete(null)}
+        onDismiss={() => {
+          if (pendingDelete) void commitDelete(pendingDelete);
+        }}
       />
     </div>
   );
