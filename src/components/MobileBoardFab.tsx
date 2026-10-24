@@ -82,7 +82,6 @@ export function MobileBoardFab() {
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const location = useLocation();
   const navigate = useNavigate();
-  const isBoardPage = location.pathname === '/board';
   const isBoardShell = isBoardShellPath(location.pathname);
   const isNamesSession = isNamesSessionPath(location.pathname);
   const { logout, isAdmin } = useAuth();
@@ -173,7 +172,7 @@ export function MobileBoardFab() {
       icon: <NavigateIcon />,
       onClick: () => setDialLevel('nav'),
     });
-    if (isBoardPage && actions?.openFilters) {
+    if (actions?.openFilters) {
       items.push({
         id: 'filter',
         label: 'Filter',
@@ -258,7 +257,6 @@ export function MobileBoardFab() {
     enable,
     install,
     isAdmin,
-    isBoardPage,
     isBoardShell,
     isIos,
     isStandalone,

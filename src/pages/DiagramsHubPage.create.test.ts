@@ -23,3 +23,22 @@ describe('diagrams hub New diagram (#arc-270)', () => {
     expect(css.slice(start, start + 160)).toContain('margin-top: 0');
   });
 });
+
+describe('diagrams hub board standard (#arc-663)', () => {
+  it('starts Filters closed and lists Rename/Delete on hub cards', () => {
+    expect(page).toContain('PageFiltersToolbar');
+    expect(page).not.toContain('diagrams-hub-filters');
+    expect(page).toContain('Rename');
+    expect(page).toContain('Delete');
+    expect(page).toContain('useDeferredDelete');
+    expect(page).toContain('role="status"');
+    expect(page).toContain('code={');
+  });
+
+  it('uses board-standard hub density tokens', () => {
+    expect(css).toContain('minmax(min(100%, 480px), 1fr)');
+    const start = css.indexOf('.diagram-card.has-accent');
+    expect(start).toBeGreaterThan(-1);
+    expect(css.slice(start, start + 240)).toContain('--entity-rail-card-width');
+  });
+});
