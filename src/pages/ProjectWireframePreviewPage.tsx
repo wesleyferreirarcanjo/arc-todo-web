@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { UndoToast } from '../components/UndoToast';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { ApiError } from '../lib/api/client';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
@@ -15,18 +17,21 @@ import {
 import type { ProjectDiagramSummary } from '../types/diagram';
 import type { ProjectWireframe } from '../types/wireframe';
 
+const ACL_PROJECT = 'ERR-ARC-ACL-02';
+
 export function ProjectWireframePreviewPage() {
   const { orgId, projectId, wireframeId } = useParams();
   const navigate = useNavigate();
   const [wireframe, setWireframe] = useState<ProjectWireframe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [forbidden, setForbidden] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameTitle, setRenameTitle] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [renameErrorCode, setRenameErrorCode] = useState<string | undefined>();
   const [renaming, setRenaming] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [markupDiagrams, setMarkupDiagrams] = useState<ProjectDiagramSummary[]>(
     [],
@@ -41,6 +46,7 @@ export function ProjectWireframePreviewPage() {
     if (!orgId || !projectId || !wireframeId) return;
     setLoading(true);
     setError(null);
+    setErrorCode(undefined);
     setForbidden(false);
     try {
       const [data, markup] = await Promise.all([
@@ -54,6 +60,7 @@ export function ProjectWireframePreviewPage() {
         setForbidden(true);
       } else {
         setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this wireframe' }));
+        setErrorCode(WEB_ERROR.LOAD);
       }
     } finally {
       setLoading(false);
@@ -64,15 +71,33 @@ export function ProjectWireframePreviewPage() {
     void loadWireframe();
   }, [loadWireframe]);
 
+  const commitDelete = useCallback(async () => {
+    if (!orgId || !projectId || !wireframeId) return;
+    setDeleting(true);
+    try {
+      await deleteProjectWireframe(orgId, projectId, wireframeId);
+      navigate(listPath);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
+      setErrorCode(WEB_ERROR.DELETE);
+    } finally {
+      setDeleting(false);
+    }
+  }, [listPath, navigate, orgId, projectId, wireframeId]);
+
+  const deferredDelete = useDeferredDelete(commitDelete);
+
   async function handleRename() {
     if (!orgId || !projectId || !wireframeId) return;
     const title = renameTitle.trim();
     if (!title) {
       setRenameError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
+      setRenameErrorCode(WEB_ERROR.VAL_WIREFRAME);
       return;
     }
     setRenaming(true);
     setRenameError(null);
+    setRenameErrorCode(undefined);
     try {
       const updated = await updateProjectWireframe(
         orgId,
@@ -84,22 +109,9 @@ export function ProjectWireframePreviewPage() {
       setRenameOpen(false);
     } catch (err) {
       setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this wireframe' }));
+      setRenameErrorCode(WEB_ERROR.RENAME);
     } finally {
       setRenaming(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!orgId || !projectId || !wireframeId) return;
-    setDeleting(true);
-    try {
-      await deleteProjectWireframe(orgId, projectId, wireframeId);
-      navigate(listPath);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
-      setDeleteOpen(false);
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -112,9 +124,9 @@ export function ProjectWireframePreviewPage() {
       <div className="page-shell">
         <header className="page-header">
           <h2>Wireframes</h2>
-          <p className="page-subtitle">
-            You do not have access to this project&apos;s wireframes.
-          </p>
+          <ErrorAlert code={ACL_PROJECT}>
+            {catalogMessage(ACL_PROJECT)}
+          </ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
               Back to organizations
@@ -146,7 +158,7 @@ export function ProjectWireframePreviewPage() {
             diagrams={markupDiagrams}
             disabled={!wireframe || loading}
             markUpClassName="btn btn-secondary"
-            showList={false}
+            showList={markupDiagrams.length > 0}
             onDiagramsChange={() => {
               void fetchProjectDiagrams(orgId, projectId, { wireframeId }).then(
                 setMarkupDiagrams,
@@ -160,6 +172,7 @@ export function ProjectWireframePreviewPage() {
             onClick={() => {
               setRenameTitle(wireframe?.title ?? '');
               setRenameError(null);
+              setRenameErrorCode(undefined);
               setRenameOpen(true);
             }}
           >
@@ -168,36 +181,16 @@ export function ProjectWireframePreviewPage() {
           <button
             type="button"
             className="btn btn-danger"
-            disabled={!wireframe || loading}
-            onClick={() => setDeleteOpen(true)}
+            disabled={!wireframe || loading || deleting}
+            onClick={() => deferredDelete.requestDelete()}
           >
             Delete
           </button>
         </div>
       </header>
 
-      {markupDiagrams.length > 0 && (
-        <div className="wireframe-markup-bar">
-          <WireframeMarkupBlock
-            orgId={orgId}
-            projectId={projectId}
-            wireframeId={wireframeId}
-            wireframeTitle={wireframe?.title ?? 'Wireframe'}
-            html={wireframe?.html}
-            diagrams={markupDiagrams}
-            disabled={!wireframe || loading}
-            showButton={false}
-            onDiagramsChange={() => {
-              void fetchProjectDiagrams(orgId, projectId, { wireframeId }).then(
-                setMarkupDiagrams,
-              );
-            }}
-          />
-        </div>
-      )}
-
       {loading && <p className="status-message">Loading wireframe...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && wireframe && (
         <iframe
@@ -229,7 +222,9 @@ export function ProjectWireframePreviewPage() {
             }}
           />
         </label>
-        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
+        {renameError && (
+          <ErrorAlert code={renameErrorCode}>{renameError}</ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -251,14 +246,23 @@ export function ProjectWireframePreviewPage() {
       </Modal>
 
       <ConfirmDialog
-        open={deleteOpen}
+        open={deferredDelete.confirmOpen}
         title="Delete wireframe"
         description={`Delete "${wireframe?.title ?? 'this wireframe'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
-        onCancel={() => setDeleteOpen(false)}
+        onConfirm={() => void deferredDelete.confirm()}
+        onCancel={deferredDelete.cancel}
+      />
+
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="Wireframe deleted"
+        onUndo={deferredDelete.undo}
+        onDismiss={() => {
+          void deferredDelete.dismiss();
+        }}
       />
     </div>
   );
