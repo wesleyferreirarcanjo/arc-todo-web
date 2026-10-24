@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SeoIcon } from '../icons';
 import type { SeoAudit, SeoFinding, SeoFindingBucket } from '../../types/seo';
 
 const BUCKETS: SeoFindingBucket[] = [
@@ -66,7 +67,12 @@ export function SeoFindings({ audit }: { audit: SeoAudit }) {
         })}
       </nav>
       {visible.length === 0 ? (
-        <p className="status-message">Nothing here.</p>
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <SeoIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">Nothing here.</p>
+        </div>
       ) : (
         <ul className="seo-finding-list">
           {visible.map((finding) => {

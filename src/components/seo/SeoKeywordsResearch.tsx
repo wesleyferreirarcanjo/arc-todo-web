@@ -28,6 +28,7 @@ export function SeoKeywordsResearch({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,24 +64,28 @@ export function SeoKeywordsResearch({
   }
 
   async function persistOfferings(): Promise<string[] | null> {
-    const saved = nonBlankOfferings(offerings);
-    if (saved.length === 0) {
+    const next = nonBlankOfferings(offerings);
+    if (next.length === 0) {
+      setSaved(false);
       setError(OFFERINGS_REQUIRED_COPY);
       firstOfferingRef.current?.focus();
       return null;
     }
-    const result = await saveSeoOfferings(orgId, projectId, siteId, saved);
+    const result = await saveSeoOfferings(orgId, projectId, siteId, next);
     setOfferings(result.offerings);
+    setSaved(true);
     return result.offerings;
   }
 
   async function handleFindKeywords() {
     setSaving(true);
     setError(null);
+    setSaved(false);
     try {
       // ponytail: persists offerings only. Wire POST .../research when #arc-394 lands.
       await persistOfferings();
     } catch (err) {
+      setSaved(false);
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'offerings' }));
     } finally {
       setSaving(false);
@@ -90,12 +95,16 @@ export function SeoKeywordsResearch({
   async function handleNameThisOffering() {
     setSaving(true);
     setError(null);
+    setSaved(false);
     try {
-      const saved = await persistOfferings();
-      if (!saved) return;
-      const created = await createNameSession(createNameSessionFromOfferings(siteTitle, saved));
+      const savedOfferings = await persistOfferings();
+      if (!savedOfferings) return;
+      const created = await createNameSession(
+        createNameSessionFromOfferings(siteTitle, savedOfferings),
+      );
       navigate(`/names/${created.id}`);
     } catch (err) {
+      setSaved(false);
       setError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this naming session' }));
     } finally {
       setSaving(false);
@@ -109,6 +118,11 @@ export function SeoKeywordsResearch({
   return (
     <div className="seo-research">
       {error && <ErrorAlert>{error}</ErrorAlert>}
+      {saved && !error && (
+        <p className="status-message" role="status">
+          Saved.
+        </p>
+      )}
       <p className="page-subtitle">
         Write 1–5 client pain points. Saved offerings can name the product
         without retyping the sentence. Find keywords stays optional.

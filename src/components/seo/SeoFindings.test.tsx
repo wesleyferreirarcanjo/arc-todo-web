@@ -134,8 +134,10 @@ describe('SeoFindings', () => {
   it('shows an empty bucket message', async () => {
     const user = userEvent.setup();
     render(<SeoFindings audit={audit([])} />);
-    expect(screen.getByText('Nothing here.')).toBeInTheDocument();
+    const empty = screen.getByText('Nothing here.');
+    expect(empty.closest('.diagrams-empty')).toBeTruthy();
+    expect(empty.closest('.diagrams-empty')?.querySelector('.hub-empty-glyph')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Watch 0' }));
-    expect(screen.getByText('Nothing here.')).toBeInTheDocument();
+    expect(screen.getByText('Nothing here.').closest('.diagrams-empty')).toBeTruthy();
   });
 });

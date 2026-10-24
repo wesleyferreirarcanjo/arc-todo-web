@@ -128,10 +128,10 @@
   padding-left: 1.15rem;
 }
 
-.seo-empty-tab {
-  display: grid;
-  gap: 0.85rem;
-  justify-items: start;
+@media (max-width: 1023px) {
+  .seo-workspace-tabs {
+    display: none;
+  }
 }
 
 .seo-research {
