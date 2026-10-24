@@ -1,20 +1,34 @@
 import { ErrorAlert } from './ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { PasswordInput } from './PasswordInput';
 import { ApiError } from '../lib/api/client';
 import type { ManagedUser, ProjectOption, UpdateUserInput } from '../types/user';
+import { ConfirmDialog } from './ConfirmDialog';
+import { UndoToast } from './UndoToast';
 
 interface UserListProps {
   users: ManagedUser[];
+  query: string;
   projectOptions: ProjectOption[];
   currentUserId: string;
   onUpdate: (userId: string, input: UpdateUserInput) => Promise<void>;
   onDelete: (userId: string) => Promise<void>;
 }
 
+export function matchesUserQuery(user: ManagedUser, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return (
+    user.username.toLowerCase().includes(needle) ||
+    Boolean(user.ssoAssign?.toLowerCase().includes(needle))
+  );
+}
+
 export function UserList({
   users,
+  query,
   projectOptions,
   currentUserId,
   onUpdate,
@@ -27,6 +41,8 @@ export function UserList({
   const [projectIds, setProjectIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ManagedUser | null>(null);
+  const pendingDeleteRef = useRef<ManagedUser | null>(null);
 
   const groupedProjects = projectOptions.reduce<
     Record<string, ProjectOption[]>
@@ -90,11 +106,9 @@ export function UserList({
     }
   }
 
-  async function handleDelete(user: ManagedUser) {
-    const confirmed = window.confirm(
-      `Delete user "${user.username}"? This cannot be undone.`,
-    );
-    if (!confirmed) return;
+  const deferredDelete = useDeferredDelete(async () => {
+    const user = pendingDeleteRef.current;
+    if (!user) return;
 
     setLoading(true);
     setError(null);
@@ -108,7 +122,15 @@ export function UserList({
       }
     } finally {
       setLoading(false);
+      pendingDeleteRef.current = null;
+      setPendingDelete(null);
     }
+  });
+
+  function handleDelete(user: ManagedUser) {
+    pendingDeleteRef.current = user;
+    setPendingDelete(user);
+    deferredDelete.requestDelete();
   }
 
   function projectSummary(user: ManagedUser) {
@@ -120,10 +142,12 @@ export function UserList({
     return names.join(', ');
   }
 
+  const visibleUsers = users.filter((user) => matchesUserQuery(user, query));
+
   return (
     <div className="entity-list">
       {error && <ErrorAlert>{error}</ErrorAlert>}
-      {users.map((user) => {
+      {visibleUsers.map((user) => {
         const isEditing = editingId === user.id;
         const isSelf = user.id === currentUserId;
 
@@ -255,6 +279,22 @@ export function UserList({
           </article>
         );
       })}
+      <ConfirmDialog
+        open={deferredDelete.confirmOpen}
+        title="Delete user"
+        description={`Delete user "${pendingDelete?.username ?? ''}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={loading}
+        onConfirm={deferredDelete.confirm}
+        onCancel={deferredDelete.cancel}
+      />
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="User deleted"
+        onUndo={deferredDelete.undo}
+        onDismiss={deferredDelete.dismiss}
+      />
     </div>
   );
 }
