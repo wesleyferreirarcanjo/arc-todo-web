@@ -1,13 +1,18 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { Modal } from '../components/Modal';
 import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { NamesIcon } from '../components/icons';
 import { NamesParticipationChoice } from '../components/names/NamesParticipationChoice';
 import { NameSessionRow } from '../components/names/NameSessionRow';
+import { useWorkspace } from '../context/WorkspaceContext';
+import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
+import { getProjectColor } from '../lib/color/entityColor';
 import {
   createNameSession,
   createNameSessionBasics,
@@ -28,13 +33,37 @@ const SORT_OPTIONS: { value: NameSort; label: string }[] = [
   { value: 'title_desc', label: 'Title (Z-A)' },
 ];
 
+function parseNameSort(value: string | null): NameSort {
+  switch (value) {
+    case 'updated_asc':
+    case 'title_asc':
+    case 'title_desc':
+      return value;
+    default:
+      return 'updated_desc';
+  }
+}
+
+function sessionAccent(
+  session: ProjectNameSessionSummary,
+  projects: Array<{ id: string; color?: string | null }>,
+): string | undefined {
+  if (!session.projectId) return undefined;
+  const project = projects.find((item) => item.id === session.projectId);
+  return project ? getProjectColor(project) : undefined;
+}
+
 export function NamesHubPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { projects } = useWorkspace();
+  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
+  const searchQuery = searchParams.get('q') ?? '';
+  const sort = parseNameSort(searchParams.get('sort'));
   const [items, setItems] = useState<ProjectNameSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sort, setSort] = useState<NameSort>('updated_desc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [whatItIs, setWhatItIs] = useState('');
@@ -47,7 +76,29 @@ export function NamesHubPage() {
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProjectNameSessionSummary | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ProjectNameSessionSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const patchParams = useCallback(
+    (patch: { q?: string; sort?: NameSort }) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (patch.q !== undefined) {
+            if (patch.q) next.set('q', patch.q);
+            else next.delete('q');
+          }
+          if (patch.sort !== undefined) {
+            if (patch.sort === 'updated_desc') next.delete('sort');
+            else next.set('sort', patch.sort);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -89,6 +140,10 @@ export function NamesHubPage() {
     });
     return sorted;
   }, [items, searchQuery, sort]);
+
+  const extraFilterCount =
+    Number(Boolean(searchQuery.trim())) + Number(sort !== 'updated_desc');
+  const filtersActive = extraFilterCount > 0;
 
   function openCreate() {
     setNewTitle('');
@@ -146,19 +201,55 @@ export function NamesHubPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
+  function requestDelete(session: ProjectNameSessionSummary) {
+    if (isMobileShell) {
+      setPendingDelete(session);
+      return;
+    }
+    setDeleteTarget(session);
+  }
+
+  async function commitDelete(session: ProjectNameSessionSummary) {
     setDeleting(true);
     try {
-      await deleteNameSession(deleteTarget.id);
-      setItems((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-      setDeleteTarget(null);
+      await deleteNameSession(session.id);
+      setItems((prev) => prev.filter((item) => item.id !== session.id));
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this session' }));
-      setDeleteTarget(null);
     } finally {
       setDeleting(false);
+      setDeleteTarget(null);
+      setPendingDelete(null);
     }
+  }
+
+  function clearFilters() {
+    patchParams({ q: '', sort: 'updated_desc' });
+  }
+
+  function renderFilterControls() {
+    return (
+      <>
+        <label className="board-filter-field board-filter-search">
+          Search
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => patchParams({ q: event.target.value })}
+            placeholder="Filter by title"
+            aria-label="Filter name sessions by title"
+          />
+        </label>
+        <label className="board-filter-field">
+          Sort by
+          <Select
+            value={sort}
+            onChange={(value) => patchParams({ sort: value as NameSort })}
+            options={SORT_OPTIONS}
+          />
+        </label>
+      </>
+    );
   }
 
   return (
@@ -202,36 +293,55 @@ export function NamesHubPage() {
 
       {!loading && !error && items.length > 0 && (
         <>
-          <div className="board-filters names-hub-filters">
-            <label className="board-filter-field board-filter-search">
-              Search
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Filter by title"
-                aria-label="Filter name sessions by title"
-              />
-            </label>
-            <label className="board-filter-field">
-              Sort by
-              <Select
-                value={sort}
-                onChange={(value) => setSort(value as NameSort)}
-                options={SORT_OPTIONS}
-              />
-            </label>
-          </div>
-          {visibleItems.length === 0 ? (
-            <div className="diagrams-empty">
-              <p className="status-message">No sessions match these filters.</p>
+          <div className="board-chrome-toolbar">
+            <div className="board-chrome-actions">
               <button
                 type="button"
-                className="btn btn-secondary"
-                onClick={() => setSearchQuery('')}
+                className={`btn btn-secondary board-chrome-toggle${filtersOpen ? ' is-open' : ''}`}
+                aria-expanded={filtersOpen}
+                aria-controls={filtersOpen ? 'board-chrome-panel' : undefined}
+                onClick={() => setFiltersOpen((open) => !open)}
               >
-                Clear filters
+                Filters
+                {extraFilterCount > 0 ? (
+                  <span className="board-chrome-count" aria-hidden="true">
+                    {extraFilterCount}
+                  </span>
+                ) : null}
               </button>
+            </div>
+          </div>
+          {filtersOpen && !isMobileShell ? (
+            <div
+              id="board-chrome-panel"
+              className="board-filters board-filters-inline names-hub-filters"
+              role="region"
+              aria-label="Filters"
+            >
+              {renderFilterControls()}
+            </div>
+          ) : null}
+          <MobileBoardFiltersOverlay
+            open={filtersOpen && isMobileShell}
+            onClose={() => setFiltersOpen(false)}
+          >
+            {renderFilterControls()}
+          </MobileBoardFiltersOverlay>
+          {visibleItems.length === 0 ? (
+            <div className="diagrams-empty">
+              <p className="status-message" role="status">
+                No sessions match these filters. {visibleItems.length} matching
+                {items.length !== visibleItems.length ? ` of ${items.length}` : ''}.
+              </p>
+              {filtersActive && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="names-session-list-wrap">
@@ -246,12 +356,13 @@ export function NamesHubPage() {
                     participationMode={session.participationMode}
                     updatedAt={session.updatedAt}
                     namingGoal={session.namingGoal}
+                    accent={sessionAccent(session, projects)}
                     onRename={() => {
                       setRenameTarget(session);
                       setRenameTitle(session.title);
                       setRenameError(null);
                     }}
-                    onDelete={() => setDeleteTarget(session)}
+                    onDelete={() => requestDelete(session)}
                   />
                 ))}
               </ul>
@@ -369,8 +480,19 @@ export function NamesHubPage() {
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
+        onConfirm={() => {
+          if (deleteTarget) void commitDelete(deleteTarget);
+        }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <UndoToast
+        open={Boolean(pendingDelete)}
+        message="Session deleted"
+        onUndo={() => setPendingDelete(null)}
+        onDismiss={() => {
+          if (pendingDelete) void commitDelete(pendingDelete);
+        }}
       />
     </div>
   );

@@ -297,6 +297,7 @@ export interface ProjectNameSessionSummary {
   participationMode?: ParticipationMode;
   recommendedName: string | null;
   candidateCount: number;
+  projectId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
