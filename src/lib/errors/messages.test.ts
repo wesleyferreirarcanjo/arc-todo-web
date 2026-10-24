@@ -25,4 +25,10 @@ describe('userMessage', () => {
       "Couldn't load tasks. Check your connection and try again.",
     );
   });
+
+  it('returns the project-access catalog copy', () => {
+    expect(catalogMessage('ERR-ARC-ACL-02')).toBe(
+      'You do not have access to this project. Ask an administrator to add you.',
+    );
+  });
 });

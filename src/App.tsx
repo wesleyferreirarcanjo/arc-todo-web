@@ -92,6 +92,18 @@ export default function App() {
               <Route
                 element={
                   <WorkspaceProvider>
+                    <Layout tightPage />
+                  </WorkspaceProvider>
+                }
+              >
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/wireframes"
+                  element={<ProjectWireframesPage />}
+                />
+              </Route>
+              <Route
+                element={
+                  <WorkspaceProvider>
                     <Layout />
                   </WorkspaceProvider>
                 }
@@ -169,10 +181,6 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/diagrams"
                   element={<ProjectDiagramsPage />}
-                />
-                <Route
-                  path="/organizations/:orgId/projects/:projectId/wireframes"
-                  element={<ProjectWireframesPage />}
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/videos"
