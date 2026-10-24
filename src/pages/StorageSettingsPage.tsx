@@ -1,9 +1,14 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { ErrorAlert } from '../components/ErrorAlert';
+import { StorageIcon } from '../components/icons';
 import { SettingsPageShell } from '../components/SettingsPageShell';
 import { fetchEvidenceStorageUsage } from '../lib/api/storage';
 import type { EvidenceStorageUsage } from '../types/storage';
+
+export const STORAGE_EMPTY =
+  'No evidence files yet. Attach images or videos on a task checklist and they will appear here.';
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) {
@@ -63,13 +68,24 @@ export function StorageSettingsPage() {
     >
       <ChatbotSettingsNav />
 
-      {error ? <p className="form-error">{error}</p> : null}
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
       {loading && !usage ? (
-        <p className="subtitle">Loading storage usage…</p>
+        <p className="status-message" role="status">
+          Loading storage usage…
+        </p>
       ) : null}
 
-      {usage ? (
+      {usage && usage.fileCount === 0 ? (
+        <div className="diagrams-empty">
+          <div className="hub-empty-glyph">
+            <StorageIcon className="arc-icon arc-icon-empty" />
+          </div>
+          <p className="status-message">{STORAGE_EMPTY}</p>
+        </div>
+      ) : null}
+
+      {usage && usage.fileCount > 0 ? (
         <div className="settings-summary">
           <div className="token-summary-grid">
             <article className="token-summary-card">
@@ -88,12 +104,15 @@ export function StorageSettingsPage() {
               </p>
             </article>
           </div>
-          <p className="subtitle settings-summary-note">
-            Evidence older than {retentionDays} day
-            {retentionDays === 1 ? '' : 's'} is deleted automatically. Recent
-            uploads remain available until they reach that age.
-          </p>
         </div>
+      ) : null}
+
+      {usage ? (
+        <p className="subtitle settings-summary-note">
+          Evidence older than {retentionDays} day
+          {retentionDays === 1 ? '' : 's'} is deleted automatically. Recent
+          uploads remain available until they reach that age.
+        </p>
       ) : null}
     </SettingsPageShell>
   );
