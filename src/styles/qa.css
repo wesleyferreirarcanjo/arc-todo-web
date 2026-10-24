@@ -304,6 +304,42 @@
   font-size: 0.925rem;
 }
 
+.task-qa-checklist-help-summary {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.task-qa-checklist-help-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.task-qa-checklist-help-toggle::before {
+  content: '';
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  flex-shrink: 0;
+}
+
+.task-qa-checklist-help-toggle[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+
 .qa-info-section h3 {
   margin: 0 0 0.5rem;
   font-size: 1.02rem;
@@ -338,7 +374,9 @@
 }
 
 .qa-info-form.is-compact .qa-info-row {
-  padding: 0.55rem 0.6rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .qa-info-page .qa-info-form,

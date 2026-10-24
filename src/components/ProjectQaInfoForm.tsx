@@ -45,12 +45,14 @@ type ProjectQaInfoFormProps = {
   organizationId: string;
   projectId: string;
   compact?: boolean;
+  showLede?: boolean;
 };
 
 export function ProjectQaInfoForm({
   organizationId,
   projectId,
   compact = false,
+  showLede = true,
 }: ProjectQaInfoFormProps) {
   const formId = useId();
   const [environments, setEnvironments] = useState<QaEnvironmentDraft[]>([]);
@@ -139,7 +141,7 @@ export function ProjectQaInfoForm({
         void handleSave();
       }}
     >
-      {compact && (
+      {compact && showLede && (
         <p className="qa-info-form-lede">
           Saved for this whole project, not only this task.{' '}
           <Link to={`/organizations/${organizationId}/projects/${projectId}/qa-info`}>
