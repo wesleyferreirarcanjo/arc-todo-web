@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WEB_ERROR } from '../lib/errors/messages';
 import { BrowserExtensionDownload } from './BrowserExtensionDownload';
 
 describe('BrowserExtensionDownload', () => {
@@ -60,8 +61,23 @@ describe('BrowserExtensionDownload', () => {
     expect(
       screen.getByRole('link', { name: 'Download for Chrome/Edge' }),
     ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.queryByText(/Version /)).not.toBeInTheDocument();
-    });
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveAttribute('data-error-code', WEB_ERROR.LOAD);
+    expect(alert).toHaveTextContent("Couldn't load the extension version");
+    expect(screen.queryByText(/Version /)).not.toBeInTheDocument();
+  });
+
+  it('shows an alert when the version fetch rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Not Found')));
+
+    render(<BrowserExtensionDownload />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveAttribute('data-error-code', WEB_ERROR.LOAD);
+    expect(alert).toHaveTextContent("Couldn't load the extension version");
+    expect(
+      screen.getByRole('link', { name: 'Download for Chrome/Edge' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Version /)).not.toBeInTheDocument();
   });
 });
