@@ -160,11 +160,20 @@ export function MetricsResourceTable({
         ) : null}
       </div>
       {filtered.length === 0 ? (
-        <p className="status-message">
-          {resources.length === 0 && emptyLabel
-            ? emptyLabel
-            : 'No apps match this filter.'}
-        </p>
+        resources.length > 0 ? (
+          <p className="status-message" role="status">
+            No apps match this filter.{' '}
+            <button
+              type="button"
+              className="btn btn-link"
+              onClick={() => setFilter('')}
+            >
+              Clear
+            </button>
+          </p>
+        ) : emptyLabel ? (
+          <p className="status-message">{emptyLabel}</p>
+        ) : null
       ) : (
         <div className="analytics-table-wrap">
           <table className="analytics-table">

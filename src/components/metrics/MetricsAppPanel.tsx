@@ -9,8 +9,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { ErrorAlert } from '../ErrorAlert';
 import { useChartColors } from '../analytics/useChartColors';
 import { getAppMetrics, getAppSeries } from '../../lib/api/metrics';
+import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import type {
   MetricsAppMetric,
   MetricsAppSeries,
@@ -69,18 +71,26 @@ export function MetricsAppPanel({
       : null;
   const [series, setSeries] = useState<MetricsAppSeries | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     void getAppMetrics()
       .then((next) => {
         if (!cancelled) {
           setMetrics(next);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
-          setError('Metrics service is unavailable.');
+          setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
         }
       });
     return () => {
@@ -100,10 +110,10 @@ export function MetricsAppPanel({
           setSeries(next);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
           setSeries(null);
-          setError('Metrics service is unavailable.');
+          setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE));
         }
       });
     return () => {
@@ -137,6 +147,10 @@ export function MetricsAppPanel({
 
   return (
     <div className="metrics-app-panel">
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
+      {loading && metrics.length === 0 && !error ? (
+        <p className="status-message">Loading metrics...</p>
+      ) : null}
       <div className="analytics-table-wrap">
         <table className="analytics-table">
           <thead>
@@ -177,8 +191,8 @@ export function MetricsAppPanel({
             })}
           </tbody>
         </table>
-        {metrics.length === 0 ? (
-          <p className="status-message">{error ?? EMPTY_METRICS}</p>
+        {!loading && metrics.length === 0 && !error ? (
+          <p className="status-message">{EMPTY_METRICS}</p>
         ) : null}
       </div>
 

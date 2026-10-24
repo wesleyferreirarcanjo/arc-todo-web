@@ -42,8 +42,12 @@ vi.mock('recharts', async () => {
   };
 });
 
+import { ApiError } from '../lib/api/client';
 import { METRICS_LIVE_REFRESH_MS } from '../lib/api/metrics';
+import { catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { MetricsPage } from './MetricsPage';
+
+const METRICS_UNAVAILABLE = catalogMessage(WEB_ERROR.METRICS_UNAVAILABLE);
 
 const serverId = '11111111-1111-4111-8111-111111111111';
 
@@ -243,17 +247,22 @@ describe('MetricsPage', () => {
     expect(screen.getByRole('table').querySelectorAll('tbody tr')).toHaveLength(16);
 
     await user.type(screen.getByLabelText('Filter apps'), 'zzz');
-    expect(screen.getByText('No apps match this filter.')).toBeInTheDocument();
+    const miss = screen.getByRole('status');
+    expect(miss).toHaveTextContent('No apps match this filter.');
+    expect(screen.queryByText(/No data for/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.getByRole('table').querySelectorAll('tbody tr')).toHaveLength(16);
   });
 
   it('keeps host history when the app list request fails', async () => {
     getServers.mockResolvedValue([server]);
-    getServerResources.mockRejectedValue(new Error('down'));
+    getServerResources.mockRejectedValue(new ApiError('Service Unavailable', 502));
     getServerSeries.mockResolvedValue(twoPointSeries);
 
     renderPage();
 
-    expect(await screen.findByText('Metrics service is unavailable.')).toBeInTheDocument();
+    expect(await screen.findByText(METRICS_UNAVAILABLE)).toBeInTheDocument();
+    expect(screen.queryByText('Metrics service is unavailable.')).not.toBeInTheDocument();
     const cpuChart = screen.getByRole('region', { name: 'CPU' });
     expect(
       within(cpuChart).queryByText('Not enough history for this window yet.'),
@@ -431,13 +440,35 @@ describe('MetricsPage', () => {
     }
   });
 
-  it('renders Metrics service is unavailable. when the API rejects', async () => {
-    getServers.mockRejectedValue(new Error('down'));
+  it('renders catalog unavailable copy for a 502 and shows visible loading', async () => {
+    getServers.mockImplementation(() => new Promise(() => {}));
 
+    const { unmount } = renderPage();
+    const loading = screen.getByText('Loading metrics...');
+    expect(loading).toHaveClass('status-message');
+    expect(loading).not.toHaveClass('sr-only');
+    unmount();
+
+    getServers.mockRejectedValue(new ApiError('Service Unavailable', 502));
     renderPage();
 
+    expect(await screen.findByText(METRICS_UNAVAILABLE)).toBeInTheDocument();
+    expect(screen.queryByText('Metrics service is unavailable.')).not.toBeInTheDocument();
+  });
+
+  it('shows catalog unavailable copy on Custom metrics instead of an empty status line', async () => {
+    getServers.mockResolvedValue([]);
+    getAppMetrics.mockRejectedValue(new ApiError('Service Unavailable', 502));
+
+    renderPage('/metrics?tab=apps');
+
+    expect(await screen.findByText(METRICS_UNAVAILABLE)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(METRICS_UNAVAILABLE);
+    expect(screen.queryByText('Metrics service is unavailable.')).not.toBeInTheDocument();
     expect(
-      await screen.findByText('Metrics service is unavailable.'),
-    ).toBeInTheDocument();
+      screen.queryByText(
+        'No custom app metrics yet. Ingest via POST /v1/apps/ingest/metrics with an aap_ token.',
+      ),
+    ).not.toBeInTheDocument();
   });
 });

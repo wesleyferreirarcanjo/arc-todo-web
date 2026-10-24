@@ -34,6 +34,7 @@ export const WEB_ERROR = {
   VAL_VIDEO: 'ERR-ARC-WEB-23',
   SESSION: 'ERR-ARC-AUTH-10',
   NET: 'ERR-ARC-NET-01',
+  METRICS_UNAVAILABLE: 'ERR-ARC-METRICS-02',
 } as const;
 
 export type WebErrorCode = (typeof WEB_ERROR)[keyof typeof WEB_ERROR];
@@ -77,6 +78,8 @@ const MESSAGES: Record<string, string> = {
   [WEB_ERROR.SESSION]: 'Your session ended. Sign in again to continue.',
   [WEB_ERROR.NET]:
     "Couldn't reach Arc Todo right now. Check your connection and try again.",
+  [WEB_ERROR.METRICS_UNAVAILABLE]:
+    'The metrics service is unavailable. Try again in a moment.',
   'ERR-ARC-AUTH-07':
     'No Arc Todo user is assigned to this Google account. Ask an administrator to add your email, then try again.',
   'ERR-ARC-SEO-01': 'Enter a site address to continue.',

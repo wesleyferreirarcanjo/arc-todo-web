@@ -23,6 +23,7 @@ import {
   METRICS_WINDOW_OPTIONS,
   revokeAgentToken,
 } from '../lib/api/metrics';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import type {
   MetricsAgentToken,
   MetricsResource,
@@ -31,7 +32,6 @@ import type {
   MetricsWindow,
 } from '../types/metrics';
 
-const UNAVAILABLE = 'Metrics service is unavailable.';
 const EMPTY_SERVERS =
   'No servers yet. Create an agent token and install the agent on a server.';
 
@@ -146,10 +146,10 @@ export function MetricsPage() {
             { replace: true },
           );
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setServers([]);
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE));
         }
       } finally {
         if (!cancelled) {
@@ -182,13 +182,13 @@ export function MetricsPage() {
         setResources(resourcesResult.value);
       } else {
         setResources([]);
-        setError(UNAVAILABLE);
+        setError(userMessage(resourcesResult.reason, WEB_ERROR.METRICS_UNAVAILABLE));
       }
       if (seriesResult.status === 'fulfilled') {
         setServerSeries(seriesResult.value);
       } else {
         setServerSeries(null);
-        setError(UNAVAILABLE);
+        setError(userMessage(seriesResult.reason, WEB_ERROR.METRICS_UNAVAILABLE));
       }
     }
     void loadWindow();
@@ -210,10 +210,10 @@ export function MetricsPage() {
         if (!cancelled) {
           setResourceSeries(next);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setResourceSeries(null);
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE));
         }
       }
     }
@@ -234,10 +234,10 @@ export function MetricsPage() {
         if (!cancelled) {
           setTokens(next);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setTokens([]);
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE));
         }
       }
     }
@@ -266,7 +266,7 @@ export function MetricsPage() {
             setServers(next);
           }
         })
-        .catch(() => setError(UNAVAILABLE));
+        .catch((err) => setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE)));
       if (snap.selectedServerId && !resourcesBusy) {
         resourcesBusy = true;
         const serverId = snap.selectedServerId;
@@ -278,7 +278,7 @@ export function MetricsPage() {
               setResources(next);
             }
           })
-          .catch(() => setError(UNAVAILABLE))
+          .catch((err) => setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE)))
           .finally(() => {
             resourcesBusy = false;
           });
@@ -311,7 +311,7 @@ export function MetricsPage() {
         );
       }
       void Promise.all(pending)
-        .catch(() => setError(UNAVAILABLE))
+        .catch((err) => setError(userMessage(err, WEB_ERROR.METRICS_UNAVAILABLE)))
         .finally(() => {
           seriesBusy = false;
         });
@@ -407,7 +407,7 @@ export function MetricsPage() {
       {tab === 'servers' ? (
         <>
           {loading && servers.length === 0 && !error ? (
-            <p className="sr-only">Loading metrics...</p>
+            <p className="status-message">Loading metrics...</p>
           ) : null}
           {!loading && servers.length === 0 && !error ? (
             <div className="diagrams-empty">
