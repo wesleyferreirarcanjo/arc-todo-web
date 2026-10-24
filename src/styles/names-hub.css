@@ -3,6 +3,12 @@
   width: 100%;
   max-width: none;
   margin-inline: 0;
+  gap: 1rem;
+}
+
+/* ponytail: content-area padding via :has until Layout tightPage (#arc-654) is the opt-in. */
+.content-area:has(.names-hub-page) {
+  padding: 0.5rem 1rem 1rem;
 }
 
 .names-create-form {
@@ -81,7 +87,7 @@
 }
 
 .names-session-row.has-accent {
-  border-left: var(--entity-rail-width) solid
+  border-left: var(--entity-rail-card-width) solid
     var(--entity-accent, var(--border-strong));
   background: color-mix(
     in srgb,
@@ -214,6 +220,12 @@
 
 .names-session-menu button:hover {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+@media (hover: none) {
+  .names-session-menu button {
+    min-height: 2.75rem;
+  }
 }
 
 @media (max-width: 640px) {

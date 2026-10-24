@@ -56,6 +56,21 @@ describe('Names hub session row CSS (#arc-474)', () => {
     );
   });
 
+  it('uses the 3px card rail token on accented hub rows', () => {
+    const rule = ruleBlock('.names-session-row.has-accent');
+    expect(rule).toContain('border-left: var(--entity-rail-card-width)');
+    expect(rule).not.toContain('var(--entity-rail-width)');
+  });
+
+  it('gives kebab menu items a 2.75rem tap target only on coarse pointers', () => {
+    const rule = ruleBlock('.names-session-menu button');
+    expect(rule).toContain('min-height: 2.35rem');
+    expect(rule).not.toContain('min-height: 2.75rem');
+    expect(css).toMatch(
+      /@media \(hover: none\) \{\s*\.names-session-menu button \{[^}]*min-height: 2\.75rem/,
+    );
+  });
+
   it('lets the names hub use the full content width', () => {
     const rule = ruleBlock('.names-hub-page');
     expect(rule).toContain('width: 100%');

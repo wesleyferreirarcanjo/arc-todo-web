@@ -70,6 +70,19 @@ describe('NameSessionRow', () => {
     expect(screen.getByText(/With the team/)).toBeTruthy();
   });
 
+  it('applies the project accent rail only when accent is passed', () => {
+    renderRow({ accent: '#4862ce' });
+    const row = document.querySelector('.names-session-row');
+    expect(row).toHaveClass('has-accent');
+    expect((row as HTMLElement).style.getPropertyValue('--entity-accent')).toBe(
+      '#4862ce',
+    );
+
+    cleanup();
+    renderRow();
+    expect(document.querySelector('.names-session-row')).not.toHaveClass('has-accent');
+  });
+
   it('keeps rename and delete behind the kebab menu', async () => {
     const user = userEvent.setup();
     const { onRename, onDelete } = renderRow();
