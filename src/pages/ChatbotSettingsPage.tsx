@@ -1,6 +1,7 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { SettingsPageShell } from '../components/SettingsPageShell';
 import { PasswordInput } from '../components/PasswordInput';
 import {
   fetchChatbotSettings,
@@ -76,16 +77,10 @@ export function ChatbotSettingsPage() {
   }
 
   return (
-    <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>Chatbot Settings</h2>
-          <p className="subtitle">
-            Configure the AI provider used by the Arc Todo chatbot service.
-          </p>
-        </div>
-      </div>
-
+    <SettingsPageShell
+      title="Chatbot Settings"
+      subtitle="Configure the AI provider used by the Arc Todo chatbot service."
+    >
       <ChatbotSettingsNav />
 
       {loading ? <p className="subtitle">Loading chatbot settings...</p> : null}
@@ -168,6 +163,6 @@ export function ChatbotSettingsPage() {
           </div>
         </form>
       ) : null}
-    </section>
+    </SettingsPageShell>
   );
 }

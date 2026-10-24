@@ -1,5 +1,7 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
+import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { SettingsPageShell } from '../components/SettingsPageShell';
 import { fetchEvidenceStorageUsage } from '../lib/api/storage';
 import type { EvidenceStorageUsage } from '../types/storage';
 
@@ -45,15 +47,10 @@ export function StorageSettingsPage() {
   const retentionDays = usage?.retentionDays ?? 30;
 
   return (
-    <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>Storage</h2>
-          <p className="subtitle">
-            Task evidence (QA images and videos) storage across the system.
-            Admin only.
-          </p>
-        </div>
+    <SettingsPageShell
+      title="Storage"
+      subtitle="Task evidence (QA images and videos) storage across the system. Admin only."
+      actions={
         <button
           type="button"
           className="btn btn-secondary"
@@ -62,7 +59,9 @@ export function StorageSettingsPage() {
         >
           Refresh
         </button>
-      </div>
+      }
+    >
+      <ChatbotSettingsNav />
 
       {error ? <p className="form-error">{error}</p> : null}
 
@@ -96,6 +95,6 @@ export function StorageSettingsPage() {
           </p>
         </div>
       ) : null}
-    </section>
+    </SettingsPageShell>
   );
 }
