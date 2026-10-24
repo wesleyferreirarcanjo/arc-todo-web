@@ -28,34 +28,21 @@ import type {
   CloudGitProvider,
   CloudServer,
 } from '../../types/cloud';
+import { AppDetailDeployments } from './AppDetailDeployments';
+import { AppDetailEnvironment } from './AppDetailEnvironment';
+import { AppDetailLogs } from './AppDetailLogs';
+import { AppDetailOverview } from './AppDetailOverview';
+import { AppDetailSource } from './AppDetailSource';
 
 const UNAVAILABLE = 'Cloud service is unavailable.';
-const MASK = '••••••••';
 
-type Tab = 'overview' | 'source' | 'deployments' | 'environment' | 'logs';
+export type Tab = 'overview' | 'source' | 'deployments' | 'environment' | 'logs';
 
 interface Props {
   app: CloudApp;
   servers: CloudServer[];
   onChanged: (app: CloudApp) => void;
   onDeleted: (id: string) => void;
-}
-
-function fmt(value: string | null): string {
-  return value ? new Date(value).toLocaleString() : '—';
-}
-
-/** Bytes → "12.3 MiB" (IEC). */
-function fmtBytes(bytes?: number): string {
-  if (bytes === undefined) return '—';
-  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value.toFixed(value >= 100 || unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
 /** Parse `KEY=value` lines; returns null when a line has no '='. */
@@ -423,6 +410,17 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     }
   }
 
+  function startEnvEdit() {
+    setEnvEditing(true);
+    setEnvText(
+      revealed && env
+        ? Object.entries(env)
+            .map(([k, v]) => `${k}=${v}`)
+            .join('\n')
+        : '',
+    );
+  }
+
   return (
     <section className="cloud-containers cloud-app-detail" aria-label={`App ${app.name}`}>
       <h3>{app.name}</h3>
@@ -452,608 +450,99 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       </div>
 
       {tab === 'overview' ? (
-        <div className="cloud-app-overview">
-          {isDraft ? (
-            <div className="cloud-import-draft">
-              <p className="status-message">
-                Draft imported from {app.importSource ?? 'a panel'} — nothing
-                is deployed yet. Review the summary, set domains when ready,
-                then confirm the import.
-              </p>
-              {app.importSummary?.warnings.map((w) => (
-                <p key={w} className="status-message">
-                  {w}
-                </p>
-              )) ?? null}
-              {app.importSummary &&
-              (app.importSummary.domains.length > 0 ||
-                app.importSummary.envCount > 0) ? (
-                <dl className="cloud-app-facts">
-                  <dt>Panel domains</dt>
-                  <dd>{app.importSummary.domains.join(', ') || '—'}</dd>
-                  <dt>Env vars</dt>
-                  <dd>
-                    {app.importSummary.envKeys.join(', ') || '—'}
-                  </dd>
-                </dl>
-              ) : null}
-              <div className="hub-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={busy !== null}
-                  onClick={() => void handleConfirmImport()}
-                >
-                  {busy === 'confirm' ? 'Confirming…' : 'Confirm import'}
-                </button>
-              </div>
-            </div>
-          ) : null}
-          <dl className="cloud-app-facts">
-            <dt>Server</dt>
-            <dd>{server?.name ?? '—'}</dd>
-            <dt>Source</dt>
-            <dd>
-              {app.gitProvider
-                ? `Git — ${app.repo ?? 'unconfigured'}`
-                : app.source === 'compose'
-                  ? 'Compose file'
-                  : app.image}
-            </dd>
-            <dt>Domains</dt>
-            <dd>{app.domains.join(', ') || '—'}</dd>
-            <dt>Port</dt>
-            <dd>{app.port}</dd>
-            <dt>Health check</dt>
-            <dd>{app.healthPath}</dd>
-            <dt>Status</dt>
-            <dd>{app.status}</dd>
-            {!isDraft ? (
-              <>
-                <dt>CPU</dt>
-                <dd>
-                  {stats === null
-                    ? '…'
-                    : stats.running
-                      ? `${(stats.cpuPercent ?? 0).toFixed(1)}%`
-                      : '—'}
-                </dd>
-                <dt>Memory</dt>
-                <dd>
-                  {stats === null
-                    ? '…'
-                    : stats.running
-                      ? `${fmtBytes(stats.memUsedBytes)} / ${fmtBytes(stats.memLimitBytes)} (${(stats.memPercent ?? 0).toFixed(1)}%)`
-                      : '—'}
-                </dd>
-              </>
-            ) : null}
-          </dl>
-          {!isDraft && stats && !stats.running && stats.detail ? (
-            <p className="status-message">{stats.detail}</p>
-          ) : null}
-
-          {app.gitProvider ? (
-            <label className="board-filter-field">
-              Git ref for next build (blank = {app.branch} tip)
-              <input
-                type="text"
-                value={gitRef}
-                onChange={(event) => setGitRef(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="commit sha or branch"
-              />
-            </label>
-          ) : app.source === 'image' ? (
-            <label className="board-filter-field">
-              Image ref for next deploy (blank = stored image)
-              <input
-                type="text"
-                value={imageRef}
-                onChange={(event) => setImageRef(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                placeholder={app.image ?? 'ghcr.io/org/app:tag'}
-              />
-            </label>
-          ) : null}
-
-          <div className="hub-actions cloud-app-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={busy !== null || isDraft}
-              title={isDraft ? 'Confirm the import first' : undefined}
-              onClick={() => void handleDeploy()}
-            >
-              {busy === 'deploy'
-                ? 'Deploying…'
-                : app.gitProvider
-                  ? 'Build & deploy'
-                  : 'Deploy'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={busy !== null || isDraft || app.status !== 'running'}
-              onClick={() => void handleLifecycle('restart')}
-            >
-              Restart
-            </button>
-            {app.status === 'stopped' || isDraft ? (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={busy !== null || isDraft}
-                onClick={() => void handleLifecycle('start')}
-              >
-                Start
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={busy !== null || isDraft || app.status !== 'running'}
-                onClick={() => void handleLifecycle('stop')}
-              >
-                Stop
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={busy !== null || isDraft}
-              onClick={() => void handleRollback()}
-            >
-              {busy === 'rollback' ? 'Rolling back…' : 'Rollback'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={busy !== null}
-              onClick={() => setDeleteOpen(true)}
-            >
-              Delete
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={busy !== null}
-              onClick={() => void refreshApp()}
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
+        <AppDetailOverview
+          app={app}
+          server={server}
+          isDraft={isDraft}
+          stats={stats}
+          busy={busy}
+          gitRef={gitRef}
+          imageRef={imageRef}
+          onGitRefChange={setGitRef}
+          onImageRefChange={setImageRef}
+          onConfirmImport={() => void handleConfirmImport()}
+          onDeploy={() => void handleDeploy()}
+          onLifecycle={(verb) => void handleLifecycle(verb)}
+          onRollback={() => void handleRollback()}
+          onDelete={() => setDeleteOpen(true)}
+          onRefresh={() => void refreshApp()}
+        />
       ) : null}
 
       {tab === 'source' ? (
-        <div className="cloud-app-overview">
-          <label className="board-filter-field">
-            Git provider
-            <select
-              value={gitProvider}
-              onChange={(event) => setGitProvider(event.target.value)}
-            >
-              <option value="">None (image / compose deploys)</option>
-              <option value="github_app">GitHub App</option>
-              <option value="deploy_key">Deploy key (SSH)</option>
-              <option value="public">Public repository</option>
-            </select>
-          </label>
-          {gitProvider ? (
-            <>
-              <label className="board-filter-field">
-                Repository
-                <input
-                  type="text"
-                  value={repo}
-                  onChange={(event) => setRepo(event.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="owner/repo or full git URL"
-                />
-              </label>
-              <label className="board-filter-field">
-                Branch
-                <input
-                  type="text"
-                  value={branch}
-                  onChange={(event) => setBranch(event.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="main"
-                />
-              </label>
-              <label className="board-filter-field">
-                Dockerfile
-                <input
-                  type="text"
-                  value={dockerfile}
-                  onChange={(event) => setDockerfile(event.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="Dockerfile"
-                />
-              </label>
-              <label className="board-filter-field">
-                Build context
-                <input
-                  type="text"
-                  value={context}
-                  onChange={(event) => setContext(event.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="."
-                />
-              </label>
-              <label className="cloud-build-toggle">
-                <input
-                  type="checkbox"
-                  checked={autoDeploy}
-                  onChange={(event) => setAutoDeploy(event.target.checked)}
-                />
-                Auto-deploy on push (signed GitHub webhook)
-              </label>
-            </>
-          ) : null}
-          <div className="hub-actions cloud-app-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={busy !== null}
-              onClick={() => void handleSaveSource()}
-            >
-              Save source
-            </button>
-          </div>
-
-          {gitProvider === 'deploy_key' ? (
-            <>
-              <div className="hub-actions cloud-app-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={busy !== null}
-                  onClick={() => void handleDeployKey()}
-                >
-                  {busy === 'deploykey'
-                    ? 'Generating…'
-                    : app.deployKeyPub
-                      ? 'Rotate deploy key'
-                      : 'Generate deploy key'}
-                </button>
-              </div>
-              {newKey || app.deployKeyPub ? (
-                <pre className="cloud-log-view" aria-label="Deploy key">
-                  {newKey ?? app.deployKeyPub}
-                </pre>
-              ) : null}
-              <p className="status-message">
-                Add this as a read-only deploy key on the repository.
-              </p>
-            </>
-          ) : null}
-
-          <label className="board-filter-field">
-            Build policy
-            <select
-              value={buildPolicy}
-              onChange={(event) =>
-                setPolicy(event.target.value as CloudApp['buildPolicy'])
-              }
-            >
-              <option value="local_preferred">
-                Local preferred — build on a build machine when online,
-                otherwise on the target
-              </option>
-              <option value="local_only">
-                Local only — queue until a build machine is free
-              </option>
-              <option value="server_only">
-                Server only — always build on the target
-              </option>
-            </select>
-          </label>
-          {buildPolicy !== 'server_only' && buildMachines.length > 0 ? (
-            <fieldset className="board-filter-field">
-              <legend>Allowed build machines (none checked = all)</legend>
-              {buildMachines.map((m) => (
-                <label key={m.id} className="cloud-build-toggle">
-                  <input
-                    type="checkbox"
-                    checked={allowed.includes(m.id)}
-                    onChange={() => toggleAllowed(m.id)}
-                  />
-                  {m.name}
-                </label>
-              ))}
-            </fieldset>
-          ) : null}
-          <div className="hub-actions cloud-app-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={busy !== null}
-              onClick={() => void handleSavePolicy()}
-            >
-              Save build policy
-            </button>
-          </div>
-
-          {buildPolicy !== 'server_only' && buildMachines.length > 0 ? (
-            <fieldset className="board-filter-field">
-              <legend>Checkout mapping (persistent path per machine)</legend>
-              {buildMachines.map((m) => (
-                <div key={m.id} className="cloud-app-actions">
-                  <label className="board-filter-field">
-                    {m.name}
-                    <input
-                      type="text"
-                      value={checkoutPaths[m.id] ?? ''}
-                      onChange={(event) =>
-                        setCheckoutPaths((cur) => ({
-                          ...cur,
-                          [m.id]: event.target.value,
-                        }))
-                      }
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder="D:\\arc-checkouts\\app or /var/lib/arc/app"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={busy !== null}
-                    onClick={() => void handleSaveCheckout(m.id)}
-                  >
-                    Save
-                  </button>
-                </div>
-              ))}
-            </fieldset>
-          ) : null}
-
-          <label className="board-filter-field">
-            Registry repository
-            <input
-              type="text"
-              value={registryRepo}
-              onChange={(event) => setRegistryRepo(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="ghcr.io/owner/image"
-            />
-          </label>
-          <label className="board-filter-field">
-            Registry user
-            <input
-              type="text"
-              value={registryUser}
-              onChange={(event) => setRegistryUser(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </label>
-          <label className="board-filter-field">
-            Registry token / password (write-only, stored encrypted)
-            <input
-              type="password"
-              value={registryPass}
-              onChange={(event) => setRegistryPass(event.target.value)}
-              autoComplete="new-password"
-              spellCheck={false}
-            />
-          </label>
-          <div className="hub-actions cloud-app-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={busy !== null}
-              onClick={() => void handleSaveRegistry()}
-            >
-              Save registry
-            </button>
-          </div>
-        </div>
+        <AppDetailSource
+          app={app}
+          gitProvider={gitProvider}
+          repo={repo}
+          branch={branch}
+          dockerfile={dockerfile}
+          context={context}
+          autoDeploy={autoDeploy}
+          registryRepo={registryRepo}
+          registryUser={registryUser}
+          registryPass={registryPass}
+          buildPolicy={buildPolicy}
+          allowed={allowed}
+          checkoutPaths={checkoutPaths}
+          newKey={newKey}
+          busy={busy}
+          buildMachines={buildMachines}
+          onGitProviderChange={setGitProvider}
+          onRepoChange={setRepo}
+          onBranchChange={setBranch}
+          onDockerfileChange={setDockerfile}
+          onContextChange={setContext}
+          onAutoDeployChange={setAutoDeploy}
+          onRegistryRepoChange={setRegistryRepo}
+          onRegistryUserChange={setRegistryUser}
+          onRegistryPassChange={setRegistryPass}
+          onBuildPolicyChange={setPolicy}
+          onToggleAllowed={toggleAllowed}
+          onCheckoutPathChange={(serverId, value) =>
+            setCheckoutPaths((cur) => ({ ...cur, [serverId]: value }))
+          }
+          onSaveSource={() => void handleSaveSource()}
+          onDeployKey={() => void handleDeployKey()}
+          onSavePolicy={() => void handleSavePolicy()}
+          onSaveCheckout={(serverId) => void handleSaveCheckout(serverId)}
+          onSaveRegistry={() => void handleSaveRegistry()}
+        />
       ) : null}
 
       {tab === 'deployments' ? (
-        <div>
-          {deployments.length === 0 ? (
-            <p className="status-message">No deployments yet.</p>
-          ) : (
-            <div className="analytics-table-wrap">
-              <table className="analytics-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Status</th>
-                    <th scope="col">Image ref</th>
-                    <th scope="col">Commit</th>
-                    <th scope="col">Built on</th>
-                    <th scope="col">Build</th>
-                    <th scope="col">Trigger</th>
-                    <th scope="col">Started</th>
-                    <th scope="col">Finished</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deployments.map((dep) => (
-                    <tr key={dep.id}>
-                      <td>
-                        <button
-                          type="button"
-                          className="cloud-server-name"
-                          onClick={() => void toggleLog(dep)}
-                        >
-                          {dep.status}
-                        </button>
-                      </td>
-                      <td>{dep.imageRef ?? 'compose'}</td>
-                      <td>{dep.commitSha ? dep.commitSha.slice(0, 8) : '—'}</td>
-                      <td>{dep.builtOnName ?? '—'}</td>
-                      <td>
-                        {dep.buildSeconds === null
-                          ? '—'
-                          : dep.pushSeconds !== null
-                            ? `${dep.buildSeconds}s +${dep.pushSeconds}s`
-                            : `${dep.buildSeconds}s`}
-                      </td>
-                      <td>{dep.trigger}</td>
-                      <td>{fmt(dep.startedAt)}</td>
-                      <td>{fmt(dep.finishedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {openLog ? (
-            <pre className="cloud-log-view" aria-label="Deployment log">
-              {openLog === liveDep.current && liveLines.length > 0
-                ? liveLines.join('\n')
-                : logText || 'No log output.'}
-              {openLog === liveDep.current && !liveStatus ? '\n…live' : ''}
-              {openLog === liveDep.current && liveStatus
-                ? `\nstatus: ${liveStatus}`
-                : ''}
-            </pre>
-          ) : null}
-        </div>
+        <AppDetailDeployments
+          deployments={deployments}
+          openLog={openLog}
+          liveDeploymentId={liveDep.current}
+          liveLines={liveLines}
+          liveStatus={liveStatus}
+          logText={logText}
+          onToggleLog={(dep) => void toggleLog(dep)}
+        />
       ) : null}
 
       {tab === 'environment' ? (
-        <div>
-          {!envEditing ? (
-            <>
-              {env === null ? (
-                <p className="status-message">Loading environment...</p>
-              ) : Object.keys(env).length === 0 ? (
-                <p className="status-message">No environment variables.</p>
-              ) : (
-                <div className="analytics-table-wrap">
-                  <table className="analytics-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Key</th>
-                        <th scope="col">Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(env).map(([key, value]) => (
-                        <tr key={key}>
-                          <td>{key}</td>
-                          <td>{revealed ? value : MASK}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <div className="hub-actions cloud-app-actions">
-                {!revealed && env !== null && Object.keys(env).length > 0 ? (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={busy !== null}
-                    onClick={() => void handleReveal()}
-                  >
-                    Reveal values
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={busy !== null}
-                  onClick={() => {
-                    setEnvEditing(true);
-                    setEnvText(
-                      revealed && env
-                        ? Object.entries(env)
-                            .map(([k, v]) => `${k}=${v}`)
-                            .join('\n')
-                        : '',
-                    );
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-              {revealed ? (
-                <p className="status-message">
-                  Values are visible — this view was audited.
-                </p>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <label className="board-filter-field">
-                KEY=value lines — replaces the whole environment
-                <textarea
-                  value={envText}
-                  onChange={(event) => setEnvText(event.target.value)}
-                  rows={8}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder={'DATABASE_URL=postgres://…\nSECRET=…'}
-                />
-              </label>
-              <div className="hub-actions cloud-app-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={busy !== null}
-                  onClick={() => void handleSaveEnv()}
-                >
-                  Save environment
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setEnvEditing(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        <AppDetailEnvironment
+          env={env}
+          revealed={revealed}
+          envEditing={envEditing}
+          envText={envText}
+          busy={busy}
+          onReveal={() => void handleReveal()}
+          onStartEdit={startEnvEdit}
+          onEnvTextChange={setEnvText}
+          onSave={() => void handleSaveEnv()}
+          onCancel={() => setEnvEditing(false)}
+        />
       ) : null}
 
       {tab === 'logs' ? (
-        <div>
-          <div className="hub-actions cloud-app-actions">
-            <label className="board-filter-field">
-              Tail
-              <select
-                value={tail}
-                onChange={(event) => setTail(Number(event.target.value))}
-              >
-                <option value={100}>100</option>
-                <option value={200}>200</option>
-                <option value={500}>500</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => void loadAppLogs()}
-            >
-              Refresh
-            </button>
-          </div>
-          {appLogLines === null ? (
-            <p className="status-message">Loading container logs...</p>
-          ) : appLogLines.length === 0 ? (
-            <p className="status-message">No log output.</p>
-          ) : (
-            <pre className="cloud-log-view" aria-label="Container logs">
-              {appLogLines.join('\n')}
-            </pre>
-          )}
-        </div>
+        <AppDetailLogs
+          tail={tail}
+          appLogLines={appLogLines}
+          onTailChange={setTail}
+          onRefresh={() => void loadAppLogs()}
+        />
       ) : null}
 
       <ConfirmDialog
