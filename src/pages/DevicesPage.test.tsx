@@ -93,11 +93,41 @@ describe('DevicesPage', () => {
     Object.values(api).forEach((fn) => fn.mockReset());
   });
 
+  it('shows loading devices as visible status, not sr-only', () => {
+    api.listDevices.mockReturnValue(new Promise(() => {}));
+    renderPage();
+    const loading = screen.getByText('Loading devices...');
+    expect(loading).not.toHaveClass('sr-only');
+    expect(loading).toHaveClass('status-message');
+    expect(loading).toHaveAttribute('role', 'status');
+  });
+
   it('shows an honest empty state', async () => {
     api.listDevices.mockResolvedValue([]);
     renderPage();
     expect(await screen.findByText(DEVICES_EMPTY)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Devices' })).toBeInTheDocument();
+    expect(document.querySelector('.hub-empty-glyph')).not.toBeNull();
+  });
+
+  it('alerts when sessions fail to load', async () => {
+    api.listDevices.mockResolvedValue([browser]);
+    api.listDeviceSessions.mockRejectedValue(new Error('Internal Server Error'));
+    api.listDeviceAudit.mockResolvedValue([]);
+    renderPage();
+    expect(
+      await screen.findByRole('alert'),
+    ).toHaveTextContent("Couldn't load sessions. Check your connection and try again.");
+  });
+
+  it('alerts when audit fails to load', async () => {
+    api.listDevices.mockResolvedValue([browser]);
+    api.listDeviceSessions.mockResolvedValue([]);
+    api.listDeviceAudit.mockRejectedValue(new Error('Internal Server Error'));
+    renderPage();
+    expect(
+      await screen.findByRole('alert'),
+    ).toHaveTextContent("Couldn't load audit. Check your connection and try again.");
   });
 
   it('lists own browsers and PCs and hides IDE hosts for a member', async () => {
