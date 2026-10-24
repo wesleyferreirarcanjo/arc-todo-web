@@ -46,6 +46,14 @@
   overflow-x: clip;
 }
 
+.content-area.is-tight-page {
+  padding: 0.5rem 1rem 1rem;
+}
+
+.content-area.is-tight-page .page-shell {
+  gap: 1rem;
+}
+
 
 .content-area.is-board-page .app-main {
   display: flex;
