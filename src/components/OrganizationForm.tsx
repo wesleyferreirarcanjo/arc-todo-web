@@ -42,7 +42,7 @@ export function OrganizationForm({ onSubmit }: OrganizationFormProps) {
       aria-labelledby="organizations-create-heading"
     >
       <div className="organization-form-header">
-        <h2 id="organizations-create-heading">New organization</h2>
+        <h3 id="organizations-create-heading">New organization</h3>
         <p className="organization-form-description">
           Create a workspace to group projects.
         </p>
