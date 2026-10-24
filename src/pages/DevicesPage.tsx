@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AnalyticsTable } from '../components/AnalyticsTable';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { DevicesIcon } from '../components/icons';
 import { useAuth } from '../context/AuthContext';
 import {
   deviceStatusLabel,
@@ -194,10 +195,16 @@ export function DevicesPage() {
     }
     void listDeviceSessions(selected)
       .then(setSessions)
-      .catch(() => setSessions([]));
+      .catch((err) => {
+        setSessions([]);
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'sessions' }));
+      });
     void listDeviceAudit(selected)
       .then(setAudit)
-      .catch(() => setAudit([]));
+      .catch((err) => {
+        setAudit([]);
+        setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'audit' }));
+      });
   }, [ownsSelected, selected]);
 
   async function confirmRevoke() {
@@ -217,7 +224,7 @@ export function DevicesPage() {
   const sessionRows = sessionViews(sessions, audit);
 
   return (
-    <div className="page-shell analytics-page">
+    <div className="page-shell">
       <header className="page-header">
         <h2>Devices</h2>
         <p className="page-subtitle">
@@ -226,10 +233,17 @@ export function DevicesPage() {
       </header>
 
       {error ? <ErrorAlert>{error}</ErrorAlert> : null}
-      {loading ? <p className="sr-only">Loading devices...</p> : null}
+      {loading ? (
+        <p className="status-message" role="status">
+          Loading devices...
+        </p>
+      ) : null}
 
       {!loading && devices.length === 0 && !error ? (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <DevicesIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">{DEVICES_EMPTY}</p>
         </div>
       ) : null}
