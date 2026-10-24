@@ -1,12 +1,15 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { SeoIcon } from '../components/icons';
 import { SeoFindings } from '../components/seo/SeoFindings';
 import { SeoKeywordsResearch } from '../components/seo/SeoKeywordsResearch';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
+import { useRegisterMobileShellModeTabs } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ApiError } from '../lib/api/client';
+import { getProjectColor } from '../lib/color/entityColor';
 import {
   connectSeoSearchConsole,
   enqueueSeoAudit,
@@ -38,11 +41,16 @@ function isHiddenTab(value: string | null): boolean {
 
 const KEYWORD_SEGMENTS = ['research', 'gsc'] as const;
 
-const KEYWORD_SEGMENT_LABELS: Record<(typeof KEYWORD_SEGMENTS)[number], string> =
-  {
-    research: 'Research',
-    gsc: 'Search Console',
-  };
+type KeywordSegment = (typeof KEYWORD_SEGMENTS)[number];
+
+const KEYWORD_SEGMENT_LABELS: Record<KeywordSegment, string> = {
+  research: 'Research',
+  gsc: 'Search Console',
+};
+
+function isKeywordSegment(value: string | null): value is KeywordSegment {
+  return value != null && (KEYWORD_SEGMENTS as readonly string[]).includes(value);
+}
 
 function categoryScore(
   categories: Record<string, unknown>,
@@ -68,7 +76,10 @@ function GscConnectPrompt({
   onConnect: () => void;
 }) {
   return (
-    <div className="seo-empty-tab">
+    <div className="diagrams-empty">
+      <span className="hub-empty-glyph" aria-hidden="true">
+        <SeoIcon className="arc-icon-empty" />
+      </span>
       <p className="status-message">
         Connect Search Console to see real queries, clicks, and positions for
         this site. Arc Todo does not invent rankings.
@@ -125,18 +136,14 @@ function GscTable({
 
 export function SeoSitePage() {
   const { orgId, projectId, siteId } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
+  const requestedSegment = searchParams.get('segment');
   const { currentProject } = useWorkspace();
   const [site, setSite] = useState<SeoSite | null>(null);
   const [audit, setAudit] = useState<SeoAudit | null>(null);
   const [keywords, setKeywords] = useState<SeoGscRow[]>([]);
   const [pages, setPages] = useState<SeoGscRow[]>([]);
-  const [tab, setTab] = useState<SeoTab>(() =>
-    isVisibleTab(requestedTab) ? requestedTab : 'audit',
-  );
-  const [keywordSegment, setKeywordSegment] =
-    useState<(typeof KEYWORD_SEGMENTS)[number]>('research');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -144,6 +151,42 @@ export function SeoSitePage() {
   const [connecting, setConnecting] = useState(false);
   const [gscError, setGscError] = useState<string | null>(null);
   const [gscLoading, setGscLoading] = useState(false);
+  const tab: SeoTab = isVisibleTab(requestedTab) ? requestedTab : 'audit';
+  const keywordSegment: KeywordSegment = isKeywordSegment(requestedSegment)
+    ? requestedSegment
+    : 'research';
+
+  const writeTab = useCallback(
+    (id: SeoTab) => {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', id);
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const writeSegment = useCallback(
+    (id: KeywordSegment) => {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', 'keywords');
+      next.set('segment', id);
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  useRegisterMobileShellModeTabs(
+    forbidden
+      ? null
+      : {
+          items: TABS.map((id) => ({ id, label: TAB_LABELS[id] })),
+          activeId: tab,
+          onChange: (id) => {
+            if (isVisibleTab(id)) writeTab(id);
+          },
+          ariaLabel: 'SEO workspace',
+        },
+  );
 
   const loadSite = useCallback(async () => {
     if (!orgId || !projectId || !siteId) return;
@@ -190,7 +233,9 @@ export function SeoSitePage() {
     const timer = window.setInterval(() => {
       void fetchSeoAudit(orgId, projectId, siteId, audit.id)
         .then(setAudit)
-        .catch(() => undefined);
+        .catch((err) => {
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this audit' }));
+        });
     }, 2000);
     return () => window.clearInterval(timer);
   }, [audit, orgId, projectId, siteId]);
@@ -297,8 +342,17 @@ export function SeoSitePage() {
     running || audit?.status === 'queued' || audit?.status === 'running';
 
   return (
-    <div className="page-shell names-session-page seo-site-page">
-      <header className="page-header page-header-with-actions">
+    <div
+      className="page-shell names-session-page seo-site-page"
+      style={
+        currentProject
+          ? ({ '--entity-accent': getProjectColor(currentProject) } as CSSProperties)
+          : undefined
+      }
+    >
+      <header
+        className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}
+      >
         <div>
           <WorkspaceEyebrow />
           <h2>{site?.title || site?.hostname || currentProject?.name || 'SEO'}</h2>
@@ -319,14 +373,14 @@ export function SeoSitePage() {
 
       {!loading && site && (
         <>
-          <nav className="names-stepper" aria-label="SEO workspace">
+          <nav className="names-stepper seo-workspace-tabs" aria-label="SEO workspace">
             {TABS.map((id) => (
               <button
                 key={id}
                 type="button"
                 className={tab === id ? 'is-current' : undefined}
                 aria-current={tab === id ? 'true' : undefined}
-                onClick={() => setTab(id)}
+                onClick={() => writeTab(id)}
               >
                 {TAB_LABELS[id]}
               </button>
@@ -346,10 +400,15 @@ export function SeoSitePage() {
                 </button>
               </div>
               {!audit && (
-                <p className="status-message">
-                  No audit yet. Run audit to crawl this address with Arc Todo&apos;s
-                  own crawler — no paid SEO key.
-                </p>
+                <div className="diagrams-empty">
+                  <span className="hub-empty-glyph" aria-hidden="true">
+                    <SeoIcon className="arc-icon-empty" />
+                  </span>
+                  <p className="status-message">
+                    No audit yet. Run audit to crawl this address with Arc Todo&apos;s
+                    own crawler — no paid SEO key.
+                  </p>
+                </div>
               )}
               {audit && (
                 <>
@@ -451,7 +510,7 @@ export function SeoSitePage() {
                     type="button"
                     className={keywordSegment === id ? 'is-current' : undefined}
                     aria-current={keywordSegment === id ? 'true' : undefined}
-                    onClick={() => setKeywordSegment(id)}
+                    onClick={() => writeSegment(id)}
                   >
                     {KEYWORD_SEGMENT_LABELS[id]}
                   </button>

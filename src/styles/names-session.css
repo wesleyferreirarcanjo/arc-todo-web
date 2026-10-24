@@ -1104,7 +1104,8 @@
 @media (hover: none) {
   .names-desk-tabs button,
   .choice-group-option,
-  .analytics-metric-info-btn {
+  .analytics-metric-info-btn,
+  .names-stepper button {
     min-height: 2.75rem;
   }
 }
