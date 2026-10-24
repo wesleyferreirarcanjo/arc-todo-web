@@ -32,4 +32,10 @@ describe('userMessage', () => {
       'Enter a maximum pages-per-audit of at least 1.',
     );
   });
+
+  it('returns the project-access catalog copy', () => {
+    expect(catalogMessage('ERR-ARC-ACL-02')).toBe(
+      'You do not have access to this project. Ask an administrator to add you.',
+    );
+  });
 });
