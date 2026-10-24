@@ -173,7 +173,7 @@ export function MobileBoardFab() {
       icon: <NavigateIcon />,
       onClick: () => setDialLevel('nav'),
     });
-    if (isBoardPage && actions?.openFilters) {
+    if (actions?.openFilters) {
       items.push({
         id: 'filter',
         label: 'Filter',

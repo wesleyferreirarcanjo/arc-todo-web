@@ -54,7 +54,7 @@
 }
 
 .diagrams-grid--wireframe {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 640px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
 }
 
 .diagram-card {
@@ -139,7 +139,7 @@
 }
 
 .wireframe-preview-nav:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -188,6 +188,22 @@
 
 .wireframe-preview-dot.is-active {
   background: var(--text-primary);
+}
+
+@media (hover: none) {
+  .wireframe-preview-nav {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .wireframe-preview-dot {
+    box-sizing: content-box;
+    width: 0.45rem;
+    height: 0.45rem;
+    padding: 1.15rem;
+    margin: -1.15rem;
+    background-clip: content-box;
+  }
 }
 
 .diagram-card-placeholder {

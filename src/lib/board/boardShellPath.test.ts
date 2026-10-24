@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isBoardShellPath,
   isNamesSessionPath,
+  isTightPagePath,
   projectTasksHref,
 } from './boardShellPath';
 
@@ -22,6 +23,17 @@ describe('isBoardShellPath', () => {
     ).toBe(false);
     expect(
       isBoardShellPath('/organizations/org-1/projects/proj-1/names/sess-1'),
+    ).toBe(false);
+  });
+});
+
+describe('isTightPagePath', () => {
+  it('opts the wireframes hub into tight density', () => {
+    expect(isTightPagePath('/wireframes')).toBe(true);
+    expect(isTightPagePath('/board')).toBe(false);
+    expect(isTightPagePath('/diagrams')).toBe(false);
+    expect(
+      isTightPagePath('/organizations/org-1/projects/proj-1/wireframes'),
     ).toBe(false);
   });
 });

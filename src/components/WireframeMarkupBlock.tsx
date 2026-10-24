@@ -1,9 +1,11 @@
 import { ErrorAlert } from './ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Modal } from './Modal';
+import { UndoToast } from './UndoToast';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { ApiError } from '../lib/api/client';
 import {
   deleteProjectDiagram,
@@ -45,17 +47,39 @@ export function WireframeMarkupBlock({
   const navigate = useNavigate();
   const [capturing, setCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<ProjectDiagramSummary | null>(
     null,
   );
   const [deleting, setDeleting] = useState(false);
+  const deleteTargetRef = useRef<ProjectDiagramSummary | null>(null);
   const [nameMode, setNameMode] = useState<NameMode | null>(null);
   const [nameTarget, setNameTarget] = useState<ProjectDiagramSummary | null>(
     null,
   );
   const [nameValue, setNameValue] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
+  const [nameErrorCode, setNameErrorCode] = useState<string | undefined>();
   const [savingName, setSavingName] = useState(false);
+
+  const markupDelete = useDeferredDelete(async () => {
+    const target = deleteTargetRef.current;
+    if (!target) return;
+    setDeleting(true);
+    try {
+      await deleteProjectDiagram(orgId, projectId, target.id);
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+      onDiagramsChange();
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this markup' }));
+      setErrorCode(WEB_ERROR.DELETE);
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
+  });
 
   const editorPath = (diagramId: string) =>
     `/organizations/${orgId}/projects/${projectId}/diagrams/${diagramId}`;
@@ -65,7 +89,9 @@ export function WireframeMarkupBlock({
     setNameTarget(null);
     setNameValue(`${wireframeTitle} — markup`);
     setNameError(null);
+    setNameErrorCode(undefined);
     setError(null);
+    setErrorCode(undefined);
   }
 
   function openRename(diagram: ProjectDiagramSummary) {
@@ -73,7 +99,9 @@ export function WireframeMarkupBlock({
     setNameTarget(diagram);
     setNameValue(diagram.title);
     setNameError(null);
+    setNameErrorCode(undefined);
     setError(null);
+    setErrorCode(undefined);
   }
 
   function closeNameModal() {
@@ -81,11 +109,13 @@ export function WireframeMarkupBlock({
     setNameMode(null);
     setNameTarget(null);
     setNameError(null);
+    setNameErrorCode(undefined);
   }
 
   async function handleMarkUp(title: string) {
     setCapturing(true);
     setError(null);
+    setErrorCode(undefined);
     try {
       const sourceHtml =
         html ??
@@ -109,6 +139,7 @@ export function WireframeMarkupBlock({
             ? err.message
             : userMessage(err, WEB_ERROR.CREATE, { thing: 'this markup' });
       setError(message);
+      setErrorCode(err instanceof ApiError ? err.code : WEB_ERROR.CREATE);
     } finally {
       setCapturing(false);
     }
@@ -118,6 +149,7 @@ export function WireframeMarkupBlock({
     const title = nameValue.trim();
     if (!title) {
       setNameError(catalogMessage(WEB_ERROR.VAL_NAME));
+      setNameErrorCode(WEB_ERROR.VAL_NAME);
       return;
     }
 
@@ -130,6 +162,7 @@ export function WireframeMarkupBlock({
     if (!nameTarget) return;
     setSavingName(true);
     setNameError(null);
+    setNameErrorCode(undefined);
     try {
       await updateProjectDiagram(orgId, projectId, nameTarget.id, { title });
       setNameMode(null);
@@ -137,24 +170,16 @@ export function WireframeMarkupBlock({
       onDiagramsChange();
     } catch (err) {
       setNameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this markup' }));
+      setNameErrorCode(WEB_ERROR.RENAME);
     } finally {
       setSavingName(false);
     }
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteProjectDiagram(orgId, projectId, deleteTarget.id);
-      setDeleteTarget(null);
-      onDiagramsChange();
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this markup' }));
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
+  function requestMarkupDelete(diagram: ProjectDiagramSummary) {
+    deleteTargetRef.current = diagram;
+    setDeleteTarget(diagram);
+    markupDelete.requestDelete();
   }
 
   const nameBusy = savingName || capturing;
@@ -173,7 +198,7 @@ export function WireframeMarkupBlock({
           </button>
         </div>
       )}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
       {showList && diagrams.length > 0 && (
         <ul className="wireframe-markup-list">
           {diagrams.map((diagram) => (
@@ -200,7 +225,7 @@ export function WireframeMarkupBlock({
               <button
                 type="button"
                 className="btn btn-danger btn-sm"
-                onClick={() => setDeleteTarget(diagram)}
+                onClick={() => requestMarkupDelete(diagram)}
               >
                 Delete
               </button>
@@ -230,7 +255,7 @@ export function WireframeMarkupBlock({
             }}
           />
         </label>
-        {nameError && <ErrorAlert>{nameError}</ErrorAlert>}
+        {nameError && <ErrorAlert code={nameErrorCode}>{nameError}</ErrorAlert>}
         <div className="hub-actions">
           <button
             type="button"
@@ -257,14 +282,28 @@ export function WireframeMarkupBlock({
         </div>
       </Modal>
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
+        open={markupDelete.confirmOpen}
         title="Delete markup"
         description={`Delete "${deleteTarget?.title ?? 'this markup'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={markupDelete.confirm}
+        onCancel={() => {
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+          markupDelete.cancel();
+        }}
+      />
+      <UndoToast
+        open={markupDelete.toastOpen}
+        message="Markup deleted"
+        onUndo={() => {
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+          markupDelete.undo();
+        }}
+        onDismiss={markupDelete.dismiss}
       />
     </div>
   );
