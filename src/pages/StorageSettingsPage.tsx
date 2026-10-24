@@ -25,6 +25,18 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(digits)} ${units[unitIndex]}`;
 }
 
+/** Cloudflare decimal GB (1e9), so 10000000000 bytes reads "10 GB". */
+function formatDecimalGb(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 GB';
+  }
+  const gb = bytes / 1e9;
+  if (Number.isInteger(gb) || gb >= 10) {
+    return `${gb.toFixed(0)} GB`;
+  }
+  return `${parseFloat(gb.toFixed(2))} GB`;
+}
+
 export function StorageSettingsPage() {
   const [usage, setUsage] = useState<EvidenceStorageUsage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,12 +107,21 @@ export function StorageSettingsPage() {
               </strong>
             </article>
             <article className="token-summary-card">
-              <span className="token-summary-label">Total size</span>
+              <span className="token-summary-label">Cloudflare</span>
               <strong className="token-summary-value">
-                {formatBytes(usage.totalBytes)}
+                {formatDecimalGb(usage.cloudflareBytes)} of 10 GB
               </strong>
               <p className="subtitle token-summary-note">
-                {usage.totalBytes.toLocaleString()} bytes
+                {usage.cloudflareBytes.toLocaleString()} bytes
+              </p>
+            </article>
+            <article className="token-summary-card">
+              <span className="token-summary-label">Still on the server</span>
+              <strong className="token-summary-value">
+                {formatBytes(usage.serverMediaBytes)}
+              </strong>
+              <p className="subtitle token-summary-note">
+                {usage.serverMediaBytes.toLocaleString()} bytes
               </p>
             </article>
           </div>
