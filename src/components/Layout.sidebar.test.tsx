@@ -265,6 +265,14 @@ describe('Layout sidebar identity', () => {
   it('applies tight page density on Metrics', () => {
     authState.isAdmin = true;
     renderLayout('/metrics');
+    const metricsContent = document.querySelector('.content-area');
+    expect(metricsContent).toHaveClass('is-tight-page');
+    expect(metricsContent).not.toHaveClass('is-board-page');
+  });
+
+  it('applies tight page density on Users', () => {
+    authState.isAdmin = true;
+    renderLayout('/admin/users');
     const content = document.querySelector('.content-area');
     expect(content).toHaveClass('is-tight-page');
     expect(content).not.toHaveClass('is-board-page');

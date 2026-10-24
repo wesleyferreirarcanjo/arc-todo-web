@@ -293,7 +293,7 @@
   margin-top: 0;
 }
 
-.user-form-header h2 {
+.user-form-header h3 {
   font-size: var(--type-section);
   font-weight: 700;
   line-height: 1.2;

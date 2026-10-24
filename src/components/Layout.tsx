@@ -90,7 +90,8 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
     isTightPagePath(location.pathname) ||
     location.pathname === '/organizations' ||
     location.pathname === '/analytics' ||
-    location.pathname === '/metrics';
+    location.pathname === '/metrics' ||
+    location.pathname === '/admin/users';
   const entries = visibleNav(isAdmin);
 
   if (navPath !== location.pathname) {
