@@ -14,6 +14,7 @@ import type {
   NameCandidate,
   ProjectNameSession,
 } from '../../types/name-session';
+import { NamesIcon } from '../icons';
 import { BatchProgress } from './BatchProgress';
 import { CandidateDeck } from './CandidateDeck';
 import { CandidateDeckCard } from './CandidateDeckCard';
@@ -374,7 +375,14 @@ export function ExploreMode(props: {
   });
 
   if (session.candidates.filter((item) => item.status !== 'rejected').length === 0) {
-    return <p className="names-empty">{NEEDS_AI_COPY}</p>;
+    return (
+      <div className="diagrams-empty">
+        <span className="hub-empty-glyph" aria-hidden="true">
+          <NamesIcon className="arc-icon-empty" />
+        </span>
+        <p className="names-empty status-message">{NEEDS_AI_COPY}</p>
+      </div>
+    );
   }
 
   const remaining = Math.max(0, deck.length - Math.min(index, deck.length));
@@ -451,7 +459,12 @@ export function ExploreMode(props: {
             />
           </>
         ) : (
-          <p className="names-empty">No names in this batch yet.</p>
+          <div className="diagrams-empty">
+            <span className="hub-empty-glyph" aria-hidden="true">
+              <NamesIcon className="arc-icon-empty" />
+            </span>
+            <p className="names-empty status-message">No names in this batch yet.</p>
+          </div>
         )}
       </div>
       <VariationPicker

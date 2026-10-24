@@ -10,6 +10,7 @@ import {
   upsertNameFeedback,
 } from '../../lib/api/names';
 import { resolveSessionParticipation } from '../../lib/names/hubList';
+import { NamesIcon } from '../icons';
 import { NoBatchDecision } from './DecisionNoBatch';
 import {
   BELOW_TOP_REASON_MESSAGE,
@@ -395,7 +396,14 @@ export function DecisionMode(props: {
   const progress = session.participationProgress;
 
   if (!showBallot && !showResults && !showFaceoff) {
-    return <p className="names-empty">Decision comes next.</p>;
+    return (
+      <div className="diagrams-empty">
+        <span className="hub-empty-glyph" aria-hidden="true">
+          <NamesIcon className="arc-icon-empty" />
+        </span>
+        <p className="names-empty status-message">Decision comes next.</p>
+      </div>
+    );
   }
 
   const savedPick = session.recommendedCandidateId

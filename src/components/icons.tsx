@@ -224,6 +224,28 @@ export function NamesIcon({ className = 'arc-icon' }: ArcIconProps) {
   );
 }
 
+export function HeartIcon({
+  className = 'arc-icon',
+  filled = false,
+}: ArcIconProps & { filled?: boolean }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="1.1em"
+      height="1.1em"
+      aria-hidden="true"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 21s-6.2-4.35-9.33-8.5C.5 9.5 1.2 5.4 4.5 3.9c2.1-.95 4.4-.2 5.5 1.6 1.1-1.8 3.4-2.55 5.5-1.6 3.3 1.5 4 5.6 1.83 8.6C18.2 16.65 12 21 12 21z" />
+    </svg>
+  );
+}
+
 export function SeoIcon({ className = 'arc-icon' }: ArcIconProps) {
   return (
     <DuotoneIcon className={className}>

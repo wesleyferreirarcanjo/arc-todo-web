@@ -14,7 +14,7 @@ import { Select } from '../components/Select';
 import { CandidateReviewDialog, NamesPasteDialog } from '../components/names/CandidateReviewDialog';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiError } from '../lib/api/client';
 import { ChatApiError, generateNameSuggestions } from '../lib/api/chat';
 import {
@@ -96,8 +96,18 @@ function isSessionMode(id: string): id is NamesSessionMode {
   return SESSION_MODES.some((item) => item.id === id);
 }
 
+function resolveSessionMode(
+  raw: string | null,
+  participationMode: string | undefined,
+): NamesSessionMode {
+  if (raw === 'explore' || raw === 'shortlist' || raw === 'decision') return raw;
+  if (raw === 'team' && participationMode !== 'solo') return 'team';
+  return 'explore';
+}
+
 export function NameSessionPage() {
   const { sessionId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [session, setSession] = useState<ProjectNameSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,7 +123,6 @@ export function NameSessionPage() {
   const [resolvingKeys, setResolvingKeys] = useState<string[]>([]);
   const [inspectorId, setInspectorId] = useState<string | null>(null);
   const [inspectorView, setInspectorView] = useState<InspectorView>('checks');
-  const [mode, setMode] = useState<NamesSessionMode>('explore');
   const [pendingPickId, setPendingPickId] = useState<string | null>(null);
   const [pickNote, setPickNote] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -130,6 +139,7 @@ export function NameSessionPage() {
 
   const favoriteCount = session ? yourShortlist(session).length : 0;
   const showTeamTab = session?.participationMode === 'team';
+  const mode = resolveSessionMode(searchParams.get('mode'), session?.participationMode);
   const sessionModes = SESSION_MODES.filter(
     (item) => item.id !== 'team' || showTeamTab,
   ).map((item) =>
@@ -137,6 +147,18 @@ export function NameSessionPage() {
       ? { ...item, label: `Shortlist-${favoriteCount}` }
       : item,
   );
+
+  function setMode(next: NamesSessionMode) {
+    if (next === 'team' && !showTeamTab) return;
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        params.set('mode', next);
+        return params;
+      },
+      { replace: true },
+    );
+  }
 
   useRegisterMobileShellModeTabs(
     forbidden
@@ -591,7 +613,9 @@ export function NameSessionPage() {
     return (
       <div className="page-shell">
         <h2>Names</h2>
-        <p>You do not have access to this session.</p>
+        <ErrorAlert code="ERR-ARC-NAME-29">
+          You do not have access to this naming session.
+        </ErrorAlert>
       </div>
     );
   }
@@ -754,7 +778,11 @@ export function NameSessionPage() {
       </header>
       {loading && <p className="status-message">Loading session...</p>}
       {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
-      {notice && <div className="alert">{notice}</div>}
+      {notice && (
+        <div className="alert" role="status">
+          {notice}
+        </div>
+      )}
       {pendingPickId && session && (
         <div className="names-decision-panel">
           <label className="form-field">

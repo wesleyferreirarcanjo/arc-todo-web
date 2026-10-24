@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HeartIcon } from '../components/icons';
 import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { ApiError } from '../lib/api/client';
 import type { ProjectNameSession } from '../types/name-session';
@@ -99,14 +103,16 @@ const emptySession: ProjectNameSession = {
   feedback: [],
 };
 
-function renderPage() {
+function SearchProbe() {
+  const { search } = useLocation();
+  return <span data-testid="names-search">{search}</span>;
+}
+
+function renderPage(path = '/names/sess-1') {
   return render(
-    <MemoryRouter
-      initialEntries={[
-        '/names/sess-1',
-      ]}
-    >
+    <MemoryRouter initialEntries={[path]}>
       <BoardMobileShellProvider>
+        <SearchProbe />
         <Routes>
           <Route
             path="/names/:sessionId"
@@ -194,6 +200,7 @@ describe('NameSessionPage shortlist chrome', () => {
     await user.click(modeButton(/Shortlist/));
     expect(modeButton(/Shortlist/)).toHaveAttribute('aria-current', 'true');
     expect(modeButton('Explore')).not.toHaveAttribute('aria-current');
+    expect(screen.getByTestId('names-search')).toHaveTextContent('?mode=shortlist');
     expect(screen.queryByText(/Add names — type them here/)).toBeNull();
     expect(screen.queryByText('Add names — type them or copy the brief')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Generate with AI' })).toBeNull();
@@ -449,17 +456,52 @@ describe('NameSessionPage shortlist chrome', () => {
     expect(screen.queryByRole('button', { name: 'Checks' })).toBeNull();
   });
 
+  it('opens Shortlist from ?mode=shortlist', async () => {
+    renderPage('/names/sess-1?mode=shortlist');
+
+    await waitFor(() => {
+      expect(modeButton(/Shortlist/)).toHaveAttribute('aria-current', 'true');
+    });
+    expect(modeButton('Explore')).not.toHaveAttribute('aria-current');
+    expect(screen.getByTestId('names-search')).toHaveTextContent('?mode=shortlist');
+    expect(screen.queryByText(/Add names — type them here/)).toBeNull();
+  });
+
+  it('falls back to Explore when ?mode= is invalid', async () => {
+    renderPage('/names/sess-1?mode=garbage');
+
+    await waitFor(() => {
+      expect(modeButton('Explore')).toHaveAttribute('aria-current', 'true');
+    });
+    expect(screen.getByText(/Add names — type them here/)).toBeTruthy();
+  });
+
   it('renders the existing forbidden state', async () => {
     fetchNameSession.mockRejectedValue(new ApiError('Forbidden', 403));
     renderPage();
 
     await waitFor(() => {
-      expect(
-        screen.getByText('You do not have access to this session.'),
-      ).toBeTruthy();
+      expect(screen.getByRole('alert')).toHaveAttribute(
+        'data-error-code',
+        'ERR-ARC-NAME-29',
+      );
     });
+    expect(screen.getByRole('alert').textContent).toMatch(
+      /You do not have access to this naming session/,
+    );
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Smart copy' })).toBeNull();
+  });
+
+  it('imports HeartIcon from icons.tsx', () => {
+    expect(typeof HeartIcon).toBe('function');
+    const dir = path.dirname(fileURLToPath(import.meta.url));
+    const grid = readFileSync(
+      path.join(dir, '../components/names/ShortlistGrid.tsx'),
+      'utf8',
+    );
+    expect(grid).toMatch(/import \{[^}]*HeartIcon[^}]*\} from '\.\.\/icons'/);
+    expect(grid).not.toMatch(/function HeartIcon/);
   });
 
   it('hides Team views on a solo session', async () => {

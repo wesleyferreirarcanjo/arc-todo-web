@@ -1,4 +1,5 @@
 import type { NameCandidate } from '../../types/name-session';
+import { HeartIcon, NamesIcon } from '../icons';
 import { CheckSummary } from './CheckSummary';
 import { normalizeNameKey } from '../../lib/names/catalog';
 
@@ -6,24 +7,6 @@ function reactionLabel(reaction: NameCandidate['reaction']): string {
   if (reaction === 'loved') return 'Loved';
   if (reaction === 'liked') return 'Liked';
   return 'Kept';
-}
-
-function HeartIcon(props: { filled: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="1.1em"
-      height="1.1em"
-      aria-hidden="true"
-      fill={props.filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 21s-6.2-4.35-9.33-8.5C.5 9.5 1.2 5.4 4.5 3.9c2.1-.95 4.4-.2 5.5 1.6 1.1-1.8 3.4-2.55 5.5-1.6 3.3 1.5 4 5.6 1.83 8.6C18.2 16.65 12 21 12 21z" />
-    </svg>
-  );
 }
 
 export function ShortlistGrid(props: {
@@ -46,10 +29,15 @@ export function ShortlistGrid(props: {
 
   if (props.candidates.length === 0) {
     return (
-      <p className="names-empty">
-        {props.emptyMessage ??
-          'No shortlist yet. Like or Love names in Explore.'}
-      </p>
+      <div className="diagrams-empty">
+        <span className="hub-empty-glyph" aria-hidden="true">
+          <NamesIcon className="arc-icon-empty" />
+        </span>
+        <p className="names-empty status-message">
+          {props.emptyMessage ??
+            'No shortlist yet. Like or Love names in Explore.'}
+        </p>
+      </div>
     );
   }
 
