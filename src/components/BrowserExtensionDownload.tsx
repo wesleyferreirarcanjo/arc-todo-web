@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
+import { ErrorAlert } from './ErrorAlert';
 import { InstallIcon } from './icons';
 
 const VERSION_HREF = '/extension/version.json';
@@ -9,18 +11,29 @@ const FIREFOX_NOTE =
 
 export function BrowserExtensionDownload() {
   const [version, setVersion] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void fetch(VERSION_HREF)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload: { version?: unknown } | null) => {
+      .then((response) => {
+        if (!response.ok) {
+          throw Object.assign(new Error('Not Found'), { status: response.status });
+        }
+        return response.json();
+      })
+      .then((payload: { version?: unknown }) => {
         if (cancelled) return;
         const next = typeof payload?.version === 'string' ? payload.version.trim() : '';
         setVersion(next || null);
+        setLoadError(null);
       })
-      .catch(() => {
-        if (!cancelled) setVersion(null);
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setVersion(null);
+        setLoadError(
+          userMessage(err, WEB_ERROR.LOAD, { thing: 'the extension version' }),
+        );
       });
     return () => {
       cancelled = true;
@@ -30,6 +43,9 @@ export function BrowserExtensionDownload() {
   return (
     <section className="extension-download" aria-labelledby="extension-download-heading">
       <h3 id="extension-download-heading">Browser extension</h3>
+      {loadError ? (
+        <ErrorAlert code={WEB_ERROR.LOAD}>{loadError}</ErrorAlert>
+      ) : null}
       {version ? <p className="extension-download-version">Version {version}</p> : null}
       <p className="extension-download-lede">
         Unzip the Chrome/Edge package once, then load the folder at chrome://extensions

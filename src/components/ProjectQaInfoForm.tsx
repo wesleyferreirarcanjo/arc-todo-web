@@ -1,6 +1,9 @@
 import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ConfirmDialog } from './ConfirmDialog';
 import { ErrorAlert } from './ErrorAlert';
+import { UndoToast } from './UndoToast';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { fetchProjectQaInfo, updateProjectQaInfo } from '../lib/api/qaInfo';
 import {
@@ -16,6 +19,28 @@ let draftKey = 0;
 function nextKey(): string {
   draftKey += 1;
   return `qa-${draftKey}`;
+}
+
+type RemoveKind = 'environment' | 'user';
+type RemoveTarget = { kind: RemoveKind; key: string };
+
+function removeCopy(kind: RemoveKind): {
+  title: string;
+  description: string;
+  toast: string;
+} {
+  if (kind === 'environment') {
+    return {
+      title: 'Remove environment',
+      description: 'Remove this environment? This cannot be undone.',
+      toast: 'Environment removed',
+    };
+  }
+  return {
+    title: 'Remove user',
+    description: 'Remove this user? This cannot be undone.',
+    toast: 'User removed',
+  };
 }
 
 function profileToDrafts(profile: ProjectQaInfo): {
@@ -62,6 +87,28 @@ export function ProjectQaInfoForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const removeCopyForTarget = removeTarget
+    ? removeCopy(removeTarget.kind)
+    : { title: 'Remove', description: '', toast: '' };
+
+  function commitRemove(target: RemoveTarget) {
+    if (target.kind === 'environment') {
+      setEnvironments((prev) => prev.filter((row) => row.key !== target.key));
+    } else {
+      setUsers((prev) => prev.filter((row) => row.key !== target.key));
+    }
+  }
+
+  const deferredRemove = useDeferredDelete(() => {
+    if (removeTarget) commitRemove(removeTarget);
+    setRemoveTarget(null);
+  });
+
+  function requestRemove(target: RemoveTarget) {
+    setRemoveTarget(target);
+    deferredRemove.requestDelete();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -217,7 +264,7 @@ export function ProjectQaInfoForm({
                 type="button"
                 className="text-link"
                 onClick={() =>
-                  setEnvironments((prev) => prev.filter((row) => row.key !== item.key))
+                  requestRemove({ kind: 'environment', key: item.key })
                 }
               >
                 Remove
@@ -311,9 +358,7 @@ export function ProjectQaInfoForm({
               <button
                 type="button"
                 className="text-link"
-                onClick={() =>
-                  setUsers((prev) => prev.filter((row) => row.key !== item.key))
-                }
+                onClick={() => requestRemove({ kind: 'user', key: item.key })}
               >
                 Remove
               </button>
@@ -349,6 +394,31 @@ export function ProjectQaInfoForm({
           {saving ? 'Saving...' : 'Save'}
         </button>
       </div>
+
+      {deferredRemove.confirmOpen ? (
+        <ConfirmDialog
+          open
+          title={removeCopyForTarget.title}
+          description={removeCopyForTarget.description}
+          confirmLabel="Remove"
+          variant="danger"
+          onConfirm={deferredRemove.confirm}
+          onCancel={() => {
+            deferredRemove.cancel();
+            setRemoveTarget(null);
+          }}
+        />
+      ) : null}
+
+      <UndoToast
+        open={deferredRemove.toastOpen}
+        message={removeCopyForTarget.toast}
+        onUndo={() => {
+          deferredRemove.undo();
+          setRemoveTarget(null);
+        }}
+        onDismiss={deferredRemove.dismiss}
+      />
     </form>
   );
 }
