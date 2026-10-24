@@ -49,7 +49,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
   gap: 1.25rem;
 }
 
@@ -67,7 +67,7 @@
 }
 
 .diagram-card.has-accent {
-  border-left: var(--entity-rail-width) solid var(--entity-accent, var(--border-strong));
+  border-left: var(--entity-rail-card-width) solid var(--entity-accent, var(--border-strong));
   background: color-mix(
     in srgb,
     var(--entity-accent, var(--accent-secondary)) var(--entity-mix-fill),

@@ -1,17 +1,24 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { DiagramsIcon } from '../components/icons';
+import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { getProjectColor } from '../lib/color/entityColor';
 import {
   createProjectDiagram,
+  deleteProjectDiagram,
   fetchProjectDiagrams,
+  updateProjectDiagram,
 } from '../lib/api/diagrams';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import type { ProjectDiagramSummary } from '../types/diagram';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
@@ -67,21 +74,34 @@ function formatBadgeLabel(label: string): string {
 
 export function DiagramsHubPage() {
   const navigate = useNavigate();
+  const { registerActions } = useBoardMobileShell();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [items, setItems] = useState<HubDiagram[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [orgFilter, setOrgFilter] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<DiagramSort>('updated_desc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createOrgId, setCreateOrgId] = useState('');
   const [createProjectId, setCreateProjectId] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createErrorCode, setCreateErrorCode] = useState<string | undefined>();
   const [creating, setCreating] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<HubDiagram | null>(null);
+  const [renameTitle, setRenameTitle] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [renameErrorCode, setRenameErrorCode] = useState<string | undefined>();
+  const [renaming, setRenaming] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<HubDiagram | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const deleteTargetRef = useRef<HubDiagram | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,6 +109,7 @@ export function DiagramsHubPage() {
     async function load() {
       setLoading(true);
       setError(null);
+      setErrorCode(undefined);
       try {
         const orgs = await fetchOrganizations();
         const projectsByOrg = await Promise.all(
@@ -112,6 +133,7 @@ export function DiagramsHubPage() {
       } catch (err) {
         if (!cancelled) {
           setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'diagrams' }));
+          setErrorCode(WEB_ERROR.LOAD);
         }
       } finally {
         if (!cancelled) {
@@ -158,9 +180,54 @@ export function DiagramsHubPage() {
 
   const canCreate = organizations.length > 0 && projects.length > 0;
 
+  const activeFilterCount =
+    Number(Boolean(searchQuery.trim())) +
+    Number(Boolean(orgFilter)) +
+    Number(Boolean(projectFilter)) +
+    Number(sort !== 'updated_desc');
+
+  useEffect(() => {
+    if (canvasCount === 0) {
+      registerActions(null);
+      return () => registerActions(null);
+    }
+    registerActions({
+      // ponytail: FAB Filter requires BoardMobileShellActions.onCreated; hub does not create from the dial. Register openFilters alone when the shell allows it.
+      onCreated: async () => {},
+      openFilters: () => setMobileFiltersOpen(true),
+    });
+    return () => registerActions(null);
+  }, [canvasCount, registerActions]);
+
+  const commitDelete = useCallback(async () => {
+    const row = deleteTargetRef.current;
+    if (!row) return;
+    setDeleting(true);
+    try {
+      await deleteProjectDiagram(row.org.id, row.project.id, row.diagram.id);
+      setItems((prev) => prev.filter((item) => item.diagram.id !== row.diagram.id));
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this diagram' }));
+      setErrorCode(WEB_ERROR.DELETE);
+    } finally {
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+      setDeleting(false);
+    }
+  }, []);
+
+  const deferredDelete = useDeferredDelete(commitDelete);
+
   function handleOrgFilterChange(value: string) {
     setOrgFilter(value);
     setProjectFilter('');
+  }
+
+  function clearFilters() {
+    setOrgFilter('');
+    setProjectFilter('');
+    setSearchQuery('');
+    setSort('updated_desc');
   }
 
   function openCreate() {
@@ -180,6 +247,7 @@ export function DiagramsHubPage() {
     setCreateProjectId(defaultProject);
     setNewTitle('');
     setCreateError(null);
+    setCreateErrorCode(undefined);
     setCreateOpen(true);
   }
 
@@ -192,19 +260,23 @@ export function DiagramsHubPage() {
     const title = newTitle.trim();
     if (!createOrgId) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
+      setCreateErrorCode(WEB_ERROR.VAL_ORG);
       return;
     }
     if (!createProjectId) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
+      setCreateErrorCode(WEB_ERROR.VAL_PROJECT);
       return;
     }
     if (!title) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_DIAGRAM));
+      setCreateErrorCode(WEB_ERROR.VAL_DIAGRAM);
       return;
     }
 
     setCreating(true);
     setCreateError(null);
+    setCreateErrorCode(undefined);
     try {
       const created = await createProjectDiagram(createOrgId, createProjectId, {
         title,
@@ -216,10 +288,111 @@ export function DiagramsHubPage() {
       );
     } catch (err) {
       setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this diagram' }));
+      setCreateErrorCode(WEB_ERROR.CREATE);
     } finally {
       setCreating(false);
     }
   }
+
+  async function handleRename() {
+    const row = renameTarget;
+    if (!row) return;
+    const title = renameTitle.trim();
+    if (!title) {
+      setRenameError(catalogMessage(WEB_ERROR.VAL_DIAGRAM));
+      setRenameErrorCode(WEB_ERROR.VAL_DIAGRAM);
+      return;
+    }
+
+    setRenaming(true);
+    setRenameError(null);
+    setRenameErrorCode(undefined);
+    try {
+      const updated = await updateProjectDiagram(
+        row.org.id,
+        row.project.id,
+        row.diagram.id,
+        { title },
+      );
+      setItems((prev) =>
+        prev.map((item) =>
+          item.diagram.id === updated.id
+            ? {
+                ...item,
+                diagram: {
+                  ...item.diagram,
+                  title: updated.title,
+                  updatedAt: updated.updatedAt,
+                },
+              }
+            : item,
+        ),
+      );
+      setRenameTarget(null);
+      setRenameTitle('');
+    } catch (err) {
+      setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this diagram' }));
+      setRenameErrorCode(WEB_ERROR.RENAME);
+    } finally {
+      setRenaming(false);
+    }
+  }
+
+  function requestHubDelete(row: HubDiagram) {
+    deleteTargetRef.current = row;
+    setDeleteTarget(row);
+    deferredDelete.requestDelete();
+  }
+
+  const filterPanel = (
+    <>
+      <label className="board-filter-field board-filter-search">
+        Search
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter by title"
+          aria-label="Filter diagrams by title"
+        />
+      </label>
+      <label className="board-filter-field">
+        Organization
+        <Select
+          value={orgFilter}
+          placeholder="All organizations"
+          onChange={handleOrgFilterChange}
+          options={[
+            { value: '', label: 'All organizations' },
+            ...organizations.map((org) => ({ value: org.id, label: org.name })),
+          ]}
+        />
+      </label>
+      <label className="board-filter-field">
+        Project
+        <Select
+          value={projectFilter}
+          placeholder="All projects"
+          onChange={setProjectFilter}
+          options={[
+            { value: '', label: 'All projects' },
+            ...projectOptions.map((project) => ({
+              value: project.id,
+              label: project.name,
+            })),
+          ]}
+        />
+      </label>
+      <label className="board-filter-field">
+        Sort by
+        <Select
+          value={sort}
+          onChange={(value) => setSort(value as DiagramSort)}
+          options={SORT_OPTIONS}
+        />
+      </label>
+    </>
+  );
 
   return (
     <div className="page-shell diagrams-hub-page">
@@ -248,7 +421,7 @@ export function DiagramsHubPage() {
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && canvasCount === 0 && (
         <div className="diagrams-empty">
@@ -282,72 +455,32 @@ export function DiagramsHubPage() {
 
       {!loading && !error && canvasCount > 0 && (
         <>
-          <div className="board-filters diagrams-hub-filters">
-            <label className="board-filter-field board-filter-search">
-              Search
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Filter by title"
-                aria-label="Filter diagrams by title"
-              />
-            </label>
-            <label className="board-filter-field">
-              Organization
-              <Select
-                value={orgFilter}
-                placeholder="All organizations"
-                onChange={handleOrgFilterChange}
-                options={[
-                  { value: '', label: 'All organizations' },
-                  ...organizations.map((org) => ({ value: org.id, label: org.name })),
-                ]}
-              />
-            </label>
-            <label className="board-filter-field">
-              Project
-              <Select
-                value={projectFilter}
-                placeholder="All projects"
-                onChange={setProjectFilter}
-                options={[
-                  { value: '', label: 'All projects' },
-                  ...projectOptions.map((project) => ({
-                    value: project.id,
-                    label: project.name,
-                  })),
-                ]}
-              />
-            </label>
-            <label className="board-filter-field">
-              Sort by
-              <Select
-                value={sort}
-                onChange={(value) => setSort(value as DiagramSort)}
-                options={SORT_OPTIONS}
-              />
-            </label>
-          </div>
+          <PageFiltersToolbar
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            panel={filterPanel}
+            mobileOverlayOpen={mobileFiltersOpen}
+            onMobileOverlayOpenChange={setMobileFiltersOpen}
+          />
 
           {visibleItems.length === 0 ? (
-            <div className="diagrams-empty">
-              <p className="status-message">No diagrams match these filters.</p>
+            <div className="diagrams-empty" role="status">
+              <p className="status-message">
+                No diagrams match these filters. {visibleItems.length} of {canvasCount}
+              </p>
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => {
-                  setOrgFilter('');
-                  setProjectFilter('');
-                  setSearchQuery('');
-                }}
+                onClick={clearFilters}
               >
                 Clear filters
               </button>
             </div>
           ) : (
             <ul className="diagrams-grid">
-              {visibleItems.map(({ diagram, org, project }) => {
+              {visibleItems.map((row) => {
+                const { diagram, org, project } = row;
                 const editorPath = `/organizations/${org.id}/projects/${project.id}/diagrams/${diagram.id}`;
                 const accentColor = getProjectColor(project);
                 return (
@@ -386,6 +519,27 @@ export function DiagramsHubPage() {
                       <p className="diagram-card-meta">
                         Updated {formatUpdatedAt(diagram.updatedAt)}
                       </p>
+                      <div className="diagram-card-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setRenameTarget(row);
+                            setRenameTitle(diagram.title);
+                            setRenameError(null);
+                            setRenameErrorCode(undefined);
+                          }}
+                        >
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => requestHubDelete(row)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </li>
                 );
@@ -446,7 +600,7 @@ export function DiagramsHubPage() {
             }}
           />
         </label>
-        {createError && <ErrorAlert>{createError}</ErrorAlert>}
+        {createError && <ErrorAlert code={createErrorCode}>{createError}</ErrorAlert>}
         <div className="hub-actions">
           <button
             type="button"
@@ -466,6 +620,76 @@ export function DiagramsHubPage() {
           </button>
         </div>
       </Modal>
+
+      <Modal
+        open={Boolean(renameTarget)}
+        onClose={() => (renaming ? undefined : setRenameTarget(null))}
+        title="Rename diagram"
+        titleId="rename-diagram-hub-title"
+      >
+        <label className="form-field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={renameTitle}
+            onChange={(event) => setRenameTitle(event.target.value)}
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void handleRename();
+              }
+            }}
+          />
+        </label>
+        {renameError && <ErrorAlert code={renameErrorCode}>{renameError}</ErrorAlert>}
+        <div className="hub-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={renaming}
+            onClick={() => void handleRename()}
+          >
+            {renaming ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={renaming}
+            onClick={() => setRenameTarget(null)}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        open={deferredDelete.confirmOpen}
+        title="Delete diagram"
+        description={`Delete "${deleteTarget?.diagram.title ?? 'this diagram'}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+        onConfirm={() => void deferredDelete.confirm()}
+        onCancel={() => {
+          deferredDelete.cancel();
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+        }}
+      />
+
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="Diagram deleted"
+        onUndo={() => {
+          deferredDelete.undo();
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+        }}
+        onDismiss={() => {
+          void deferredDelete.dismiss();
+        }}
+      />
     </div>
   );
 }

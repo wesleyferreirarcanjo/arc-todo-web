@@ -92,13 +92,21 @@ export default function App() {
               <Route
                 element={
                   <WorkspaceProvider>
+                    <Layout tightPage />
+                  </WorkspaceProvider>
+                }
+              >
+                <Route path="/diagrams" element={<DiagramsHubPage />} />
+              </Route>
+              <Route
+                element={
+                  <WorkspaceProvider>
                     <Layout />
                   </WorkspaceProvider>
                 }
               >
                 <Route path="/chat" element={<Navigate to="/board" replace />} />
                 <Route path="/board" element={<AllTasksBoardPage />} />
-                <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/wireframes" element={<WireframesHubPage />} />
                 <Route path="/videos" element={<VideosHubPage />} />
                 <Route path="/names" element={<NamesHubPage />} />
