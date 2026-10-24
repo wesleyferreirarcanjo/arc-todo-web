@@ -319,7 +319,7 @@
 
 .wireframe-preview-title {
   margin: 0;
-  font-size: var(--type-section);
+  font-size: var(--type-page);
   font-weight: 600;
   line-height: 1.2;
 }
@@ -329,14 +329,7 @@
   min-height: 0;
   width: 100%;
   border: 0;
-  background: #e8e8e8;
-}
-
-.wireframe-markup-bar {
-  flex-shrink: 0;
-  padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-surface);
+  background: var(--bg-page);
 }
 
 .wireframe-markup {
