@@ -98,6 +98,10 @@ describe('LoginPage SSO 401', () => {
       ),
     ).toBeInTheDocument();
 
+    const alert = document.querySelector('.alert.alert-error');
+    expect(alert).toBeInTheDocument();
+    expect(alert).toHaveAttribute('data-error-code', 'ERR-ARC-AUTH-07');
+
     const host = document.querySelector('.google-signin-button');
     expect(host).toBeInTheDocument();
     expect(host).toHaveAttribute('aria-busy', 'false');
