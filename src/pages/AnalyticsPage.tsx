@@ -20,6 +20,7 @@ import { useChartColors } from '../components/analytics/useChartColors';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { AnalyticsIcon } from '../components/icons';
 import {
+  ANALYTICS_DEFAULT_PERIOD,
   ANALYTICS_PERIOD_OPTIONS,
   fetchAnalyticsBugFlags,
   fetchAnalyticsSummary,
@@ -151,6 +152,59 @@ function AnalyticsSkeleton() {
   );
 }
 
+const CLEARED_ANALYTICS_FILTERS: AnalyticsPageFilters = {
+  organizationId: '',
+  projectId: '',
+  period: ANALYTICS_DEFAULT_PERIOD,
+  from: '',
+  to: '',
+  compareMode: 'previous',
+  compareFrom: '',
+  compareTo: '',
+};
+
+function analyticsFiltersActive(filters: AnalyticsPageFilters): boolean {
+  return (
+    Boolean(filters.organizationId) ||
+    Boolean(filters.projectId) ||
+    filters.period !== ANALYTICS_DEFAULT_PERIOD ||
+    filters.compareMode === 'custom'
+  );
+}
+
+function AnalyticsEmpty({
+  filtersActive,
+  filterMiss,
+  nextStep,
+  onClear,
+}: {
+  filtersActive: boolean;
+  filterMiss: string;
+  nextStep: string;
+  onClear: () => void;
+}) {
+  if (filtersActive) {
+    return (
+      <div className="diagrams-empty">
+        <p className="status-message" role="status">
+          {filterMiss}
+        </p>
+        <button type="button" className="btn btn-secondary" onClick={onClear}>
+          Clear
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="diagrams-empty">
+      <div className="hub-empty-glyph">
+        <AnalyticsIcon className="arc-icon arc-icon-empty" />
+      </div>
+      <p className="status-message">{nextStep}</p>
+    </div>
+  );
+}
+
 export function AnalyticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = useMemo(() => readAnalyticsFilters(searchParams), [searchParams]);
@@ -273,6 +327,8 @@ export function AnalyticsPage() {
     summary?.period.previousLabel ??
     (filters.period === 'all' ? null : 'the previous window');
   const windowName = periodLabel ?? 'this window';
+  const filtersActive = analyticsFiltersActive(filters);
+  const clearFilters = () => setFilters(CLEARED_ANALYTICS_FILTERS);
   const completedGrowth = summary?.growth.tasksCompleted ?? {
     current: summary?.tasksCompleted ?? summary?.sampleSize ?? 0,
     previous: null,
@@ -307,16 +363,16 @@ export function AnalyticsPage() {
       />
 
       {error && <ErrorAlert>{error}</ErrorAlert>}
-      {loading && !summary && <p className="sr-only">Loading analytics...</p>}
+      {loading && !summary && <p className="status-message">Loading analytics...</p>}
       {loading && !summary && <AnalyticsSkeleton />}
 
       {!loading && !summary && !error && !pendingDates && (
-        <div className="diagrams-empty">
-          <div className="hub-empty-glyph">
-            <AnalyticsIcon className="arc-icon arc-icon-empty" />
-          </div>
-          <p className="status-message">No tasks in this view yet.</p>
-        </div>
+        <AnalyticsEmpty
+          filtersActive={filtersActive}
+          filterMiss="0 tasks match these filters."
+          nextStep="No tasks in this view yet. Create a task on the board, then it shows up here."
+          onClear={clearFilters}
+        />
       )}
 
       {summary && (
@@ -670,7 +726,12 @@ export function AnalyticsPage() {
             </header>
             <article className="analytics-panel analytics-panel-wide">
               {summary.byPerson.length === 0 ? (
-                <p className="status-message">No person activity in this view yet.</p>
+                <AnalyticsEmpty
+                  filtersActive={filtersActive}
+                  filterMiss="0 people match these filters."
+                  nextStep="No person activity in this view yet. Assign or move tasks in this window, then people show up here."
+                  onClear={clearFilters}
+                />
               ) : (
                 <div className="analytics-table-wrap">
                   <table className="analytics-table">
@@ -703,14 +764,14 @@ export function AnalyticsPage() {
                       {summary.byPerson.map((row) => (
                         <tr key={row.userId ?? 'unassigned'}>
                           <th scope="row">{row.username}</th>
-                          <td>{row.tasksCreated}</td>
-                          <td>{row.tasksCompleted ?? row.sampleSizeToDone}</td>
-                          <td>{row.moves}</td>
-                          <td>{row.openBugs}</td>
-                          <td>
+                          <td data-label="New tasks">{row.tasksCreated}</td>
+                          <td data-label="Completed">{row.tasksCompleted ?? row.sampleSizeToDone}</td>
+                          <td data-label="Column moves">{row.moves}</td>
+                          <td data-label="Open bugs">{row.openBugs}</td>
+                          <td data-label="Avg to Done">
                             {durationOrEmpty(row.averageMsToDone, '—')}
                           </td>
-                          <td>
+                          <td data-label="Avg in test">
                             {durationOrEmpty(row.averageMsInTest, '—')}
                           </td>
                         </tr>
@@ -737,7 +798,12 @@ export function AnalyticsPage() {
             </header>
             <article className="analytics-panel analytics-panel-wide">
               {(summary.lastInteractions ?? []).length === 0 ? (
-                <p className="status-message">No people in this view yet.</p>
+                <AnalyticsEmpty
+                  filtersActive={filtersActive}
+                  filterMiss="0 people match these filters."
+                  nextStep="No people in this view yet. Add organization members, then they show up here."
+                  onClear={clearFilters}
+                />
               ) : (
                 <div className="analytics-table-wrap">
                   <table className="analytics-table">
@@ -781,18 +847,32 @@ export function AnalyticsPage() {
                             className={never ? 'analytics-last-never' : undefined}
                           >
                             <th scope="row">{row.username}</th>
-                            <td>{renderWhen(row.lastInteractedAt)}</td>
-                            <td className="analytics-last-count">{row.tasksLast24h ?? 0}</td>
-                            <td className="analytics-last-count">
+                            <td data-label="Last interaction">{renderWhen(row.lastInteractedAt)}</td>
+                            <td className="analytics-last-count" data-label="Last 24 hours tasks">
+                              {row.tasksLast24h ?? 0}
+                            </td>
+                            <td
+                              className="analytics-last-count"
+                              data-label="Last 24 hours checklist"
+                            >
                               {row.checklistLast24h ?? 0}
                             </td>
-                            <td className="analytics-last-count">{row.bugsLast24h ?? 0}</td>
-                            <td className="analytics-last-count">{row.tasksLast7d ?? 0}</td>
-                            <td className="analytics-last-count">
+                            <td className="analytics-last-count" data-label="Last 24 hours bug flags">
+                              {row.bugsLast24h ?? 0}
+                            </td>
+                            <td className="analytics-last-count" data-label="Last 7 days tasks">
+                              {row.tasksLast7d ?? 0}
+                            </td>
+                            <td
+                              className="analytics-last-count"
+                              data-label="Last 7 days checklist"
+                            >
                               {row.checklistLast7d ?? 0}
                             </td>
-                            <td className="analytics-last-count">{row.bugsLast7d ?? 0}</td>
-                            <td className="analytics-last-summary">
+                            <td className="analytics-last-count" data-label="Last 7 days bug flags">
+                              {row.bugsLast7d ?? 0}
+                            </td>
+                            <td className="analytics-last-summary" data-label="What they did">
                               {row.summary || '—'}
                             </td>
                           </tr>
@@ -817,7 +897,12 @@ export function AnalyticsPage() {
             </header>
             <article className="analytics-panel analytics-panel-wide">
               {bugFlags.length === 0 ? (
-                <p className="status-message">No Grok bug-flag dossiers in this window yet.</p>
+                <AnalyticsEmpty
+                  filtersActive={filtersActive}
+                  filterMiss="0 Grok bug-flag dossiers match these filters."
+                  nextStep="No Grok bug-flag dossiers in this window yet. Flag a task as a bug, then the latest dossier shows up here."
+                  onClear={clearFilters}
+                />
               ) : (
                 <div className="analytics-table-wrap">
                   <table className="analytics-table">
@@ -843,12 +928,14 @@ export function AnalyticsPage() {
                           <th scope="row" className="analytics-flag-id">
                             {row.displayId}
                           </th>
-                          <td>{renderWhen(row.createdAt)}</td>
-                          <td className="analytics-flag-title">{row.title}</td>
-                          <td>
+                          <td data-label="When">{renderWhen(row.createdAt)}</td>
+                          <td className="analytics-flag-title" data-label="Title">
+                            {row.title}
+                          </td>
+                          <td data-label="Primary">
                             <span className="analytics-flag-chip">{row.primary}</span>
                           </td>
-                          <td>
+                          <td data-label="Secondary">
                             {row.secondary.length === 0 ? (
                               '—'
                             ) : (
@@ -861,14 +948,18 @@ export function AnalyticsPage() {
                               </div>
                             )}
                           </td>
-                          <td className="analytics-flag-id">
+                          <td className="analytics-flag-id" data-label="Task score">
                             {row.taskScore == null ? '—' : `${row.taskScore}/10`}
                           </td>
-                          <td className="analytics-flag-id">
+                          <td className="analytics-flag-id" data-label="Flag score">
                             {row.flagScore == null ? '—' : `${row.flagScore}/10`}
                           </td>
-                          <td className="analytics-flag-motivo">{row.motivo}</td>
-                          <td className="analytics-flag-evidence">{row.evidence || '—'}</td>
+                          <td className="analytics-flag-motivo" data-label="Motivo">
+                            {row.motivo}
+                          </td>
+                          <td className="analytics-flag-evidence" data-label="Evidence">
+                            {row.evidence || '—'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

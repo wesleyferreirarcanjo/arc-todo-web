@@ -1,7 +1,8 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readAppCss } from '../test/readAppCss';
 import type { AnalyticsSummary } from '../types/analytics';
 
 const fetchAnalyticsSummary = vi.hoisted(() => vi.fn());
@@ -228,6 +229,90 @@ describe('AnalyticsPage copy', () => {
     expect(screen.getByText('#arc-296')).toBeInTheDocument();
     expect(screen.getByText('REAL_DEFECT')).toBeInTheDocument();
     expect(screen.getByText('regression')).toBeInTheDocument();
+    expect(document.querySelector('.analytics-page td[data-label]')).toBeTruthy();
+  });
+
+  it('shows a visible loading status with the skeleton', () => {
+    fetchOrganizations.mockResolvedValue([]);
+    fetchProjects.mockResolvedValue([]);
+    fetchAnalyticsSummary.mockReturnValue(new Promise(() => {}));
+    fetchAnalyticsBugFlags.mockReturnValue(new Promise(() => {}));
+
+    render(
+      <MemoryRouter initialEntries={['/analytics']}>
+        <AnalyticsPage />
+      </MemoryRouter>,
+    );
+
+    const loading = screen.getByText('Loading analytics...');
+    expect(loading).toHaveClass('status-message');
+    expect(loading).not.toHaveClass('sr-only');
+    expect(document.querySelector('.analytics-skeleton')).toBeTruthy();
+  });
+
+  it('shows filter-miss status and Clear resets to last 30 days', async () => {
+    fetchOrganizations.mockResolvedValue([]);
+    fetchProjects.mockResolvedValue([]);
+    fetchAnalyticsSummary.mockResolvedValue({
+      ...summary,
+      byPerson: [],
+      lastInteractions: [],
+    });
+    fetchAnalyticsBugFlags.mockResolvedValue({ items: [] });
+
+    render(
+      <MemoryRouter initialEntries={['/analytics?organizationId=org-1&period=7d']}>
+        <AnalyticsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'By person' })).toBeInTheDocument();
+    });
+
+    const miss = screen.getAllByRole('status');
+    expect(miss.some((node) => /0 people match these filters/i.test(node.textContent ?? ''))).toBe(
+      true,
+    );
+    expect(screen.getAllByRole('button', { name: 'Clear' }).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Clear' })[0]);
+
+    await waitFor(() => {
+      const period = screen.getByRole('group', { name: 'Time window' });
+      expect(within(period).getByRole('button', { name: 'Last 30 days' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'No person activity in this view yet. Assign or move tasks in this window, then people show up here.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('stacks analytics tables as cards only at 1023 and below', () => {
+    const css = readAppCss();
+    const pageWrap = css.indexOf('.analytics-page .analytics-table-wrap {');
+    expect(pageWrap).toBeGreaterThan(-1);
+    const pageWrapRule = css.slice(pageWrap, css.indexOf('}', pageWrap) + 1);
+    expect(pageWrapRule).toContain('overflow-x: visible');
+    expect(pageWrapRule).not.toContain('overflow-x: auto');
+
+    const stackLabel = css.indexOf('.analytics-page .analytics-table td::before {');
+    expect(stackLabel).toBeGreaterThan(-1);
+    expect(css.slice(stackLabel, css.indexOf('}', stackLabel) + 1)).toContain(
+      'content: attr(data-label)',
+    );
+    const mediaStart = css.lastIndexOf('@media (max-width: 1023px)', stackLabel);
+    expect(mediaStart).toBeGreaterThan(-1);
+    expect(css.slice(mediaStart, stackLabel)).not.toContain('@media (min-width');
+
+    const mobileWrap = css.lastIndexOf('.analytics-page .analytics-table-wrap {');
+    expect(mobileWrap).toBeGreaterThan(pageWrap);
+    expect(css.slice(mobileWrap, css.indexOf('}', mobileWrap) + 1)).toContain('overflow-x: auto');
   });
 
   it('keeps Filters closed with period chips outside the panel', async () => {
