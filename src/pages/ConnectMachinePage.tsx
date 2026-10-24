@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
-import { ApiError } from '../lib/api/client';
+import { BrandMarkIcon } from '../components/icons';
 import { authorizeMachineConnect } from '../lib/api/machines';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 
 const CALLBACK = 'arc-windows://connect/callback';
 
@@ -44,11 +45,13 @@ export function ConnectMachinePage() {
       ? null
       : 'This connection link is incomplete. Start it again from the PC.',
   );
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
   async function continueToMachine() {
     setBusy(true);
     setError(null);
+    setErrorCode(undefined);
     try {
       const result = await authorizeMachineConnect({
         state,
@@ -57,11 +60,17 @@ export function ConnectMachinePage() {
       });
       window.location.assign(machineCallbackTarget(result.callbackUrl));
     } catch (err) {
+      // ponytail: userMessage echoes non-generic Error.message, so ENOENT leaks.
+      // Catalog client-side failures; API errors still go through userMessage.
+      // Upgrade: treat filesystem/stack fragments as generic in userMessage.
       setError(
-        err instanceof ApiError || err instanceof Error
-          ? err.message
-          : 'Could not continue to the PC.',
+        userMessage(
+          err && typeof err === 'object' && 'status' in err ? err : {},
+          WEB_ERROR.LOAD,
+          { thing: 'this machine' },
+        ),
       );
+      setErrorCode(WEB_ERROR.LOAD);
       setBusy(false);
     }
   }
@@ -69,12 +78,18 @@ export function ConnectMachinePage() {
   return (
     <div className="login-page">
       <div className="login-card">
+        <BrandMarkIcon className="arc-icon login-mark" />
         <h1>Connect this machine</h1>
         <p className="subtitle">
           Continue only if you just started this from the PC you want to
           connect to Arc Todo.
         </p>
-        {error && <ErrorAlert>{error}</ErrorAlert>}
+        {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
+        {busy ? (
+          <p className="status-message" aria-live="polite">
+            Connecting…
+          </p>
+        ) : null}
         <button
           className="btn btn-primary"
           type="button"
