@@ -1,13 +1,17 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { WireframesIcon } from '../components/icons';
+import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContext';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { getProjectColor } from '../lib/color/entityColor';
 import { fetchProjectDiagrams } from '../lib/api/diagrams';
 import {
@@ -87,22 +91,28 @@ export function WireframesHubPage() {
   const [items, setItems] = useState<HubWireframe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [orgFilter, setOrgFilter] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<WireframeSort>('updated_desc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileOverlayOpen, setMobileOverlayOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createOrgId, setCreateOrgId] = useState('');
   const [createProjectId, setCreateProjectId] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createErrorCode, setCreateErrorCode] = useState<string | undefined>();
   const [creating, setCreating] = useState(false);
   const [renameTarget, setRenameTarget] = useState<HubWireframe | null>(null);
   const [renameTitle, setRenameTitle] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [renameErrorCode, setRenameErrorCode] = useState<string | undefined>();
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<HubWireframe | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteTargetRef = useRef<HubWireframe | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +120,7 @@ export function WireframesHubPage() {
     async function load() {
       setLoading(true);
       setError(null);
+      setErrorCode(undefined);
       try {
         const orgs = await fetchOrganizations();
         const projectsByOrg = await Promise.all(
@@ -143,6 +154,7 @@ export function WireframesHubPage() {
       } catch (err) {
         if (!cancelled) {
           setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'wireframes' }));
+          setErrorCode(WEB_ERROR.LOAD);
         }
       } finally {
         if (!cancelled) {
@@ -186,6 +198,42 @@ export function WireframesHubPage() {
 
   const canCreate = organizations.length > 0 && projects.length > 0;
 
+  const activeFilterCount =
+    Number(Boolean(searchQuery.trim())) +
+    Number(Boolean(orgFilter)) +
+    Number(Boolean(projectFilter)) +
+    Number(sort !== 'updated_desc');
+
+  useRegisterBoardMobileActions({
+    onCreated: async () => undefined,
+    openFilters: () => setMobileOverlayOpen(true),
+  });
+
+  const wireframeDelete = useDeferredDelete(async () => {
+    const target = deleteTargetRef.current;
+    if (!target) return;
+    setDeleting(true);
+    try {
+      await deleteProjectWireframe(
+        target.org.id,
+        target.project.id,
+        target.wireframe.id,
+      );
+      setItems((prev) =>
+        prev.filter((item) => item.wireframe.id !== target.wireframe.id),
+      );
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
+      setErrorCode(WEB_ERROR.DELETE);
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
+  });
+
   function handleOrgFilterChange(value: string) {
     setOrgFilter(value);
     setProjectFilter('');
@@ -208,6 +256,7 @@ export function WireframesHubPage() {
     setCreateProjectId(defaultProject);
     setNewTitle('');
     setCreateError(null);
+    setCreateErrorCode(undefined);
     setCreateOpen(true);
   }
 
@@ -220,19 +269,23 @@ export function WireframesHubPage() {
     const title = newTitle.trim();
     if (!createOrgId) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_ORG));
+      setCreateErrorCode(WEB_ERROR.VAL_ORG);
       return;
     }
     if (!createProjectId) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_PROJECT));
+      setCreateErrorCode(WEB_ERROR.VAL_PROJECT);
       return;
     }
     if (!title) {
       setCreateError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
+      setCreateErrorCode(WEB_ERROR.VAL_WIREFRAME);
       return;
     }
 
     setCreating(true);
     setCreateError(null);
+    setCreateErrorCode(undefined);
     try {
       const created = await createProjectWireframe(
         createOrgId,
@@ -246,6 +299,7 @@ export function WireframesHubPage() {
       );
     } catch (err) {
       setCreateError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this wireframe' }));
+      setCreateErrorCode(WEB_ERROR.CREATE);
     } finally {
       setCreating(false);
     }
@@ -256,11 +310,13 @@ export function WireframesHubPage() {
     const title = renameTitle.trim();
     if (!title) {
       setRenameError(catalogMessage(WEB_ERROR.VAL_WIREFRAME));
+      setRenameErrorCode(WEB_ERROR.VAL_WIREFRAME);
       return;
     }
 
     setRenaming(true);
     setRenameError(null);
+    setRenameErrorCode(undefined);
     try {
       const updated = await updateProjectWireframe(
         renameTarget.org.id,
@@ -286,30 +342,16 @@ export function WireframesHubPage() {
       setRenameTitle('');
     } catch (err) {
       setRenameError(userMessage(err, WEB_ERROR.RENAME, { thing: 'this wireframe' }));
+      setRenameErrorCode(WEB_ERROR.RENAME);
     } finally {
       setRenaming(false);
     }
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteProjectWireframe(
-        deleteTarget.org.id,
-        deleteTarget.project.id,
-        deleteTarget.wireframe.id,
-      );
-      setItems((prev) =>
-        prev.filter((item) => item.wireframe.id !== deleteTarget.wireframe.id),
-      );
-      setDeleteTarget(null);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
+  function requestWireframeDelete(item: HubWireframe) {
+    deleteTargetRef.current = item;
+    setDeleteTarget(item);
+    wireframeDelete.requestDelete();
   }
 
   return (
@@ -339,7 +381,7 @@ export function WireframesHubPage() {
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && items.length === 0 && (
         <div className="diagrams-empty">
@@ -373,58 +415,69 @@ export function WireframesHubPage() {
 
       {!loading && !error && items.length > 0 && (
         <>
-          <div className="board-filters diagrams-hub-filters">
-            <label className="board-filter-field board-filter-search">
-              Search
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Filter by title"
-                aria-label="Filter wireframes by title"
-              />
-            </label>
-            <label className="board-filter-field">
-              Organization
-              <Select
-                value={orgFilter}
-                onChange={handleOrgFilterChange}
-                options={[
-                  { value: '', label: 'All organizations' },
-                  ...organizations.map((org) => ({
-                    value: org.id,
-                    label: org.name,
-                  })),
-                ]}
-              />
-            </label>
-            <label className="board-filter-field">
-              Project
-              <Select
-                value={projectFilter}
-                onChange={setProjectFilter}
-                options={[
-                  { value: '', label: 'All projects' },
-                  ...projectOptions.map((project) => ({
-                    value: project.id,
-                    label: project.name,
-                  })),
-                ]}
-              />
-            </label>
-            <label className="board-filter-field">
-              Sort by
-              <Select
-                value={sort}
-                onChange={(value) => setSort(value as WireframeSort)}
-                options={SORT_OPTIONS}
-              />
-            </label>
-          </div>
+          <PageFiltersToolbar
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            mobileOverlayOpen={mobileOverlayOpen}
+            onMobileOverlayOpenChange={setMobileOverlayOpen}
+            panel={
+              <>
+                <label className="board-filter-field board-filter-search">
+                  Search
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Filter by title"
+                    aria-label="Filter wireframes by title"
+                  />
+                </label>
+                <label className="board-filter-field">
+                  Organization
+                  <Select
+                    value={orgFilter}
+                    onChange={handleOrgFilterChange}
+                    options={[
+                      { value: '', label: 'All organizations' },
+                      ...organizations.map((org) => ({
+                        value: org.id,
+                        label: org.name,
+                      })),
+                    ]}
+                  />
+                </label>
+                <label className="board-filter-field">
+                  Project
+                  <Select
+                    value={projectFilter}
+                    onChange={setProjectFilter}
+                    options={[
+                      { value: '', label: 'All projects' },
+                      ...projectOptions.map((project) => ({
+                        value: project.id,
+                        label: project.name,
+                      })),
+                    ]}
+                  />
+                </label>
+                <label className="board-filter-field">
+                  Sort by
+                  <Select
+                    value={sort}
+                    onChange={(value) => setSort(value as WireframeSort)}
+                    options={SORT_OPTIONS}
+                  />
+                </label>
+              </>
+            }
+          />
 
           {visibleItems.length === 0 ? (
-            <div className="diagrams-empty">
-              <p className="status-message">No wireframes match these filters.</p>
+            <div className="diagrams-empty" role="status">
+              <p className="status-message board-search-status">
+                No wireframes match these filters. 0 of {items.length}.
+              </p>
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -514,6 +567,7 @@ export function WireframesHubPage() {
                             setRenameTarget(item);
                             setRenameTitle(wireframe.title);
                             setRenameError(null);
+                            setRenameErrorCode(undefined);
                           }}
                         >
                           Rename
@@ -521,7 +575,7 @@ export function WireframesHubPage() {
                         <button
                           type="button"
                           className="btn btn-danger btn-sm"
-                          onClick={() => setDeleteTarget(item)}
+                          onClick={() => requestWireframeDelete(item)}
                         >
                           Delete
                         </button>
@@ -586,7 +640,9 @@ export function WireframesHubPage() {
             }}
           />
         </label>
-        {createError && <ErrorAlert>{createError}</ErrorAlert>}
+        {createError && (
+          <ErrorAlert code={createErrorCode}>{createError}</ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -628,7 +684,9 @@ export function WireframesHubPage() {
             }}
           />
         </label>
-        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
+        {renameError && (
+          <ErrorAlert code={renameErrorCode}>{renameError}</ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -650,14 +708,28 @@ export function WireframesHubPage() {
       </Modal>
 
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
+        open={wireframeDelete.confirmOpen}
         title="Delete wireframe"
         description={`Delete "${deleteTarget?.wireframe.title ?? 'this wireframe'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={wireframeDelete.confirm}
+        onCancel={() => {
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+          wireframeDelete.cancel();
+        }}
+      />
+      <UndoToast
+        open={wireframeDelete.toastOpen}
+        message="Wireframe deleted"
+        onUndo={() => {
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+          wireframeDelete.undo();
+        }}
+        onDismiss={wireframeDelete.dismiss}
       />
     </div>
   );

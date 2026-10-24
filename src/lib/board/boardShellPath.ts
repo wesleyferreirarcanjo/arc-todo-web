@@ -3,6 +3,11 @@ export function isBoardShellPath(pathname: string): boolean {
   return pathname === '/board';
 }
 
+/** Hubs that opt into All tasks padding/gap via `.content-area.is-tight-page`. */
+export function isTightPagePath(pathname: string): boolean {
+  return pathname === '/wireframes';
+}
+
 /** One naming session — not the Names hub or a project session list. */
 export function isNamesSessionPath(pathname: string): boolean {
   return (

@@ -17,7 +17,7 @@ import {
 import { entityAccentStyle, useWorkspaceAccent } from './WorkspaceChrome';
 import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
-import { isBoardShellPath } from '../lib/board/boardShellPath';
+import { isBoardShellPath, isTightPagePath } from '../lib/board/boardShellPath';
 import { contrastInk } from '../lib/brand/brandMark';
 import {
   groupForPath,
@@ -85,6 +85,7 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
   const [collapsedFlyout, setCollapsedFlyout] = useState<NavGroupId | null>(null);
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isBoardShell = isBoardShellPath(location.pathname);
+  const isTightPage = tightPage || isTightPagePath(location.pathname);
   const entries = visibleNav(isAdmin);
 
   if (navPath !== location.pathname) {
@@ -412,7 +413,7 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
           <BoardMobileShellProvider>
             <SmartCopyBasketProvider>
               <div
-                className={`content-area${isBoardShell ? ' is-board-page' : tightPage ? ' is-tight-page' : ''}`}
+                className={`content-area${isBoardShell ? ' is-board-page' : isTightPage ? ' is-tight-page' : ''}`}
                 key={isBoardShell ? 'board-shell' : 'page-shell'}
               >
                 <OfflineBanner />
