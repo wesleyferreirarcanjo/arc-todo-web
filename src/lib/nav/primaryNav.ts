@@ -8,6 +8,7 @@ import {
   DownloadIcon,
   LogsIcon,
   MakeIcon,
+  MetricsIcon,
   NamesIcon,
   OperateIcon,
   OrganizationsIcon,
@@ -129,7 +130,7 @@ export const primaryNav: PrimaryNavEntry[] = [
     adminOnly: true,
     children: [
       link({ to: '/analytics', label: 'Analytics', icon: AnalyticsIcon }),
-      link({ to: '/metrics', label: 'Metrics', icon: AnalyticsIcon }),
+      link({ to: '/metrics', label: 'Metrics', icon: MetricsIcon }),
       link({ to: '/cloud', label: 'Cloud', icon: CloudIcon }),
       link({ to: '/logs', label: 'Logs', icon: LogsIcon }),
       link({ to: '/admin/users', label: 'Users', icon: UsersIcon }),
