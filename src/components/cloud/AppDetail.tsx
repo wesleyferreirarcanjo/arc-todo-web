@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../ConfirmDialog';
 import {
   appAction,
@@ -33,6 +34,18 @@ const UNAVAILABLE = 'Cloud service is unavailable.';
 const MASK = '••••••••';
 
 type Tab = 'overview' | 'source' | 'deployments' | 'environment' | 'logs';
+
+function readSection(value: string | null): Tab {
+  if (
+    value === 'source' ||
+    value === 'deployments' ||
+    value === 'environment' ||
+    value === 'logs'
+  ) {
+    return value;
+  }
+  return 'overview';
+}
 
 interface Props {
   app: CloudApp;
@@ -72,8 +85,29 @@ function parseEnvText(text: string): Record<string, string> | null {
 }
 
 export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
-  const [tab, setTab] = useState<Tab>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = readSection(searchParams.get('section'));
   const [error, setError] = useState<string | null>(null);
+
+  const patchParams = useCallback(
+    (next: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(next)) {
+            if (value == null || value === '') {
+              params.delete(key);
+            } else {
+              params.set(key, value);
+            }
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [imageRef, setImageRef] = useState('');
@@ -215,7 +249,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
               ? imageRef.trim()
               : undefined,
           );
-      setTab('deployments');
+      patchParams({ section: 'deployments' });
       void loadDeployments();
       watchDeployment(deploymentId);
       onChanged({ ...app, status: 'deploying' });
@@ -243,7 +277,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     setError(null);
     try {
       const { deploymentId } = await rollbackApp(app.id);
-      setTab('deployments');
+      patchParams({ section: 'deployments' });
       void loadDeployments();
       watchDeployment(deploymentId);
       onChanged({ ...app, status: 'deploying' });
@@ -428,7 +462,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       <h3>{app.name}</h3>
       {error ? <p className="alert alert-error">{error}</p> : null}
 
-      <div className="board-view-toggle" role="tablist" aria-label="App sections">
+      <div className="board-view-toggle" role="group" aria-label="App sections">
         {(
           [
             ['overview', 'Overview'],
@@ -441,10 +475,9 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
           <button
             key={key}
             type="button"
-            role="tab"
             className={`board-view-toggle-btn${tab === key ? ' is-active' : ''}`}
-            aria-selected={tab === key}
-            onClick={() => setTab(key)}
+            aria-pressed={tab === key}
+            onClick={() => patchParams({ section: key })}
           >
             {label}
           </button>

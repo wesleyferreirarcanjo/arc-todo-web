@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { AppsTab } from '../components/cloud/AppsTab';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
@@ -63,8 +64,13 @@ function errorMessage(err: unknown): string {
 type ProxyAction = 'install' | 'rollback';
 type PageTab = 'servers' | 'apps';
 
+function readPageTab(value: string | null): PageTab {
+  return value === 'apps' ? 'apps' : 'servers';
+}
+
 export function CloudPage() {
-  const [pageTab, setPageTab] = useState<PageTab>('servers');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageTab = readPageTab(searchParams.get('tab'));
   const [servers, setServers] = useState<CloudServer[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [containers, setContainers] = useState<CloudContainer[] | null>(null);
@@ -114,6 +120,29 @@ export function CloudPage() {
   const [ghSecret, setGhSecret] = useState('');
   const [ghBusy, setGhBusy] = useState(false);
   const [ghError, setGhError] = useState<string | null>(null);
+
+  const patchParams = useCallback(
+    (next: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(next)) {
+            if (value == null || value === '') {
+              params.delete(key);
+            } else {
+              params.set(key, value);
+            }
+          }
+          if (!params.get('tab')) {
+            params.set('tab', 'servers');
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const loadServers = useCallback(async () => {
     try {
@@ -483,22 +512,20 @@ export function CloudPage() {
         </div>
       </header>
 
-      <div className="board-view-toggle" role="tablist" aria-label="Cloud sections">
+      <div className="board-view-toggle" role="group" aria-label="Cloud sections">
         <button
           type="button"
-          role="tab"
           className={`board-view-toggle-btn${pageTab === 'servers' ? ' is-active' : ''}`}
-          aria-selected={pageTab === 'servers'}
-          onClick={() => setPageTab('servers')}
+          aria-pressed={pageTab === 'servers'}
+          onClick={() => patchParams({ tab: 'servers' })}
         >
           Servers
         </button>
         <button
           type="button"
-          role="tab"
           className={`board-view-toggle-btn${pageTab === 'apps' ? ' is-active' : ''}`}
-          aria-selected={pageTab === 'apps'}
-          onClick={() => setPageTab('apps')}
+          aria-pressed={pageTab === 'apps'}
+          onClick={() => patchParams({ tab: 'apps' })}
         >
           Apps
         </button>
@@ -775,23 +802,21 @@ export function CloudPage() {
             {formError ? <p className="alert alert-error">{formError}</p> : null}
             <div
               className="board-view-toggle"
-              role="tablist"
+              role="group"
               aria-label="Connection type"
             >
               <button
                 type="button"
-                role="tab"
                 className={`board-view-toggle-btn${transport === 'ssh' ? ' is-active' : ''}`}
-                aria-selected={transport === 'ssh'}
+                aria-pressed={transport === 'ssh'}
                 onClick={() => setTransport('ssh')}
               >
                 SSH
               </button>
               <button
                 type="button"
-                role="tab"
                 className={`board-view-toggle-btn${transport === 'agent' ? ' is-active' : ''}`}
-                aria-selected={transport === 'agent'}
+                aria-pressed={transport === 'agent'}
                 onClick={() => setTransport('agent')}
               >
                 Agent

@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CloudServer } from '../types/cloud';
 
@@ -96,9 +96,15 @@ const server: CloudServer = {
   maxParallelBuilds: 1,
 };
 
-function renderPage() {
+function LocationProbe() {
+  const location = useLocation();
+  return <div data-testid="location">{location.search}</div>;
+}
+
+function renderPage(path = '/cloud') {
   return render(
-    <MemoryRouter initialEntries={['/cloud']}>
+    <MemoryRouter initialEntries={[path]}>
+      <LocationProbe />
       <CloudPage />
     </MemoryRouter>,
   );
@@ -158,7 +164,16 @@ describe('CloudPage', () => {
     await screen.findByText(/No servers yet/);
 
     await user.click(screen.getByRole('button', { name: 'Add server' }));
-    await user.click(screen.getByRole('tab', { name: 'Agent' }));
+    expect(screen.getByRole('group', { name: 'Connection type' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'SSH' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await user.click(screen.getByRole('button', { name: 'Agent' }));
+    expect(screen.getByRole('button', { name: 'Agent' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await user.type(screen.getByLabelText('Server name'), 'arc-lab-2');
     await user.click(screen.getByRole('button', { name: 'Create agent token' }));
 
@@ -191,7 +206,7 @@ describe('CloudPage', () => {
     await screen.findByText(/No servers yet/);
 
     await user.click(screen.getByRole('button', { name: 'Add server' }));
-    await user.click(screen.getByRole('tab', { name: 'Agent' }));
+    await user.click(screen.getByRole('button', { name: 'Agent' }));
     await user.type(screen.getByLabelText('Server name'), 'wesley-pc');
     await user.click(screen.getByLabelText(/Build machine only/));
     await user.click(screen.getByRole('button', { name: 'Create agent token' }));
@@ -527,10 +542,75 @@ describe('CloudPage apps tab', () => {
   async function openAppsTab() {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByRole('tab', { name: 'Apps' });
-    await user.click(screen.getByRole('tab', { name: 'Apps' }));
+    await screen.findByRole('button', { name: 'Apps' });
+    await user.click(screen.getByRole('button', { name: 'Apps' }));
     return user;
   }
+
+  it('opens the Apps section from ?tab=apps', async () => {
+    getServers.mockResolvedValue([server]);
+    getApps.mockResolvedValue([app]);
+
+    renderPage('/cloud?tab=apps');
+
+    expect(await screen.findByRole('button', { name: 'Apps' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(await screen.findByText('whoami')).toBeInTheDocument();
+    expect(screen.getByTestId('location').textContent).toContain('tab=apps');
+  });
+
+  it('opens app logs from the URL without clicking', async () => {
+    getServers.mockResolvedValue([server]);
+    getApps.mockResolvedValue([app]);
+    getAppLogs.mockResolvedValue({ lines: ['whoami started'] });
+
+    renderPage(
+      `/cloud?tab=apps&app=${app.id}&section=logs`,
+    );
+
+    expect(await screen.findByLabelText('Container logs')).toHaveTextContent(
+      'whoami started',
+    );
+    expect(screen.getByRole('button', { name: 'Logs' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByTestId('location').textContent).toContain(`app=${app.id}`);
+    expect(screen.getByTestId('location').textContent).toContain('section=logs');
+  });
+
+  it('writes tab, app, and section into the URL and clears them on close', async () => {
+    getServers.mockResolvedValue([server]);
+    getApps.mockResolvedValue([app]);
+    getAppLogs.mockResolvedValue({ lines: ['whoami started'] });
+
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Apps' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toContain('tab=apps');
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'whoami' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toContain(`app=${app.id}`);
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Logs' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toContain('section=logs');
+    });
+    expect(await screen.findByLabelText('Container logs')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'whoami' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).not.toContain('app=');
+      expect(screen.getByTestId('location').textContent).not.toContain('section=');
+    });
+    expect(screen.queryByLabelText('Container logs')).not.toBeInTheDocument();
+  });
 
   it('lists apps with status and domain', async () => {
     getServers.mockResolvedValue([server]);
@@ -629,7 +709,7 @@ describe('CloudPage apps tab', () => {
 
     const user = await openAppsTab();
     await user.click(await screen.findByRole('button', { name: 'whoami' }));
-    await user.click(screen.getByRole('tab', { name: 'Environment' }));
+    await user.click(screen.getByRole('button', { name: 'Environment' }));
 
     expect(await screen.findByText('SECRET')).toBeInTheDocument();
     expect(screen.getByText('••••••••')).toBeInTheDocument();
@@ -665,7 +745,7 @@ describe('CloudPage apps tab', () => {
 
     const user = await openAppsTab();
     await user.click(await screen.findByRole('button', { name: 'whoami' }));
-    await user.click(screen.getByRole('tab', { name: 'Source' }));
+    await user.click(screen.getByRole('button', { name: 'Source' }));
 
     await user.selectOptions(
       screen.getByLabelText('Git provider'),
