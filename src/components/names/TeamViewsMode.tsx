@@ -1,3 +1,4 @@
+import { NamesIcon } from '../icons';
 import type { MemberShortlist, ProjectNameSession } from '../../types/name-session';
 
 function reactionLabel(reaction: MemberShortlist['likedLoved'][number]['reaction']) {
@@ -10,9 +11,14 @@ export function TeamViewsMode(props: { session: ProjectNameSession }) {
     : [];
   if (members.length === 0) {
     return (
-      <p className="names-empty">
-        No one else has liked, loved, or scored a name yet.
-      </p>
+      <div className="diagrams-empty">
+        <span className="hub-empty-glyph" aria-hidden="true">
+          <NamesIcon className="arc-icon-empty" />
+        </span>
+        <p className="names-empty status-message">
+          No one else has liked, loved, or scored a name yet.
+        </p>
+      </div>
     );
   }
 
