@@ -39,6 +39,8 @@ vi.mock('../lib/api/observer', async () => {
   };
 });
 
+import { ApiError } from '../lib/api/client';
+import { catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { LogsPage } from './LogsPage';
 
 const serverId = '11111111-1111-4111-8111-111111111111';
@@ -90,6 +92,8 @@ describe('LogsPage', () => {
 
   afterEach(() => {
     cleanup();
+    getSdkApps.mockResolvedValue([]);
+    searchLogs.mockResolvedValue({ lines: [], hasMore: false });
   });
 
   it('keeps Filters closed and turns Stop tail on from live=1', async () => {
@@ -291,13 +295,70 @@ describe('LogsPage', () => {
     expect(screen.getByText(/OBSERVER_AGENT_TOKEN/)).toBeInTheDocument();
   });
 
-  it('renders Logs service is unavailable. when the API rejects', async () => {
-    getServers.mockRejectedValue(new Error('down'));
+  it('shows visible loading text while servers are in flight', () => {
+    getServers.mockReturnValue(new Promise(() => {}));
+    getSdkApps.mockReturnValue(new Promise(() => {}));
+
+    renderPage();
+
+    const loading = screen.getByText('Loading logs...');
+    expect(loading).toBeVisible();
+    expect(loading).toHaveClass('status-message');
+    expect(loading).not.toHaveClass('sr-only');
+  });
+
+  it('announces an empty window with status and Clear when filters caused the miss', async () => {
+    getServers.mockResolvedValue([server]);
+    getApps.mockResolvedValue([]);
+    searchLogs.mockResolvedValue({ lines: [], hasMore: false });
+
+    const user = userEvent.setup();
+    renderPage(`/logs?server=${serverId}&q=disk&level=error&app=myapp`);
+
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('No log lines in this window.');
+    expect(status).toHaveClass('status-message');
+
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await waitFor(() => {
+      const search = screen.getByTestId('location').textContent ?? '';
+      expect(search).not.toContain('server=');
+      expect(search).not.toContain('q=');
+      expect(search).not.toContain('level=');
+      expect(search).not.toContain('app=');
+    });
+  });
+
+  it('shows the API observer message when ERR-ARC-OBS-02 is what the API used', async () => {
+    getServers.mockRejectedValue(
+      new ApiError(
+        'The logs service is unavailable. Try again in a moment.',
+        502,
+        'ERR-ARC-OBS-02',
+      ),
+    );
 
     renderPage();
 
     expect(
-      await screen.findByText('Logs service is unavailable.'),
+      await screen.findByText(
+        'The logs service is unavailable. Try again in a moment.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Logs service is unavailable.'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('falls back to the load catalog when the API copy is generic', async () => {
+    getServers.mockRejectedValue(new ApiError('Service Unavailable', 503));
+
+    renderPage();
+
+    expect(
+      await screen.findByText(
+        catalogMessage(WEB_ERROR.LOAD, { thing: 'logs' }),
+      ),
     ).toBeInTheDocument();
   });
 });
