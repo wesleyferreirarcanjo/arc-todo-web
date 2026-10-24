@@ -1,5 +1,9 @@
 /* observer.css — imported from src/index.css; reuse analytics chips/tables. */
 
+.logs-page {
+  gap: 1rem;
+}
+
 .logs-filters {
   display: flex;
   flex-wrap: wrap;
@@ -25,13 +29,14 @@
 
 .logs-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  margin-left: auto;
 }
 
 .logs-table-wrap {
   max-height: 34rem;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .logs-table td {
@@ -47,7 +52,6 @@
   font-size: var(--type-meta);
   word-break: break-word;
   white-space: pre-wrap;
-  min-width: 20rem;
 }
 
 .logs-level {
@@ -61,13 +65,13 @@
 }
 
 .logs-level-error {
-  color: var(--danger, #c0392b);
-  background: color-mix(in srgb, var(--danger, #c0392b) 14%, transparent);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
 }
 
 .logs-level-warn {
-  color: var(--warning, #b7791f);
-  background: color-mix(in srgb, var(--warning, #b7791f) 16%, transparent);
+  color: var(--warning-text);
+  background: color-mix(in srgb, var(--warning-text) 16%, transparent);
 }
 
 .logs-level-info {
@@ -101,4 +105,73 @@
 .logs-explain-text {
   margin: 0;
   white-space: pre-wrap;
+}
+
+@media (hover: none) {
+  .logs-filters .btn,
+  .logs-filters input,
+  .logs-actions .btn {
+    min-height: 2.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .logs-table-wrap {
+    overflow-x: auto;
+  }
+
+  .logs-cell-message {
+    min-width: 20rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .logs-table thead {
+    display: none;
+  }
+
+  .logs-table,
+  .logs-table tbody,
+  .logs-table tr,
+  .logs-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .logs-table tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logs-table td {
+    display: flex;
+    align-items: start;
+    gap: 0.65rem;
+    min-width: 0;
+    padding: 0.2rem 0;
+    border: 0;
+  }
+
+  .logs-table td::before {
+    content: attr(data-label);
+    flex: 0 0 4.75rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .logs-cell-nowrap {
+    white-space: normal;
+  }
+
+  .logs-cell-message {
+    min-width: 0;
+  }
+
+  .logs-search-form {
+    min-width: 0;
+    width: 100%;
+  }
 }

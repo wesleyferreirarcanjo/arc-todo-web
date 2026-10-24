@@ -20,6 +20,7 @@ import {
   searchLogs,
   tailLogs,
 } from '../lib/api/observer';
+import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
 import type {
   ObserverAgentToken,
   ObserverExplainResult,
@@ -31,7 +32,6 @@ import type {
 } from '../types/observer';
 import { OBSERVER_LOG_LEVELS } from '../types/observer';
 
-const UNAVAILABLE = 'Logs service is unavailable.';
 const EMPTY_SERVERS =
   'No servers yet. Create an agent token and install the agent on a server.';
 const SEARCH_LIMIT = 200;
@@ -138,10 +138,10 @@ export function LogsPage() {
           setServers(next);
           setSdkApps(nextSdkApps.map((a) => a.app));
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setServers([]);
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
         }
       } finally {
         if (!cancelled) {
@@ -203,10 +203,10 @@ export function LogsPage() {
           setHasMore(page.hasMore);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
           setLines([]);
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
         }
       })
       .finally(() => {
@@ -237,8 +237,8 @@ export function LogsPage() {
       });
       setLines((current) => [...current, ...page.lines]);
       setHasMore(page.hasMore);
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
     }
   }
 
@@ -274,9 +274,9 @@ export function LogsPage() {
         setTailLines((current) =>
           [...current, ...page.lines].slice(-TAIL_BUFFER),
         );
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
         }
       }
     };
@@ -299,10 +299,10 @@ export function LogsPage() {
           setTokens(next);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
           setTokens([]);
-          setError(UNAVAILABLE);
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
         }
       });
     return () => {
@@ -350,17 +350,20 @@ export function LogsPage() {
         query: qParam || undefined,
       });
       setExplain(result);
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
     } finally {
       setExplaining(false);
     }
   }
 
   const visibleLines = liveTail ? tailLines : lines;
+  const logFiltersActive = Boolean(
+    qParam || serverParam || appParam || level,
+  );
 
   return (
-    <div className="page-shell analytics-page metrics-page logs-page">
+    <div className="page-shell analytics-page metrics-page logs-page is-tight-page">
       <header className="analytics-toolbar">
         <div className="analytics-toolbar-title">
           <h2>Logs</h2>
@@ -413,7 +416,7 @@ export function LogsPage() {
       {tab === 'logs' ? (
         <>
           {loading && servers.length === 0 && !error ? (
-            <p className="sr-only">Loading logs...</p>
+            <p className="status-message">Loading logs...</p>
           ) : null}
           {!loading && servers.length === 0 && sdkApps.length === 0 && !error ? (
             <div className="diagrams-empty">
@@ -549,25 +552,51 @@ export function LogsPage() {
                   <tbody>
                     {visibleLines.map((line, index) => (
                       <tr key={`${line.ts}-${index}`} className={`log-level-${line.level}`}>
-                        <td className="logs-cell-nowrap">{formatTs(line.ts)}</td>
-                        <td>
+                        <td className="logs-cell-nowrap" data-label="Time">
+                          {formatTs(line.ts)}
+                        </td>
+                        <td data-label="Level">
                           <span className={`logs-level logs-level-${line.level}`}>
                             {line.level}
                           </span>
                         </td>
-                        <td className="logs-cell-nowrap">
+                        <td className="logs-cell-nowrap" data-label="Server">
                           {line.server ?? 'sdk'}
                         </td>
-                        <td className="logs-cell-nowrap">{line.app ?? line.name}</td>
-                        <td>{line.stream}</td>
-                        <td className="logs-cell-message">{line.message}</td>
+                        <td className="logs-cell-nowrap" data-label="App">
+                          {line.app ?? line.name}
+                        </td>
+                        <td data-label="Stream">{line.stream}</td>
+                        <td className="logs-cell-message" data-label="Message">
+                          {line.message}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {visibleLines.length === 0 ? (
-                  <p className="status-message">
+                  <p className="status-message" role="status">
                     {searching ? 'Searching…' : 'No log lines in this window.'}
+                    {logFiltersActive ? (
+                      <>
+                        {' '}
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setDraftQ('');
+                            patchParams({
+                              q: null,
+                              server: null,
+                              app: null,
+                              level: null,
+                            });
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
               </div>
@@ -592,7 +621,7 @@ export function LogsPage() {
           onCreate={handleCreateToken}
           onRevoke={handleRevokeToken}
           envVarName="OBSERVER_AGENT_TOKEN"
-          unavailable={UNAVAILABLE}
+          unavailable={catalogMessage(WEB_ERROR.LOAD, { thing: 'logs' })}
         />
       )}
     </div>
