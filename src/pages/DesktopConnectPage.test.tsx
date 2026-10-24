@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { DesktopConnectPage, desktopCallbackTarget } from './DesktopConnectPage';
 
 const authorizeDesktop = vi.hoisted(() => vi.fn());
@@ -67,5 +68,34 @@ describe('DesktopConnectPage', () => {
     );
     expect(screen.getByRole('button', { name: 'Continue to Arc IDE' })).toBeDisabled();
     expect(screen.getByText(/incomplete/)).toBeInTheDocument();
+  });
+
+  it('shows catalog load copy instead of a raw authorize error and a polite busy status', async () => {
+    const user = userEvent.setup();
+    let rejectAuth!: (reason: Error) => void;
+    authorizeDesktop.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectAuth = reject;
+        }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={[`/desktop/connect?state=${state}&code_challenge=${challenge}`]}>
+        <DesktopConnectPage />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Continue to Arc IDE' }));
+    const status = screen.getByText('Opening Arc IDE…');
+    expect(status).toHaveClass('status-message');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByRole('button', { name: 'Continue to Arc IDE' })).toBeDisabled();
+
+    rejectAuth(new Error('ENOENT secret'));
+    expect(
+      await screen.findByText(catalogMessage(WEB_ERROR.LOAD, { thing: 'Arc IDE' })),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('ENOENT secret')).not.toBeInTheDocument();
   });
 });
