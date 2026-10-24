@@ -118,6 +118,7 @@ export function MetricsResourceTable({
   onToggleColumns,
   filter,
   emptyLabel,
+  onClearFilter,
 }: {
   resources: MetricsResource[];
   selectedId: number | null;
@@ -126,6 +127,7 @@ export function MetricsResourceTable({
   onToggleColumns: () => void;
   filter: string;
   emptyLabel?: string;
+  onClearFilter: () => void;
 }) {
   const [showAll, setShowAll] = useState(false);
   const columns = allColumns ? ALL_COLUMNS : COMPACT_COLUMNS;
@@ -160,7 +162,7 @@ export function MetricsResourceTable({
             <button
               type="button"
               className="btn btn-link"
-              onClick={() => setFilter('')}
+              onClick={onClearFilter}
             >
               Clear
             </button>

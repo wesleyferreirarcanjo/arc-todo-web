@@ -7,6 +7,7 @@ import type { ObserverLogLine, ObserverServer } from '../types/observer';
 const mediaState = vi.hoisted(() => ({ mobile: false }));
 
 vi.mock('../hooks/useMediaQuery', () => ({
+  BOARD_MOBILE_QUERY: '(max-width: 1023px)',
   SHELL_MOBILE_QUERY: '(max-width: 1023px)',
   useMediaQuery: () => mediaState.mobile,
 }));

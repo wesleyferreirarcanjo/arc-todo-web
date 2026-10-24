@@ -460,6 +460,7 @@ export function MetricsPage() {
                   allColumns={allColumns}
                   filter={appFilter}
                   emptyLabel={emptyLabel}
+                  onClearFilter={() => patchParams({ q: null })}
                   onToggleColumns={() =>
                     patchParams({ columns: allColumns ? null : 'all' })
                   }
