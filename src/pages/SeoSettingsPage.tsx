@@ -1,4 +1,6 @@
 import { ErrorAlert } from '../components/ErrorAlert';
+import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { SettingsPageShell } from '../components/SettingsPageShell';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchSeoSettings, updateSeoSettings } from '../lib/api/seo';
@@ -48,16 +50,11 @@ export function SeoSettingsPage() {
   }
 
   return (
-    <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>SEO</h2>
-          <p className="subtitle">
-            Maximum pages one site audit may crawl. Members never see this
-            screen. No paid SEO API key lives here.
-          </p>
-        </div>
-      </div>
+    <SettingsPageShell
+      title="SEO"
+      subtitle="Maximum pages one site audit may crawl. Members never see this screen. No paid SEO API key lives here."
+    >
+      <ChatbotSettingsNav />
 
       {loading ? (
         <p className="status-message">Loading SEO settings...</p>
@@ -90,6 +87,6 @@ export function SeoSettingsPage() {
           </p>
         </div>
       )}
-    </section>
+    </SettingsPageShell>
   );
 }

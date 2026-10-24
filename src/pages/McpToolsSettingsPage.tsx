@@ -1,5 +1,7 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { SettingsPageShell } from '../components/SettingsPageShell';
 import {
   bulkUpdateMcpToolSettings,
   fetchMcpToolSettings,
@@ -171,16 +173,11 @@ export function McpToolsSettingsPage() {
   }
 
   return (
-    <section className="page-section">
-      <div className="page-header">
-        <div>
-          <h2>MCP Tools</h2>
-          <p className="subtitle">
-            Enable or disable individual MCP tools exposed by the Arc Todo MCP
-            server.
-          </p>
-        </div>
-      </div>
+    <SettingsPageShell
+      title="MCP Tools"
+      subtitle="Enable or disable individual MCP tools exposed by the Arc Todo MCP server."
+    >
+      <ChatbotSettingsNav />
 
       <div className="notice-card">
         <strong>Restart required.</strong> Changes are saved immediately, but
@@ -301,6 +298,6 @@ export function McpToolsSettingsPage() {
             );
           })
         : null}
-    </section>
+    </SettingsPageShell>
   );
 }

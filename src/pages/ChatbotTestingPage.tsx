@@ -1,6 +1,7 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { SettingsPageShell } from '../components/SettingsPageShell';
 import { useWorkspace } from '../context/WorkspaceContext';
 import {
   ChatApiError,
@@ -678,24 +679,17 @@ export function ChatbotTestingPage() {
     : selectedScenario.priorMessages;
 
   return (
-    <section className="page-section chatbot-testing-page">
-      <div className="page-header">
-        <div>
-          <h2>Chatbot Testing</h2>
-          <p className="subtitle">
-            Run predefined or conversation-backed prompts against the chatbot service
-            and inspect responses, tools, and timing.
-          </p>
-        </div>
-      </div>
-
+    <SettingsPageShell
+      title="Chatbot Testing"
+      subtitle="Run predefined or conversation-backed prompts against the chatbot service and inspect responses, tools, and timing."
+    >
       <ChatbotSettingsNav />
 
       {error ? <p className="form-error">{error}</p> : null}
       {loading ? <p className="subtitle">Loading chatbot testing console...</p> : null}
 
       {!loading ? (
-        <>
+        <div className="chatbot-testing-page">
           <ConfigStatusCard settings={settings} />
 
           <form
@@ -821,8 +815,8 @@ export function ChatbotTestingPage() {
               <pre className="chatbot-testing-json">{rawError}</pre>
             </div>
           ) : null}
-        </>
+        </div>
       ) : null}
-    </section>
+    </SettingsPageShell>
   );
 }
