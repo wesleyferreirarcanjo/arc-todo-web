@@ -103,7 +103,6 @@ export default function App() {
                 <Route path="/videos" element={<VideosHubPage />} />
                 <Route path="/names" element={<NamesHubPage />} />
                 <Route path="/names/:sessionId" element={<NameSessionPage />} />
-                <Route path="/seo" element={<SeoHubPage />} />
                 <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route path="/devices" element={<DevicesPage />} />
                 <Route
@@ -195,6 +194,15 @@ export default function App() {
                   element={<SeoSitePage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
+              </Route>
+              <Route
+                element={
+                  <WorkspaceProvider>
+                    <Layout tightPage />
+                  </WorkspaceProvider>
+                }
+              >
+                <Route path="/seo" element={<SeoHubPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/board" replace />} />

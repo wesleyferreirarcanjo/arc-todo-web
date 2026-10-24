@@ -81,7 +81,7 @@
 }
 
 .names-session-row.has-accent {
-  border-left: var(--entity-rail-width) solid
+  border-left: var(--entity-rail-card-width) solid
     var(--entity-accent, var(--border-strong));
   background: color-mix(
     in srgb,
