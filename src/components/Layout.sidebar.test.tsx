@@ -143,6 +143,8 @@ describe('Layout sidebar identity', () => {
       'aria-expanded',
       'true',
     );
+    expect(document.querySelector('.content-area')).toHaveClass('is-tight-page');
+    expect(document.querySelector('.content-area')).not.toHaveClass('is-board-page');
   });
 
   it('hides Analytics from a project member', () => {

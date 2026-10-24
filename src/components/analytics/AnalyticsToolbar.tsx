@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { PageFiltersToolbar } from '../PageFiltersToolbar';
 import { Select } from '../Select';
 import { ANALYTICS_PERIOD_OPTIONS } from '../../lib/api/analytics';
 import type { AnalyticsPageFilters } from '../../lib/analytics/period';
@@ -22,78 +24,47 @@ export function AnalyticsToolbar({
   caption: string;
   onChange: (next: AnalyticsPageFilters) => void;
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileOverlayOpen, setMobileOverlayOpen] = useState(false);
   const extraOpen = filters.period === 'custom' || filters.compareMode === 'custom';
+  const activeFilterCount =
+    Number(Boolean(filters.organizationId)) +
+    Number(Boolean(filters.projectId)) +
+    Number(filters.period === 'custom') +
+    Number(filters.period !== 'all' && filters.compareMode === 'custom');
 
-  return (
-    <header className="analytics-toolbar">
-      <div className="analytics-toolbar-title">
-        <h2>Analytics</h2>
-        <AnalyticsMetricInfo label="Analytics clocks">{caption}</AnalyticsMetricInfo>
-      </div>
-
-      <div className="analytics-toolbar-controls">
-        <label className="board-filter-field analytics-toolbar-field">
-          Organization
-          <Select
-            value={filters.organizationId}
-            onChange={(value) =>
-              onChange({ ...filters, organizationId: value, projectId: '' })
-            }
-            options={[
-              { value: '', label: 'All organizations' },
-              ...organizations.map((organization) => ({
-                value: organization.id,
-                label: organization.name,
-              })),
-            ]}
-          />
-        </label>
-        <label className="board-filter-field analytics-toolbar-field">
-          Project
-          <Select
-            value={filters.projectId}
-            onChange={(value) => onChange({ ...filters, projectId: value })}
-            options={[
-              { value: '', label: 'All projects' },
-              ...projectOptions.map((project) => ({
-                value: project.id,
-                label: project.name,
-              })),
-            ]}
-          />
-        </label>
-
-        <div
-          className="board-view-toggle analytics-period-toggle"
-          role="group"
-          aria-label="Time window"
-        >
-          {ANALYTICS_PERIOD_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={`board-view-toggle-btn${filters.period === option.value ? ' is-active' : ''}`}
-              aria-pressed={filters.period === option.value}
-              onClick={() =>
-                onChange({
-                  ...filters,
-                  period: option.value,
-                  compareMode: option.value === 'all' ? 'previous' : filters.compareMode,
-                })
-              }
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {periodLabel ? (
-        <p className="analytics-period-caption">
-          {periodLabel}
-          {compareCaption ? ` vs ${compareCaption}` : ''}
-        </p>
-      ) : null}
+  const filterPanel = (
+    <>
+      <label className="board-filter-field analytics-toolbar-field">
+        Organization
+        <Select
+          value={filters.organizationId}
+          onChange={(value) =>
+            onChange({ ...filters, organizationId: value, projectId: '' })
+          }
+          options={[
+            { value: '', label: 'All organizations' },
+            ...organizations.map((organization) => ({
+              value: organization.id,
+              label: organization.name,
+            })),
+          ]}
+        />
+      </label>
+      <label className="board-filter-field analytics-toolbar-field">
+        Project
+        <Select
+          value={filters.projectId}
+          onChange={(value) => onChange({ ...filters, projectId: value })}
+          options={[
+            { value: '', label: 'All projects' },
+            ...projectOptions.map((project) => ({
+              value: project.id,
+              label: project.name,
+            })),
+          ]}
+        />
+      </label>
 
       <details className="analytics-extra" open={extraOpen || undefined}>
         <summary>Dates and comparison</summary>
@@ -163,6 +134,57 @@ export function AnalyticsToolbar({
           </div>
         )}
       </details>
+    </>
+  );
+
+  return (
+    <header className="analytics-toolbar">
+      <div className="analytics-toolbar-title">
+        <h2>Analytics</h2>
+        <AnalyticsMetricInfo label="Analytics clocks">{caption}</AnalyticsMetricInfo>
+      </div>
+
+      <PageFiltersToolbar
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        activeFilterCount={activeFilterCount}
+        panel={filterPanel}
+        chips={
+          <div
+            className="board-view-toggle analytics-period-toggle"
+            role="group"
+            aria-label="Time window"
+          >
+            {ANALYTICS_PERIOD_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`board-view-toggle-btn${filters.period === option.value ? ' is-active' : ''}`}
+                aria-pressed={filters.period === option.value}
+                onClick={() =>
+                  onChange({
+                    ...filters,
+                    period: option.value,
+                    compareMode: option.value === 'all' ? 'previous' : filters.compareMode,
+                  })
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        }
+        mobileOverlayOpen={mobileOverlayOpen}
+        onMobileOverlayOpenChange={setMobileOverlayOpen}
+        showToggleOnMobile
+      />
+
+      {periodLabel ? (
+        <p className="analytics-period-caption">
+          {periodLabel}
+          {compareCaption ? ` vs ${compareCaption}` : ''}
+        </p>
+      ) : null}
     </header>
   );
 }

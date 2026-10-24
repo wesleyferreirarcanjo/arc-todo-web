@@ -19,11 +19,13 @@ function Harness({
   activeFilterCount = 0,
   mobileOverlayOpen = false,
   mobileOverlayTitle,
+  showToggleOnMobile = false,
 }: {
   initialOpen?: boolean;
   activeFilterCount?: number;
   mobileOverlayOpen?: boolean;
   mobileOverlayTitle?: string;
+  showToggleOnMobile?: boolean;
 }) {
   const [open, setOpen] = useState(initialOpen);
   const [overlayOpen, setOverlayOpen] = useState(mobileOverlayOpen);
@@ -36,6 +38,7 @@ function Harness({
       mobileOverlayOpen={overlayOpen}
       onMobileOverlayOpenChange={setOverlayOpen}
       mobileOverlayTitle={mobileOverlayTitle}
+      showToggleOnMobile={showToggleOnMobile}
     />
   );
 }
@@ -101,5 +104,21 @@ describe('PageFiltersToolbar', () => {
 
     expect(screen.getByRole('dialog', { name: 'Filters' })).toBeInTheDocument();
     expect(document.querySelector('.mobile-filters-title')).toHaveTextContent('Filters');
+  });
+
+  it('can keep a Filters button on mobile that opens the overlay', async () => {
+    mediaState.mobile = true;
+    const user = userEvent.setup();
+    render(<Harness showToggleOnMobile />);
+
+    const toggle = screen.getByRole('button', { name: 'Filters' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('dialog', { name: 'Filters' })).toBeInTheDocument();
+    expect(screen.getByText('Filter tasks by title or ID')).toBeInTheDocument();
   });
 });
