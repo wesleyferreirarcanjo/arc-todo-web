@@ -167,15 +167,8 @@
   margin-bottom: 0.5rem;
 }
 
-.metrics-table-toolbar input {
-  width: auto;
-  flex: 1 1 12rem;
-  min-width: 0;
-  margin: 0;
-}
-
 @media (hover: none) {
-  .metrics-table-toolbar input,
+  .metrics-page .board-filter-search input,
   .metrics-table-toolbar .board-view-toggle-btn {
     min-height: 2.75rem;
   }

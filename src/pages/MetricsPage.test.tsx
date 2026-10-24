@@ -210,6 +210,51 @@ describe('MetricsPage', () => {
     });
   });
 
+  it('uses a pressed section group and keeps Filter apps out of the table toolbar until Filters open', async () => {
+    getServers.mockResolvedValue([server]);
+    getServerResources.mockResolvedValue(resources);
+    getServerSeries.mockResolvedValue(twoPointSeries);
+    getAppMetrics.mockResolvedValue([]);
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('table')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    const sections = screen.getByRole('group', { name: 'Metrics sections' });
+    expect(within(sections).getByRole('button', { name: 'Servers' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(sections).getByRole('button', { name: 'Custom metrics' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(within(sections).getByRole('button', { name: 'Agent tokens' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+
+    const tableToolbar = document.querySelector('.metrics-table-toolbar');
+    expect(tableToolbar).not.toBeNull();
+    expect(within(tableToolbar as HTMLElement).queryByLabelText('Filter apps')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Filter apps')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All columns' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    expect(screen.getByLabelText('Filter apps')).toBeInTheDocument();
+    expect(within(tableToolbar as HTMLElement).queryByLabelText('Filter apps')).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Time window' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Custom metrics' }));
+    expect(screen.getByRole('group', { name: 'Time window' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Filters' })).not.toBeInTheDocument();
+  });
+
   it('opens the app table compact, expands columns, filters, and caps at 15 rows', async () => {
     const many = Array.from({ length: 16 }, (_, index) =>
       resource({
@@ -242,8 +287,11 @@ describe('MetricsPage', () => {
     await user.click(screen.getByRole('button', { name: 'Show all 16 apps' }));
     expect(screen.getByRole('table').querySelectorAll('tbody tr')).toHaveLength(16);
 
+    expect(within(document.querySelector('.metrics-table-toolbar') as HTMLElement).queryByLabelText('Filter apps')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
     await user.type(screen.getByLabelText('Filter apps'), 'zzz');
     expect(screen.getByText('No apps match this filter.')).toBeInTheDocument();
+    expect(screen.getByTestId('location').textContent).toContain('q=zzz');
   });
 
   it('keeps host history when the app list request fails', async () => {
