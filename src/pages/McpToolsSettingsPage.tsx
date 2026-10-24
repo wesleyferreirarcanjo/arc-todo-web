@@ -1,6 +1,8 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { ErrorAlert } from '../components/ErrorAlert';
+import { McpIcon } from '../components/icons';
 import { SettingsPageShell } from '../components/SettingsPageShell';
 import {
   bulkUpdateMcpToolSettings,
@@ -74,6 +76,7 @@ export function McpToolsSettingsPage() {
   const [tokenSummary, setTokenSummary] = useState<McpTokenSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [savingGroup, setSavingGroup] = useState<McpToolGroup | null>(null);
 
@@ -106,6 +109,7 @@ export function McpToolsSettingsPage() {
   async function handleToolToggle(key: string, enabled: boolean) {
     setSavingKey(key);
     setError(null);
+    setSaved(null);
     try {
       const updated = await updateMcpToolSetting(key, { enabled });
       setGroups((current) => {
@@ -122,6 +126,7 @@ export function McpToolsSettingsPage() {
         );
         return nextGroups;
       });
+      setSaved(`Saved ${updated.displayName}.`);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this tool' }));
     } finally {
@@ -135,6 +140,7 @@ export function McpToolsSettingsPage() {
 
     setSavingGroup(groupName);
     setError(null);
+    setSaved(null);
     try {
       const updated = await bulkUpdateMcpToolSettings({
         tools: group.tools.map((tool) => ({ key: tool.key, enabled })),
@@ -156,6 +162,7 @@ export function McpToolsSettingsPage() {
         );
         return nextGroups;
       });
+      setSaved(`Saved ${MCP_TOOL_GROUP_LABELS[groupName]} group.`);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'this tool group' }));
     } finally {
@@ -179,7 +186,7 @@ export function McpToolsSettingsPage() {
     >
       <ChatbotSettingsNav />
 
-      <div className="notice-card">
+      <div className="notice-card" role="status">
         <strong>Restart required.</strong> Changes are saved immediately, but
         the MCP service must restart before disabled tools disappear from MCP
         discovery.
@@ -220,10 +227,27 @@ export function McpToolsSettingsPage() {
         </p>
       </div>
 
-      {error ? <p className="form-error">{error}</p> : null}
-      {loading ? <p className="subtitle">Loading MCP tools...</p> : null}
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
+      {saved ? (
+        <p className="status-message" role="status">
+          {saved}
+        </p>
+      ) : null}
+      {loading ? <p className="status-message">Loading MCP tools...</p> : null}
 
-      {!loading
+      {!loading && !error && groups.length === 0 ? (
+        <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <McpIcon className="arc-icon-empty" />
+          </span>
+          <p className="status-message">
+            No MCP tool groups yet. Groups appear here when the MCP catalog has
+            tools.
+          </p>
+        </div>
+      ) : null}
+
+      {!loading && groups.length > 0
         ? groups.map((group) => {
             const groupEnabled = isGroupEnabled(group);
             const groupMixed = isGroupMixed(group);
