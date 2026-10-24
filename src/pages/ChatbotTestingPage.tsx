@@ -1,7 +1,12 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ErrorAlert } from '../components/ErrorAlert';
+import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import {
   ChatApiError,
   sendChatMessage,
@@ -354,6 +359,79 @@ function ResultCard({ result }: { result: RunResult }) {
   );
 }
 
+function SavedRunCard({
+  run,
+  onSelect,
+  onDelete,
+}: {
+  run: RunResult;
+  onSelect: (run: RunResult) => void;
+  onDelete: (runId: string) => void;
+}) {
+  const deferred = useDeferredDelete(() => onDelete(run.id));
+
+  return (
+    <article className="settings-section-card chatbot-testing-saved-card" tabIndex={0}>
+      <div className="task-context-badges chatbot-testing-saved-badges">
+        <div className="task-context-badges-main">
+          <span className="task-badge">{run.mode}</span>
+          <span className="task-badge">
+            {run.totalTokenCount.toLocaleString()} tokens
+          </span>
+          <span className="task-badge">{run.usedTools.length} tools</span>
+        </div>
+      </div>
+
+      <div>
+        <h3>{run.scenarioLabel}</h3>
+        <p className="task-meta">
+          {new Date(run.savedAt).toLocaleString()} · {formatMs(run.elapsedMs)}
+        </p>
+        <p className="task-description">
+          {run.request.messages[run.request.messages.length - 1]?.content ||
+            'No prompt recorded.'}
+        </p>
+        <p className="chatbot-testing-saved-response">
+          {run.response || '(empty response)'}
+        </p>
+      </div>
+
+      <div className="entity-actions chatbot-testing-saved-actions">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => onSelect(run)}
+        >
+          View
+        </button>
+        <button
+          type="button"
+          className="btn btn-danger btn-sm"
+          onClick={deferred.requestDelete}
+        >
+          Delete
+        </button>
+      </div>
+
+      <ConfirmDialog
+        open={deferred.confirmOpen}
+        title="Delete saved run"
+        description="Delete this saved test run?"
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={deferred.confirm}
+        onCancel={deferred.cancel}
+      />
+      <UndoToast
+        open={deferred.toastOpen}
+        message="Saved run deleted"
+        onUndo={deferred.undo}
+        onDismiss={deferred.dismiss}
+      />
+    </article>
+  );
+}
+
 function SavedRunCards({
   runs,
   onSelect,
@@ -365,6 +443,8 @@ function SavedRunCards({
   onDelete: (runId: string) => void;
   onClear: () => void;
 }) {
+  const deferredClear = useDeferredDelete(onClear);
+
   return (
     <section className="notice-card chatbot-testing-saved-section">
       <div className="chatbot-testing-saved-header">
@@ -375,7 +455,11 @@ function SavedRunCards({
           </p>
         </div>
         {runs.length > 0 ? (
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClear}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={deferredClear.requestDelete}
+          >
             Clear saved
           </button>
         ) : null}
@@ -386,57 +470,31 @@ function SavedRunCards({
       ) : (
         <div className="chatbot-testing-saved-grid">
           {runs.map((run) => (
-            <article
+            <SavedRunCard
               key={run.id}
-              className="task-card chatbot-testing-saved-card"
-              tabIndex={0}
-            >
-              <div className="task-context-badges chatbot-testing-saved-badges">
-                <div className="task-context-badges-main">
-                  <span className="task-badge">{run.mode}</span>
-                  <span className="task-badge">
-                    {run.totalTokenCount.toLocaleString()} tokens
-                  </span>
-                  <span className="task-badge">{run.usedTools.length} tools</span>
-                </div>
-              </div>
-
-              <div className="task-card-content">
-                <div className="task-card-header">
-                  <h3>{run.scenarioLabel}</h3>
-                </div>
-                <p className="task-meta">
-                  {new Date(run.savedAt).toLocaleString()} · {formatMs(run.elapsedMs)}
-                </p>
-                <p className="task-description">
-                  {run.request.messages[run.request.messages.length - 1]?.content ||
-                    'No prompt recorded.'}
-                </p>
-                <p className="chatbot-testing-saved-response">
-                  {run.response || '(empty response)'}
-                </p>
-              </div>
-
-              <div className="entity-actions chatbot-testing-saved-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => onSelect(run)}
-                >
-                  View
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => onDelete(run.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
+              run={run}
+              onSelect={onSelect}
+              onDelete={onDelete}
+            />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deferredClear.confirmOpen}
+        title="Clear saved runs"
+        description="Clear all saved test runs?"
+        confirmLabel="Clear"
+        variant="danger"
+        onConfirm={deferredClear.confirm}
+        onCancel={deferredClear.cancel}
+      />
+      <UndoToast
+        open={deferredClear.toastOpen}
+        message="Saved runs cleared"
+        onUndo={deferredClear.undo}
+        onDismiss={deferredClear.dismiss}
+      />
     </section>
   );
 }
@@ -460,6 +518,7 @@ export function ChatbotTestingPage() {
   const [running, setRunning] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [rawError, setRawError] = useState<string | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
   const [savedRuns, setSavedRuns] = useState<RunResult[]>([]);
@@ -472,6 +531,7 @@ export function ChatbotTestingPage() {
   const loadInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setErrorCode(undefined);
     try {
       const [chatbotSettings, conversationList] = await Promise.all([
         fetchChatbotSettings(),
@@ -484,6 +544,7 @@ export function ChatbotTestingPage() {
       setConversations(conversationList);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'chatbot testing data' }));
+      setErrorCode(WEB_ERROR.LOAD);
     } finally {
       setLoading(false);
     }
@@ -510,6 +571,7 @@ export function ChatbotTestingPage() {
     let cancelled = false;
     setLoadingConversation(true);
     setError(null);
+    setErrorCode(undefined);
 
     void getConversation(conversationId)
       .then((detail) => {
@@ -523,6 +585,7 @@ export function ChatbotTestingPage() {
           setError(
             userMessage(err, WEB_ERROR.LOAD, { thing: 'this conversation' }),
           );
+          setErrorCode(WEB_ERROR.LOAD);
         }
       })
       .finally(() => {
@@ -569,6 +632,7 @@ export function ChatbotTestingPage() {
     setResult(run);
     setRawError(null);
     setError(null);
+    setErrorCode(undefined);
   }
 
   function handleDeleteSavedRun(runId: string) {
@@ -600,6 +664,7 @@ export function ChatbotTestingPage() {
 
     setRunning(true);
     setError(null);
+    setErrorCode(undefined);
     setRawError(null);
     setResult(null);
     setStreamingText('');
@@ -652,9 +717,8 @@ export function ChatbotTestingPage() {
         return;
       }
 
-      const message =
-        err instanceof Error ? err.message : 'Chatbot test request failed';
-      setError(message);
+      setError(userMessage(err, WEB_ERROR.CHAT_REQUEST));
+      setErrorCode(WEB_ERROR.CHAT_REQUEST);
 
       const detail = redactSecrets(
         err instanceof ChatApiError
@@ -691,8 +755,10 @@ export function ChatbotTestingPage() {
 
       <ChatbotSettingsNav />
 
-      {error ? <p className="form-error">{error}</p> : null}
-      {loading ? <p className="subtitle">Loading chatbot testing console...</p> : null}
+      {error ? <ErrorAlert code={errorCode}>{error}</ErrorAlert> : null}
+      {loading ? (
+        <p className="status-message">Loading chatbot testing console...</p>
+      ) : null}
 
       {!loading ? (
         <>
@@ -713,32 +779,30 @@ export function ChatbotTestingPage() {
               <div className="settings-fields-grid">
                 <label className="form-field">
                   <span>Scenario</span>
-                  <select
+                  <Select
                     value={scenarioId}
                     disabled={Boolean(conversationId)}
-                    onChange={(event) => setScenarioId(event.target.value)}
-                  >
-                    {SCENARIOS.map((scenario) => (
-                      <option key={scenario.id} value={scenario.id}>
-                        {scenario.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setScenarioId}
+                    options={SCENARIOS.map((scenario) => ({
+                      value: scenario.id,
+                      label: scenario.label,
+                    }))}
+                  />
                 </label>
 
                 <label className="form-field">
                   <span>Existing conversation</span>
-                  <select
+                  <Select
                     value={conversationId}
-                    onChange={(event) => setConversationId(event.target.value)}
-                  >
-                    <option value="">Use scenario history only</option>
-                    {conversations.map((conversation) => (
-                      <option key={conversation.id} value={conversation.id}>
-                        {conversation.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setConversationId}
+                    options={[
+                      { value: '', label: 'Use scenario history only' },
+                      ...conversations.map((conversation) => ({
+                        value: conversation.id,
+                        label: conversation.title,
+                      })),
+                    ]}
+                  />
                 </label>
 
                 <label className="toggle-row">

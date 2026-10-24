@@ -1149,7 +1149,7 @@
   border-radius: 999px;
   font-size: 0.75rem;
   text-transform: capitalize;
-  background: var(--surface-3, rgba(255, 255, 255, 0.08));
+  background: var(--bg-elevated);
 }
 
 .chatbot-testing-status-badge.status-completed {
