@@ -61,7 +61,7 @@ export function RecordPanel({ previousFrame, onCancel }: RecordPanelProps) {
   }
 
   return (
-    <div className="video-record-empty record-panel">
+    <div className="video-record-empty diagrams-empty record-panel">
       <span className="hub-empty-glyph" aria-hidden="true">
         <VideosIcon className="arc-icon-empty" />
       </span>

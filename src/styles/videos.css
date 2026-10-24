@@ -411,7 +411,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--danger, #ef4444);
+  background: var(--danger);
   transform: translateX(-1px);
   pointer-events: none;
 }
@@ -472,7 +472,7 @@
   border: 1px solid var(--border);
   color: var(--text-primary);
   font-size: 0.875rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-card);
   z-index: 80;
 }
 
@@ -485,4 +485,15 @@
 
 .recording-indicator-time {
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1023px) {
+  .video-editor-main {
+    flex-direction: column;
+  }
+
+  .video-editor-side {
+    width: 100%;
+    border-left: none;
+  }
 }

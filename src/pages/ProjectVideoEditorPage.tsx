@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
@@ -122,6 +123,7 @@ export function ProjectVideoEditorPage({
   const [sideTab, setSideTab] = useState<SideTab>('zoom');
   const [exportOpen, setExportOpen] = useState(false);
   const [rerecording, setRerecording] = useState(false);
+  const [rerecordConfirmOpen, setRerecordConfirmOpen] = useState(false);
   const sessionState = useSyncExternalStore(
     recordingSession.subscribe,
     recordingSession.getState,
@@ -537,9 +539,10 @@ export function ProjectVideoEditorPage({
       <div className="page-shell">
         <header className="page-header">
           <h2>Videos</h2>
-          <p className="page-subtitle">
-            You do not have access to this project&apos;s videos.
-          </p>
+          <ErrorAlert code="ERR-ARC-ACL-02">
+            You do not have access to this project. Ask an administrator to add
+            you.
+          </ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
               Back to organizations
@@ -590,8 +593,9 @@ export function ProjectVideoEditorPage({
           />
         </div>
         <div className="diagram-editor-header-actions">
-          {statusLabel[saveStatus] && (
+          {statusLabel[saveStatus] && saveStatus !== 'error' && (
             <span
+              role="status"
               className={`diagram-editor-status diagram-editor-status-${saveStatus}`}
             >
               {statusLabel[saveStatus]}
@@ -601,15 +605,7 @@ export function ProjectVideoEditorPage({
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => {
-                if (
-                  window.confirm(
-                    'Replace the current recording? Edits and zooms will be reset.',
-                  )
-                ) {
-                  setRerecording(true);
-                }
-              }}
+              onClick={() => setRerecordConfirmOpen(true)}
             >
               Re-record
             </button>
@@ -650,6 +646,11 @@ export function ProjectVideoEditorPage({
 
       {loading && <p className="status-message">Loading video...</p>}
       {error && <ErrorAlert>{error}</ErrorAlert>}
+      {saveStatus === 'error' && (
+        <ErrorAlert code={WEB_ERROR.SAVE}>
+          {catalogMessage(WEB_ERROR.SAVE, { thing: 'this video' })}
+        </ErrorAlert>
+      )}
 
       {!loading && !error && video && (
         <div className="video-editor-body">
@@ -681,6 +682,8 @@ export function ProjectVideoEditorPage({
                         <button
                           type="button"
                           role="tab"
+                          id="video-tab-zoom"
+                          aria-controls="video-panel-zoom"
                           aria-selected={sideTab === 'zoom'}
                           className={`video-editor-side-tab${sideTab === 'zoom' ? ' is-active' : ''}`}
                           onClick={() => setSideTab('zoom')}
@@ -690,6 +693,8 @@ export function ProjectVideoEditorPage({
                         <button
                           type="button"
                           role="tab"
+                          id="video-tab-frame"
+                          aria-controls="video-panel-frame"
                           aria-selected={sideTab === 'frame'}
                           className={`video-editor-side-tab${sideTab === 'frame' ? ' is-active' : ''}`}
                           onClick={() => setSideTab('frame')}
@@ -697,11 +702,22 @@ export function ProjectVideoEditorPage({
                           Frame
                         </button>
                       </div>
-                      {sideTab === 'zoom' ? (
+                      <div
+                        role="tabpanel"
+                        id="video-panel-zoom"
+                        aria-labelledby="video-tab-zoom"
+                        hidden={sideTab !== 'zoom'}
+                      >
                         <ZoomPanel editor={editorState} />
-                      ) : (
+                      </div>
+                      <div
+                        role="tabpanel"
+                        id="video-panel-frame"
+                        aria-labelledby="video-tab-frame"
+                        hidden={sideTab !== 'frame'}
+                      >
                         <FramePanel editor={editorState} />
-                      )}
+                      </div>
                     </div>
                   )}
                 </aside>
@@ -721,6 +737,19 @@ export function ProjectVideoEditorPage({
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={rerecordConfirmOpen}
+        title="Re-record"
+        description="Replace the current recording? Edits and zooms will be reset."
+        confirmLabel="Replace"
+        variant="danger"
+        onConfirm={() => {
+          setRerecordConfirmOpen(false);
+          setRerecording(true);
+        }}
+        onCancel={() => setRerecordConfirmOpen(false)}
+      />
     </div>
   );
 }
