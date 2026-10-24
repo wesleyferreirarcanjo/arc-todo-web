@@ -249,9 +249,9 @@ export function ProjectDiagramEditorPage() {
       <div className="page-shell">
         <header className="page-header">
           <h2>Diagrams</h2>
-          <p className="page-subtitle">
-            You do not have access to this project&apos;s diagrams.
-          </p>
+          <ErrorAlert code="ERR-ARC-ACL-02">
+            You do not have access to this project. Ask an administrator to add you.
+          </ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
               Back to organizations
@@ -262,12 +262,11 @@ export function ProjectDiagramEditorPage() {
     );
   }
 
-  const statusLabel: Record<SaveStatus, string | null> = {
+  const statusLabel: Record<Exclude<SaveStatus, 'error'>, string | null> = {
     idle: null,
     saving: 'Saving…',
     saved: 'All changes saved',
     unsaved: 'Unsaved changes',
-    error: catalogMessage(WEB_ERROR.SAVE, { thing: 'this diagram' }),
   };
 
   return (
@@ -289,12 +288,19 @@ export function ProjectDiagramEditorPage() {
           />
         </div>
         <div className="diagram-editor-header-actions">
-          {statusLabel[saveStatus] && (
-            <span
-              className={`diagram-editor-status diagram-editor-status-${saveStatus}`}
-            >
-              {statusLabel[saveStatus]}
-            </span>
+          {saveStatus === 'error' ? (
+            <ErrorAlert code={WEB_ERROR.SAVE}>
+              {catalogMessage(WEB_ERROR.SAVE, { thing: 'this diagram' })}
+            </ErrorAlert>
+          ) : (
+            statusLabel[saveStatus] && (
+              <span
+                role="status"
+                className={`diagram-editor-status diagram-editor-status-${saveStatus}`}
+              >
+                {statusLabel[saveStatus]}
+              </span>
+            )
           )}
           <button
             type="button"
@@ -308,7 +314,7 @@ export function ProjectDiagramEditorPage() {
       </header>
 
       {loading && <p className="status-message">Loading diagram...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={WEB_ERROR.LOAD}>{error}</ErrorAlert>}
 
       {!loading && !error && diagram && initialData && (
         <div className="diagram-editor-canvas">
