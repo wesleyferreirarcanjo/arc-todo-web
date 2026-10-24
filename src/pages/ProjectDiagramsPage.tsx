@@ -1,5 +1,10 @@
 import { ErrorAlert } from '../components/ErrorAlert';
-import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
+import {
+  userMessage,
+  catalogMessage,
+  WEB_ERROR,
+  type WebErrorCode,
+} from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -68,7 +73,7 @@ export function ProjectDiagramsPage() {
   const [diagrams, setDiagrams] = useState<ProjectDiagramSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState(WEB_ERROR.LOAD);
+  const [errorCode, setErrorCode] = useState<WebErrorCode>(WEB_ERROR.LOAD);
   const [forbidden, setForbidden] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
