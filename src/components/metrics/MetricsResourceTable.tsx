@@ -116,6 +116,7 @@ export function MetricsResourceTable({
   onSelect,
   allColumns,
   onToggleColumns,
+  filter,
   emptyLabel,
 }: {
   resources: MetricsResource[];
@@ -123,9 +124,9 @@ export function MetricsResourceTable({
   onSelect: (resourceId: number) => void;
   allColumns: boolean;
   onToggleColumns: () => void;
+  filter: string;
   emptyLabel?: string;
 }) {
-  const [filter, setFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
   const columns = allColumns ? ALL_COLUMNS : COMPACT_COLUMNS;
   const filtered = resources.filter((row) => matchesFilter(row, filter.trim()));
@@ -135,13 +136,6 @@ export function MetricsResourceTable({
   return (
     <div className="metrics-resource-table">
       <div className="metrics-table-toolbar">
-        <input
-          type="search"
-          aria-label="Filter apps"
-          placeholder="Filter apps"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-        />
         <button
           type="button"
           className="board-view-toggle-btn"

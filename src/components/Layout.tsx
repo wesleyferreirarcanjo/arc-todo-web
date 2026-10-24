@@ -85,11 +85,12 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
   const [collapsedFlyout, setCollapsedFlyout] = useState<NavGroupId | null>(null);
   const isSettingsPage = location.pathname.startsWith('/settings');
   const isBoardShell = isBoardShellPath(location.pathname);
-<<<<<<< HEAD
-  const isTightPage = tightPage || isTightPagePath(location.pathname);
-=======
-  const isTightPage = tightPage || location.pathname === '/analytics';
->>>>>>> feat/arc-705
+  const isTightPage =
+    tightPage ||
+    isTightPagePath(location.pathname) ||
+    location.pathname === '/organizations' ||
+    location.pathname === '/analytics' ||
+    location.pathname === '/metrics';
   const entries = visibleNav(isAdmin);
 
   if (navPath !== location.pathname) {
@@ -417,7 +418,7 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
           <BoardMobileShellProvider>
             <SmartCopyBasketProvider>
               <div
-                className={`content-area${isBoardShell ? ' is-board-page' : isTightPage || location.pathname === '/organizations' ? ' is-tight-page' : ''}`}
+                className={`content-area${isBoardShell ? ' is-board-page' : isTightPage ? ' is-tight-page' : ''}`}
                 key={isBoardShell ? 'board-shell' : 'page-shell'}
               >
                 <OfflineBanner />

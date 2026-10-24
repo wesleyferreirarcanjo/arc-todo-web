@@ -262,6 +262,14 @@ describe('Layout sidebar identity', () => {
     expect(screen.queryByRole('link', { name: 'Diagrams' })).not.toBeInTheDocument();
   });
 
+  it('applies tight page density on Metrics', () => {
+    authState.isAdmin = true;
+    renderLayout('/metrics');
+    const content = document.querySelector('.content-area');
+    expect(content).toHaveClass('is-tight-page');
+    expect(content).not.toHaveClass('is-board-page');
+  });
+
   it('opens Operate on Cloud for an administrator', () => {
     authState.isAdmin = true;
     renderLayout('/cloud', true);

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { MetricsIcon } from '../components/icons';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { serverStatusLabel } from '../components/metrics/format';
 import { MetricsCpuBreakdown } from '../components/metrics/MetricsCpuBreakdown';
 import { MetricsHostSummary } from '../components/metrics/MetricsHostSummary';
@@ -64,8 +65,10 @@ export function MetricsPage() {
   const appName = searchParams.get('app');
   const appMetric = searchParams.get('metric');
   const allColumns = searchParams.get('columns') === 'all';
+  const appFilter = searchParams.get('q') ?? '';
 
   const [servers, setServers] = useState<MetricsServer[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [resources, setResources] = useState<MetricsResource[]>([]);
   const [serverSeries, setServerSeries] = useState<MetricsSeries | null>(null);
   const [resourceSeries, setResourceSeries] = useState<MetricsSeries | null>(null);
@@ -355,30 +358,27 @@ export function MetricsPage() {
           <h2>Metrics</h2>
         </div>
         <div className="analytics-toolbar-controls">
-          <div className="board-view-toggle" role="tablist" aria-label="Metrics sections">
+          <div className="board-view-toggle" role="group" aria-label="Metrics sections">
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${tab === 'servers' ? ' is-active' : ''}`}
-              aria-selected={tab === 'servers'}
+              aria-pressed={tab === 'servers'}
               onClick={() => patchParams({ tab: 'servers' })}
             >
               Servers
             </button>
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${tab === 'apps' ? ' is-active' : ''}`}
-              aria-selected={tab === 'apps'}
+              aria-pressed={tab === 'apps'}
               onClick={() => patchParams({ tab: 'apps' })}
             >
               Custom metrics
             </button>
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${tab === 'tokens' ? ' is-active' : ''}`}
-              aria-selected={tab === 'tokens'}
+              aria-pressed={tab === 'tokens'}
               onClick={() => patchParams({ tab: 'tokens' })}
             >
               Agent tokens
@@ -401,6 +401,28 @@ export function MetricsPage() {
           ) : null}
         </div>
       </header>
+
+      {tab === 'servers' ? (
+        <PageFiltersToolbar
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          activeFilterCount={appFilter.trim() ? 1 : 0}
+          panel={
+            <label className="board-filter-field board-filter-search">
+              Filter apps
+              <input
+                type="search"
+                aria-label="Filter apps"
+                placeholder="Filter apps"
+                value={appFilter}
+                onChange={(event) => patchParams({ q: event.target.value })}
+              />
+            </label>
+          }
+          mobileOverlayOpen={filtersOpen}
+          onMobileOverlayOpenChange={setFiltersOpen}
+        />
+      ) : null}
 
       {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
@@ -436,6 +458,7 @@ export function MetricsPage() {
                   resources={resources}
                   selectedId={resourceId}
                   allColumns={allColumns}
+                  filter={appFilter}
                   emptyLabel={emptyLabel}
                   onToggleColumns={() =>
                     patchParams({ columns: allColumns ? null : 'all' })
