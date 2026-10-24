@@ -260,32 +260,11 @@
 .organizations-list-count {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: var(--type-meta);
   font-weight: 500;
 }
 
-.organizations-state-card {
-  padding: 1.25rem 1.35rem;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-soft);
-}
-
-.organizations-state-title {
-  margin: 0;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.organizations-state-detail {
-  margin: 0.35rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-.organization-form-header h2 {
+.organization-form-header h3 {
   font-size: var(--type-section);
   font-weight: 700;
   line-height: 1.2;
@@ -394,7 +373,7 @@
   padding: 0.15rem 0.45rem;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 1024px) {
   .organizations-page.page-shell {
     display: grid;
     grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
@@ -412,7 +391,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .organizations-list-header,
   .organization-form-actions,
   .user-form-actions,

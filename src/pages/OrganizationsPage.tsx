@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { createOrganization } from '../lib/api/organizations';
 import { OrganizationForm } from '../components/OrganizationForm';
 import { OrganizationList } from '../components/OrganizationList';
 import { OrganizationsIcon } from '../components/icons';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreateOrganizationInput } from '../types/organization';
@@ -14,6 +15,8 @@ export function OrganizationsPage() {
     loadingOrganizations,
     refreshOrganizations,
   } = useWorkspace();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleCreate = useCallback(
     async (input: CreateOrganizationInput) => {
@@ -27,10 +30,34 @@ export function OrganizationsPage() {
     await refreshOrganizations();
   }, [refreshOrganizations]);
 
+  const query = searchQuery.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      organizations.filter(
+        (organization) =>
+          !query || organization.name.toLowerCase().includes(query),
+      ),
+    [organizations, query],
+  );
+  const searchActive = query.length > 0;
   const organizationCount = organizations.length;
+  const visibleCount = filtered.length;
+
+  const filterPanel = (
+    <label className="board-filter-field board-filter-search">
+      Search
+      <input
+        type="search"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        placeholder="Filter by title"
+        aria-label="Filter organizations by title"
+      />
+    </label>
+  );
 
   return (
-    <div className="page-shell organizations-page">
+    <div className="page-shell organizations-page is-tight-page">
       <header className="page-header">
         <h2>Organizations</h2>
         <p className="page-subtitle">
@@ -47,6 +74,17 @@ export function OrganizationsPage() {
         </section>
       )}
 
+      {!loadingOrganizations && organizationCount > 0 && (
+        <PageFiltersToolbar
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          activeFilterCount={searchActive ? 1 : 0}
+          panel={filterPanel}
+          mobileOverlayOpen={filtersOpen}
+          onMobileOverlayOpenChange={setFiltersOpen}
+        />
+      )}
+
       <section
         className="organizations-list-section"
         aria-labelledby="organizations-list-heading"
@@ -55,14 +93,16 @@ export function OrganizationsPage() {
           <div className="organizations-list-header">
             <h3 id="organizations-list-heading">Your workspaces</h3>
             <p className="organizations-list-count">
-              {organizationCount}{' '}
-              {organizationCount === 1 ? 'organization' : 'organizations'}
+              {visibleCount}{' '}
+              {visibleCount === 1 ? 'organization' : 'organizations'}
             </p>
           </div>
         )}
 
         {loadingOrganizations && (
-          <p className="status-message">Loading organizations...</p>
+          <p className="status-message" role="status">
+            Loading organizations...
+          </p>
         )}
 
         {!loadingOrganizations && organizationCount === 0 && (
@@ -78,9 +118,27 @@ export function OrganizationsPage() {
           </div>
         )}
 
-        {!loadingOrganizations && organizationCount > 0 && (
+        {!loadingOrganizations && organizationCount > 0 && visibleCount === 0 && (
+          <>
+            <p className="status-message" role="status">
+              No organizations match these filters.
+            </p>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setSearchQuery('');
+                setFiltersOpen(false);
+              }}
+            >
+              Clear filters
+            </button>
+          </>
+        )}
+
+        {!loadingOrganizations && visibleCount > 0 && (
           <OrganizationList
-            organizations={organizations}
+            organizations={filtered}
             canManage={isAdmin}
             onUpdated={handleUpdated}
           />

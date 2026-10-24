@@ -1,10 +1,13 @@
 import { ErrorAlert } from './ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useState, type CSSProperties } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { deleteOrganization, updateOrganization } from '../lib/api/organizations';
 import { getOrganizationColor } from '../lib/color/entityColor';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import type { Organization, UpdateOrganizationInput } from '../types/organization';
+import { ConfirmDialog } from './ConfirmDialog';
+import { UndoToast } from './UndoToast';
 
 interface OrganizationListProps {
   organizations: Organization[];
@@ -25,6 +28,28 @@ export function OrganizationList({
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const pendingDeleteRef = useRef<Organization | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Organization | null>(null);
+
+  const commitDelete = useCallback(async () => {
+    const organization = pendingDeleteRef.current;
+    if (!organization) return;
+
+    setDeletingId(organization.id);
+    setDeleteError(null);
+    try {
+      await deleteOrganization(organization.id);
+      await onUpdated?.();
+    } catch (err) {
+      setDeleteError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this organization' }));
+    } finally {
+      setDeletingId(null);
+      pendingDeleteRef.current = null;
+      setPendingDelete(null);
+    }
+  }, [onUpdated]);
+
+  const deferredDelete = useDeferredDelete(commitDelete);
 
   function handleStartEdit(organization: Organization) {
     setName(organization.name);
@@ -66,27 +91,41 @@ export function OrganizationList({
     }
   }
 
-  async function handleDelete(organization: Organization) {
-    const confirmed = window.confirm(
-      `Delete "${organization.name}"? This will remove the organization and its projects.`,
-    );
-    if (!confirmed) return;
-
-    setDeletingId(organization.id);
-    setDeleteError(null);
-    try {
-      await deleteOrganization(organization.id);
-      await onUpdated?.();
-    } catch (err) {
-      setDeleteError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this organization' }));
-    } finally {
-      setDeletingId(null);
-    }
+  function handleDelete(organization: Organization) {
+    pendingDeleteRef.current = organization;
+    setPendingDelete(organization);
+    deferredDelete.requestDelete();
   }
 
   return (
     <div className="entity-list organizations-list">
       {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
+      <ConfirmDialog
+        open={deferredDelete.confirmOpen}
+        title={`Delete "${pendingDelete?.name ?? 'this organization'}"?`}
+        description="This will remove the organization and its projects."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deletingId !== null}
+        onConfirm={() => void deferredDelete.confirm()}
+        onCancel={() => {
+          pendingDeleteRef.current = null;
+          setPendingDelete(null);
+          deferredDelete.cancel();
+        }}
+      />
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="Organization deleted"
+        onUndo={() => {
+          pendingDeleteRef.current = null;
+          setPendingDelete(null);
+          deferredDelete.undo();
+        }}
+        onDismiss={() => {
+          void deferredDelete.dismiss();
+        }}
+      />
       {organizations.map((organization) => {
         const accent = getOrganizationColor(organization);
         const isEditing = editingId === organization.id;
