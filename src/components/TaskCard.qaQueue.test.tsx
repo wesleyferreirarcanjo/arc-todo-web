@@ -1,5 +1,4 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../types/todo';
 import { StatusMoveAnimationProvider } from '../lib/motion/StatusMoveAnimationContext';
@@ -136,10 +135,8 @@ describe('TaskCard QA queue selection', () => {
     expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
   });
 
-  it('shows the title only and adds the whole card on click when QA extension is open', async () => {
-    const onToggleQaExtensionQueue = vi.fn();
-    const user = userEvent.setup();
-    render(
+  it('keeps full card chrome and never enters QA extension picker mode', () => {
+    const { container } = render(
       <StatusMoveAnimationProvider>
         <TaskCard
           task={makeTask({
@@ -147,60 +144,17 @@ describe('TaskCard QA queue selection', () => {
           })}
           organizationId="org-1"
           projectId="proj-1"
-          qaExtensionOpen
-          onToggleQaExtensionQueue={onToggleQaExtensionQueue}
           onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </StatusMoveAnimationProvider>,
     );
 
-    expect(screen.getByText('QA pick card')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('checkbox', { name: 'Add #arc-1 to QA extension' }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('checkbox', { name: 'Marcar Sign in como verificado' }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('checkbox', { name: 'Marcar Open the board como verificado' }),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Add #arc-1 to QA extension'));
-    expect(onToggleQaExtensionQueue).toHaveBeenCalledWith(
-      '11111111-1111-1111-1111-111111111111',
-    );
-  });
-
-  it('does not add nested subtasks by click in QA extension view', async () => {
-    const onToggleQaExtensionQueue = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <StatusMoveAnimationProvider>
-        <TaskCard
-          task={makeTask({
-            parentTaskId: 'parent-1',
-            testDescription: '## O que verificar\n- [ ] Nested step',
-          })}
-          isSubtask
-          organizationId="org-1"
-          projectId="proj-1"
-          qaExtensionOpen
-          onToggleQaExtensionQueue={onToggleQaExtensionQueue}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      </StatusMoveAnimationProvider>,
-    );
-
+    expect(container.querySelector('.has-qa-extension')).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText('Add #arc-1 to QA extension'),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('checkbox', { name: 'Marcar Nested step como verificado' }),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByText('QA pick card'));
-    expect(onToggleQaExtensionQueue).not.toHaveBeenCalled();
+    expect(screen.getByText('QA pick card')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Task actions' })).toBeInTheDocument();
   });
 });

@@ -330,15 +330,6 @@
   flex-direction: column;
 }
 
-.task-card.is-qa-selected {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong));
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
-}
-
-.task-card.has-qa-extension {
-  cursor: pointer;
-}
-
 .task-card:hover,
 .task-card.has-menu-open,
 .task-card:focus-within {

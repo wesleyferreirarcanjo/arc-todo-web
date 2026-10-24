@@ -222,11 +222,6 @@ interface TaskCardProps {
   isMoving?: boolean;
   draggingTaskId?: string;
   compact?: boolean;
-  selected?: boolean;
-  qaExtensionOpen?: boolean;
-  inQaExtensionQueue?: boolean;
-  queueBusy?: boolean;
-  onToggleQaExtensionQueue?: (taskId: string) => void;
   onUpdate: (id: string, input: Partial<UpdateTaskInput>, replaced?: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCreateSubtask?: (parentId: string, input: CreateTaskInput) => Promise<void>;
@@ -264,11 +259,6 @@ export function TaskCard({
   isMoving = false,
   draggingTaskId,
   compact = false,
-  selected = false,
-  qaExtensionOpen = false,
-  inQaExtensionQueue = false,
-  queueBusy = false,
-  onToggleQaExtensionQueue,
   onUpdate,
   onDelete,
   onCreateSubtask,
@@ -339,8 +329,6 @@ export function TaskCard({
 
   const deferredDelete = useDeferredDelete(finalizeDelete);
 
-  const showQaExtension = qaExtensionOpen && !isSubtask;
-  const isSelected = selected;
   const menusOpen = overlayMenu !== null;
   const actionMenuOpen = overlayMenu?.source === 'kebab';
   const isInteractionLocked =
@@ -353,7 +341,7 @@ export function TaskCard({
   const resolvedOrganizationId = organizationId ?? chatContextScope?.organizationId;
   const resolvedProjectId = projectId ?? chatContextScope?.projectId;
   const canOpenDetails = Boolean(resolvedOrganizationId && resolvedProjectId);
-  const isDraggable = draggable && !isInteractionLocked && !showQaExtension;
+  const isDraggable = draggable && !isInteractionLocked;
 
   const {
     attributes,
@@ -455,7 +443,7 @@ export function TaskCard({
   }
 
   function handleCardDoubleClick(event: ReactMouseEvent<HTMLElement>) {
-    if (showQaExtension || !canOpenDetails) {
+    if (!canOpenDetails) {
       return;
     }
 
@@ -616,25 +604,8 @@ export function TaskCard({
     }
   }
 
-  function handleQaExtensionCardClick(event: ReactMouseEvent<HTMLElement>) {
-    if (!showQaExtension || !onToggleQaExtensionQueue || queueBusy || inQaExtensionQueue) {
-      return;
-    }
-    const target = event.target as HTMLElement;
-    if (
-      target.closest(
-        'button, a, input, select, textarea, label, [role="menu"], .task-card-actions, .task-card-copy-actions, .task-card-context-menu',
-      )
-    ) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    onToggleQaExtensionQueue(task.id);
-  }
-
   function handleSwipePointerDown(event: ReactPointerEvent<HTMLElement>) {
-    if (!isMobileBoard || isInteractionLocked || isDraggable || showQaExtension) return;
+    if (!isMobileBoard || isInteractionLocked || isDraggable) return;
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
     if (target.closest('button, a, input, select, textarea, [role="menuitem"]')) {
@@ -876,7 +847,7 @@ export function TaskCard({
       ? checklistProgress
       : null;
   const showQaStage =
-    Boolean(qaProgress) && (!isSubtask || isDetachedSubtask) && !showQaExtension;
+    Boolean(qaProgress) && (!isSubtask || isDetachedSubtask);
   const qaProgressRatio =
     qaProgress && qaProgress.total > 0
       ? Math.min(Math.max(qaProgress.done / qaProgress.total, 0), 1)
@@ -914,7 +885,7 @@ export function TaskCard({
 
   const showAsDragging = isDragging || isDndDragging;
   const showChatHint = Boolean(
-    !showQaExtension && (!isSubtask || isDetachedSubtask) && chatContextTask,
+    (!isSubtask || isDetachedSubtask) && chatContextTask,
   );
   const showSmartCopy =
     isSmartCopyStatus(task.status) &&
@@ -925,16 +896,13 @@ export function TaskCard({
   const showDoneHold =
     task.status === 'done' && (!isSubtask || isDetachedSubtask);
   const showCornerActions =
-    !showQaExtension &&
     (!isSubtask || isDetachedSubtask) &&
     (Boolean(qaProgress) || showSmartCopy || showDoneHold);
   const showParentSubtaskMeta =
-    !showQaExtension &&
     !compact &&
     !isSubtask &&
     (Boolean(subtaskProgress) || detachedSubtaskCount > 0);
   const showSubtaskSection =
-    !showQaExtension &&
     !compact &&
     !isSubtask &&
     (nestedSubtasks.length > 0 || showParentSubtaskMeta);
@@ -1077,17 +1045,12 @@ export function TaskCard({
       <motion.article
         ref={setNodeRef}
         layout={animateStatusMove ? 'position' : false}
-        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${isSelected ? ' is-qa-selected' : ''}${showQaExtension ? ' has-qa-extension' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
+        className={`task-card criticity-${task.criticity}${accentColor ? ' has-accent' : ''}${compact ? ' is-compact' : ''}${showAsDragging ? ' is-dragging' : ''}${isMoving ? ' is-moving' : ''}${isInteractionLocked ? ' has-menu-open' : ''}${inChatContext ? ' is-chat-context' : ''}${inSmartCopyBasket ? ' is-smart-copy-basket' : ''}${showChatHint ? ' has-chat-hint' : ''}${isSubtask ? ' is-subtask' : ''}${isDetachedSubtask ? ' is-detached-subtask' : ''}${showSubtaskSection ? ' has-subtasks' : ''}${showCornerActions ? ' has-corner-actions' : ''}${showQaStage ? ' is-qa-stage' : ''}${showScatterLights ? ' has-scatter-lights' : ''}${scatterStage === 'todo' ? ' is-todo-stage' : ''}${scatterStage === 'in_progress' ? ' is-in-progress-stage' : ''}${scatterStage === 'dev_test' ? ' is-dev-test-stage' : ''}${scatterStage === 'qa_test' ? ' is-qa-test-stage' : ''}${showDoneHold ? ' is-done-stage' : ''}${swipeHint ? ' has-swipe-hint' : ''}${isDraggable ? ' is-draggable' : ''}`}
         data-task-id={task.id}
         data-display-id={task.displayId || undefined}
         data-task-title={task.title}
         data-organization-id={resolvedOrganizationId}
         data-project-id={resolvedProjectId}
-        aria-label={
-          showQaExtension
-            ? `Add ${task.displayId || task.title} to QA extension`
-            : undefined
-        }
         style={cardStyle}
         animate={{ opacity: showAsDragging || isMoving ? 0.55 : 1 }}
         aria-busy={isMoving || undefined}
@@ -1106,7 +1069,6 @@ export function TaskCard({
           default: base,
         }}
         onDoubleClick={handleCardDoubleClick}
-        onClick={handleQaExtensionCardClick}
         onContextMenu={handleCardContextMenu}
         {...draggableProps}
         onPointerMove={handleCardPointerMove}
@@ -1244,7 +1206,7 @@ export function TaskCard({
             )}
           </div>
 
-          {!isSubtask && compact && !showQaExtension && resolvedSubtasks.length > 0 && (
+          {!isSubtask && compact && resolvedSubtasks.length > 0 && (
             <p className="task-subtask-summary">
               {resolvedSubtasks.length} subtask{resolvedSubtasks.length === 1 ? '' : 's'}
               {detachedSubtaskCount > 0
@@ -1253,14 +1215,14 @@ export function TaskCard({
             </p>
           )}
 
-          {!compact && !showQaExtension && (!isSubtask || isDetachedSubtask) && task.dueDate && (
+          {!compact && (!isSubtask || isDetachedSubtask) && task.dueDate && (
             <div className="task-meta">
               <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             </div>
           )}
         </motion.div>
 
-        {(!isSubtask || isDetachedSubtask) && !showQaExtension && chatContextTask ? (
+        {(!isSubtask || isDetachedSubtask) && chatContextTask ? (
           <span className="task-card-tooltip" role="tooltip">
             Ctrl+click insert reference · Shift+click remove
           </span>

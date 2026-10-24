@@ -90,15 +90,11 @@ vi.mock('../components/TaskImportExportMenu', () => ({
 }));
 
 vi.mock('../components/UnifiedTaskBoard', () => ({
-  UnifiedTaskBoard: ({ qaExtensionOpen }: { qaExtensionOpen?: boolean }) => (
-    <div data-testid="unified-board" data-qa-extension={qaExtensionOpen ? 'on' : 'off'} />
-  ),
+  UnifiedTaskBoard: () => <div data-testid="unified-board" />,
 }));
 
 vi.mock('../components/TaskBoard', () => ({
-  TaskBoard: ({ qaExtensionOpen }: { qaExtensionOpen?: boolean }) => (
-    <div data-testid="task-board" data-qa-extension={qaExtensionOpen ? 'on' : 'off'} />
-  ),
+  TaskBoard: () => <div data-testid="task-board" />,
 }));
 
 import { AllTasksBoardPage } from './AllTasksBoardPage';
@@ -163,9 +159,9 @@ describe('AllTasksBoardPage chrome', () => {
     expect(actions).toBeInTheDocument();
     expect(tabs).toBeInTheDocument();
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
-    expect(actions).toContainElement(screen.getByRole('button', { name: 'QA extension' }));
+    expect(actions).toContainElement(screen.getByRole('link', { name: 'QA extension' }));
     expect(screen.getByRole('button', { name: 'Filters' }).nextElementSibling).toBe(
-      screen.getByRole('button', { name: 'QA extension' }),
+      screen.getByRole('link', { name: 'QA extension' }),
     );
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'My Tasks' }));
@@ -197,7 +193,7 @@ describe('AllTasksBoardPage chrome', () => {
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(actions).toBeInTheDocument();
-    expect(actions).toContainElement(screen.getByRole('button', { name: 'QA extension' }));
+    expect(actions).toContainElement(screen.getByRole('link', { name: 'QA extension' }));
     expect(screen.queryByRole('button', { name: 'Filters' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Weekly cycle' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sprint history' })).not.toBeInTheDocument();
@@ -218,9 +214,9 @@ describe('AllTasksBoardPage chrome', () => {
     expect(actions).toBeInTheDocument();
     expect(tabs).toContainElement(screen.getByRole('button', { name: 'All' }));
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
-    expect(actions).toContainElement(screen.getByRole('button', { name: 'QA extension' }));
+    expect(actions).toContainElement(screen.getByRole('link', { name: 'QA extension' }));
     expect(screen.getByRole('button', { name: 'Filters' }).nextElementSibling).toBe(
-      screen.getByRole('button', { name: 'QA extension' }),
+      screen.getByRole('link', { name: 'QA extension' }),
     );
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Weekly cycle' }));
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Sprint history' }));
@@ -250,7 +246,7 @@ describe('AllTasksBoardPage chrome', () => {
     });
   });
 
-  it('puts the QA extension toggle immediately after Filters', async () => {
+  it('puts the QA extension count immediately after Filters', async () => {
     fetchQaQueue.mockResolvedValue({
       projectId: 'proj-1',
       organizationId: 'org-1',
@@ -276,18 +272,22 @@ describe('AllTasksBoardPage chrome', () => {
     renderBoard();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'QA extension, 2 cards' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'QA extension, 2 cards' })).toBeInTheDocument();
     });
     const actions = document.querySelector('.board-chrome-actions');
-    const qa = screen.getByRole('button', { name: 'QA extension, 2 cards' });
+    const qa = screen.getByRole('link', { name: 'QA extension, 2 cards' });
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Filters' }));
     expect(actions).toContainElement(qa);
     expect(screen.getByRole('button', { name: 'Filters' }).nextElementSibling).toBe(qa);
     expect(qa).toHaveTextContent('2');
+    expect(qa).toHaveAttribute('href', '/download');
+    expect(qa).not.toHaveAttribute('aria-expanded');
+    expect(qa).not.toHaveAttribute('aria-controls');
+    expect(document.getElementById('board-qa-queue-panel')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add all parents' })).not.toBeInTheDocument();
   });
 
-  it('opens QA extension queue titles without card checklists', async () => {
+  it('does not reveal a QA extension board panel', async () => {
     fetchQaQueue.mockResolvedValue({
       projectId: 'proj-1',
       organizationId: 'org-1',
@@ -302,103 +302,14 @@ describe('AllTasksBoardPage chrome', () => {
         },
       ],
     });
-    fetchAllTasks.mockResolvedValue([
-      {
-        id: '11111111-1111-1111-1111-111111111111',
-        title: 'One',
-        description: null,
-        businessDescription: null,
-        planCodeDescription: null,
-        testDescription: '## O que verificar\n- [ ] Step',
-        status: 'qa_test',
-        criticity: 'medium',
-        dueDate: null,
-        projectId: 'proj-1',
-        parentTaskId: null,
-        taskNumber: 1,
-        displayId: '#arc-1',
-        category: 'other',
-        metadata: {},
-        createdAt: '2026-08-01T00:00:00.000Z',
-        updatedAt: '2026-08-01T00:00:00.000Z',
-        organization: { id: 'org-1', name: 'Personal', slug: 'personal' },
-        project: {
-          id: 'proj-1',
-          name: 'arc-todo',
-          organizationId: 'org-1',
-          color: '#4862ce',
-          acronym: 'arc',
-        },
-        subtasks: [
-          {
-            id: '22222222-2222-2222-2222-222222222222',
-            title: 'Nested',
-            description: null,
-            status: 'todo',
-            criticity: 'medium',
-            dueDate: null,
-            projectId: 'proj-1',
-            parentTaskId: '11111111-1111-1111-1111-111111111111',
-            taskNumber: 2,
-            displayId: '#arc-2',
-            category: 'other',
-            metadata: {},
-            createdAt: '2026-08-01T00:00:00.000Z',
-            updatedAt: '2026-08-01T00:00:00.000Z',
-          },
-        ],
-      },
-      {
-        id: '22222222-2222-2222-2222-222222222222',
-        title: 'Nested',
-        description: null,
-        businessDescription: null,
-        planCodeDescription: null,
-        testDescription: null,
-        status: 'todo',
-        criticity: 'medium',
-        dueDate: null,
-        projectId: 'proj-1',
-        parentTaskId: '11111111-1111-1111-1111-111111111111',
-        taskNumber: 2,
-        displayId: '#arc-2',
-        category: 'other',
-        metadata: {},
-        createdAt: '2026-08-01T00:00:00.000Z',
-        updatedAt: '2026-08-01T00:00:00.000Z',
-        organization: { id: 'org-1', name: 'Personal', slug: 'personal' },
-        project: {
-          id: 'proj-1',
-          name: 'arc-todo',
-          organizationId: 'org-1',
-          color: '#4862ce',
-          acronym: 'arc',
-        },
-      },
-    ]);
-    const user = userEvent.setup();
     renderBoard();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'QA extension, 1 card' })).toBeInTheDocument();
-    });
+    const qa = await screen.findByRole('link', { name: 'QA extension, 1 card' });
+    expect(qa).toHaveAttribute('href', '/download');
+    expect(qa).not.toHaveAttribute('aria-expanded');
+    expect(document.getElementById('board-qa-queue-panel')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add all parents' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('unified-board')).toHaveAttribute('data-qa-extension', 'off');
-
-    await user.click(screen.getByRole('button', { name: 'QA extension, 1 card' }));
-
-    expect(screen.getByRole('region', { name: 'QA extension' })).toBeInTheDocument();
-    expect(screen.getByText('Queued')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Remove #arc-1 from QA extension' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('checkbox', { name: 'Select #arc-1 for QA queue' }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ver checklists' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Enviar para fila de QA' }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByTestId('unified-board')).toHaveAttribute('data-qa-extension', 'on');
+    expect(screen.queryByRole('region', { name: 'QA extension' })).not.toBeInTheDocument();
+    expect(document.querySelector('.has-qa-extension')).not.toBeInTheDocument();
   });
 });
