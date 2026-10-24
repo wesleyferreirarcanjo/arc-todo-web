@@ -413,11 +413,7 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
           <BoardMobileShellProvider>
             <SmartCopyBasketProvider>
               <div
-<<<<<<< HEAD
-                className={`content-area${isBoardShell ? ' is-board-page' : isTightPage ? ' is-tight-page' : ''}`}
-=======
-                className={`content-area${isBoardShell ? ' is-board-page' : tightPage || location.pathname === '/organizations' ? ' is-tight-page' : ''}`}
->>>>>>> feat/arc-683
+                className={`content-area${isBoardShell ? ' is-board-page' : isTightPage || location.pathname === '/organizations' ? ' is-tight-page' : ''}`}
                 key={isBoardShell ? 'board-shell' : 'page-shell'}
               >
                 <OfflineBanner />
