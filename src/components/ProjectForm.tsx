@@ -31,8 +31,11 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
           setUsers(data.map((user) => ({ id: user.id, username: user.username })));
         }
       })
-      .catch(() => {
-        if (!cancelled) setUsers([]);
+      .catch((err) => {
+        if (!cancelled) {
+          setUsers([]);
+          setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'users' }));
+        }
       });
     return () => {
       cancelled = true;
@@ -66,7 +69,7 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
 
   return (
     <form className="entity-form" onSubmit={handleSubmit}>
-      <h2>New project</h2>
+      <h3>New project</h3>
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>
