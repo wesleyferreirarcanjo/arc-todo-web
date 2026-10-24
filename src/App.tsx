@@ -97,6 +97,10 @@ export default function App() {
                 }
               >
                 <Route path="/diagrams" element={<DiagramsHubPage />} />
+                <Route
+                  path="/organizations/:orgId/projects/:projectId/wireframes"
+                  element={<ProjectWireframesPage />}
+                />
               </Route>
               <Route
                 element={
@@ -177,10 +181,6 @@ export default function App() {
                 <Route
                   path="/organizations/:orgId/projects/:projectId/diagrams"
                   element={<ProjectDiagramsPage />}
-                />
-                <Route
-                  path="/organizations/:orgId/projects/:projectId/wireframes"
-                  element={<ProjectWireframesPage />}
                 />
                 <Route
                   path="/organizations/:orgId/projects/:projectId/videos"

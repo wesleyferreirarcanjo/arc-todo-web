@@ -1,15 +1,18 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
+import { UndoToast } from '../components/UndoToast';
 import { WireframeCardPreview } from '../components/WireframeCardPreview';
 import { WireframeMarkupBlock } from '../components/WireframeMarkupBlock';
 import { WireframesIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
 import { ApiError } from '../lib/api/client';
 import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -73,6 +76,7 @@ export function ProjectWireframesPage() {
   const [diagrams, setDiagrams] = useState<ProjectDiagramSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState(WEB_ERROR.LOAD);
   const [forbidden, setForbidden] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -85,14 +89,18 @@ export function ProjectWireframesPage() {
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] =
     useState<ProjectWireframeSummary | null>(null);
+  const deleteTargetRef = useRef<ProjectWireframeSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<WireframeSort>('updated_desc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileOverlayOpen, setMobileOverlayOpen] = useState(false);
 
   const loadWireframes = useCallback(async () => {
     if (!orgId || !projectId) return;
     setLoading(true);
     setError(null);
+    setErrorCode(WEB_ERROR.LOAD);
     setForbidden(false);
     try {
       const [data, projectDiagrams] = await Promise.all([
@@ -136,6 +144,40 @@ export function ProjectWireframesPage() {
     }
     return grouped;
   }, [diagrams]);
+
+  const deferredDelete = useDeferredDelete(async () => {
+    if (!orgId || !projectId) return;
+    const target = deleteTargetRef.current;
+    if (!target) return;
+    setDeleting(true);
+    try {
+      await deleteProjectWireframe(orgId, projectId, target.id);
+      setWireframes((prev) =>
+        prev.filter((wireframe) => wireframe.id !== target.id),
+      );
+    } catch (err) {
+      setErrorCode(WEB_ERROR.DELETE);
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
+    } finally {
+      setDeleting(false);
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+    }
+  });
+
+  const activeFilterCount =
+    Number(searchQuery.trim() !== '') + Number(sort !== 'updated_desc');
+
+  function requestDelete(wireframe: ProjectWireframeSummary) {
+    deleteTargetRef.current = wireframe;
+    setDeleteTarget(wireframe);
+    deferredDelete.requestDelete();
+  }
+
+  function clearFilters() {
+    setSearchQuery('');
+    setSort('updated_desc');
+  }
 
   async function handleCreate() {
     if (!orgId || !projectId) return;
@@ -198,23 +240,6 @@ export function ProjectWireframesPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!orgId || !projectId || !deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteProjectWireframe(orgId, projectId, deleteTarget.id);
-      setWireframes((prev) =>
-        prev.filter((wireframe) => wireframe.id !== deleteTarget.id),
-      );
-      setDeleteTarget(null);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this wireframe' }));
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
-  }
-
   if (!orgId || !projectId) {
     return <Navigate to="/organizations" replace />;
   }
@@ -224,9 +249,9 @@ export function ProjectWireframesPage() {
       <div className="page-shell">
         <header className="page-header">
           <h2>Wireframes</h2>
-          <p className="page-subtitle">
-            You do not have access to this project&apos;s wireframes.
-          </p>
+          <ErrorAlert code="ERR-ARC-ACL-02">
+            {catalogMessage('ERR-ARC-ACL-02')}
+          </ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
               Back to organizations
@@ -236,6 +261,29 @@ export function ProjectWireframesPage() {
       </div>
     );
   }
+
+  const filterPanel = (
+    <>
+      <label className="board-filter-field board-filter-search">
+        Search
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter by title"
+          aria-label="Filter wireframes by title"
+        />
+      </label>
+      <label className="board-filter-field">
+        Sort by
+        <Select
+          value={sort}
+          onChange={(value) => setSort(value as WireframeSort)}
+          options={SORT_OPTIONS}
+        />
+      </label>
+    </>
+  );
 
   return (
     <div
@@ -269,21 +317,23 @@ export function ProjectWireframesPage() {
             </Link>
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => {
-            setCreateOpen(true);
-            setNewTitle('');
-            setCreateError(null);
-          }}
-        >
-          New wireframe
-        </button>
+        {!loading && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setCreateOpen(true);
+              setNewTitle('');
+              setCreateError(null);
+            }}
+          >
+            New wireframe
+          </button>
+        )}
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && wireframes.length === 0 && (
         <div className="diagrams-empty">
@@ -308,98 +358,98 @@ export function ProjectWireframesPage() {
       )}
 
       {!loading && !error && wireframes.length > 0 && (
-        <div className="board-filters diagrams-filters">
-          <label className="board-filter-field board-filter-search">
-            Search
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Filter by title"
-              aria-label="Filter wireframes by title"
-            />
-          </label>
-          <label className="board-filter-field">
-            Sort by
-            <Select
-              value={sort}
-              onChange={(value) => setSort(value as WireframeSort)}
-              options={SORT_OPTIONS}
-            />
-          </label>
-        </div>
-      )}
+        <>
+          <PageFiltersToolbar
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            panel={filterPanel}
+            mobileOverlayOpen={mobileOverlayOpen}
+            onMobileOverlayOpenChange={setMobileOverlayOpen}
+          />
 
-      {!loading && !error && wireframes.length > 0 && visibleWireframes.length === 0 && (
-        <div className="diagrams-empty">
-          <p className="status-message">No wireframes match "{searchQuery}".</p>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setSearchQuery('')}
-          >
-            Clear filters
-          </button>
-        </div>
-      )}
-
-      {!loading && !error && visibleWireframes.length > 0 && (
-        <ul className="diagrams-grid diagrams-grid--wireframe">
-          {visibleWireframes.map((wireframe) => {
-            return (
-              <li key={wireframe.id} className="diagram-card diagram-card--wireframe entity-card">
-              <WireframeCardPreview
-                orgId={orgId}
-                projectId={projectId}
-                previewPath={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
-                diagrams={diagramsByWireframe.get(wireframe.id) ?? []}
-              />
-              <div className="diagram-card-body">
-                <h3 className="diagram-card-title">
-                  <Link
-                    to={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
+          {visibleWireframes.length === 0 ? (
+            <div className="diagrams-empty" role="status">
+              <p className="status-message">
+                No wireframes match "{searchQuery}". {visibleWireframes.length} of {wireframes.length}.
+              </p>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <ul className="diagrams-grid diagrams-grid--wireframe">
+              {visibleWireframes.map((wireframe) => {
+                return (
+                  <li
+                    key={wireframe.id}
+                    className="diagram-card diagram-card--wireframe entity-card has-accent"
+                    style={
+                      currentProject
+                        ? ({
+                            '--entity-accent': getProjectColor(currentProject),
+                          } as CSSProperties)
+                        : undefined
+                    }
                   >
-                    {wireframe.title}
-                  </Link>
-                </h3>
-                <p className="diagram-card-meta">
-                  Updated {formatUpdatedAt(wireframe.updatedAt)}
-                </p>
-                <WireframeMarkupBlock
-                  orgId={orgId}
-                  projectId={projectId}
-                  wireframeId={wireframe.id}
-                  wireframeTitle={wireframe.title}
-                  diagrams={diagramsByWireframe.get(wireframe.id) ?? []}
-                  onDiagramsChange={() => {
-                    void fetchProjectDiagrams(orgId, projectId).then(setDiagrams);
-                  }}
-                />
-                <div className="diagram-card-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setRenameTarget(wireframe);
-                      setRenameTitle(wireframe.title);
-                      setRenameError(null);
-                    }}
-                  >
-                    Rename
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={() => setDeleteTarget(wireframe)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </li>
-            );
-          })}
-        </ul>
+                    <WireframeCardPreview
+                      orgId={orgId}
+                      projectId={projectId}
+                      previewPath={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
+                      diagrams={diagramsByWireframe.get(wireframe.id) ?? []}
+                    />
+                    <div className="diagram-card-body">
+                      <h3 className="diagram-card-title">
+                        <Link
+                          to={`/organizations/${orgId}/projects/${projectId}/wireframes/${wireframe.id}`}
+                        >
+                          {wireframe.title}
+                        </Link>
+                      </h3>
+                      <p className="diagram-card-meta">
+                        Updated {formatUpdatedAt(wireframe.updatedAt)}
+                      </p>
+                      <WireframeMarkupBlock
+                        orgId={orgId}
+                        projectId={projectId}
+                        wireframeId={wireframe.id}
+                        wireframeTitle={wireframe.title}
+                        diagrams={diagramsByWireframe.get(wireframe.id) ?? []}
+                        onDiagramsChange={() => {
+                          void fetchProjectDiagrams(orgId, projectId).then(setDiagrams);
+                        }}
+                      />
+                      <div className="diagram-card-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setRenameTarget(wireframe);
+                            setRenameTitle(wireframe.title);
+                            setRenameError(null);
+                          }}
+                        >
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => requestDelete(wireframe)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
       )}
 
       <Modal
@@ -424,7 +474,17 @@ export function ProjectWireframesPage() {
             }}
           />
         </label>
-        {createError && <ErrorAlert>{createError}</ErrorAlert>}
+        {createError && (
+          <ErrorAlert
+            code={
+              createError === catalogMessage(WEB_ERROR.VAL_WIREFRAME)
+                ? WEB_ERROR.VAL_WIREFRAME
+                : WEB_ERROR.CREATE
+            }
+          >
+            {createError}
+          </ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -466,7 +526,17 @@ export function ProjectWireframesPage() {
             }}
           />
         </label>
-        {renameError && <ErrorAlert>{renameError}</ErrorAlert>}
+        {renameError && (
+          <ErrorAlert
+            code={
+              renameError === catalogMessage(WEB_ERROR.VAL_WIREFRAME)
+                ? WEB_ERROR.VAL_WIREFRAME
+                : WEB_ERROR.RENAME
+            }
+          >
+            {renameError}
+          </ErrorAlert>
+        )}
         <div className="hub-actions">
           <button
             type="button"
@@ -488,14 +558,28 @@ export function ProjectWireframesPage() {
       </Modal>
 
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
+        open={deferredDelete.confirmOpen}
         title="Delete wireframe"
         description={`Delete "${deleteTarget?.title ?? 'this wireframe'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={deferredDelete.confirm}
+        onCancel={() => {
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+          deferredDelete.cancel();
+        }}
+      />
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="Wireframe deleted"
+        onUndo={() => {
+          deleteTargetRef.current = null;
+          setDeleteTarget(null);
+          deferredDelete.undo();
+        }}
+        onDismiss={deferredDelete.dismiss}
       />
     </div>
   );
