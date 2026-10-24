@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../ErrorAlert';
 import { Modal } from '../Modal';
 import { createApp, getApps } from '../../lib/api/cloud';
@@ -30,10 +31,42 @@ function statusLabel(status: CloudApp['status']): string {
 }
 
 export function AppsTab({ servers }: { servers: CloudServer[] }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get('app');
   const [apps, setApps] = useState<CloudApp[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const patchParams = useCallback(
+    (next: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(next)) {
+            if (value == null || value === '') {
+              params.delete(key);
+            } else {
+              params.set(key, value);
+            }
+          }
+          if (!params.get('tab')) {
+            params.set('tab', 'apps');
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  function selectApp(id: string | null) {
+    if (id) {
+      patchParams({ app: id });
+    } else {
+      patchParams({ app: null, section: null });
+    }
+  }
 
   // New-app dialog state.
   const [formOpen, setFormOpen] = useState(false);
@@ -122,7 +155,7 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
       setApps((current) => [...current, app]);
       setFormOpen(false);
       resetForm();
-      setSelectedId(app.id);
+      selectApp(app.id);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : UNAVAILABLE);
     } finally {
@@ -213,7 +246,7 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
                       type="button"
                       className="cloud-server-name"
                       onClick={() =>
-                        setSelectedId(selectedId === app.id ? null : app.id)
+                        selectApp(selectedId === app.id ? null : app.id)
                       }
                     >
                       {app.name}
@@ -255,7 +288,7 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
           }
           onDeleted={(id) => {
             setApps((current) => current.filter((a) => a.id !== id));
-            setSelectedId(null);
+            selectApp(null);
           }}
         />
       ) : null}
@@ -268,7 +301,7 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
           onClose={() => setImportPanel(null)}
           onImported={(app) => {
             setApps((current) => [...current.filter((a) => a.id !== app.id), app]);
-            setSelectedId(app.id);
+            selectApp(app.id);
           }}
         />
       ) : null}
@@ -279,23 +312,21 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
             {formError ? <p className="alert alert-error">{formError}</p> : null}
             <div
               className="board-view-toggle"
-              role="tablist"
+              role="group"
               aria-label="Source type"
             >
               <button
                 type="button"
-                role="tab"
                 className={`board-view-toggle-btn${source === 'image' ? ' is-active' : ''}`}
-                aria-selected={source === 'image'}
+                aria-pressed={source === 'image'}
                 onClick={() => setSource('image')}
               >
                 Image
               </button>
               <button
                 type="button"
-                role="tab"
                 className={`board-view-toggle-btn${source === 'compose' ? ' is-active' : ''}`}
-                aria-selected={source === 'compose'}
+                aria-pressed={source === 'compose'}
                 onClick={() => setSource('compose')}
               >
                 Compose

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AddServerModal } from '../components/cloud/AddServerModal';
 import { AppsTab } from '../components/cloud/AppsTab';
 import { GitHubAppModal } from '../components/cloud/GitHubAppModal';
@@ -11,14 +12,42 @@ const UNAVAILABLE = 'Cloud service is unavailable.';
 
 type PageTab = 'servers' | 'apps';
 
+function readPageTab(value: string | null): PageTab {
+  return value === 'apps' ? 'apps' : 'servers';
+}
+
 export function CloudPage() {
-  const [pageTab, setPageTab] = useState<PageTab>('servers');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageTab = readPageTab(searchParams.get('tab'));
   const [servers, setServers] = useState<CloudServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formEpoch, setFormEpoch] = useState(0);
   const [ghOpen, setGhOpen] = useState(false);
+
+  const patchParams = useCallback(
+    (next: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(next)) {
+            if (value == null || value === '') {
+              params.delete(key);
+            } else {
+              params.set(key, value);
+            }
+          }
+          if (!params.get('tab')) {
+            params.set('tab', 'servers');
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const loadServers = useCallback(async () => {
     try {
@@ -112,22 +141,20 @@ export function CloudPage() {
         </div>
       </header>
 
-      <div className="board-view-toggle" role="tablist" aria-label="Cloud sections">
+      <div className="board-view-toggle" role="group" aria-label="Cloud sections">
         <button
           type="button"
-          role="tab"
           className={`board-view-toggle-btn${pageTab === 'servers' ? ' is-active' : ''}`}
-          aria-selected={pageTab === 'servers'}
-          onClick={() => setPageTab('servers')}
+          aria-pressed={pageTab === 'servers'}
+          onClick={() => patchParams({ tab: 'servers' })}
         >
           Servers
         </button>
         <button
           type="button"
-          role="tab"
           className={`board-view-toggle-btn${pageTab === 'apps' ? ' is-active' : ''}`}
-          aria-selected={pageTab === 'apps'}
-          onClick={() => setPageTab('apps')}
+          aria-pressed={pageTab === 'apps'}
+          onClick={() => patchParams({ tab: 'apps' })}
         >
           Apps
         </button>
