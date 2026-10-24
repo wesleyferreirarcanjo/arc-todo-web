@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { LogsIcon } from '../components/icons';
 import { MetricsTokenPanel } from '../components/metrics/MetricsTokenPanel';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
 import {
   createAgentToken,
@@ -70,6 +71,7 @@ export function LogsPage() {
     ? levelParam
     : undefined;
   const qParam = searchParams.get('q') ?? '';
+  const liveTail = searchParams.get('live') === '1';
 
   const [servers, setServers] = useState<ObserverServer[]>([]);
   const [apps, setApps] = useState<string[]>([]);
@@ -80,7 +82,8 @@ export function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [liveTail, setLiveTail] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [tailLines, setTailLines] = useState<ObserverLogLine[]>([]);
   const [draftQ, setDraftQ] = useState(qParam);
   const [explain, setExplain] = useState<ObserverExplainResult | null>(null);
@@ -358,6 +361,11 @@ export function LogsPage() {
   }
 
   const visibleLines = liveTail ? tailLines : lines;
+  const activeFilterCount =
+    Number(Boolean(selectedServerId)) +
+    Number(Boolean(appParam)) +
+    Number(Boolean(level)) +
+    Number(Boolean(qParam));
 
   return (
     <div className="page-shell analytics-page metrics-page logs-page">
@@ -366,21 +374,19 @@ export function LogsPage() {
           <h2>Logs</h2>
         </div>
         <div className="analytics-toolbar-controls">
-          <div className="board-view-toggle" role="tablist" aria-label="Logs sections">
+          <div className="board-view-toggle" role="group" aria-label="Logs sections">
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${tab === 'logs' ? ' is-active' : ''}`}
-              aria-selected={tab === 'logs'}
+              aria-pressed={tab === 'logs'}
               onClick={() => patchParams({ tab: 'logs' })}
             >
               Logs
             </button>
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${tab === 'tokens' ? ' is-active' : ''}`}
-              aria-selected={tab === 'tokens'}
+              aria-pressed={tab === 'tokens'}
               onClick={() => patchParams({ tab: 'tokens' })}
             >
               Agent tokens
@@ -425,102 +431,111 @@ export function LogsPage() {
           ) : null}
           {servers.length > 0 || sdkApps.length > 0 ? (
             <>
-              <div className="logs-filters">
-                <label className="board-filter-field">
-                  Server
-                  <Select
-                    value={selectedServerId ?? ''}
-                    onChange={(value) =>
-                      patchParams({ server: value || null, app: null })
-                    }
-                    options={[
-                      { value: '', label: 'All servers' },
-                      ...servers.map((s) => ({ value: s.id, label: s.name })),
-                    ]}
-                  />
-                </label>
-                <label className="board-filter-field">
-                  App
-                  <Select
-                    value={appParam ?? ''}
-                    onChange={(value) => {
-                      // SDK apps have no agent server — clear the server
-                      // filter so the search isn't scoped to a host.
-                      const sdkOnly =
-                        value !== '' &&
-                        !apps.includes(value) &&
-                        sdkApps.includes(value);
-                      patchParams(
-                        sdkOnly
-                          ? { app: value, server: null }
-                          : { app: value || null },
-                      );
-                    }}
-                    disabled={!selectedServerId && sdkApps.length === 0}
-                    options={[
-                      { value: '', label: 'All apps' },
-                      ...[...new Set([...apps, ...sdkApps])]
-                        .sort()
-                        .map((a) => ({ value: a, label: a })),
-                    ]}
-                  />
-                </label>
-                <label className="board-filter-field">
-                  Level
-                  <Select
-                    value={level ?? ''}
-                    onChange={(value) =>
-                      patchParams({ level: value || null })
-                    }
-                    options={[
-                      { value: '', label: 'All levels' },
-                      ...OBSERVER_LOG_LEVELS.map((l) => ({
-                        value: l,
-                        label: l,
-                      })),
-                    ]}
-                  />
-                </label>
-                <form
-                  className="board-filter-field board-filter-search logs-search-form"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    patchParams({ q: draftQ || null });
-                  }}
+              <PageFiltersToolbar
+                open={filtersOpen}
+                onOpenChange={setFiltersOpen}
+                activeFilterCount={activeFilterCount}
+                panel={
+                  <>
+                    <label className="board-filter-field">
+                      Server
+                      <Select
+                        value={selectedServerId ?? ''}
+                        onChange={(value) =>
+                          patchParams({ server: value || null, app: null })
+                        }
+                        options={[
+                          { value: '', label: 'All servers' },
+                          ...servers.map((s) => ({ value: s.id, label: s.name })),
+                        ]}
+                      />
+                    </label>
+                    <label className="board-filter-field">
+                      App
+                      <Select
+                        value={appParam ?? ''}
+                        onChange={(value) => {
+                          // SDK apps have no agent server — clear the server
+                          // filter so the search isn't scoped to a host.
+                          const sdkOnly =
+                            value !== '' &&
+                            !apps.includes(value) &&
+                            sdkApps.includes(value);
+                          patchParams(
+                            sdkOnly
+                              ? { app: value, server: null }
+                              : { app: value || null },
+                          );
+                        }}
+                        disabled={!selectedServerId && sdkApps.length === 0}
+                        options={[
+                          { value: '', label: 'All apps' },
+                          ...[...new Set([...apps, ...sdkApps])]
+                            .sort()
+                            .map((a) => ({ value: a, label: a })),
+                        ]}
+                      />
+                    </label>
+                    <label className="board-filter-field">
+                      Level
+                      <Select
+                        value={level ?? ''}
+                        onChange={(value) =>
+                          patchParams({ level: value || null })
+                        }
+                        options={[
+                          { value: '', label: 'All levels' },
+                          ...OBSERVER_LOG_LEVELS.map((l) => ({
+                            value: l,
+                            label: l,
+                          })),
+                        ]}
+                      />
+                    </label>
+                    <form
+                      className="board-filter-field board-filter-search logs-search-form"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        patchParams({ q: draftQ || null });
+                      }}
+                    >
+                      <label>
+                        Search messages
+                        <input
+                          type="search"
+                          value={draftQ}
+                          onChange={(event) => setDraftQ(event.target.value)}
+                          placeholder="Filter text"
+                          autoComplete="off"
+                        />
+                      </label>
+                      <button type="submit" className="btn btn-secondary">
+                        Search
+                      </button>
+                    </form>
+                  </>
+                }
+                mobileOverlayOpen={mobileFiltersOpen}
+                onMobileOverlayOpenChange={setMobileFiltersOpen}
+                mobileOverlayTitle="Log filters"
+              >
+                <button
+                  type="button"
+                  className={`btn ${liveTail ? 'btn-primary' : 'btn-secondary'}`}
+                  aria-pressed={liveTail}
+                  onClick={() => patchParams({ live: liveTail ? null : '1' })}
                 >
-                  <label>
-                    Search messages
-                    <input
-                      type="search"
-                      value={draftQ}
-                      onChange={(event) => setDraftQ(event.target.value)}
-                      placeholder="Filter text"
-                      autoComplete="off"
-                    />
-                  </label>
-                  <button type="submit" className="btn btn-secondary">
-                    Search
-                  </button>
-                </form>
-                <div className="logs-actions">
-                  <button
-                    type="button"
-                    className={`btn ${liveTail ? 'btn-primary' : 'btn-secondary'}`}
-                    aria-pressed={liveTail}
-                    onClick={() => setLiveTail((on) => !on)}
-                  >
-                    {liveTail ? 'Stop tail' : 'Live tail'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={explaining}
-                    onClick={() => void handleExplain()}
-                  >
-                    {explaining ? 'Explaining…' : 'Explain errors'}
-                  </button>
-                </div>
-              </div>
+                  {liveTail ? 'Stop tail' : 'Live tail'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={explaining}
+                  onClick={() => void handleExplain()}
+                >
+                  {explaining ? 'Explaining…' : 'Explain errors'}
+                </button>
+              </PageFiltersToolbar>
 
               {explain ? (
                 <section className="logs-explain" aria-label="AI explanation">

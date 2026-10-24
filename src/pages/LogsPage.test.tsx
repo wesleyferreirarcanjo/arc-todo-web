@@ -1,8 +1,15 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ObserverLogLine, ObserverServer } from '../types/observer';
+
+const mediaState = vi.hoisted(() => ({ mobile: false }));
+
+vi.mock('../hooks/useMediaQuery', () => ({
+  SHELL_MOBILE_QUERY: '(max-width: 1023px)',
+  useMediaQuery: () => mediaState.mobile,
+}));
 
 const getServers = vi.hoisted(() => vi.fn());
 const getSdkApps = vi.hoisted(() => vi.fn(() => Promise.resolve([])));
@@ -77,8 +84,61 @@ function renderPage(path = '/logs') {
 }
 
 describe('LogsPage', () => {
+  beforeEach(() => {
+    mediaState.mobile = false;
+  });
+
   afterEach(() => {
     cleanup();
+  });
+
+  it('keeps Filters closed and turns Stop tail on from live=1', async () => {
+    getServers.mockResolvedValue([server]);
+    getApps.mockResolvedValue([]);
+    searchLogs.mockResolvedValue({ lines: [], hasMore: false });
+    tailLogs.mockResolvedValue({ lines: [], hasMore: false });
+
+    renderPage('/logs?live=1');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Stop tail' })).toBeInTheDocument();
+    });
+    const filters = screen.getByRole('button', { name: 'Filters' });
+    expect(filters).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('region', { name: 'Filters' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Search messages')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Explain errors' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Logs sections' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Logs' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+  });
+
+  it('writes live=1 from Live tail and removes it on Stop tail', async () => {
+    getServers.mockResolvedValue([server]);
+    getApps.mockResolvedValue([]);
+    searchLogs.mockResolvedValue({ lines: [], hasMore: false });
+    tailLogs.mockResolvedValue({ lines: [], hasMore: false });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Live tail' })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: 'Live tail' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toContain('live=1');
+    });
+    expect(screen.getByRole('button', { name: 'Stop tail' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Stop tail' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).not.toContain('live=1');
+    });
+    expect(screen.getByRole('button', { name: 'Live tail' })).toBeInTheDocument();
   });
 
   it('renders filters and search results, and switches the window in the URL', async () => {
@@ -126,6 +186,7 @@ describe('LogsPage', () => {
       expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
     await user.type(screen.getByLabelText('Search messages'), 'disk');
     await user.click(screen.getByRole('button', { name: 'Search' }));
     await waitFor(() => {
