@@ -27,7 +27,7 @@
   border-radius: 8px;
   background: color-mix(in srgb, var(--bg-page) 78%, transparent);
   color: var(--text-primary);
-  font-size: 0.75rem;
+  font-size: var(--type-meta);
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
