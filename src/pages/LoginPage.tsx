@@ -13,6 +13,7 @@ export function LoginPage() {
   const { isAuthenticated, loginWithGoogle } = useAuth();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
   const handlingRef = useRef(false);
@@ -21,6 +22,7 @@ export function LoginPage() {
     if (isAuthenticated) return;
     if (!GOOGLE_CLIENT_ID) {
       setError(catalogMessage(WEB_ERROR.GIS_MISSING));
+      setErrorCode(WEB_ERROR.GIS_MISSING);
       return;
     }
 
@@ -31,23 +33,28 @@ export function LoginPage() {
       const idToken = response.credential;
       if (!idToken) {
         setError(catalogMessage(WEB_ERROR.GIS_CANCELLED));
+        setErrorCode(WEB_ERROR.GIS_CANCELLED);
         return;
       }
 
       handlingRef.current = true;
       setError(null);
+      setErrorCode(undefined);
       setLoading(true);
       try {
         await loginWithGoogle(idToken);
       } catch (err) {
         if (err instanceof ApiError) {
-          setError(
-            err.status === 401
-              ? err.message || catalogMessage('ERR-ARC-AUTH-07')
-              : err.message,
-          );
+          if (err.status === 401) {
+            setError(err.message || catalogMessage('ERR-ARC-AUTH-07'));
+            setErrorCode(err.code || 'ERR-ARC-AUTH-07');
+          } else {
+            setError(err.message);
+            setErrorCode(err.code);
+          }
         } else {
           setError(userMessage(err, WEB_ERROR.GIS_FAILED));
+          setErrorCode(WEB_ERROR.GIS_FAILED);
         }
         setLoading(false);
         handlingRef.current = false;
@@ -97,6 +104,7 @@ export function LoginPage() {
     script.onerror = () => {
       if (!cancelled) {
         setError(catalogMessage(WEB_ERROR.GIS_SCRIPT));
+        setErrorCode(WEB_ERROR.GIS_SCRIPT);
       }
     };
     document.body.appendChild(script);
@@ -136,7 +144,7 @@ export function LoginPage() {
         <h1>Arc Todo</h1>
         <p className="subtitle">Sign in with your Google account</p>
 
-        {error && <ErrorAlert>{error}</ErrorAlert>}
+        {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
         {loading ? (
           <p className="status-message" aria-live="polite">

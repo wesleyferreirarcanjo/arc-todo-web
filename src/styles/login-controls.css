@@ -58,13 +58,9 @@
   margin-bottom: 0.85rem;
 }
 
-[data-theme='light'] .login-card .login-mark {
-  color: #000;
-}
-
 .login-card h1 {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: var(--type-page);
   font-weight: 700;
   font-style: italic;
   font-optical-sizing: auto;
