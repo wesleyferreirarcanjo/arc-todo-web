@@ -42,7 +42,7 @@ import { BoardFiltersControls } from '../components/BoardFiltersControls';
 import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
 import { QaQueueBulkBar } from '../components/QaQueueBulkBar';
 import { QaQueueCountChip } from '../components/QaQueueCountChip';
-import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { TaskListView } from '../components/TaskListView';
 import { TaskBoard } from '../components/TaskBoard';
 import { UnifiedTaskBoard } from '../components/UnifiedTaskBoard';
@@ -675,10 +675,8 @@ export function AllTasksBoardPage() {
     Number(Boolean(organizationId)) +
     Number(Boolean(projectId));
 
-  const showFiltersButton = !isMobileShell;
   const showCycleButton = Boolean(projectFocus && activeCycle && autoClosesOn);
   const showHistoryButton = projectFocus;
-  const showChromeActions = true;
 
   const topLevelCount = visibleTasks.filter((task) => !task.parentTaskId).length;
 
@@ -751,74 +749,53 @@ export function AllTasksBoardPage() {
       <header className="page-header">
         <h2>All tasks</h2>
       </header>
-      <div className="board-chrome-toolbar">
-        {showChromeActions ? (
-          <div className="board-chrome-actions">
-            {showFiltersButton ? (
-              <button
-                type="button"
-                className={`btn btn-secondary board-chrome-toggle${chromePanel === 'filters' ? ' is-open' : ''}`}
-                aria-expanded={chromePanel === 'filters'}
-                aria-controls={chromePanel === 'filters' ? 'board-chrome-panel' : undefined}
-                onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'filters'))}
-              >
-                Filters
-                {extraFilterCount > 0 ? (
-                  <span className="board-chrome-count" aria-hidden="true">
-                    {extraFilterCount}
-                  </span>
-                ) : null}
-              </button>
-            ) : null}
-            <QaQueueCountChip
-              count={queueCount}
-              expanded={chromePanel === 'qa-queue'}
-              onToggle={() => {
-                setFiltersOpen(false);
-                setChromePanel((current) => toggleBoardChrome(current, 'qa-queue'));
-              }}
-            />
-            {showCycleButton ? (
-              <button
-                type="button"
-                className={`btn btn-secondary board-chrome-toggle${chromePanel === 'cycle' ? ' is-open' : ''}`}
-                aria-expanded={chromePanel === 'cycle'}
-                aria-controls={chromePanel === 'cycle' ? 'board-chrome-panel' : undefined}
-                onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'cycle'))}
-              >
-                Weekly cycle
-              </button>
-            ) : null}
-            {showHistoryButton ? (
-              <button
-                type="button"
-                className={`btn btn-secondary board-chrome-toggle${chromePanel === 'history' ? ' is-open' : ''}`}
-                aria-expanded={chromePanel === 'history'}
-                aria-controls={chromePanel === 'history' ? 'board-chrome-panel' : undefined}
-                onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'history'))}
-              >
-                Sprint history
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="board-chrome-filters-cluster">
+      <PageFiltersToolbar
+        open={chromePanel === 'filters'}
+        onOpenChange={(next) => {
+          setChromePanel((current) => (next ? 'filters' : current === 'filters' ? null : current));
+        }}
+        activeFilterCount={extraFilterCount}
+        panel={renderFilterControls(!isMobileShell)}
+        chips={
           <BoardQuickFilterChips
             value={quickFilter}
             onChange={handleQuickFilterChange}
           />
-        </div>
-      </div>
-      {chromePanel === 'filters' && !isMobileShell ? (
-        <div
-          id="board-chrome-panel"
-          className="board-filters board-filters-inline"
-          role="region"
-          aria-label="Filters"
-        >
-          {renderFilterControls(true)}
-        </div>
-      ) : null}
+        }
+        mobileOverlayOpen={filtersOpen}
+        onMobileOverlayOpenChange={setFiltersOpen}
+      >
+        <QaQueueCountChip
+          count={queueCount}
+          expanded={chromePanel === 'qa-queue'}
+          onToggle={() => {
+            setFiltersOpen(false);
+            setChromePanel((current) => toggleBoardChrome(current, 'qa-queue'));
+          }}
+        />
+        {showCycleButton ? (
+          <button
+            type="button"
+            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'cycle' ? ' is-open' : ''}`}
+            aria-expanded={chromePanel === 'cycle'}
+            aria-controls={chromePanel === 'cycle' ? 'board-chrome-panel' : undefined}
+            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'cycle'))}
+          >
+            Weekly cycle
+          </button>
+        ) : null}
+        {showHistoryButton ? (
+          <button
+            type="button"
+            className={`btn btn-secondary board-chrome-toggle${chromePanel === 'history' ? ' is-open' : ''}`}
+            aria-expanded={chromePanel === 'history'}
+            aria-controls={chromePanel === 'history' ? 'board-chrome-panel' : undefined}
+            onClick={() => setChromePanel((current) => toggleBoardChrome(current, 'history'))}
+          >
+            Sprint history
+          </button>
+        ) : null}
+      </PageFiltersToolbar>
       {chromePanel === 'cycle' && projectFocus && activeCycle && autoClosesOn ? (
         <div
           id="board-chrome-panel"
@@ -849,13 +826,6 @@ export function AllTasksBoardPage() {
           />
         </div>
       ) : null}
-
-      <MobileBoardFiltersOverlay
-        open={isMobileShell && filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-      >
-        {renderFilterControls(false)}
-      </MobileBoardFiltersOverlay>
 
       <QaQueueBulkBar
         open={qaExtensionOpen}
