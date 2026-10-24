@@ -1,22 +1,30 @@
 import { ErrorAlert } from '../components/ErrorAlert';
 import { catalogMessage, userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { SeoIcon } from '../components/icons';
+import { UndoToast } from '../components/UndoToast';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDeferredDelete } from '../hooks/useDeferredDelete';
+import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { ApiError } from '../lib/api/client';
 import { createSeoSite, deleteSeoSite, fetchProjectSeoSites } from '../lib/api/seo';
 import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import type { SeoSite } from '../types/seo';
 
+const FORBIDDEN_CODE = 'ERR-ARC-ACL-02';
+
 export function ProjectSeoPage() {
   const { orgId, projectId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentProject } = useWorkspace();
+  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [sites, setSites] = useState<SeoSite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +35,10 @@ export function ProjectSeoPage() {
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SeoSite | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const deleteTargetRef = useRef<SeoSite | null>(null);
+  const searchQuery = searchParams.get('q') ?? '';
 
   const load = useCallback(async () => {
     if (!orgId || !projectId) return;
@@ -50,6 +62,48 @@ export function ProjectSeoPage() {
     void load();
   }, [load]);
 
+  function setSearchQuery(value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set('q', value);
+    else next.delete('q');
+    setSearchParams(next, { replace: true });
+  }
+
+  const visibleSites = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return sites;
+    return sites.filter((site) =>
+      `${site.title} ${site.hostname}`.toLowerCase().includes(query),
+    );
+  }, [sites, searchQuery]);
+
+  const searchActive = Boolean(searchQuery.trim());
+  const activeFilterCount = searchActive ? 1 : 0;
+
+  const commitDelete = useCallback(async () => {
+    const target = deleteTargetRef.current;
+    if (!orgId || !projectId || !target) return;
+    setDeleting(true);
+    try {
+      await deleteSeoSite(orgId, projectId, target.id);
+      setSites((prev) => prev.filter((site) => site.id !== target.id));
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this SEO site' }));
+    } finally {
+      deleteTargetRef.current = null;
+      setDeleteTarget(null);
+      setDeleting(false);
+    }
+  }, [orgId, projectId]);
+
+  const deferredDelete = useDeferredDelete(commitDelete);
+
+  function requestSiteDelete(site: SeoSite) {
+    deleteTargetRef.current = site;
+    setDeleteTarget(site);
+    deferredDelete.requestDelete();
+  }
+
   async function handleCreate() {
     if (!orgId || !projectId) return;
     const address = hostname.trim();
@@ -69,21 +123,6 @@ export function ProjectSeoPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!orgId || !projectId || !deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deleteSeoSite(orgId, projectId, deleteTarget.id);
-      setSites((prev) => prev.filter((site) => site.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (err) {
-      setError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this SEO site' }));
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
-  }
-
   if (!orgId || !projectId) {
     return <Navigate to="/organizations" replace />;
   }
@@ -93,9 +132,9 @@ export function ProjectSeoPage() {
       <div className="page-shell">
         <header className="page-header">
           <h2>SEO</h2>
-          <p className="page-subtitle">
-            You do not have access to this project&apos;s SEO workspace.
-          </p>
+          <ErrorAlert code={FORBIDDEN_CODE}>
+            {catalogMessage(FORBIDDEN_CODE)}
+          </ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
               Back to organizations
@@ -105,6 +144,21 @@ export function ProjectSeoPage() {
       </div>
     );
   }
+
+  const filterPanel = (
+    <div className="diagrams-filters">
+      <label className="board-filter-field board-filter-search">
+        Search
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter by title"
+          aria-label="Filter SEO sites by title"
+        />
+      </label>
+    </div>
+  );
 
   return (
     <div
@@ -178,9 +232,60 @@ export function ProjectSeoPage() {
       )}
 
       {!loading && !error && sites.length > 0 && (
+        <PageFiltersToolbar
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          activeFilterCount={activeFilterCount}
+          panel={filterPanel}
+          mobileOverlayOpen={mobileFiltersOpen}
+          onMobileOverlayOpenChange={setMobileFiltersOpen}
+        >
+          {isMobileShell ? (
+            <button
+              type="button"
+              className={`btn btn-secondary board-chrome-toggle${mobileFiltersOpen ? ' is-open' : ''}`}
+              aria-expanded={mobileFiltersOpen}
+              onClick={() => setMobileFiltersOpen(true)}
+            >
+              Filters
+              {activeFilterCount > 0 ? (
+                <span className="board-chrome-count" aria-hidden="true">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
+          ) : null}
+        </PageFiltersToolbar>
+      )}
+
+      {!loading && !error && sites.length > 0 && searchActive && (
+        <p className="status-message board-search-status" role="status">
+          {visibleSites.length === 0
+            ? 'No SEO sites match your filters.'
+            : `${visibleSites.length} matching site${visibleSites.length === 1 ? '' : 's'}${
+                sites.length !== visibleSites.length
+                  ? ` in ${sites.length} loaded`
+                  : ''
+              }.`}
+        </p>
+      )}
+
+      {!loading && !error && sites.length > 0 && visibleSites.length === 0 && (
+        <div className="diagrams-empty">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setSearchQuery('')}
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && visibleSites.length > 0 && (
         <div className="names-session-list-wrap">
           <ul className="names-session-list">
-            {sites.map((site) => (
+            {visibleSites.map((site) => (
               <li
                 key={site.id}
                 className={`names-session-row entity-card${currentProject ? ' has-accent' : ''}`}
@@ -209,7 +314,7 @@ export function ProjectSeoPage() {
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    onClick={() => setDeleteTarget(site)}
+                    onClick={() => requestSiteDelete(site)}
                   >
                     Delete
                   </button>
@@ -267,14 +372,21 @@ export function ProjectSeoPage() {
       </Modal>
 
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
+        open={deferredDelete.confirmOpen}
         title="Delete SEO site"
         description={`Delete "${deleteTarget?.hostname ?? 'this site'}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
-        onConfirm={() => void handleDelete()}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void deferredDelete.confirm()}
+        onCancel={() => deferredDelete.cancel()}
+      />
+
+      <UndoToast
+        open={deferredDelete.toastOpen}
+        message="SEO site deleted"
+        onUndo={() => deferredDelete.undo()}
+        onDismiss={() => void deferredDelete.dismiss()}
       />
     </div>
   );
