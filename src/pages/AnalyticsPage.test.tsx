@@ -1,6 +1,7 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyticsSummary } from '../types/analytics';
 
 const fetchAnalyticsSummary = vi.hoisted(() => vi.fn());
@@ -145,6 +146,10 @@ const summary: AnalyticsSummary = {
 };
 
 describe('AnalyticsPage copy', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('names the window clock versus the board-now clock', async () => {
     fetchOrganizations.mockResolvedValue([]);
     fetchProjects.mockResolvedValue([]);
@@ -223,5 +228,85 @@ describe('AnalyticsPage copy', () => {
     expect(screen.getByText('#arc-296')).toBeInTheDocument();
     expect(screen.getByText('REAL_DEFECT')).toBeInTheDocument();
     expect(screen.getByText('regression')).toBeInTheDocument();
+  });
+
+  it('keeps Filters closed with period chips outside the panel', async () => {
+    fetchOrganizations.mockResolvedValue([]);
+    fetchProjects.mockResolvedValue([]);
+    fetchAnalyticsSummary.mockResolvedValue(summary);
+    fetchAnalyticsBugFlags.mockResolvedValue({ items: [] });
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/analytics']}>
+        <AnalyticsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Analytics' })).toBeInTheDocument();
+    });
+
+    const filters = screen.getByRole('button', { name: 'Filters' });
+    expect(filters).toHaveAttribute('aria-expanded', 'false');
+    expect(filters).not.toHaveAttribute('aria-controls');
+    expect(screen.queryByRole('region', { name: 'Filters' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Organization')).not.toBeInTheDocument();
+    expect(screen.queryByText('Project')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dates and comparison')).not.toBeInTheDocument();
+
+    const periodGroup = screen.getByRole('group', { name: 'Time window' });
+    expect(periodGroup).toHaveClass('analytics-period-toggle');
+    expect(periodGroup).toContainElement(screen.getByRole('button', { name: 'Last 7 days' }));
+    expect(periodGroup).toContainElement(screen.getByRole('button', { name: 'Last 30 days' }));
+    expect(periodGroup).toContainElement(screen.getByRole('button', { name: 'Last 90 days' }));
+    expect(periodGroup).toContainElement(screen.getByRole('button', { name: 'All time' }));
+    expect(periodGroup).toContainElement(screen.getByRole('button', { name: 'Custom range' }));
+    expect(screen.getByRole('button', { name: 'Last 30 days' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    const toolbar = document.querySelector('.board-chrome-toolbar');
+    expect(toolbar).toContainElement(filters);
+    expect(toolbar).toContainElement(periodGroup);
+
+    await user.click(filters);
+
+    expect(filters).toHaveAttribute('aria-expanded', 'true');
+    expect(filters).toHaveAttribute('aria-controls', 'board-chrome-panel');
+    const panel = screen.getByRole('region', { name: 'Filters' });
+    expect(panel).toContainElement(screen.getByText('Organization'));
+    expect(panel).toContainElement(screen.getByText('Project'));
+    expect(panel).toContainElement(screen.getByText('Dates and comparison'));
+    expect(panel).not.toContainElement(screen.getByRole('button', { name: 'Last 30 days' }));
+  });
+
+  it('badges Filters when org, project, or custom dates are active', async () => {
+    fetchOrganizations.mockResolvedValue([]);
+    fetchProjects.mockResolvedValue([]);
+    fetchAnalyticsSummary.mockResolvedValue(summary);
+    fetchAnalyticsBugFlags.mockResolvedValue({ items: [] });
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          '/analytics?organizationId=org-1&projectId=proj-1&period=custom&from=2026-07-01&to=2026-07-31',
+        ]}
+      >
+        <AnalyticsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
+    });
+
+    expect(document.querySelector('.board-chrome-count')).toHaveTextContent('3');
+    expect(screen.getByRole('button', { name: 'Custom range' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByLabelText('From')).not.toBeInTheDocument();
   });
 });

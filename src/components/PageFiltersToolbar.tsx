@@ -11,6 +11,7 @@ export interface PageFiltersToolbarProps {
   mobileOverlayOpen: boolean;
   onMobileOverlayOpenChange: (open: boolean) => void;
   mobileOverlayTitle?: string;
+  showToggleOnMobile?: boolean;
   children?: ReactNode;
 }
 
@@ -23,21 +24,30 @@ export function PageFiltersToolbar({
   mobileOverlayOpen,
   onMobileOverlayOpenChange,
   mobileOverlayTitle,
+  showToggleOnMobile = false,
   children,
 }: PageFiltersToolbarProps) {
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
+  const showToggle = !isMobileShell || showToggleOnMobile;
+  const toggleOpen = isMobileShell ? mobileOverlayOpen : open;
 
   return (
     <>
       <div className="board-chrome-toolbar">
         <div className="board-chrome-actions">
-          {!isMobileShell ? (
+          {showToggle ? (
             <button
               type="button"
-              className={`btn btn-secondary board-chrome-toggle${open ? ' is-open' : ''}`}
-              aria-expanded={open}
-              aria-controls={open ? 'board-chrome-panel' : undefined}
-              onClick={() => onOpenChange(!open)}
+              className={`btn btn-secondary board-chrome-toggle${toggleOpen ? ' is-open' : ''}`}
+              aria-expanded={toggleOpen}
+              aria-controls={!isMobileShell && open ? 'board-chrome-panel' : undefined}
+              onClick={() => {
+                if (isMobileShell) {
+                  onMobileOverlayOpenChange(!mobileOverlayOpen);
+                  return;
+                }
+                onOpenChange(!open);
+              }}
             >
               Filters
               {activeFilterCount > 0 ? (
