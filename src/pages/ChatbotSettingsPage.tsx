@@ -1,6 +1,7 @@
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { ChatbotSettingsNav } from '../components/ChatbotSettingsNav';
+import { ErrorAlert } from '../components/ErrorAlert';
 import { PasswordInput } from '../components/PasswordInput';
 import {
   fetchChatbotSettings,
@@ -88,9 +89,15 @@ export function ChatbotSettingsPage() {
 
       <ChatbotSettingsNav />
 
-      {loading ? <p className="subtitle">Loading chatbot settings...</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="notice-card">{success}</p> : null}
+      {loading ? (
+        <p className="status-message">Loading chatbot settings...</p>
+      ) : null}
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
+      {success ? (
+        <p className="status-message" role="status">
+          {success}
+        </p>
+      ) : null}
 
       {!loading ? (
         <form className="settings-form-card" onSubmit={(event) => void handleSubmit(event)}>
