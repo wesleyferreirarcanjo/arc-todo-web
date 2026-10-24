@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { ErrorAlert } from '../ErrorAlert';
+import { Select } from '../Select';
+import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import {
   appAction,
   buildDeployApp,
@@ -29,7 +32,6 @@ import type {
   CloudServer,
 } from '../../types/cloud';
 
-const UNAVAILABLE = 'Cloud service is unavailable.';
 const MASK = '••••••••';
 
 type Tab = 'overview' | 'source' | 'deployments' | 'environment' | 'logs';
@@ -124,8 +126,8 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     try {
       setDeployments(await getDeployments(app.id));
       setError(null);
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     }
   }, [app.id]);
 
@@ -135,8 +137,8 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       setEnv(data.env);
       setRevealed(false);
       setError(null);
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     }
   }, [app.id]);
 
@@ -147,7 +149,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       setError(null);
     } catch (err) {
       setAppLogLines(null);
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     }
   }, [app.id, tail]);
 
@@ -220,7 +222,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       watchDeployment(deploymentId);
       onChanged({ ...app, status: 'deploying' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -232,7 +234,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     try {
       onChanged(await confirmImport(app.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -248,7 +250,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       watchDeployment(deploymentId);
       onChanged({ ...app, status: 'deploying' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -264,7 +266,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
         status: verb === 'stop' ? 'stopped' : 'running',
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -276,7 +278,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       await deleteApp(app.id);
       onDeleted(app.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
       setDeleteOpen(false);
@@ -292,7 +294,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       setEnv(data.env);
       setRevealed(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -312,7 +314,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       setRevealed(false);
       await loadEnv();
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -332,7 +334,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       });
       onChanged(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -348,7 +350,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       });
       onChanged(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -366,7 +368,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       setRegistryPass('');
       onChanged(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -380,7 +382,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
       setNewKey(publicKey);
       await refreshApp();
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -392,7 +394,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     try {
       await setBuildCheckout(serverId, app.id, checkoutPaths[serverId] ?? '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : UNAVAILABLE);
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
     } finally {
       setBusy(null);
     }
@@ -426,7 +428,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
   return (
     <section className="cloud-containers cloud-app-detail" aria-label={`App ${app.name}`}>
       <h3>{app.name}</h3>
-      {error ? <p className="alert alert-error">{error}</p> : null}
+      {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
       <div className="board-view-toggle" role="tablist" aria-label="App sections">
         {(
@@ -1027,14 +1029,15 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
           <div className="hub-actions cloud-app-actions">
             <label className="board-filter-field">
               Tail
-              <select
-                value={tail}
-                onChange={(event) => setTail(Number(event.target.value))}
-              >
-                <option value={100}>100</option>
-                <option value={200}>200</option>
-                <option value={500}>500</option>
-              </select>
+              <Select
+                value={String(tail)}
+                onChange={(value) => setTail(Number(value))}
+                options={[
+                  { value: '100', label: '100' },
+                  { value: '200', label: '200' },
+                  { value: '500', label: '500' },
+                ]}
+              />
             </label>
             <button
               type="button"

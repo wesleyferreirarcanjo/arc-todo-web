@@ -3,7 +3,9 @@ import { flushSync } from 'react-dom';
 import { AppsTab } from '../components/cloud/AppsTab';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { CloudIcon } from '../components/icons';
 import { Modal } from '../components/Modal';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import {
   agentInstallCommand,
   createAgentServer,
@@ -28,7 +30,6 @@ import type {
   CloudServerRole,
 } from '../types/cloud';
 
-const UNAVAILABLE = 'Cloud service is unavailable.';
 const EMPTY_SERVERS =
   'No servers yet. Add a Docker server over SSH or with an outbound agent.';
 
@@ -52,12 +53,6 @@ function proxyLabel(state: CloudProxyState): string {
 
 function isProxyBusy(state: CloudProxyState): boolean {
   return state === 'installing' || state === 'restoring';
-}
-
-/** Surface the API's real message (install refusal, timeout, …); fall back
- *  to the generic outage text only when there is none. */
-function errorMessage(err: unknown): string {
-  return err instanceof Error && err.message ? err.message : UNAVAILABLE;
 }
 
 type ProxyAction = 'install' | 'rollback';
@@ -121,8 +116,8 @@ export function CloudPage() {
       setServers(next);
       setError(null);
       return next;
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'servers' }));
       return [] as CloudServer[];
     }
   }, []);
@@ -163,7 +158,9 @@ export function CloudPage() {
           setContainers(null);
           // The API forwards the master's message (SSH auth refused, agent
           // offline…) — show the real cause, not a generic "unavailable".
-          setContainersError(err instanceof Error ? err.message : UNAVAILABLE);
+          setContainersError(
+            userMessage(err, WEB_ERROR.LOAD, { thing: 'containers' }),
+          );
         }
       }
     }
@@ -260,8 +257,8 @@ export function CloudPage() {
         setSshKey('');
         setFormName('');
       }
-    } catch {
-      setFormError(UNAVAILABLE);
+    } catch (err) {
+      setFormError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this server' }));
     } finally {
       setSaving(false);
       // Never keep the private key in component state after submit.
@@ -278,7 +275,7 @@ export function CloudPage() {
       );
       setError(null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'Cloud' }));
     } finally {
       setRefreshingId(null);
     }
@@ -300,7 +297,7 @@ export function CloudPage() {
       setRemoveTarget(null);
       setError(null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'Cloud' }));
     } finally {
       setRemoving(false);
     }
@@ -328,7 +325,7 @@ export function CloudPage() {
       setPanelRemove(null);
       setError(null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'Cloud' }));
       setPanelRemove(null);
     } finally {
       setPanelBusy(false);
@@ -358,7 +355,7 @@ export function CloudPage() {
     } catch (err) {
       // Refusals (build machine, unsafe routing) and post-check rollbacks
       // come back as the master's message — show it verbatim.
-      setError(errorMessage(err));
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'Cloud' }));
       setProxyConfirm(null);
     } finally {
       setProxyBusy(false);
@@ -397,7 +394,7 @@ export function CloudPage() {
       );
       setError(null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'Cloud' }));
     } finally {
       setBuildBusy(false);
     }
@@ -414,9 +411,9 @@ export function CloudPage() {
       setGhAppId(status.appId ?? '');
       setGhClientId(status.clientId ?? '');
       setGhInstallId(status.installationId ?? '');
-    } catch {
+    } catch (err) {
       setGhStatus(null);
-      setGhError(UNAVAILABLE);
+      setGhError(userMessage(err, WEB_ERROR.LOAD, { thing: 'GitHub App' }));
     }
   }
 
@@ -436,7 +433,7 @@ export function CloudPage() {
       setGhKey('');
       setGhSecret('');
     } catch (err) {
-      setGhError(err instanceof Error ? err.message : UNAVAILABLE);
+      setGhError(userMessage(err, WEB_ERROR.SAVE, { thing: 'GitHub App' }));
     } finally {
       setGhBusy(false);
     }
@@ -509,10 +506,13 @@ export function CloudPage() {
       {pageTab === 'apps' ? <AppsTab servers={servers} /> : null}
 
       {pageTab === 'servers' && loading && servers.length === 0 && !error ? (
-        <p className="sr-only">Loading servers...</p>
+        <p className="status-message">Loading servers...</p>
       ) : null}
       {pageTab === 'servers' && !loading && servers.length === 0 && !error ? (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <CloudIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">{EMPTY_SERVERS}</p>
         </div>
       ) : null}
@@ -706,9 +706,9 @@ export function CloudPage() {
         >
           <h3>Containers on {selectedServer.name}</h3>
           {containersError ? (
-            <p className="status-message" role="alert">
+            <ErrorAlert>
               Could not load containers: {containersError}
-            </p>
+            </ErrorAlert>
           ) : containers === null ? (
             <p className="status-message">Loading containers...</p>
           ) : containers.length === 0 ? (
@@ -772,7 +772,7 @@ export function CloudPage() {
           </div>
         ) : formOpen ? (
           <div className="cloud-add-form">
-            {formError ? <p className="alert alert-error">{formError}</p> : null}
+            {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
             <div
               className="board-view-toggle"
               role="tablist"
@@ -928,7 +928,7 @@ export function CloudPage() {
       <Modal open={ghOpen} onClose={() => setGhOpen(false)} title="GitHub App">
         {ghOpen ? (
           <div className="cloud-add-form">
-            {ghError ? <p className="alert alert-error">{ghError}</p> : null}
+            {ghError ? <ErrorAlert>{ghError}</ErrorAlert> : null}
             <p className="status-message">
               {ghStatus?.configured
                 ? `Configured — app ${ghStatus.appId}${
