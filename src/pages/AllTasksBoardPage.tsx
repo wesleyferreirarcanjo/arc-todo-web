@@ -40,7 +40,6 @@ import { BoardCycleHeader } from '../components/BoardCycleHeader';
 import { BoardCycleHistoryPanel } from '../components/BoardCycleHistory';
 import { BoardFiltersControls } from '../components/BoardFiltersControls';
 import { BoardQuickFilterChips } from '../components/BoardQuickFilterChips';
-import { QaQueueBulkBar } from '../components/QaQueueBulkBar';
 import { QaQueueCountChip } from '../components/QaQueueCountChip';
 import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { TaskListView } from '../components/TaskListView';
@@ -52,7 +51,6 @@ import { useRegisterBoardMobileActions } from '../context/BoardMobileShellContex
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { useQaQueueBoard } from '../hooks/useQaQueueBoard';
-import { parentTasksOnly } from '../lib/qaQueue/selection';
 import type { BoardCycle, BoardCycleHistoryResponse } from '../types/boardCycle';
 import type {
   CreateTaskInput,
@@ -74,7 +72,7 @@ function removeMovingTaskId(current: Set<string>, taskId: string): Set<string> {
   return next;
 }
 
-type BoardChromePanel = 'filters' | 'cycle' | 'history' | 'qa-queue' | null;
+type BoardChromePanel = 'filters' | 'cycle' | 'history' | null;
 
 function toggleBoardChrome(
   current: BoardChromePanel,
@@ -634,28 +632,7 @@ export function AllTasksBoardPage() {
 
   const visibleTasks = projectFocus ? sortedCycleTasks : sortedTasks;
   const sourceTaskCount = projectFocus ? cycleTasks.length : tasks.length;
-  const qaQueueTasks = useMemo(
-    () => parentTasksOnly(visibleTasks),
-    [visibleTasks],
-  );
-  const {
-    queue,
-    queueCount,
-    queuedTaskIds,
-    unqueuedCount,
-    mixedUnqueued,
-    sending,
-    removingTaskId,
-    queueBusy,
-    sendError,
-    replaceOpen,
-    addAllUnqueued,
-    removeItem,
-    toggleQueueMembership,
-    confirmReplace,
-    cancelReplace,
-  } = useQaQueueBoard(qaQueueTasks);
-  const qaExtensionOpen = chromePanel === 'qa-queue';
+  const { queueCount } = useQaQueueBoard();
 
   function handleSortFieldChange(value: string) {
     const field = value as TaskSortField;
@@ -770,14 +747,7 @@ export function AllTasksBoardPage() {
                 ) : null}
               </button>
             ) : null}
-            <QaQueueCountChip
-              count={queueCount}
-              expanded={chromePanel === 'qa-queue'}
-              onToggle={() => {
-                setFiltersOpen(false);
-                setChromePanel((current) => toggleBoardChrome(current, 'qa-queue'));
-              }}
-            />
+            <QaQueueCountChip count={queueCount} />
             {showCycleButton ? (
               <button
                 type="button"
@@ -857,25 +827,6 @@ export function AllTasksBoardPage() {
         {renderFilterControls(false)}
       </MobileBoardFiltersOverlay>
 
-      <QaQueueBulkBar
-        open={qaExtensionOpen}
-        items={queue.items.map((item) => ({
-          taskId: item.taskId,
-          displayId: item.displayId,
-          title: item.title,
-        }))}
-        unqueuedCount={unqueuedCount}
-        mixedUnqueued={mixedUnqueued}
-        sending={sending}
-        removingTaskId={removingTaskId}
-        sendError={sendError}
-        replaceOpen={replaceOpen}
-        onAddAll={addAllUnqueued}
-        onRemove={(taskId) => void removeItem(taskId)}
-        onConfirmReplace={confirmReplace}
-        onCancelReplace={cancelReplace}
-      />
-
       {hiddenColumns.length > 0 && !loading && (
         <p className="status-message board-columns-hidden-hint" role="status">
           {hiddenColumns.length} column{hiddenColumns.length === 1 ? '' : 's'} hidden
@@ -932,10 +883,6 @@ export function AllTasksBoardPage() {
             onCreateSubtask={handleCycleCreateSubtask}
             onSetParent={handleCycleSetParent}
             onMoveError={handleMoveError}
-            qaExtensionOpen={qaExtensionOpen}
-            queuedTaskIds={queuedTaskIds}
-            queueBusy={queueBusy}
-            onToggleQaExtensionQueue={toggleQueueMembership}
           />
         ) : (
           <TaskListView
@@ -973,10 +920,6 @@ export function AllTasksBoardPage() {
             onCreateSubtask={handleCreateSubtask}
             onSetParent={handleSetParent}
             onMoveError={handleMoveError}
-            qaExtensionOpen={qaExtensionOpen}
-            queuedTaskIds={queuedTaskIds}
-            queueBusy={queueBusy}
-            onToggleQaExtensionQueue={toggleQueueMembership}
           />
         ) : (
           <TaskListView

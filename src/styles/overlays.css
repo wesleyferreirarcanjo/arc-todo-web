@@ -548,10 +548,6 @@
   cursor: pointer;
 }
 
-.task-list-row.is-qa-selected {
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
-}
-
 .task-list-header {
   position: sticky;
   top: 0;
