@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import { ErrorAlert } from '../ErrorAlert';
 import { Modal } from '../Modal';
+import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import { getGithubAppStatus, updateGithubApp } from '../../lib/api/cloud';
 import type { CloudGithubAppStatus } from '../../types/cloud';
-
-const UNAVAILABLE = 'Cloud service is unavailable.';
 
 interface Props {
   open: boolean;
@@ -34,9 +34,9 @@ export function GitHubAppModal({ open, onClose }: Props) {
         setGhClientId(status.clientId ?? '');
         setGhInstallId(status.installationId ?? '');
       })
-      .catch(() => {
+      .catch((err) => {
         setGhStatus(null);
-        setGhError(UNAVAILABLE);
+        setGhError(userMessage(err, WEB_ERROR.LOAD, { thing: 'GitHub App' }));
       });
   }, [open]);
 
@@ -56,7 +56,7 @@ export function GitHubAppModal({ open, onClose }: Props) {
       setGhKey('');
       setGhSecret('');
     } catch (err) {
-      setGhError(err instanceof Error ? err.message : UNAVAILABLE);
+      setGhError(userMessage(err, WEB_ERROR.SAVE, { thing: 'GitHub App' }));
     } finally {
       setGhBusy(false);
     }
@@ -66,7 +66,7 @@ export function GitHubAppModal({ open, onClose }: Props) {
     <Modal open={open} onClose={onClose} title="GitHub App">
       {open ? (
         <div className="cloud-add-form">
-          {ghError ? <p className="alert alert-error">{ghError}</p> : null}
+          {ghError ? <ErrorAlert>{ghError}</ErrorAlert> : null}
           <p className="status-message">
             {ghStatus?.configured
               ? `Configured — app ${ghStatus.appId}${

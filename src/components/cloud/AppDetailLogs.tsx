@@ -1,3 +1,5 @@
+import { Select } from '../Select';
+
 interface Props {
   tail: number;
   appLogLines: string[] | null;
@@ -16,14 +18,15 @@ export function AppDetailLogs({
       <div className="hub-actions cloud-app-actions">
         <label className="board-filter-field">
           Tail
-          <select
-            value={tail}
-            onChange={(event) => onTailChange(Number(event.target.value))}
-          >
-            <option value={100}>100</option>
-            <option value={200}>200</option>
-            <option value={500}>500</option>
-          </select>
+          <Select
+            value={String(tail)}
+            onChange={(value) => onTailChange(Number(value))}
+            options={[
+              { value: '100', label: '100' },
+              { value: '200', label: '200' },
+              { value: '500', label: '500' },
+            ]}
+          />
         </label>
         <button
           type="button"

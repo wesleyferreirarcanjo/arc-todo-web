@@ -5,10 +5,9 @@ import { AppsTab } from '../components/cloud/AppsTab';
 import { GitHubAppModal } from '../components/cloud/GitHubAppModal';
 import { isProxyBusy, ServersTab } from '../components/cloud/ServersTab';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { getProxyStatus, getServers } from '../lib/api/cloud';
 import type { CloudServer } from '../types/cloud';
-
-const UNAVAILABLE = 'Cloud service is unavailable.';
 
 type PageTab = 'servers' | 'apps';
 
@@ -55,8 +54,8 @@ export function CloudPage() {
       setServers(next);
       setError(null);
       return next;
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'servers' }));
       return [] as CloudServer[];
     }
   }, []);

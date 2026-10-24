@@ -441,13 +441,15 @@ describe('CloudPage', () => {
     expect(screen.queryByText('Loading containers...')).toBeNull();
   });
 
-  it('renders Cloud service is unavailable. when the API rejects', async () => {
-    getServers.mockRejectedValue(new Error('down'));
+  it('falls back to the catalog load message when the Cloud API is generic', async () => {
+    getServers.mockRejectedValue(new Error('Internal Server Error'));
 
     renderPage();
 
     expect(
-      await screen.findByText('Cloud service is unavailable.'),
+      await screen.findByText(
+        "Couldn't load servers. Check your connection and try again.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -485,6 +487,59 @@ describe('CloudPage', () => {
         maxParallelBuilds: 4,
       });
     });
+  });
+
+  it('shows visible loading text while servers load', async () => {
+    let resolveServers!: (value: CloudServer[]) => void;
+    getServers.mockReturnValue(
+      new Promise((resolve) => {
+        resolveServers = resolve;
+      }),
+    );
+
+    renderPage();
+
+    const loading = screen.getByText('Loading servers...');
+    expect(loading).toHaveClass('status-message');
+    expect(loading).not.toHaveClass('sr-only');
+
+    resolveServers([]);
+    expect(await screen.findByText(/No servers yet/)).toBeInTheDocument();
+  });
+
+  it('surfaces add-server failures in ErrorAlert', async () => {
+    getServers.mockResolvedValue([]);
+    createSshServer.mockRejectedValue(
+      new Error('host key fingerprint mismatch'),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText(/No servers yet/);
+
+    await user.click(screen.getByRole('button', { name: 'Add server' }));
+    await user.type(screen.getByLabelText('Server name'), 'arc-lab-1');
+    await user.type(screen.getByLabelText('Host'), '192.168.1.10');
+    await user.type(screen.getByLabelText('Private key'), 'KEY-MATERIAL');
+    await user.click(screen.getByRole('button', { name: 'Save server' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('host key fingerprint mismatch');
+  });
+
+  it('surfaces GitHub App failures in ErrorAlert', async () => {
+    getServers.mockResolvedValue([server]);
+    getGithubAppStatus.mockRejectedValue(
+      new Error('GitHub App is not configured.'),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('arc-lab-1');
+    await user.click(screen.getByRole('button', { name: 'GitHub App' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('GitHub App is not configured.');
   });
 
   it('shows GitHub App status in the config dialog', async () => {
@@ -610,6 +665,28 @@ describe('CloudPage apps tab', () => {
       expect(screen.getByTestId('location').textContent).not.toContain('section=');
     });
     expect(screen.queryByLabelText('Container logs')).not.toBeInTheDocument();
+  });
+
+  it('shows visible loading text while applications load', async () => {
+    let resolveApps!: (value: CloudApp[]) => void;
+    getServers.mockResolvedValue([server]);
+    getApps.mockReturnValue(
+      new Promise((resolve) => {
+        resolveApps = resolve;
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('button', { name: 'Apps' });
+    await user.click(screen.getByRole('button', { name: 'Apps' }));
+
+    const loading = screen.getByText('Loading applications...');
+    expect(loading).toHaveClass('status-message');
+    expect(loading).not.toHaveClass('sr-only');
+
+    resolveApps([]);
+    expect(await screen.findByText(/No applications yet/)).toBeInTheDocument();
   });
 
   it('lists apps with status and domain', async () => {

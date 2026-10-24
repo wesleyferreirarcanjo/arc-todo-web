@@ -1,5 +1,8 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { ErrorAlert } from '../ErrorAlert';
+import { CloudIcon } from '../icons';
+import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import {
   getContainers,
   installProxy,
@@ -15,7 +18,6 @@ import type {
   CloudServer,
 } from '../../types/cloud';
 
-const UNAVAILABLE = 'Cloud service is unavailable.';
 const EMPTY_SERVERS =
   'No servers yet. Add a Docker server over SSH or with an outbound agent.';
 
@@ -39,10 +41,8 @@ export function isProxyBusy(state: CloudProxyState): boolean {
   return state === 'installing' || state === 'restoring';
 }
 
-/** Surface the API's real message (install refusal, timeout, …); fall back
- *  to the generic outage text only when there is none. */
 function errorMessage(err: unknown): string {
-  return err instanceof Error && err.message ? err.message : UNAVAILABLE;
+  return userMessage(err, WEB_ERROR.LOAD, { thing: 'Cloud' });
 }
 
 interface Props {
@@ -98,7 +98,9 @@ export function ServersTab({
           setContainers(null);
           // The API forwards the master's message (SSH auth refused, agent
           // offline…) — show the real cause, not a generic "unavailable".
-          setContainersError(err instanceof Error ? err.message : UNAVAILABLE);
+          setContainersError(
+            userMessage(err, WEB_ERROR.LOAD, { thing: 'containers' }),
+          );
         }
       }
     }
@@ -251,10 +253,13 @@ export function ServersTab({
   return (
     <>
       {loading && servers.length === 0 && !error ? (
-        <p className="sr-only">Loading servers...</p>
+        <p className="status-message">Loading servers...</p>
       ) : null}
       {!loading && servers.length === 0 && !error ? (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <CloudIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">{EMPTY_SERVERS}</p>
         </div>
       ) : null}
@@ -448,9 +453,9 @@ export function ServersTab({
         >
           <h3>Containers on {selectedServer.name}</h3>
           {containersError ? (
-            <p className="status-message" role="alert">
+            <ErrorAlert>
               Could not load containers: {containersError}
-            </p>
+            </ErrorAlert>
           ) : containers === null ? (
             <p className="status-message">Loading containers...</p>
           ) : containers.length === 0 ? (

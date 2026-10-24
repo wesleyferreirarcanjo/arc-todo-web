@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../ErrorAlert';
+import { CloudIcon } from '../icons';
 import { Modal } from '../Modal';
 import { createApp, getApps } from '../../lib/api/cloud';
+import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import type {
   CloudApp,
   CloudAppSource,
@@ -12,7 +14,6 @@ import type {
 import { AppDetail } from './AppDetail';
 import { ImportDialog } from './ImportDialog';
 
-const UNAVAILABLE = 'Cloud service is unavailable.';
 const EMPTY_APPS = 'No applications yet. Deploy a container image or a compose stack.';
 
 function statusLabel(status: CloudApp['status']): string {
@@ -90,8 +91,8 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
       setApps(next);
       setError(null);
       return next;
-    } catch {
-      setError(UNAVAILABLE);
+    } catch (err) {
+      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'applications' }));
       return [] as CloudApp[];
     }
   }, []);
@@ -157,7 +158,7 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
       resetForm();
       selectApp(app.id);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : UNAVAILABLE);
+      setFormError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this app' }));
     } finally {
       setSaving(false);
     }
@@ -215,10 +216,13 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
       {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
       {loading && apps.length === 0 && !error ? (
-        <p className="sr-only">Loading applications...</p>
+        <p className="status-message">Loading applications...</p>
       ) : null}
       {!loading && apps.length === 0 && !error ? (
         <div className="diagrams-empty">
+          <span className="hub-empty-glyph" aria-hidden="true">
+            <CloudIcon className="arc-icon-empty" />
+          </span>
           <p className="status-message">{EMPTY_APPS}</p>
         </div>
       ) : null}
@@ -309,7 +313,7 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title="New app">
         {formOpen ? (
           <div className="cloud-add-form">
-            {formError ? <p className="alert alert-error">{formError}</p> : null}
+            {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
             <div
               className="board-view-toggle"
               role="group"

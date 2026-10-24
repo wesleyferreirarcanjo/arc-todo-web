@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
+import { ErrorAlert } from '../ErrorAlert';
 import { Modal } from '../Modal';
+import { userMessage, WEB_ERROR } from '../../lib/errors/messages';
 import {
   agentInstallCommand,
   createAgentServer,
@@ -8,7 +10,6 @@ import {
 } from '../../lib/api/cloud';
 import type { CloudServer, CloudServerRole } from '../../types/cloud';
 
-const UNAVAILABLE = 'Cloud service is unavailable.';
 const DEFAULT_MASTER_URL = `ws://${window.location.hostname}:8080/v1/agent/connect`;
 
 type TransportChoice = 'ssh' | 'agent';
@@ -84,8 +85,8 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
         setSshKey('');
         setFormName('');
       }
-    } catch {
-      setFormError(UNAVAILABLE);
+    } catch (err) {
+      setFormError(userMessage(err, WEB_ERROR.CREATE, { thing: 'this server' }));
     } finally {
       setSaving(false);
       // Never keep the private key in component state after submit.
@@ -130,26 +131,24 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
         </div>
       ) : open ? (
         <div className="cloud-add-form">
-          {formError ? <p className="alert alert-error">{formError}</p> : null}
+          {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
           <div
             className="board-view-toggle"
-            role="tablist"
+            role="group"
             aria-label="Connection type"
           >
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${transport === 'ssh' ? ' is-active' : ''}`}
-              aria-selected={transport === 'ssh'}
+              aria-pressed={transport === 'ssh'}
               onClick={() => setTransport('ssh')}
             >
               SSH
             </button>
             <button
               type="button"
-              role="tab"
               className={`board-view-toggle-btn${transport === 'agent' ? ' is-active' : ''}`}
-              aria-selected={transport === 'agent'}
+              aria-pressed={transport === 'agent'}
               onClick={() => setTransport('agent')}
             >
               Agent
