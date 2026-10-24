@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -56,7 +56,9 @@ describe('ProjectQaInfoForm', () => {
     expect(updateProjectQaInfo).not.toHaveBeenCalled();
   });
 
-  it('saves environments, users, and notes', async () => {
+  it(
+    'saves environments, users, and notes',
+    async () => {
     const user = userEvent.setup();
     updateProjectQaInfo.mockResolvedValue({
       ...emptyProfile,
@@ -120,5 +122,40 @@ describe('ProjectQaInfoForm', () => {
     });
     expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
     expect(await screen.findByRole('status')).toHaveTextContent('Saved.');
+    },
+    15_000,
+  );
+
+  it('keeps a removed environment row until confirm completes', async () => {
+    const user = userEvent.setup();
+    fetchProjectQaInfo.mockResolvedValue({
+      ...emptyProfile,
+      environments: [
+        { name: 'Staging', url: 'https://example.com', notes: null },
+      ],
+    });
+    render(
+      <MemoryRouter>
+        <ProjectQaInfoForm organizationId="org-1" projectId="proj-1" />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByDisplayValue('Staging')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+
+    expect(screen.getByDisplayValue('Staging')).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog', { name: 'Remove environment' });
+    expect(dialog).toHaveTextContent(
+      'Remove this environment? This cannot be undone.',
+    );
+
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }));
+
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue('Staging')).not.toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole('dialog', { name: 'Remove environment' }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -306,8 +306,7 @@
 
 .qa-info-section h3 {
   margin: 0 0 0.5rem;
-  font-size: 1.02rem;
-  font-weight: 650;
+  font-size: var(--type-section);
 }
 
 .qa-info-row {

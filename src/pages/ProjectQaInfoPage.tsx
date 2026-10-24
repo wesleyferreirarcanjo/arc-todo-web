@@ -17,7 +17,7 @@ export function ProjectQaInfoPage() {
 
   return (
     <div
-      className="page-shell qa-info-page"
+      className="page-shell qa-info-page is-tight-page"
       style={
         currentProject
           ? ({ '--entity-accent': getProjectColor(currentProject) } as CSSProperties)
