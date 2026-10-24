@@ -2,6 +2,7 @@ import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
+import { ErrorAlert } from '../components/ErrorAlert';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
 import { OrganizationsIcon } from '../components/icons';
@@ -27,6 +28,7 @@ export function OrganizationProjectsPage() {
 
   useEffect(() => {
     if (!orgId) return;
+    setError(null);
     refreshProjects(orgId).catch((err) => {
       setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this organization' }));
     });
@@ -50,10 +52,6 @@ export function OrganizationProjectsPage() {
     return <Navigate to="/organizations" replace />;
   }
 
-  if (error) {
-    return <Navigate to="/organizations" replace />;
-  }
-
   return (
     <div className="page-shell" style={entityAccentStyle(color)}>
       <header className={`page-header${color ? ' has-accent' : ''}`}>
@@ -71,9 +69,17 @@ export function OrganizationProjectsPage() {
         </div>
       </header>
 
+      {error && (
+        <ErrorAlert code={WEB_ERROR.LOAD}>{error}</ErrorAlert>
+      )}
+
       {isAdmin && <ProjectForm onSubmit={handleCreate} />}
 
-      {loadingProjects && <p className="status-message">Loading projects...</p>}
+      {loadingProjects && (
+        <p className="status-message" role="status">
+          Loading projects...
+        </p>
+      )}
 
       {!loadingProjects && projects.length === 0 && (
         <div className="diagrams-empty">

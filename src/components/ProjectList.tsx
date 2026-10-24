@@ -2,12 +2,15 @@ import { ErrorAlert } from './ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { BOARD_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { deleteProject, updateProject } from '../lib/api/projects';
 import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import { UNASSIGNED_VALUE } from '../lib/users/assigneeDisplay';
 import type { Project, UpdateProjectInput } from '../types/project';
 import { AssigneeSelect } from './AssigneeSelect';
+import { ConfirmDialog } from './ConfirmDialog';
+import { UndoToast } from './UndoToast';
 
 interface ProjectListProps {
   projects: Project[];
@@ -18,6 +21,7 @@ interface ProjectListProps {
 export function ProjectList({ projects, canManage = false, onUpdated }: ProjectListProps) {
   const navigate = useNavigate();
   const { orgId } = useParams();
+  const isMobile = useMediaQuery(BOARD_MOBILE_QUERY);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -26,6 +30,8 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmProject, setConfirmProject] = useState<Project | null>(null);
+  const [pendingProject, setPendingProject] = useState<Project | null>(null);
 
   if (!orgId) {
     return null;
@@ -79,12 +85,18 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
     }
   }
 
-  async function handleDelete(project: Project) {
-    const confirmed = window.confirm(
-      `Delete "${project.name}"? This will remove the project and its tasks.`,
-    );
-    if (!confirmed) return;
+  function requestDelete(project: Project) {
+    setDeleteError(null);
+    if (isMobile) {
+      setConfirmProject(null);
+      setPendingProject(project);
+      return;
+    }
+    setPendingProject(null);
+    setConfirmProject(project);
+  }
 
+  async function commitDelete(project: Project) {
     setDeletingId(project.id);
     setDeleteError(null);
     try {
@@ -94,6 +106,8 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
       setDeleteError(userMessage(err, WEB_ERROR.DELETE, { thing: 'this project' }));
     } finally {
       setDeletingId(null);
+      setConfirmProject(null);
+      setPendingProject(null);
     }
   }
 
@@ -193,6 +207,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                     className="entity-color-swatch entity-color-swatch-lg"
                     style={{ backgroundColor: accent }}
                     title={`Color: ${accent}`}
+                    aria-label={`Project color ${accent}`}
                   />
                 </div>
 
@@ -293,7 +308,7 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
                       type="button"
                       className="btn btn-danger"
                       disabled={isDeleting}
-                      onClick={() => void handleDelete(project)}
+                      onClick={() => requestDelete(project)}
                     >
                       {isDeleting ? 'Deleting...' : 'Delete'}
                     </button>
@@ -304,6 +319,26 @@ export function ProjectList({ projects, canManage = false, onUpdated }: ProjectL
           </article>
         );
       })}
+      <ConfirmDialog
+        open={Boolean(confirmProject)}
+        title="Delete project"
+        description={`Delete "${confirmProject?.name ?? 'this project'}"? This will remove the project and its tasks.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={Boolean(confirmProject && deletingId === confirmProject.id)}
+        onConfirm={() => {
+          if (confirmProject) void commitDelete(confirmProject);
+        }}
+        onCancel={() => setConfirmProject(null)}
+      />
+      <UndoToast
+        open={Boolean(pendingProject)}
+        message="Project deleted"
+        onUndo={() => setPendingProject(null)}
+        onDismiss={() => {
+          if (pendingProject) void commitDelete(pendingProject);
+        }}
+      />
     </div>
   );
 }
