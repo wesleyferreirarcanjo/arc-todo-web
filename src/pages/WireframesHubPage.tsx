@@ -356,28 +356,8 @@ export function WireframesHubPage() {
 
   return (
     <div className="page-shell diagrams-hub-page">
-      <header className="page-header page-header-with-actions">
-        <div>
-          <h2>Wireframes</h2>
-          <p className="page-subtitle">
-            Browse HTML prototypes across your projects.
-            {!loading && !error && items.length > 0 && (
-              <>
-                {' '}
-                {items.length} wireframe{items.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-        </div>
-        {!loading && !error && canCreate && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={openCreate}
-          >
-            New wireframe
-          </button>
-        )}
+      <header className="page-header">
+        <h2>Wireframes</h2>
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
@@ -469,6 +449,15 @@ export function WireframesHubPage() {
                     options={SORT_OPTIONS}
                   />
                 </label>
+                {!loading && !error && canCreate && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={openCreate}
+                  >
+                    New wireframe
+                  </button>
+                )}
               </>
             }
           />

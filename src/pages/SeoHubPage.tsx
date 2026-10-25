@@ -192,38 +192,29 @@ export function SeoHubPage() {
   }
 
   const filterPanel = (
-    <label className="board-filter-field board-filter-search">
-      Search
-      <input
-        type="search"
-        value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
-        placeholder="Filter by title"
-        aria-label="Filter SEO sites by title"
-      />
-    </label>
+    <>
+      <label className="board-filter-field board-filter-search">
+        Search
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter by title"
+          aria-label="Filter SEO sites by title"
+        />
+      </label>
+      {!loading && !error && canCreate && (
+        <button type="button" className="btn btn-primary" onClick={openCreate}>
+          New SEO site
+        </button>
+      )}
+    </>
   );
 
   return (
     <div className="page-shell seo-hub-page">
-      <header className="page-header page-header-with-actions">
-        <div>
-          <h2>SEO</h2>
-          <p className="page-subtitle">
-            Audit a site you are working on. Keywords come from Search Console when connected.
-            {!loading && !error && items.length > 0 && (
-              <>
-                {' '}
-                {items.length} site{items.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-        </div>
-        {!loading && !error && canCreate && (
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            New SEO site
-          </button>
-        )}
+      <header className="page-header">
+        <h2>SEO</h2>
       </header>
 
       {loading && <p className="status-message">Loading SEO sites...</p>}

@@ -391,33 +391,22 @@ export function DiagramsHubPage() {
           options={SORT_OPTIONS}
         />
       </label>
+      {!loading && !error && canCreate && (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={openCreate}
+        >
+          New diagram
+        </button>
+      )}
     </>
   );
 
   return (
     <div className="page-shell diagrams-hub-page">
-      <header className="page-header page-header-with-actions">
-        <div>
-          <h2>Diagrams</h2>
-          <p className="page-subtitle">
-            Browse every Excalidraw board across your projects.
-            {!loading && !error && canvasCount > 0 && (
-              <>
-                {' '}
-                {canvasCount} diagram{canvasCount === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-        </div>
-        {!loading && !error && canCreate && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={openCreate}
-          >
-            New diagram
-          </button>
-        )}
+      <header className="page-header">
+        <h2>Diagrams</h2>
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}

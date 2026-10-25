@@ -373,23 +373,6 @@
   padding: 0.15rem 0.45rem;
 }
 
-@media (min-width: 1024px) {
-  .organizations-page.page-shell {
-    display: grid;
-    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
-    align-items: start;
-    column-gap: 1.5rem;
-  }
-
-  .organizations-page .page-header {
-    grid-column: 1 / -1;
-  }
-
-  .organizations-create-section {
-    position: sticky;
-    top: 1.5rem;
-  }
-}
 
 @media (max-width: 1023px) {
   .organizations-list-header,

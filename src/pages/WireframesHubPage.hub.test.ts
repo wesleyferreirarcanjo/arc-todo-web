@@ -11,6 +11,18 @@ const markup = readFileSync(
 );
 
 describe('wireframes hub board standard (#arc-675)', () => {
+  it('puts New wireframe in Filters, not the page header', () => {
+    expect(page).toContain('PageFiltersToolbar');
+    expect(page).not.toContain('page-subtitle');
+    const headerStart = page.indexOf('<header');
+    const headerEnd = page.indexOf('</header>', headerStart);
+    expect(headerStart).toBeGreaterThan(-1);
+    expect(headerEnd).toBeGreaterThan(headerStart);
+    const headerSlice = page.slice(headerStart, headerEnd);
+    expect(headerSlice).not.toContain('New wireframe');
+    expect(page).toContain('New wireframe');
+  });
+
   it('starts Filters closed through PageFiltersToolbar', () => {
     expect(page).toContain('PageFiltersToolbar');
     expect(page).toContain('activeFilterCount={activeFilterCount}');

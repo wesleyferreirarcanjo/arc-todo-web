@@ -9,6 +9,7 @@ import { Select } from '../components/Select';
 import { UndoToast } from '../components/UndoToast';
 import { VideosIcon } from '../components/icons';
 import { VideoCard } from '../components/videos/VideoCard';
+import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { ApiError, triggerBrowserDownload } from '../lib/api/client';
 import { getProjectColor } from '../lib/color/entityColor';
 import {
@@ -21,7 +22,6 @@ import {
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import { useDeferredDelete } from '../hooks/useDeferredDelete';
-import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import type { ProjectVideoSummary } from '../types/video';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
@@ -71,7 +71,7 @@ function codeOf(err: unknown, fallback: string): string {
 
 export function VideosHubPage() {
   const navigate = useNavigate();
-  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
+  const { registerActions } = useBoardMobileShell();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [items, setItems] = useState<HubVideo[]>([]);
@@ -179,6 +179,19 @@ export function VideosHubPage() {
     Number(searchActive) + Number(Boolean(orgFilter)) + Number(Boolean(projectFilter));
 
   const canCreate = organizations.length > 0 && projects.length > 0;
+
+  useEffect(() => {
+    if (items.length === 0) {
+      registerActions(null);
+      return () => registerActions(null);
+    }
+    registerActions({
+      // ponytail: FAB Filter requires BoardMobileShellActions.onCreated; hub does not create from the dial. Register openFilters alone when the shell allows it.
+      onCreated: async () => {},
+      openFilters: () => setMobileFiltersOpen(true),
+    });
+    return () => registerActions(null);
+  }, [items.length, registerActions]);
 
   const commitDelete = useCallback(async () => {
     const target = deleteTargetRef.current;
@@ -392,33 +405,22 @@ export function VideosHubPage() {
           options={SORT_OPTIONS}
         />
       </label>
+      {!loading && !error && canCreate && (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={openCreate}
+        >
+          New video
+        </button>
+      )}
     </>
   );
 
   return (
     <div className="page-shell diagrams-hub-page">
-      <header className="page-header page-header-with-actions">
-        <div>
-          <h2>Videos</h2>
-          <p className="page-subtitle">
-            Screen recordings and exports across your projects.
-            {!loading && !error && items.length > 0 && (
-              <>
-                {' '}
-                {items.length} video{items.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-        </div>
-        {!loading && !error && canCreate && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={openCreate}
-          >
-            New video
-          </button>
-        )}
+      <header className="page-header">
+        <h2>Videos</h2>
       </header>
 
       {loading && <p className="status-message">Loading videos...</p>}
@@ -463,23 +465,7 @@ export function VideosHubPage() {
             panel={filterPanel}
             mobileOverlayOpen={mobileFiltersOpen}
             onMobileOverlayOpenChange={setMobileFiltersOpen}
-          >
-            {isMobileShell ? (
-              <button
-                type="button"
-                className={`btn btn-secondary board-chrome-toggle${mobileFiltersOpen ? ' is-open' : ''}`}
-                aria-expanded={mobileFiltersOpen}
-                onClick={() => setMobileFiltersOpen(true)}
-              >
-                Filters
-                {activeFilterCount > 0 ? (
-                  <span className="board-chrome-count" aria-hidden="true">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </button>
-            ) : null}
-          </PageFiltersToolbar>
+          />
 
           {filtersActive ? (
             <p className="status-message board-search-status" role="status">
