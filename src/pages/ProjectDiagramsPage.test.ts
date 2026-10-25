@@ -11,15 +11,16 @@ describe('project diagrams list (#arc-665)', () => {
     expect(page).toContain('className="diagram-card entity-card has-accent"');
   });
 
-  it('does not render the header New diagram button while loading', () => {
-    const headerStart = page.indexOf('page-header-with-actions');
+  it('keeps New diagram out of the header', () => {
+    const headerStart = page.indexOf('<header className={`page-header');
     const headerEnd = page.indexOf('</header>', headerStart);
     const header = page.slice(headerStart, headerEnd);
-    const afterTitle = header.slice(header.indexOf('Back to board'));
-    expect(afterTitle).toContain('New diagram');
-    expect(afterTitle.includes('{!loading &&') || afterTitle.includes('disabled={loading}')).toBe(
-      true,
-    );
+    expect(header).toContain('Back to board');
+    expect(header).not.toContain('New diagram');
+    expect(header).not.toContain('page-header-with-actions');
+    expect(header).not.toContain('page-subtitle');
+    expect(page).toContain('title="New diagram"');
+    expect(page).toContain('No diagrams yet. Create the first whiteboard for this project.');
   });
 
   it('uses ErrorAlert ERR-ARC-ACL-02 for forbidden', () => {

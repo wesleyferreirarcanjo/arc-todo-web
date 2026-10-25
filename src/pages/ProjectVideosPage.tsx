@@ -270,26 +270,40 @@ export function ProjectVideosPage() {
   }
 
   const filterPanel = (
-    <div className="diagrams-filters">
-      <label className="board-filter-field board-filter-search">
-        Search
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Filter by title"
-          aria-label="Filter videos by title"
-        />
-      </label>
-      <label className="board-filter-field">
-        Sort by
-        <Select
-          value={sort}
-          onChange={(value) => setSort(value as VideoSort)}
-          options={SORT_OPTIONS}
-        />
-      </label>
-    </div>
+    <>
+      <div className="diagrams-filters">
+        <label className="board-filter-field board-filter-search">
+          Search
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Filter by title"
+            aria-label="Filter videos by title"
+          />
+        </label>
+        <label className="board-filter-field">
+          Sort by
+          <Select
+            value={sort}
+            onChange={(value) => setSort(value as VideoSort)}
+            options={SORT_OPTIONS}
+          />
+        </label>
+      </div>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => {
+          setCreateOpen(true);
+          setNewTitle('');
+          setCreateError(null);
+          setCreateErrorCode(undefined);
+        }}
+      >
+        New video
+      </button>
+    </>
   );
 
   return (
@@ -301,40 +315,17 @@ export function ProjectVideosPage() {
           : undefined
       }
     >
-      <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
-        <div>
-          <WorkspaceEyebrow />
-          <h2>{currentProject?.name ?? 'Project'} videos</h2>
-          <p className="page-subtitle">
-            Screen recordings for this project. Edit, zoom, and export.
-            {!loading && !error && videos.length > 0 && (
-              <>
-                {' '}
-                {videos.length} video{videos.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-          <div className="page-links">
-            <Link
-              to={projectTasksHref(orgId, projectId)}
-              className="text-link"
-            >
-              Back to board
-            </Link>
-          </div>
+      <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
+        <WorkspaceEyebrow />
+        <h2>{currentProject?.name ?? 'Project'} videos</h2>
+        <div className="page-links">
+          <Link
+            to={projectTasksHref(orgId, projectId)}
+            className="text-link"
+          >
+            Back to board
+          </Link>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => {
-            setCreateOpen(true);
-            setNewTitle('');
-            setCreateError(null);
-            setCreateErrorCode(undefined);
-          }}
-        >
-          New video
-        </button>
       </header>
 
       {loading && <p className="status-message">Loading videos...</p>}

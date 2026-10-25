@@ -49,4 +49,18 @@ describe('project wireframes list (#arc-677)', () => {
     expect(before).toContain('<Layout />');
     expect(before).not.toContain('tightPage');
   });
+
+  it('keeps New wireframe out of the header and uses default Layout', () => {
+    const headerStart = page.indexOf('<header className={`page-header');
+    const headerEnd = page.indexOf('</header>', headerStart);
+    const header = page.slice(headerStart, headerEnd);
+    expect(header).toContain('Back to board');
+    expect(header).not.toContain('New wireframe');
+    expect(header).not.toContain('page-subtitle');
+    expect(header).not.toContain('page-header-with-actions');
+    expect(page).toContain('title="New wireframe"');
+    expect(page).not.toContain('is-tight-page');
+    expect(page).not.toContain('tightPage');
+    expect(app).toContain('element={<ProjectWireframesPage />}');
+  });
 });
