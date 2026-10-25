@@ -146,14 +146,6 @@ export function VideosHubPage() {
     };
   }, []);
 
-  // ponytail: Layout has no per-route tightPage; opt in to #arc-654 CSS here.
-  useEffect(() => {
-    const area = document.querySelector('.content-area');
-    if (!area) return;
-    area.classList.add('is-tight-page');
-    return () => area.classList.remove('is-tight-page');
-  }, []);
-
   const projectOptions = useMemo(
     () =>
       orgFilter

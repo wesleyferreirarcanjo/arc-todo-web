@@ -61,8 +61,9 @@ describe('SEO hub board standard (#arc-695)', () => {
     expect(hub).toContain('useDeferredDelete');
     expect(hub).toContain('role="status"');
     expect(hub).toContain('Clear filters');
-    expect(app).toContain('<Layout tightPage />');
+    expect(app).toContain('<Layout />');
     expect(app).toContain('path="/seo"');
+    expect(layout).toContain('isTightPagePath(location.pathname)');
   });
 
   it('uses the 3px card rail token on hub rows', () => {

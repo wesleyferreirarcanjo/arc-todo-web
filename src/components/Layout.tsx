@@ -88,7 +88,6 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
   const isTightPage =
     tightPage ||
     isTightPagePath(location.pathname) ||
-    location.pathname === '/organizations' ||
     location.pathname === '/analytics' ||
     location.pathname === '/metrics' ||
     location.pathname === '/admin/users';

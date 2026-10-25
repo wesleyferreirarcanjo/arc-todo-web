@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(resolve(here, 'ProjectVideosPage.tsx'), 'utf8');
+const layout = readFileSync(resolve(here, '../components/Layout.tsx'), 'utf8');
+const helper = readFileSync(resolve(here, '../lib/board/boardShellPath.ts'), 'utf8');
 
 describe('project videos list board standard (#arc-691)', () => {
   it('passes accent, org, and project into VideoCard', () => {
@@ -19,7 +21,8 @@ describe('project videos list board standard (#arc-691)', () => {
     expect(page).toContain('role="status"');
     expect(page).toContain('ERR-ARC-ACL-02');
     expect(page).toContain('useDeferredDelete');
-    expect(page).toContain('is-tight-page');
+    expect(layout).toContain('isTightPagePath(location.pathname)');
+    expect(helper).toContain('wireframes|videos|seo');
     expect(page).toContain('code={errorCode}');
   });
 });

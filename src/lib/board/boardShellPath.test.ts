@@ -28,13 +28,37 @@ describe('isBoardShellPath', () => {
 });
 
 describe('isTightPagePath', () => {
-  it('opts the wireframes hub into tight density', () => {
+  it('opts list hubs into tight density', () => {
+    expect(isTightPagePath('/organizations')).toBe(true);
+    expect(isTightPagePath('/organizations/org-1')).toBe(true);
+    expect(isTightPagePath('/organizations/org-1/activity')).toBe(true);
+    expect(isTightPagePath('/diagrams')).toBe(true);
     expect(isTightPagePath('/wireframes')).toBe(true);
-    expect(isTightPagePath('/board')).toBe(false);
-    expect(isTightPagePath('/diagrams')).toBe(false);
+    expect(isTightPagePath('/videos')).toBe(true);
+    expect(isTightPagePath('/names')).toBe(true);
+    expect(isTightPagePath('/seo')).toBe(true);
+    expect(
+      isTightPagePath('/organizations/org-1/projects/proj-1/diagrams'),
+    ).toBe(true);
     expect(
       isTightPagePath('/organizations/org-1/projects/proj-1/wireframes'),
+    ).toBe(true);
+    expect(
+      isTightPagePath('/organizations/org-1/projects/proj-1/videos'),
+    ).toBe(true);
+    expect(isTightPagePath('/organizations/org-1/projects/proj-1/seo')).toBe(
+      true,
+    );
+    expect(isTightPagePath('/board')).toBe(false);
+    expect(isTightPagePath('/names/sess-1')).toBe(false);
+    expect(
+      isTightPagePath('/organizations/org-1/projects/proj-1/seo/site-1'),
     ).toBe(false);
+    expect(
+      isTightPagePath('/organizations/org-1/projects/proj-1/diagrams/diag-1'),
+    ).toBe(false);
+    expect(isTightPagePath('/download')).toBe(false);
+    expect(isTightPagePath('/analytics')).toBe(false);
   });
 });
 

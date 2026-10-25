@@ -262,6 +262,23 @@ describe('Layout sidebar identity', () => {
     expect(screen.queryByRole('link', { name: 'Diagrams' })).not.toBeInTheDocument();
   });
 
+  it('uses board density on All tasks', () => {
+    renderLayout('/board');
+    const content = document.querySelector('.content-area');
+    expect(content).toHaveClass('is-board-page');
+    expect(content).not.toHaveClass('is-tight-page');
+  });
+
+  it('applies tight page density on list hubs', () => {
+    for (const path of ['/diagrams', '/videos', '/names', '/seo', '/organizations']) {
+      cleanup();
+      renderLayout(path, true);
+      const content = document.querySelector('.content-area');
+      expect(content).toHaveClass('is-tight-page');
+      expect(content).not.toHaveClass('is-board-page');
+    }
+  });
+
   it('applies tight page density on Metrics', () => {
     authState.isAdmin = true;
     renderLayout('/metrics');

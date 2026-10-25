@@ -44,7 +44,9 @@ describe('project wireframes list (#arc-677)', () => {
   it('opts the project list into tight page density', () => {
     const pageRoute = app.indexOf('element={<ProjectWireframesPage />}');
     expect(pageRoute).toBeGreaterThan(-1);
-    const before = app.slice(Math.max(0, pageRoute - 400), pageRoute);
-    expect(before).toContain('tightPage');
+    const layoutAt = app.lastIndexOf('<Layout', pageRoute);
+    const before = app.slice(layoutAt, pageRoute);
+    expect(before).toContain('<Layout />');
+    expect(before).not.toContain('tightPage');
   });
 });

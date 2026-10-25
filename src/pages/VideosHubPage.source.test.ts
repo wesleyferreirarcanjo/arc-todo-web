@@ -6,6 +6,8 @@ import { readAppCss } from '../test/readAppCss';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(resolve(here, 'VideosHubPage.tsx'), 'utf8');
+const layout = readFileSync(resolve(here, '../components/Layout.tsx'), 'utf8');
+const helper = readFileSync(resolve(here, '../lib/board/boardShellPath.ts'), 'utf8');
 const css = readAppCss();
 
 function ruleBlock(selector: string): string {
@@ -33,7 +35,8 @@ describe('videos hub board standard (#arc-689)', () => {
     expect(page).toContain('code={errorCode}');
     expect(page).toContain('useDeferredDelete');
     expect(page).toContain('UndoToast');
-    expect(page).toContain('is-tight-page');
+    expect(layout).toContain('isTightPagePath(location.pathname)');
+    expect(helper).toContain("'/videos'");
     expect(page).toContain(
       'Delete "${deleteTarget?.video.title ?? \'this video\'}"? This cannot be undone.',
     );

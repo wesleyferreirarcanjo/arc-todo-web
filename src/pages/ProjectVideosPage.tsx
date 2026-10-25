@@ -125,15 +125,6 @@ export function ProjectVideosPage() {
     void loadVideos();
   }, [loadVideos]);
 
-  // ponytail: shared Layout cannot take tightPage per nested route without a
-  // second WorkspaceProvider; opt in to #arc-654 CSS on this page only.
-  useEffect(() => {
-    const area = document.querySelector('.content-area');
-    if (!area) return;
-    area.classList.add('is-tight-page');
-    return () => area.classList.remove('is-tight-page');
-  }, []);
-
   const visibleVideos = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filtered = query

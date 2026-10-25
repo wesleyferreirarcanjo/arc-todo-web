@@ -92,28 +92,17 @@ export default function App() {
               <Route
                 element={
                   <WorkspaceProvider>
-                    <Layout tightPage />
-                  </WorkspaceProvider>
-                }
-              >
-                <Route path="/diagrams" element={<DiagramsHubPage />} />
-                <Route
-                  path="/organizations/:orgId/projects/:projectId/wireframes"
-                  element={<ProjectWireframesPage />}
-                />
-              </Route>
-              <Route
-                element={
-                  <WorkspaceProvider>
                     <Layout />
                   </WorkspaceProvider>
                 }
               >
                 <Route path="/chat" element={<Navigate to="/board" replace />} />
                 <Route path="/board" element={<AllTasksBoardPage />} />
+                <Route path="/diagrams" element={<DiagramsHubPage />} />
                 <Route path="/wireframes" element={<WireframesHubPage />} />
                 <Route path="/videos" element={<VideosHubPage />} />
                 <Route path="/names" element={<NamesHubPage />} />
+                <Route path="/seo" element={<SeoHubPage />} />
                 <Route path="/names/:sessionId" element={<NameSessionPage />} />
                 <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route path="/devices" element={<DevicesPage />} />
@@ -182,6 +171,10 @@ export default function App() {
                   element={<ProjectDiagramsPage />}
                 />
                 <Route
+                  path="/organizations/:orgId/projects/:projectId/wireframes"
+                  element={<ProjectWireframesPage />}
+                />
+                <Route
                   path="/organizations/:orgId/projects/:projectId/videos"
                   element={<ProjectVideosPage />}
                 />
@@ -202,15 +195,6 @@ export default function App() {
                   element={<SeoSitePage />}
                 />
                 <Route path="/" element={<Navigate to="/board" replace />} />
-              </Route>
-              <Route
-                element={
-                  <WorkspaceProvider>
-                    <Layout tightPage />
-                  </WorkspaceProvider>
-                }
-              >
-                <Route path="/seo" element={<SeoHubPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/board" replace />} />

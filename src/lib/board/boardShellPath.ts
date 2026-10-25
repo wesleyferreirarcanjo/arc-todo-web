@@ -5,7 +5,20 @@ export function isBoardShellPath(pathname: string): boolean {
 
 /** Hubs that opt into All tasks padding/gap via `.content-area.is-tight-page`. */
 export function isTightPagePath(pathname: string): boolean {
-  return pathname === '/wireframes';
+  const TIGHT_EXACT = new Set([
+    '/organizations',
+    '/diagrams',
+    '/wireframes',
+    '/videos',
+    '/names',
+    '/seo',
+  ]);
+  if (TIGHT_EXACT.has(pathname)) return true;
+  if (/^\/organizations\/[^/]+$/.test(pathname)) return true;
+  if (/^\/organizations\/[^/]+\/activity$/.test(pathname)) return true;
+  return /^\/organizations\/[^/]+\/projects\/[^/]+\/(diagrams|wireframes|videos|seo)$/.test(
+    pathname,
+  );
 }
 
 /** One naming session — not the Names hub or a project session list. */
