@@ -41,7 +41,7 @@ describe('Names hub session row CSS (#arc-474)', () => {
     expect(wrap).toContain('width: 100%');
     expect(wrap).not.toContain('48rem');
     const row = ruleBlock('.names-session-row');
-    expect(row).toContain('border-radius: var(--radius-md)');
+    expect(row).toContain('border-radius: var(--radius-blob-alt)');
   });
 
   it('places session cards in a multi-column grid on wide viewports', () => {

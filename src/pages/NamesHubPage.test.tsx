@@ -42,6 +42,7 @@ vi.mock('../context/WorkspaceContext', () => ({
   }),
 }));
 
+import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 import { NamesHubPage } from './NamesHubPage';
 
 const sessions: ProjectNameSessionSummary[] = [
@@ -72,9 +73,11 @@ const sessions: ProjectNameSessionSummary[] = [
 function renderHub(path = '/names') {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/names" element={<NamesHubPage />} />
-      </Routes>
+      <BoardMobileShellProvider>
+        <Routes>
+          <Route path="/names" element={<NamesHubPage />} />
+        </Routes>
+      </BoardMobileShellProvider>
     </MemoryRouter>,
   );
 }
