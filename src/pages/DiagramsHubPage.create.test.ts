@@ -17,10 +17,16 @@ describe('diagrams hub New diagram (#arc-270)', () => {
     expect(page).toContain('WEB_ERROR.VAL_DIAGRAM');
   });
 
-  it('cancels .btn-primary form margin on page header actions', () => {
-    const start = css.indexOf('.page-header-with-actions > .btn-primary');
-    expect(start).toBeGreaterThan(-1);
-    expect(css.slice(start, start + 160)).toContain('margin-top: 0');
+  it('puts New diagram in Filters, not the page header', () => {
+    expect(page).toContain('PageFiltersToolbar');
+    expect(page).not.toContain('page-subtitle');
+    const headerStart = page.indexOf('<header');
+    const headerEnd = page.indexOf('</header>', headerStart);
+    expect(headerStart).toBeGreaterThan(-1);
+    expect(headerEnd).toBeGreaterThan(headerStart);
+    const headerSlice = page.slice(headerStart, headerEnd);
+    expect(headerSlice).not.toContain('New diagram');
+    expect(page).toContain('New diagram');
   });
 });
 

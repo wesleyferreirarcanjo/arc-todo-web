@@ -54,6 +54,18 @@ describe('SEO hub, workspace, and settings (#arc-392)', () => {
 });
 
 describe('SEO hub board standard (#arc-695)', () => {
+  it('puts New SEO site in Filters, not the page header', () => {
+    expect(hub).toContain('PageFiltersToolbar');
+    expect(hub).not.toContain('page-subtitle');
+    const headerStart = hub.indexOf('<header');
+    const headerEnd = hub.indexOf('</header>', headerStart);
+    expect(headerStart).toBeGreaterThan(-1);
+    expect(headerEnd).toBeGreaterThan(headerStart);
+    const headerSlice = hub.slice(headerStart, headerEnd);
+    expect(headerSlice).not.toContain('New SEO site');
+    expect(hub).toContain('New SEO site');
+  });
+
   it('starts Filters closed and reports a miss with role=status', () => {
     expect(hub).toContain('PageFiltersToolbar');
     expect(hub).toContain('const [filtersOpen, setFiltersOpen] = useState(false)');

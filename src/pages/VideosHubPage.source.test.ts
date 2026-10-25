@@ -25,6 +25,18 @@ describe('videos hub board standard (#arc-689)', () => {
     expect(ruleBlock('.diagrams-grid--video')).toContain('minmax(min(100%, 480px)');
   });
 
+  it('puts New video in Filters, not the page header', () => {
+    expect(page).toContain('PageFiltersToolbar');
+    expect(page).not.toContain('page-subtitle');
+    const headerStart = page.indexOf('<header');
+    const headerEnd = page.indexOf('</header>', headerStart);
+    expect(headerStart).toBeGreaterThan(-1);
+    expect(headerEnd).toBeGreaterThan(headerStart);
+    const headerSlice = page.slice(headerStart, headerEnd);
+    expect(headerSlice).not.toContain('New video');
+    expect(page).toContain('New video');
+  });
+
   it('uses Filters toolbar, filter-miss status, error codes, and deferred delete', () => {
     expect(page).toContain('PageFiltersToolbar');
     expect(page).not.toContain('diagrams-hub-filters');

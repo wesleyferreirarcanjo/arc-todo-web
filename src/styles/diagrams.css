@@ -63,6 +63,7 @@
   overflow: hidden;
   background: var(--bg-surface);
   border: 1px solid var(--border);
+  border-radius: var(--radius-blob-alt);
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 

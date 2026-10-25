@@ -1,15 +1,17 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createOrganization } from '../lib/api/organizations';
 import { OrganizationForm } from '../components/OrganizationForm';
 import { OrganizationList } from '../components/OrganizationList';
 import { OrganizationsIcon } from '../components/icons';
 import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { useAuth } from '../context/AuthContext';
+import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { CreateOrganizationInput } from '../types/organization';
 
 export function OrganizationsPage() {
   const { isAdmin } = useAuth();
+  const { registerActions } = useBoardMobileShell();
   const {
     organizations,
     loadingOrganizations,
@@ -17,6 +19,7 @@ export function OrganizationsPage() {
   } = useWorkspace();
   const [searchQuery, setSearchQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const handleCreate = useCallback(
     async (input: CreateOrganizationInput) => {
@@ -42,46 +45,53 @@ export function OrganizationsPage() {
   const searchActive = query.length > 0;
   const organizationCount = organizations.length;
   const visibleCount = filtered.length;
+  const showFilters = organizationCount > 0 || isAdmin;
+
+  useEffect(() => {
+    if (loadingOrganizations || !showFilters) {
+      registerActions(null);
+      return () => registerActions(null);
+    }
+    registerActions({
+      // ponytail: FAB Filter requires BoardMobileShellActions.onCreated; hub does not create from the dial. Register openFilters alone when the shell allows it.
+      onCreated: async () => {},
+      openFilters: () => setMobileFiltersOpen(true),
+    });
+    return () => registerActions(null);
+  }, [loadingOrganizations, showFilters, registerActions]);
 
   const filterPanel = (
-    <label className="board-filter-field board-filter-search">
-      Search
-      <input
-        type="search"
-        value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
-        placeholder="Filter by title"
-        aria-label="Filter organizations by title"
-      />
-    </label>
+    <>
+      {organizationCount > 0 && (
+        <label className="board-filter-field board-filter-search">
+          Search
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Filter by title"
+            aria-label="Filter organizations by title"
+          />
+        </label>
+      )}
+      {isAdmin && <OrganizationForm onSubmit={handleCreate} />}
+    </>
   );
 
   return (
     <div className="page-shell organizations-page is-tight-page">
       <header className="page-header">
         <h2>Organizations</h2>
-        <p className="page-subtitle">
-          Pick an organization, manage its projects, and edit organization details.
-        </p>
       </header>
 
-      {isAdmin && (
-        <section
-          className="organizations-create-section"
-          aria-labelledby="organizations-create-heading"
-        >
-          <OrganizationForm onSubmit={handleCreate} />
-        </section>
-      )}
-
-      {!loadingOrganizations && organizationCount > 0 && (
+      {!loadingOrganizations && showFilters && (
         <PageFiltersToolbar
           open={filtersOpen}
           onOpenChange={setFiltersOpen}
           activeFilterCount={searchActive ? 1 : 0}
           panel={filterPanel}
-          mobileOverlayOpen={filtersOpen}
-          onMobileOverlayOpenChange={setFiltersOpen}
+          mobileOverlayOpen={mobileFiltersOpen}
+          onMobileOverlayOpenChange={setMobileFiltersOpen}
         />
       )}
 
@@ -112,7 +122,7 @@ export function OrganizationsPage() {
             </span>
             <p className="status-message">
               {isAdmin
-                ? 'No organizations yet. Create your first workspace above to group projects.'
+                ? 'No organizations yet. Create your first workspace to group projects.'
                 : 'No organizations yet. An admin can assign you to projects in an organization.'}
             </p>
           </div>
@@ -129,6 +139,7 @@ export function OrganizationsPage() {
               onClick={() => {
                 setSearchQuery('');
                 setFiltersOpen(false);
+                setMobileFiltersOpen(false);
               }}
             >
               Clear filters

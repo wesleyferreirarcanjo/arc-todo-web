@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BoardMobileShellProvider } from '../context/BoardMobileShellContext';
 
 const mediaState = vi.hoisted(() => ({ mobile: false }));
 const workspaceState = vi.hoisted(() => ({
@@ -52,7 +53,9 @@ import { OrganizationsPage } from './OrganizationsPage';
 function renderPage() {
   return render(
     <MemoryRouter>
-      <OrganizationsPage />
+      <BoardMobileShellProvider>
+        <OrganizationsPage />
+      </BoardMobileShellProvider>
     </MemoryRouter>,
   );
 }
