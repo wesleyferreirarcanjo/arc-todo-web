@@ -234,6 +234,10 @@
   gap: 1.5rem;
 }
 
+.org-projects-page .entity-card {
+  border-radius: var(--radius-blob-alt);
+}
+
 .organizations-create-section,
 .organizations-list-section {
   display: flex;

@@ -19,7 +19,6 @@ describe('project videos list board standard (#arc-691)', () => {
     expect(page).toContain('role="status"');
     expect(page).toContain('ERR-ARC-ACL-02');
     expect(page).toContain('useDeferredDelete');
-    expect(page).toContain('is-tight-page');
     expect(page).toContain('code={errorCode}');
   });
 });

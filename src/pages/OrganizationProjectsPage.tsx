@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
 import { ErrorAlert } from '../components/ErrorAlert';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { ProjectForm } from '../components/ProjectForm';
 import { ProjectList } from '../components/ProjectList';
 import { OrganizationsIcon } from '../components/icons';
@@ -25,6 +26,8 @@ export function OrganizationProjectsPage() {
   } = useWorkspace();
   const { color } = useWorkspaceAccent();
   const [error, setError] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (!orgId) return;
@@ -53,12 +56,9 @@ export function OrganizationProjectsPage() {
   }
 
   return (
-    <div className="page-shell" style={entityAccentStyle(color)}>
+    <div className="page-shell org-projects-page" style={entityAccentStyle(color)}>
       <header className={`page-header${color ? ' has-accent' : ''}`}>
         <h2>{currentOrganization?.name ?? 'Projects'}</h2>
-        <p className="page-subtitle">
-          Manage projects for this organization. Open tasks or edit project details.
-        </p>
         <div className="page-links">
           <Link to="/organizations" className="text-link">
             Back to organizations
@@ -73,7 +73,17 @@ export function OrganizationProjectsPage() {
         <ErrorAlert code={WEB_ERROR.LOAD}>{error}</ErrorAlert>
       )}
 
-      {isAdmin && <ProjectForm onSubmit={handleCreate} />}
+      {isAdmin && (
+        <PageFiltersToolbar
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          activeFilterCount={0}
+          panel={<ProjectForm onSubmit={handleCreate} />}
+          mobileOverlayOpen={mobileFiltersOpen}
+          onMobileOverlayOpenChange={setMobileFiltersOpen}
+          showToggleOnMobile
+        />
+      )}
 
       {loadingProjects && (
         <p className="status-message" role="status">
@@ -88,7 +98,7 @@ export function OrganizationProjectsPage() {
           </span>
           <p className="status-message">
             {isAdmin
-              ? 'No projects yet. Create your first one above.'
+              ? 'No projects yet. Create your first one in Filters.'
               : 'No projects assigned in this organization yet.'}
           </p>
         </div>

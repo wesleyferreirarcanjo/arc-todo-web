@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WEB_ERROR } from '../lib/errors/messages';
@@ -95,7 +96,9 @@ describe('OrganizationProjectsPage', () => {
     refreshProjects.mockResolvedValue(undefined);
     fetchUsers.mockRejectedValue({ message: 'Internal Server Error' });
 
+    const user = userEvent.setup();
     renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Filters' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(

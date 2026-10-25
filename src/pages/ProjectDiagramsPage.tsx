@@ -8,12 +8,13 @@ import {
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
 import { UndoToast } from '../components/UndoToast';
 import { DiagramsIcon } from '../components/icons';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
+import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { ApiError } from '../lib/api/client';
@@ -69,6 +70,7 @@ export function ProjectDiagramsPage() {
   const { orgId, projectId } = useParams();
   const navigate = useNavigate();
   const { currentProject } = useWorkspace();
+  const { registerActions } = useBoardMobileShell();
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [diagrams, setDiagrams] = useState<ProjectDiagramSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +97,7 @@ export function ProjectDiagramsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<DiagramSort>('updated_desc');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const loadDiagrams = useCallback(async () => {
     if (!orgId || !projectId) return;
@@ -124,6 +127,19 @@ export function ProjectDiagramsPage() {
     () => diagrams.filter((diagram) => !diagram.wireframeId),
     [diagrams],
   );
+
+  useEffect(() => {
+    if (canvasDiagrams.length === 0) {
+      registerActions(null);
+      return () => registerActions(null);
+    }
+    registerActions({
+      // ponytail: FAB Filter requires BoardMobileShellActions.onCreated; this list does not create from the dial.
+      onCreated: async () => {},
+      openFilters: () => setMobileFiltersOpen(true),
+    });
+    return () => registerActions(null);
+  }, [canvasDiagrams.length, registerActions]);
 
   const visibleDiagrams = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -245,7 +261,7 @@ export function ProjectDiagramsPage() {
   const activeFilterCount =
     Number(searchQuery.trim() !== '') + Number(sort !== 'updated_desc');
 
-  const filterFields = (
+  const filterPanel = (
     <>
       <label className="board-filter-field board-filter-search">
         Search
@@ -265,24 +281,18 @@ export function ProjectDiagramsPage() {
           options={SORT_OPTIONS}
         />
       </label>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => {
+          setCreateOpen(true);
+          setNewTitle('');
+          setCreateError(null);
+        }}
+      >
+        New diagram
+      </button>
     </>
-  );
-
-  const filtersButton = (
-    <button
-      type="button"
-      className={`btn btn-secondary board-chrome-toggle${filtersOpen ? ' is-open' : ''}`}
-      aria-expanded={filtersOpen}
-      aria-controls={filtersOpen && !isMobileShell ? 'board-chrome-panel' : undefined}
-      onClick={() => setFiltersOpen((open) => !open)}
-    >
-      Filters
-      {activeFilterCount > 0 ? (
-        <span className="board-chrome-count" aria-hidden="true">
-          {activeFilterCount}
-        </span>
-      ) : null}
-    </button>
   );
 
   return (
@@ -294,43 +304,17 @@ export function ProjectDiagramsPage() {
           : undefined
       }
     >
-      <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
-        <div>
-          <WorkspaceEyebrow />
-          <h2>{currentProject?.name ?? 'Project'} diagrams</h2>
-          <p className="page-subtitle">
-            Draw architecture, flows, and board visuals on Excalidraw canvases
-            for this project.
-            {!loading && !error && canvasDiagrams.length > 0 && (
-              <>
-                {' '}
-                {canvasDiagrams.length} diagram
-                {canvasDiagrams.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-          <div className="page-links">
-            <Link
-              to={projectTasksHref(orgId, projectId)}
-              className="text-link"
-            >
-              Back to board
-            </Link>
-          </div>
-        </div>
-        {!loading && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setCreateOpen(true);
-              setNewTitle('');
-              setCreateError(null);
-            }}
+      <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
+        <WorkspaceEyebrow />
+        <h2>{currentProject?.name ?? 'Project'} diagrams</h2>
+        <div className="page-links">
+          <Link
+            to={projectTasksHref(orgId, projectId)}
+            className="text-link"
           >
-            New diagram
-          </button>
-        )}
+            Back to board
+          </Link>
+        </div>
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
@@ -359,27 +343,14 @@ export function ProjectDiagramsPage() {
       )}
 
       {!loading && !error && canvasDiagrams.length > 0 && (
-        <>
-          <div className="board-chrome-toolbar">
-            <div className="board-chrome-actions">{filtersButton}</div>
-          </div>
-          {filtersOpen && !isMobileShell ? (
-            <div
-              id="board-chrome-panel"
-              className="board-filters board-filters-inline diagrams-filters"
-              role="region"
-              aria-label="Filters"
-            >
-              {filterFields}
-            </div>
-          ) : null}
-          <MobileBoardFiltersOverlay
-            open={isMobileShell && filtersOpen}
-            onClose={() => setFiltersOpen(false)}
-          >
-            <div className="diagrams-filters">{filterFields}</div>
-          </MobileBoardFiltersOverlay>
-        </>
+        <PageFiltersToolbar
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          activeFilterCount={activeFilterCount}
+          panel={filterPanel}
+          mobileOverlayOpen={mobileFiltersOpen}
+          onMobileOverlayOpenChange={setMobileFiltersOpen}
+        />
       )}
 
       {!loading && !error && canvasDiagrams.length > 0 && visibleDiagrams.length === 0 && (

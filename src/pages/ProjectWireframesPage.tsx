@@ -287,6 +287,17 @@ export function ProjectWireframesPage() {
           options={SORT_OPTIONS}
         />
       </label>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => {
+          setCreateOpen(true);
+          setNewTitle('');
+          setCreateError(null);
+        }}
+      >
+        New wireframe
+      </button>
     </>
   );
 
@@ -299,42 +310,17 @@ export function ProjectWireframesPage() {
           : undefined
       }
     >
-      <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
-        <div>
-          <WorkspaceEyebrow />
-          <h2>{currentProject?.name ?? 'Project'} wireframes</h2>
-          <p className="page-subtitle">
-            HTML prototypes for this project. Linked screens live in one file.
-            {!loading && !error && wireframes.length > 0 && (
-              <>
-                {' '}
-                {wireframes.length} wireframe
-                {wireframes.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-          <div className="page-links">
-            <Link
-              to={projectTasksHref(orgId, projectId)}
-              className="text-link"
-            >
-              Back to board
-            </Link>
-          </div>
-        </div>
-        {!loading && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setCreateOpen(true);
-              setNewTitle('');
-              setCreateError(null);
-            }}
+      <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
+        <WorkspaceEyebrow />
+        <h2>{currentProject?.name ?? 'Project'} wireframes</h2>
+        <div className="page-links">
+          <Link
+            to={projectTasksHref(orgId, projectId)}
+            className="text-link"
           >
-            New wireframe
-          </button>
-        )}
+            Back to board
+          </Link>
+        </div>
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}

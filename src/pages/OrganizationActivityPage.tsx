@@ -3,15 +3,14 @@ import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { fetchOrganizationActivity } from '../lib/api/activity';
-import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { OrganizationsIcon } from '../components/icons';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
 import {
   entityAccentStyle,
   useWorkspaceAccent,
 } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import type { UserActivityEntry } from '../types/activity';
 
 function formatTimestamp(value: string): string {
@@ -22,10 +21,10 @@ export function OrganizationActivityPage() {
   const { orgId } = useParams();
   const { currentOrganization } = useWorkspace();
   const { color } = useWorkspaceAccent();
-  const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [activity, setActivity] = useState<UserActivityEntry[]>([]);
   const [filterUserId, setFilterUserId] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,9 +87,6 @@ export function OrganizationActivityPage() {
     <div className="page-shell" style={entityAccentStyle(color)}>
       <header className={`page-header${color ? ' has-accent' : ''}`}>
         <h2>{currentOrganization?.name ?? 'Organization'} activity</h2>
-        <p className="page-subtitle">
-          Recent actions by users across tasks and project work.
-        </p>
         <div className="page-links">
           <Link to={`/organizations/${orgId}`} className="text-link">
             Back to projects
@@ -98,42 +94,15 @@ export function OrganizationActivityPage() {
         </div>
       </header>
 
-      <div className="board-chrome-toolbar">
-        <div className="board-chrome-actions">
-          <button
-            type="button"
-            className={`btn btn-secondary board-chrome-toggle${filtersOpen ? ' is-open' : ''}`}
-            aria-expanded={filtersOpen}
-            aria-controls={
-              filtersOpen && !isMobileShell ? 'board-chrome-panel' : undefined
-            }
-            onClick={() => setFiltersOpen((open) => !open)}
-          >
-            Filters
-            {activeFilterCount > 0 ? (
-              <span className="board-chrome-count" aria-hidden="true">
-                {activeFilterCount}
-              </span>
-            ) : null}
-          </button>
-        </div>
-      </div>
-      {filtersOpen && !isMobileShell ? (
-        <div
-          id="board-chrome-panel"
-          className="board-filters board-filters-inline"
-          role="region"
-          aria-label="Filters"
-        >
-          {filterControls}
-        </div>
-      ) : null}
-      <MobileBoardFiltersOverlay
-        open={isMobileShell && filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-      >
-        {filterControls}
-      </MobileBoardFiltersOverlay>
+      <PageFiltersToolbar
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        activeFilterCount={activeFilterCount}
+        panel={filterControls}
+        mobileOverlayOpen={mobileFiltersOpen}
+        onMobileOverlayOpenChange={setMobileFiltersOpen}
+        showToggleOnMobile
+      />
 
       {loading && (
         <p className="status-message" role="status">

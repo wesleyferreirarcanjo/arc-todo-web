@@ -146,18 +146,31 @@ export function ProjectSeoPage() {
   }
 
   const filterPanel = (
-    <div className="diagrams-filters">
-      <label className="board-filter-field board-filter-search">
-        Search
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Filter by title"
-          aria-label="Filter SEO sites by title"
-        />
-      </label>
-    </div>
+    <>
+      <div className="diagrams-filters">
+        <label className="board-filter-field board-filter-search">
+          Search
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Filter by title"
+            aria-label="Filter SEO sites by title"
+          />
+        </label>
+      </div>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => {
+          setCreateOpen(true);
+          setHostname('');
+          setCreateError(null);
+        }}
+      >
+        New SEO site
+      </button>
+    </>
   );
 
   return (
@@ -169,41 +182,17 @@ export function ProjectSeoPage() {
           : undefined
       }
     >
-      <header className={`page-header page-header-with-actions${currentProject ? ' has-accent' : ''}`}>
-        <div>
-          <WorkspaceEyebrow />
-          <h2>{currentProject?.name ?? 'Project'} SEO</h2>
-          <p className="page-subtitle">
-            Sites audited on this project.
-            {!loading && !error && sites.length > 0 && (
-              <>
-                {' '}
-                {sites.length} site{sites.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-          <div className="page-links">
-            <Link
-              to={projectTasksHref(orgId, projectId)}
-              className="text-link"
-            >
-              Back to board
-            </Link>
-          </div>
-        </div>
-        {!loading && !error && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setCreateOpen(true);
-              setHostname('');
-              setCreateError(null);
-            }}
+      <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
+        <WorkspaceEyebrow />
+        <h2>{currentProject?.name ?? 'Project'} SEO</h2>
+        <div className="page-links">
+          <Link
+            to={projectTasksHref(orgId, projectId)}
+            className="text-link"
           >
-            New SEO site
-          </button>
-        )}
+            Back to board
+          </Link>
+        </div>
       </header>
 
       {loading && <p className="status-message">Loading SEO sites...</p>}
