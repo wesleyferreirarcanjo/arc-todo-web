@@ -3,13 +3,17 @@ import { userMessage, catalogMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { MobileBoardFiltersOverlay } from '../components/MobileBoardFiltersOverlay';
 import { Modal } from '../components/Modal';
+import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { Select } from '../components/Select';
 import { UndoToast } from '../components/UndoToast';
 import { NamesIcon } from '../components/icons';
 import { NamesParticipationChoice } from '../components/names/NamesParticipationChoice';
 import { NameSessionRow } from '../components/names/NameSessionRow';
+import {
+  useBoardMobileShell,
+  type BoardMobileShellActions,
+} from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { getProjectColor } from '../lib/color/entityColor';
@@ -21,7 +25,6 @@ import {
   updateNameSession,
 } from '../lib/api/names';
 import { DEFAULT_NAMING_GOAL, NAMING_GOAL_OPTIONS } from '../lib/names/catalog';
-import { NAMES_JOURNEY_COPY } from '../lib/names/hubList';
 import type { NamingGoal, ParticipationMode, ProjectNameSessionSummary } from '../types/name-session';
 
 type NameSort = 'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc';
@@ -56,6 +59,7 @@ function sessionAccent(
 export function NamesHubPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { registerActions } = useBoardMobileShell();
   const { projects } = useWorkspace();
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const searchQuery = searchParams.get('q') ?? '';
@@ -144,6 +148,17 @@ export function NamesHubPage() {
   const extraFilterCount =
     Number(Boolean(searchQuery.trim())) + Number(sort !== 'updated_desc');
   const filtersActive = extraFilterCount > 0;
+
+  useEffect(() => {
+    if (items.length === 0) {
+      registerActions(null);
+      return () => registerActions(null);
+    }
+    registerActions({
+      openFilters: () => setFiltersOpen(true),
+    } as BoardMobileShellActions);
+    return () => registerActions(null);
+  }, [items.length, registerActions]);
 
   function openCreate() {
     setNewTitle('');
@@ -254,24 +269,8 @@ export function NamesHubPage() {
 
   return (
     <div className="page-shell names-hub-page">
-      <header className="page-header page-header-with-actions">
-        <div>
-          <h2>Names</h2>
-          <p className="page-subtitle">
-            {NAMES_JOURNEY_COPY}
-            {!loading && !error && items.length > 0 && (
-              <>
-                {' '}
-                {items.length} session{items.length === 1 ? '' : 's'}.
-              </>
-            )}
-          </p>
-        </div>
-        {!loading && !error && (
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            New name session
-          </button>
-        )}
+      <header className="page-header">
+        <h2>Names</h2>
       </header>
 
       {loading && <p className="status-message">Loading name sessions...</p>}
@@ -293,40 +292,21 @@ export function NamesHubPage() {
 
       {!loading && !error && items.length > 0 && (
         <>
-          <div className="board-chrome-toolbar">
-            <div className="board-chrome-actions">
-              <button
-                type="button"
-                className={`btn btn-secondary board-chrome-toggle${filtersOpen ? ' is-open' : ''}`}
-                aria-expanded={filtersOpen}
-                aria-controls={filtersOpen ? 'board-chrome-panel' : undefined}
-                onClick={() => setFiltersOpen((open) => !open)}
-              >
-                Filters
-                {extraFilterCount > 0 ? (
-                  <span className="board-chrome-count" aria-hidden="true">
-                    {extraFilterCount}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          </div>
-          {filtersOpen && !isMobileShell ? (
-            <div
-              id="board-chrome-panel"
-              className="board-filters board-filters-inline names-hub-filters"
-              role="region"
-              aria-label="Filters"
-            >
-              {renderFilterControls()}
-            </div>
-          ) : null}
-          <MobileBoardFiltersOverlay
-            open={filtersOpen && isMobileShell}
-            onClose={() => setFiltersOpen(false)}
-          >
-            {renderFilterControls()}
-          </MobileBoardFiltersOverlay>
+          <PageFiltersToolbar
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            activeFilterCount={extraFilterCount}
+            panel={
+              <>
+                {renderFilterControls()}
+                <button type="button" className="btn btn-primary" onClick={openCreate}>
+                  New name session
+                </button>
+              </>
+            }
+            mobileOverlayOpen={filtersOpen}
+            onMobileOverlayOpenChange={setFiltersOpen}
+          />
           {visibleItems.length === 0 ? (
             <div className="diagrams-empty">
               <p className="status-message" role="status">
