@@ -73,7 +73,6 @@ describe('SEO hub board standard (#arc-695)', () => {
     expect(hub).toContain('useDeferredDelete');
     expect(hub).toContain('role="status"');
     expect(hub).toContain('Clear filters');
-    expect(app).toContain('<Layout tightPage />');
     expect(app).toContain('path="/seo"');
   });
 

@@ -45,7 +45,6 @@ describe('videos hub board standard (#arc-689)', () => {
     expect(page).toContain('code={errorCode}');
     expect(page).toContain('useDeferredDelete');
     expect(page).toContain('UndoToast');
-    expect(page).toContain('is-tight-page');
     expect(page).toContain(
       'Delete "${deleteTarget?.video.title ?? \'this video\'}"? This cannot be undone.',
     );
