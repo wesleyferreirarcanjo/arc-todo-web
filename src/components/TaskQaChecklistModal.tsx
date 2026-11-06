@@ -774,10 +774,18 @@ export function TaskQaChecklistModal({
     <Modal
       open={open}
       onClose={() => void persistAndClose()}
-      title="Checklist de QA"
+      title={task.title.trim() || 'Checklist de QA'}
       titleId={`task-qa-checklist-${task.id}`}
       className="task-qa-checklist-modal"
       accentColor={accentColor}
+      eyebrow={
+        <p className="task-qa-checklist-kicker">
+          {task.displayId ? (
+            <span className="task-display-id">{task.displayId}</span>
+          ) : null}
+          <span>Checklist de QA</span>
+        </p>
+      }
     >
       <section className="task-qa-checklist-help" aria-label="QA info">
         <div className="task-qa-checklist-help-summary">

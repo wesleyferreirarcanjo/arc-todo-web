@@ -80,6 +80,19 @@ describe('TaskQaChecklistModal QA info', () => {
     cleanup();
   });
 
+  it('names the open checklist with the task title', () => {
+    renderModal();
+
+    expect(
+      screen.getByRole('dialog', { name: 'Parent with checklist QA info' }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('heading', { name: 'Parent with checklist QA info' }),
+    ).toBeTruthy();
+    expect(screen.getByText('#arc-646')).toBeTruthy();
+    expect(screen.getByText('Checklist de QA')).toBeTruthy();
+  });
+
   it('starts closed, toggles the compact editor, and resets when the window closes', async () => {
     const user = userEvent.setup();
     const view = renderModal();
