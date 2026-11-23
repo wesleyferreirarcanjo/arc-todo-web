@@ -22,6 +22,7 @@ import {
   updateProjectVideo,
 } from '../lib/api/videos';
 import { useDeferredDelete } from '../hooks/useDeferredDelete';
+import { usePageTitle } from '../hooks/useDocumentChrome';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import type { ProjectVideoSummary } from '../types/video';
 
@@ -73,6 +74,9 @@ export function ProjectVideosPage() {
   const { orgId, projectId } = useParams();
   const navigate = useNavigate();
   const { currentProject, currentOrganization } = useWorkspace();
+  usePageTitle(
+    currentProject ? `${currentProject.name} videos` : 'Videos',
+  );
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
   const [videos, setVideos] = useState<ProjectVideoSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -257,7 +261,7 @@ export function ProjectVideosPage() {
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>Videos</h2>
+          <h1>Videos</h1>
           <ErrorAlert code={FORBIDDEN_CODE}>{FORBIDDEN_COPY}</ErrorAlert>
           <div className="page-links">
             <Link to="/organizations" className="text-link">
@@ -317,7 +321,7 @@ export function ProjectVideosPage() {
     >
       <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
         <WorkspaceEyebrow />
-        <h2>{currentProject?.name ?? 'Project'} videos</h2>
+        <h1>{currentProject?.name ?? 'Project'} videos</h1>
         <div className="page-links">
           <Link
             to={projectTasksHref(orgId, projectId)}
@@ -328,7 +332,7 @@ export function ProjectVideosPage() {
         </div>
       </header>
 
-      {loading && <p className="status-message">Loading videos...</p>}
+      {loading && <p className="status-message">Loading videos…</p>}
       {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && videos.length === 0 && (
@@ -470,7 +474,7 @@ export function ProjectVideosPage() {
             disabled={creating}
             onClick={() => void handleCreate()}
           >
-            {creating ? 'Creating...' : 'Create'}
+            {creating ? 'Creating…' : 'Create'}
           </button>
           <button
             type="button"
@@ -514,7 +518,7 @@ export function ProjectVideosPage() {
             disabled={renaming}
             onClick={() => void handleRename()}
           >
-            {renaming ? 'Saving...' : 'Save'}
+            {renaming ? 'Saving…' : 'Save'}
           </button>
           <button
             type="button"

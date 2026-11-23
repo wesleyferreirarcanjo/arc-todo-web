@@ -15,7 +15,10 @@ import {
   setSidebarCollapsed,
 } from '../lib/storage/appStorage';
 import { entityAccentStyle, useWorkspaceAccent } from './WorkspaceChrome';
-import { useDocumentChrome } from '../hooks/useDocumentChrome';
+import {
+  PageTitleSetterContext,
+  useDocumentChrome,
+} from '../hooks/useDocumentChrome';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { isBoardShellPath, isTightPagePath } from '../lib/board/boardShellPath';
 import { contrastInk } from '../lib/brand/brandMark';
@@ -68,7 +71,8 @@ function SidebarNavLink({
 }
 
 export function Layout({ tightPage = false }: { tightPage?: boolean }) {
-  useDocumentChrome();
+  const [pageTitle, setPageTitle] = useState<string | null>(null);
+  useDocumentChrome(pageTitle);
   const { logout, isAdmin } = useAuth();
   const { color: workspaceColor } = useWorkspaceAccent();
   const location = useLocation();
@@ -423,7 +427,9 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
               >
                 <OfflineBanner />
                 <main className={`app-main${isBoardShell ? ' is-board-page' : ''}`}>
-                  <Outlet />
+                  <PageTitleSetterContext.Provider value={setPageTitle}>
+                    <Outlet />
+                  </PageTitleSetterContext.Provider>
                 </main>
               </div>
 

@@ -40,12 +40,13 @@ export function ConfirmDialog({
           aria-busy={loading}
           onClick={onConfirm}
         >
-          {loading ? 'Working...' : confirmLabel}
+          {loading ? 'Working…' : confirmLabel}
         </button>
         <button
           type="button"
           className="btn btn-secondary"
           disabled={loading}
+          autoFocus={variant === 'danger'}
           onClick={onCancel}
         >
           {cancelLabel}

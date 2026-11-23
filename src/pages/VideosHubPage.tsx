@@ -22,6 +22,7 @@ import {
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
 import { useDeferredDelete } from '../hooks/useDeferredDelete';
+import { usePageTitle } from '../hooks/useDocumentChrome';
 import type { ProjectVideoSummary } from '../types/video';
 import type { Organization } from '../types/organization';
 import type { Project } from '../types/project';
@@ -70,6 +71,7 @@ function codeOf(err: unknown, fallback: string): string {
 }
 
 export function VideosHubPage() {
+  usePageTitle('Videos');
   const navigate = useNavigate();
   const { registerActions } = useBoardMobileShell();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -420,10 +422,10 @@ export function VideosHubPage() {
   return (
     <div className="page-shell diagrams-hub-page">
       <header className="page-header">
-        <h2>Videos</h2>
+        <h1>Videos</h1>
       </header>
 
-      {loading && <p className="status-message">Loading videos...</p>}
+      {loading && <p className="status-message">Loading videos…</p>}
       {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
       {!loading && !error && items.length === 0 && (
@@ -470,7 +472,7 @@ export function VideosHubPage() {
           {filtersActive ? (
             <p className="status-message board-search-status" role="status">
               {visibleItems.length === 0
-                ? `No videos match these filters. ${visibleItems.length} matching.`
+                ? 'No videos match these filters.'
                 : `${visibleItems.length} matching video${visibleItems.length === 1 ? '' : 's'}${
                     items.length !== visibleItems.length
                       ? ` in ${items.length} loaded`
@@ -533,7 +535,7 @@ export function VideosHubPage() {
         title="New video"
         titleId="new-video-title"
       >
-        <div className="form-field">
+        <label className="form-field">
           <span>Organization</span>
           <Select
             value={createOrgId}
@@ -546,8 +548,8 @@ export function VideosHubPage() {
               })),
             ]}
           />
-        </div>
-        <div className="form-field">
+        </label>
+        <label className="form-field">
           <span>Project</span>
           <Select
             value={createProjectId}
@@ -561,7 +563,7 @@ export function VideosHubPage() {
               })),
             ]}
           />
-        </div>
+        </label>
         <label className="form-field">
           <span>Name</span>
           <input
@@ -588,7 +590,7 @@ export function VideosHubPage() {
             disabled={creating}
             onClick={() => void handleCreate()}
           >
-            {creating ? 'Creating...' : 'Create'}
+            {creating ? 'Creating…' : 'Create'}
           </button>
           <button
             type="button"
@@ -632,7 +634,7 @@ export function VideosHubPage() {
             disabled={renaming}
             onClick={() => void handleRename()}
           >
-            {renaming ? 'Saving...' : 'Save'}
+            {renaming ? 'Saving…' : 'Save'}
           </button>
           <button
             type="button"

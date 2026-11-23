@@ -301,7 +301,10 @@ export function VideoTimeline({ editor }: VideoTimelineProps) {
                 onPointerUp={handleDragEnd}
                 onPointerCancel={handleDragEnd}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') editor.selectClip(clip.id);
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    editor.selectClip(clip.id);
+                  }
                 }}
               >
                 <span
@@ -383,7 +386,10 @@ export function VideoTimeline({ editor }: VideoTimelineProps) {
                 title={`Zoom ${region.scale}x · ${region.origin}`}
                 onPointerDown={() => editor.selectZoom(region.id)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') editor.selectZoom(region.id);
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    editor.selectZoom(region.id);
+                  }
                 }}
               >
                 <span

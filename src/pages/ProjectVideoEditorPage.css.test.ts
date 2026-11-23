@@ -24,6 +24,12 @@ const videosCss = readLf('../styles/videos.css');
 const diagramsCss = readLf('../styles/diagrams.css');
 
 describe('video editor polish (#arc-694)', () => {
+  it('names the view with one h1 and a document title', () => {
+    expect(page).toContain('usePageTitle(');
+    expect(page).toContain('<h1 className="sr-only">Video editor</h1>');
+    expect(page).not.toContain('<h2>Videos</h2>');
+  });
+
   it('replaces window.confirm with ConfirmDialog for Re-record', () => {
     expect(page).not.toContain('window.confirm');
     expect(page).toContain('ConfirmDialog');

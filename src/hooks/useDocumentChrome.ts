@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useWorkspaceAccent } from '../components/WorkspaceChrome';
 import { brandMarkFaviconHref } from '../lib/brand/brandMark';
 
@@ -37,11 +37,20 @@ function buildTitle(
   return DEFAULT_TITLE;
 }
 
+/**
+ * Layout provides the setter so a routed page can contribute its name to
+ * `document.title`. `null` outside the app shell (standalone routes).
+ */
+export const PageTitleSetterContext = createContext<
+  ((title: string | null) => void) | null
+>(null);
+
 /** Keeps document.title + favicon in sync with board filters or route workspace. */
-export function useDocumentChrome(): void {
+export function useDocumentChrome(pageTitle?: string | null): void {
   const { color, projectId, orgName, projectName } = useWorkspaceAccent();
 
-  const title = buildTitle(projectName, orgName, Boolean(projectId));
+  const baseTitle = buildTitle(projectName, orgName, Boolean(projectId));
+  const title = pageTitle ? `${pageTitle} · ${baseTitle}` : baseTitle;
   const faviconHref = color ? brandMarkFaviconHref(color) : MARK_FAVICON_HREF;
 
   useEffect(() => {
@@ -55,4 +64,26 @@ export function useDocumentChrome(): void {
       ensureFaviconLink().href = MARK_FAVICON_HREF;
     };
   }, []);
+}
+
+/**
+ * Names the current view in `document.title`. Inside the app shell the title
+ * is prepended to the workspace title; on standalone routes (no provider) it
+ * writes `<title> · Arc Todo` directly.
+ */
+export function usePageTitle(title: string | null): void {
+  const setPageTitle = useContext(PageTitleSetterContext);
+
+  useEffect(() => {
+    if (setPageTitle) {
+      setPageTitle(title);
+      return () => setPageTitle(null);
+    }
+    if (!title) return;
+    const previous = document.title;
+    document.title = `${title} · ${DEFAULT_TITLE}`;
+    return () => {
+      document.title = previous || DEFAULT_TITLE;
+    };
+  }, [setPageTitle, title]);
 }
