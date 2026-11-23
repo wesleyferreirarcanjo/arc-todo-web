@@ -109,7 +109,7 @@
   margin: 0;
 }
 
-.entity-card h3 {
+.entity-card :is(h2, h3) {
   position: relative;
   font-size: var(--type-card);
   font-weight: 600;
@@ -297,7 +297,7 @@
   margin-top: 0;
 }
 
-.user-form-header h3 {
+.user-form-header h2 {
   font-size: var(--type-section);
   font-weight: 700;
   line-height: 1.2;

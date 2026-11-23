@@ -140,7 +140,7 @@ export function AnalyticsToolbar({
   return (
     <header className="analytics-toolbar">
       <div className="analytics-toolbar-title">
-        <h2>Analytics</h2>
+        <h1>Analytics</h1>
         <AnalyticsMetricInfo label="Analytics clocks">{caption}</AnalyticsMetricInfo>
       </div>
 

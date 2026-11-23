@@ -1,20 +1,8 @@
-.cloud-page .cloud-server-table tr.is-selected td {
+.cloud-page .cloud-server-table tr.is-selected td,
+.cloud-page .cloud-server-table tr.is-selected th {
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
-.cloud-page .cloud-server-name {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: var(--accent);
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-.cloud-page .cloud-server-name:hover {
-  text-decoration: underline;
-}
 
 .cloud-page .cloud-status {
   display: inline-block;
@@ -144,7 +132,7 @@
   color: var(--text-muted);
 }
 
-.cloud-page .cloud-app-detail h3 {
+.cloud-page .cloud-app-detail h2 {
   margin: 0 0 0.75rem;
 }
 
@@ -184,11 +172,22 @@
   background: var(--surface-muted);
 }
 
-@media (max-width: 1023px) {
+@media (min-width: 1024px) {
+  /* Wide server/app tables scroll inside their wrapper, never the page. */
   .cloud-page .analytics-table-wrap {
     overflow-x: auto;
   }
 
+  .cloud-page .analytics-table th:first-child,
+  .cloud-page .analytics-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bg-page);
+  }
+}
+
+@media (max-width: 1023px) {
   .cloud-page .cloud-server-actions {
     white-space: normal;
   }

@@ -45,7 +45,7 @@ export function MetricsHostSummary({ server }: { server: MetricsServer }) {
   const live = server.status === 'online' ? server.current : null;
   return (
     <section className="metrics-host" aria-label={server.name}>
-      <h3>{server.name}</h3>
+      <h2>{server.name}</h2>
       <p className="metrics-host-hostname">{server.hostname?.trim() || '—'}</p>
       <div className="analytics-kpis">
         <HostKpi

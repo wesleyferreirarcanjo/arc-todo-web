@@ -25,7 +25,7 @@ export function AnalyticsKpiCard({
   return (
     <article className="analytics-kpi">
       <header className="analytics-kpi-head">
-        <h3>{title}</h3>
+        <h2>{title}</h2>
         <AnalyticsMetricInfo label={title}>{info}</AnalyticsMetricInfo>
       </header>
       {empty ? (

@@ -277,7 +277,7 @@ export function ServersTab({
                 <th scope="col">Fingerprint</th>
                 <th scope="col">Panel</th>
                 <th scope="col">Proxy</th>
-                <th scope="col"> </th>
+                <th scope="col"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -286,20 +286,21 @@ export function ServersTab({
                   key={server.id}
                   className={selectedId === server.id ? 'is-selected' : undefined}
                 >
-                  <td>
+                  <th scope="row">
                     <button
                       type="button"
-                      className="cloud-server-name"
+                      className="analytics-row-name"
+                      aria-expanded={selectedId === server.id}
                       onClick={() =>
                         setSelectedId(selectedId === server.id ? null : server.id)
                       }
                     >
                       {server.name}
                     </button>
-                  </td>
-                  <td>{server.transport === 'ssh' ? 'SSH' : 'Agent'}</td>
-                  <td>{server.role === 'build' ? 'Build machine' : 'Target'}</td>
-                  <td>
+                  </th>
+                  <td data-label="Transport">{server.transport === 'ssh' ? 'SSH' : 'Agent'}</td>
+                  <td data-label="Role">{server.role === 'build' ? 'Build machine' : 'Target'}</td>
+                  <td data-label="Status">
                     <span
                       className={`cloud-status cloud-status-${server.status}`}
                     >
@@ -311,11 +312,11 @@ export function ServersTab({
                       </span>
                     ) : null}
                   </td>
-                  <td>{server.dockerVersion || '—'}</td>
-                  <td className="cloud-fingerprint">
+                  <td data-label="Docker">{server.dockerVersion || '—'}</td>
+                  <td className="cloud-fingerprint" data-label="Fingerprint">
                     {server.fingerprint || '—'}
                   </td>
-                  <td>
+                  <td data-label="Panel">
                     {panelLabel(server.panel) ? (
                       <span className="cloud-panel-badge">
                         {panelLabel(server.panel)}
@@ -324,7 +325,7 @@ export function ServersTab({
                       '—'
                     )}
                   </td>
-                  <td>
+                  <td data-label="Proxy">
                     {server.role === 'build' ? (
                       '—'
                     ) : (
@@ -338,7 +339,7 @@ export function ServersTab({
                       </span>
                     )}
                   </td>
-                  <td className="cloud-server-actions">
+                  <td className="cloud-server-actions" data-label="Actions">
                     {server.role === 'build' ? null : isProxyBusy(
                         server.proxyState,
                       ) ? (
@@ -404,7 +405,7 @@ export function ServersTab({
           className="cloud-containers"
           aria-label={`Build settings for ${selectedServer.name}`}
         >
-          <h3>Build settings — {selectedServer.name}</h3>
+          <h2>Build settings — {selectedServer.name}</h2>
           <p className="status-message">
             Build machines only build and push images; they never run apps.
           </p>
@@ -451,7 +452,7 @@ export function ServersTab({
           className="cloud-containers"
           aria-label={`Containers on ${selectedServer.name}`}
         >
-          <h3>Containers on {selectedServer.name}</h3>
+          <h2>Containers on {selectedServer.name}</h2>
           {containersError ? (
             <ErrorAlert>
               Could not load containers: {containersError}
@@ -474,10 +475,10 @@ export function ServersTab({
                 <tbody>
                   {containers.map((container) => (
                     <tr key={container.id || container.name}>
-                      <td>{container.name}</td>
-                      <td>{container.image}</td>
-                      <td>{container.state}</td>
-                      <td>{container.status}</td>
+                      <th scope="row">{container.name}</th>
+                      <td data-label="Image">{container.image}</td>
+                      <td data-label="State">{container.state}</td>
+                      <td data-label="Status">{container.status}</td>
                     </tr>
                   ))}
                 </tbody>

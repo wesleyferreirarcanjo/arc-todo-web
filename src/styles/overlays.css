@@ -101,6 +101,20 @@
   z-index: 1;
 }
 
+/* Below ~640px dialogs become full-screen sheets. */
+@media (max-width: 639px) {
+  .modal-overlay {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+}
+
 .modal.has-accent {
   position: relative;
   border-radius: var(--radius-blob-alt);
@@ -489,7 +503,9 @@
   z-index: 1;
   color: var(--accent-contrast);
   background: var(--gradient-accent);
-  box-shadow: var(--shadow-soft), 0 0 14px color-mix(in srgb, var(--accent) 28%, transparent);
+  font-weight: 800;
+  box-shadow: var(--shadow-soft), 0 0 14px color-mix(in srgb, var(--accent) 28%, transparent),
+    inset 0 -3px 0 var(--accent-contrast);
 }
 
 .board-view-toggle-btn:first-child:hover:not(.is-active),

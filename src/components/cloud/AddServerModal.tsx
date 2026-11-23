@@ -32,6 +32,7 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
   const [agentToken, setAgentToken] = useState<string | null>(null);
   const [masterUrl, setMasterUrl] = useState(DEFAULT_MASTER_URL);
+  const [copied, setCopied] = useState(false);
 
   function resetForm() {
     setFormName('');
@@ -55,6 +56,18 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
   }
 
   async function handleCreate() {
+    if (!formName.trim()) {
+      setFormError('Enter a server name.');
+      return;
+    }
+    if (transport === 'ssh' && !sshHost.trim()) {
+      setFormError('Enter the SSH host.');
+      return;
+    }
+    if (transport === 'ssh' && !sshKey.trim()) {
+      setFormError('Paste the private key.');
+      return;
+    }
     const role: CloudServerRole = buildMachine ? 'build' : 'target';
     const port = Number.parseInt(sshPort, 10);
     if (transport === 'ssh' && (!Number.isInteger(port) || port < 1 || port > 65535)) {
@@ -96,6 +109,8 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
 
   async function handleCopy(text: string) {
     await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -122,15 +137,26 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
               void handleCopy(agentInstallCommand(masterUrl, agentToken))
             }
           >
-            Copy install command
+            {copied ? 'Copied' : 'Copy install command'}
           </button>
+          {copied ? (
+            <p className="status-message" role="status">
+              Copied to clipboard.
+            </p>
+          ) : null}
           <p className="status-message">
             This token is shown only once. Run the command on the server now —
             after you close this dialog it cannot be recovered.
           </p>
         </div>
       ) : open ? (
-        <div className="cloud-add-form">
+        <form
+          className="cloud-add-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleCreate();
+          }}
+        >
           {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
           <div
             className="board-view-toggle"
@@ -223,19 +249,18 @@ export function AddServerModal({ open, onClose, onCreated }: Props) {
           )}
           <div className="hub-actions">
             <button
-              type="button"
+              type="submit"
               className="btn btn-primary"
-              disabled={
-                saving ||
-                !formName.trim() ||
-                (transport === 'ssh' && (!sshHost.trim() || !sshKey.trim()))
-              }
-              onClick={() => void handleCreate()}
+              disabled={saving}
             >
-              {transport === 'ssh' ? 'Save server' : 'Create agent token'}
+              {saving
+                ? 'Saving…'
+                : transport === 'ssh'
+                  ? 'Save server'
+                  : 'Create agent token'}
             </button>
           </div>
-        </div>
+        </form>
       ) : null}
     </Modal>
   );

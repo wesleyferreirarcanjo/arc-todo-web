@@ -34,11 +34,17 @@ export function Modal({
 }: ModalProps) {
   const { base, reducedMotion } = useMotionTransition();
   const onCloseRef = useRef(onClose);
+  const panelRef = useRef<HTMLDivElement>(null);
   const scatterRafRef = useRef<number | null>(null);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
+
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -49,9 +55,17 @@ export function Modal({
     acquireBodyScrollLock();
     document.addEventListener('keydown', handleKeyDown);
 
+    // Move focus inside the dialog unless a child already claimed it
+    // (e.g. a destructive Cancel button with autoFocus).
+    const panel = panelRef.current;
+    if (panel && !panel.contains(document.activeElement)) {
+      panel.focus();
+    }
+
     return () => {
       releaseBodyScrollLock();
       document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus?.();
     };
   }, [open]);
 
@@ -101,6 +115,8 @@ export function Modal({
           transition={base}
         >
           <motion.div
+            ref={panelRef}
+            tabIndex={-1}
             className={[
               'modal',
               className,

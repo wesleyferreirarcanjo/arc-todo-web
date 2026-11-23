@@ -30,6 +30,7 @@ export function MetricsTokenPanel({
   const [revokeTarget, setRevokeTarget] = useState<MetricsAgentToken | null>(null);
   const [revoking, setRevoking] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   function closeForm() {
     flushSync(() => {
@@ -41,6 +42,10 @@ export function MetricsTokenPanel({
   }
 
   async function handleCreate() {
+    if (!serverName.trim()) {
+      setFormError('Enter a server name.');
+      return;
+    }
     setSaving(true);
     setFormError(null);
     try {
@@ -58,6 +63,8 @@ export function MetricsTokenPanel({
       return;
     }
     await navigator.clipboard.writeText(created.token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const commitRevoke = useCallback(async () => {
@@ -91,7 +98,7 @@ export function MetricsTokenPanel({
   return (
     <section className="metrics-token-panel" aria-label="Agent tokens">
       <div className="page-header-with-actions">
-        <h3>Agent tokens</h3>
+        <h2>Agent tokens</h2>
         <button
           type="button"
           className="btn btn-primary"
@@ -124,17 +131,17 @@ export function MetricsTokenPanel({
                 <th scope="col">Created</th>
                 <th scope="col">Last seen</th>
                 <th scope="col">Status</th>
-                <th scope="col"> </th>
+                <th scope="col"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
               {tokens.map((token) => (
                 <tr key={token.id}>
-                  <td>{token.serverName}</td>
-                  <td>{new Date(token.createdAt).toLocaleString()}</td>
-                  <td>{token.lastSeenAt ? new Date(token.lastSeenAt).toLocaleString() : '—'}</td>
-                  <td>{token.revokedAt ? 'Revoked' : 'Active'}</td>
-                  <td>
+                  <th scope="row">{token.serverName}</th>
+                  <td data-label="Created">{new Date(token.createdAt).toLocaleString()}</td>
+                  <td data-label="Last seen">{token.lastSeenAt ? new Date(token.lastSeenAt).toLocaleString() : '—'}</td>
+                  <td data-label="Status">{token.revokedAt ? 'Revoked' : 'Active'}</td>
+                  <td data-label="Actions">
                     {token.revokedAt ? null : (
                       <button
                         type="button"
@@ -157,15 +164,26 @@ export function MetricsTokenPanel({
           <div className="metrics-token-once">
             <p className="metrics-token-value">{created.token}</p>
             <button type="button" className="btn btn-primary" onClick={() => void handleCopy()}>
-              Copy token
+              {copied ? 'Copied' : 'Copy token'}
             </button>
+            {copied ? (
+              <p className="status-message" role="status">
+                Copied to clipboard.
+              </p>
+            ) : null}
             <p className="status-message">
               This token is shown only once. Paste it into the agent's {envVarName} in
               Coolify now.
             </p>
           </div>
         ) : formOpen ? (
-          <div className="metrics-token-form">
+          <form
+            className="metrics-token-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleCreate();
+            }}
+          >
             {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
             <label className="board-filter-field">
               Server name
@@ -179,21 +197,20 @@ export function MetricsTokenPanel({
             </label>
             <div className="hub-actions">
               <button
-                type="button"
+                type="submit"
                 className="btn btn-primary"
-                disabled={saving || !serverName.trim()}
-                onClick={() => void handleCreate()}
+                disabled={saving}
               >
-                Create token
+                {saving ? 'Creating…' : 'Create token'}
               </button>
             </div>
-          </div>
+          </form>
         ) : null}
       </Modal>
 
       <ConfirmDialog
         open={deferredRevoke.confirmOpen}
-        title="Revoke"
+        title="Revoke token"
         description={`Revoke token for ${revokeTarget?.serverName ?? ''}? Its agent will stop reporting.`}
         confirmLabel="Revoke"
         variant="danger"

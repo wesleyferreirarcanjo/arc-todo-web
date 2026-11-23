@@ -128,13 +128,25 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
   }
 
   async function handleCreate() {
-    const parsedPort = Number.parseInt(port, 10);
-    if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
-      setFormError('Port must be between 1 and 65535.');
+    if (!formName.trim()) {
+      setFormError('Enter an app name.');
       return;
     }
     if (!serverId) {
       setFormError('Pick a target server.');
+      return;
+    }
+    if (source === 'image' && !image.trim()) {
+      setFormError('Enter the image to deploy.');
+      return;
+    }
+    if (source === 'compose' && !composeYaml.trim()) {
+      setFormError('Paste the compose YAML.');
+      return;
+    }
+    const parsedPort = Number.parseInt(port, 10);
+    if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      setFormError('Port must be between 1 and 65535.');
       return;
     }
     setSaving(true);
@@ -245,29 +257,30 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
                   key={app.id}
                   className={selectedId === app.id ? 'is-selected' : undefined}
                 >
-                  <td>
+                  <th scope="row">
                     <button
                       type="button"
-                      className="cloud-server-name"
+                      className="analytics-row-name"
+                      aria-expanded={selectedId === app.id}
                       onClick={() =>
                         selectApp(selectedId === app.id ? null : app.id)
                       }
                     >
                       {app.name}
                     </button>
-                  </td>
-                  <td>
+                  </th>
+                  <td data-label="Source">
                     {app.gitProvider
                       ? `Git — ${app.repo ?? 'unconfigured'}`
                       : app.source === 'compose'
                         ? 'Compose'
                         : app.image}
                   </td>
-                  <td>
+                  <td data-label="Server">
                     {servers.find((s) => s.id === app.serverId)?.name ?? '—'}
                   </td>
-                  <td>{app.domains.join(', ') || '—'}</td>
-                  <td>
+                  <td data-label="Domains">{app.domains.join(', ') || '—'}</td>
+                  <td data-label="Status">
                     <span
                       className={`cloud-status cloud-app-status-${app.status}`}
                     >
@@ -312,7 +325,13 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title="New app">
         {formOpen ? (
-          <div className="cloud-add-form">
+          <form
+            className="cloud-add-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleCreate();
+            }}
+          >
             {formError ? <ErrorAlert>{formError}</ErrorAlert> : null}
             <div
               className="board-view-toggle"
@@ -419,20 +438,14 @@ export function AppsTab({ servers }: { servers: CloudServer[] }) {
             </label>
             <div className="hub-actions">
               <button
-                type="button"
+                type="submit"
                 className="btn btn-primary"
-                disabled={
-                  saving ||
-                  !formName.trim() ||
-                  !serverId ||
-                  (source === 'image' ? !image.trim() : !composeYaml.trim())
-                }
-                onClick={() => void handleCreate()}
+                disabled={saving}
               >
-                Create app
+                {saving ? 'Creating…' : 'Create app'}
               </button>
             </div>
-          </div>
+          </form>
         ) : null}
       </Modal>
     </div>

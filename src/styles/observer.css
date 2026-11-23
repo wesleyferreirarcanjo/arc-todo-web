@@ -96,7 +96,7 @@
   margin-bottom: 1rem;
 }
 
-.logs-explain h3 {
+.logs-explain h2 {
   margin: 0 0 0.35rem;
 }
 
@@ -122,6 +122,15 @@
 @media (min-width: 1024px) {
   .logs-table-wrap {
     overflow-x: auto;
+  }
+
+  /* Keep the timestamp column visible while the message scrolls. */
+  .logs-table th:first-child,
+  .logs-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bg-page);
   }
 
   .logs-cell-message {

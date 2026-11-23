@@ -245,7 +245,7 @@ export function UserList({
             ) : (
               <>
                 <div className="entity-card-header">
-                  <h3>{user.username}</h3>
+                  <h2>{user.username}</h2>
                   <span className="entity-scope-badge">
                     {user.isAdmin ? 'Admin' : 'User'}
                   </span>

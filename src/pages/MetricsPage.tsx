@@ -355,7 +355,7 @@ export function MetricsPage() {
     <div className="page-shell analytics-page metrics-page">
       <header className="analytics-toolbar">
         <div className="analytics-toolbar-title">
-          <h2>Metrics</h2>
+          <h1>Metrics</h1>
         </div>
         <div className="analytics-toolbar-controls">
           <div className="board-view-toggle" role="group" aria-label="Metrics sections">
@@ -433,7 +433,7 @@ export function MetricsPage() {
           ) : null}
           {!loading && servers.length === 0 && !error ? (
             <div className="diagrams-empty">
-              <div className="hub-empty-glyph">
+              <div className="hub-empty-glyph" aria-hidden="true">
                 <MetricsIcon className="arc-icon arc-icon-empty" />
               </div>
               <p className="status-message">{EMPTY_SERVERS}</p>
@@ -468,7 +468,7 @@ export function MetricsPage() {
                     patchParams({ resource: id === resourceId ? null : String(id) })
                   }
                 />
-                <h3>Server totals</h3>
+                <h2>Server totals</h2>
                 <MetricsSeriesChart
                   title="CPU"
                   series={serverSeries}
@@ -492,7 +492,7 @@ export function MetricsPage() {
                 />
                 {resourceId != null ? (
                   <>
-                    <h3>App</h3>
+                    <h2>App</h2>
                     <MetricsSeriesChart
                       title="CPU"
                       series={resourceSeries}

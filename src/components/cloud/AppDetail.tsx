@@ -134,6 +134,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
   // Logs tab.
   const [tail, setTail] = useState(200);
   const [appLogLines, setAppLogLines] = useState<string[] | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   // Overview tab — one-shot CPU/memory sample.
   const [stats, setStats] = useState<CloudAppStats | null>(null);
@@ -163,6 +164,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
   }, [app.id]);
 
   const loadAppLogs = useCallback(async () => {
+    setLogsLoading(true);
     try {
       const data = await getAppLogs(app.id, tail);
       setAppLogLines(data.lines);
@@ -170,6 +172,8 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
     } catch (err) {
       setAppLogLines(null);
       setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this app' }));
+    } finally {
+      setLogsLoading(false);
     }
   }, [app.id, tail]);
 
@@ -216,12 +220,15 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
   }
 
   async function refreshApp() {
+    setBusy('refresh');
     try {
       const next = await updateApp(app.id, {});
       onChanged(next);
       void loadStats();
     } catch {
       // Best-effort refresh — status errors surface on the next poll.
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -458,7 +465,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
 
   return (
     <section className="cloud-containers cloud-app-detail" aria-label={`App ${app.name}`}>
-      <h3>{app.name}</h3>
+      <h2>{app.name}</h2>
       {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
       <div className="board-view-toggle" role="group" aria-label="App sections">
@@ -574,6 +581,7 @@ export function AppDetail({ app, servers, onChanged, onDeleted }: Props) {
         <AppDetailLogs
           tail={tail}
           appLogLines={appLogLines}
+          loading={logsLoading}
           onTailChange={setTail}
           onRefresh={() => void loadAppLogs()}
         />
