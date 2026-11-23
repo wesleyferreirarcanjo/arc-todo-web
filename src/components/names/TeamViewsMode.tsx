@@ -49,7 +49,7 @@ export function TeamViewsMode(props: { session: ProjectNameSession }) {
               {member.ratings.map((item) => (
                 <li key={item.candidateId} className="names-check-line">
                   {item.name} · {item.overall}/10
-                  {item.notes ? ` · ${item.notes}` : ''}
+                  {item.notes ? ` — ${item.notes}` : ''}
                 </li>
               ))}
             </ul>

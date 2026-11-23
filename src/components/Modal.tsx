@@ -18,7 +18,8 @@ const openModalStack: symbol[] = [];
 
 function visibleFocusable(dialog: HTMLElement): HTMLElement[] {
   return Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => element.getClientRects().length > 0,
+    // jsdom has no layout, so geometry checks would empty the list in tests.
+    (element) => (element.checkVisibility ? element.checkVisibility() : true),
   );
 }
 
@@ -126,13 +127,13 @@ export function Modal({
       document.removeEventListener('keydown', handleKeyDown);
 
       // Return focus to the trigger; never let it fall back to body.
-      const restoreTarget = restoreFocusRef.current;
+      const trigger = restoreFocusRef.current;
       restoreFocusRef.current = null;
       const focusWasInside =
         dialogRef.current?.contains(document.activeElement) ??
         document.activeElement === document.body;
-      if (restoreTarget?.isConnected && focusWasInside) {
-        restoreTarget.focus({ preventScroll: true });
+      if (trigger?.isConnected && focusWasInside) {
+        trigger.focus();
       }
     };
   }, [open]);
