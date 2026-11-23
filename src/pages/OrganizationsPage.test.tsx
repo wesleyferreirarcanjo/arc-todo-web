@@ -89,6 +89,15 @@ describe('OrganizationsPage', () => {
     expect(status).toHaveTextContent('Loading organizations...');
   });
 
+  it('names the view with a single h1', () => {
+    renderPage();
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Organizations' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
   it('keeps Filters closed by default', () => {
     renderPage();
 
@@ -97,7 +106,7 @@ describe('OrganizationsPage', () => {
     expect(toggle).not.toHaveAttribute('aria-controls');
     expect(screen.queryByRole('region', { name: 'Filters' })).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText('Filter organizations by title'),
+      screen.queryByLabelText('Search organizations by name'),
     ).not.toBeInTheDocument();
   });
 

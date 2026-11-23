@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createOrganization } from '../lib/api/organizations';
+import { ErrorAlert } from '../components/ErrorAlert';
 import { OrganizationForm } from '../components/OrganizationForm';
 import { OrganizationList } from '../components/OrganizationList';
 import { OrganizationsIcon } from '../components/icons';
@@ -7,14 +8,18 @@ import { PageFiltersToolbar } from '../components/PageFiltersToolbar';
 import { useAuth } from '../context/AuthContext';
 import { useBoardMobileShell } from '../context/BoardMobileShellContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDocumentChrome } from '../hooks/useDocumentChrome';
+import { WEB_ERROR } from '../lib/errors/messages';
 import type { CreateOrganizationInput } from '../types/organization';
 
 export function OrganizationsPage() {
+  useDocumentChrome('Organizations');
   const { isAdmin } = useAuth();
   const { registerActions } = useBoardMobileShell();
   const {
     organizations,
     loadingOrganizations,
+    organizationsError,
     refreshOrganizations,
   } = useWorkspace();
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,8 +74,8 @@ export function OrganizationsPage() {
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Filter by title"
-            aria-label="Filter organizations by title"
+            placeholder="Search by name"
+            aria-label="Search organizations by name"
           />
         </label>
       )}
@@ -81,8 +86,12 @@ export function OrganizationsPage() {
   return (
     <div className="page-shell organizations-page is-tight-page">
       <header className="page-header">
-        <h2>Organizations</h2>
+        <h1>Organizations</h1>
       </header>
+
+      {organizationsError && (
+        <ErrorAlert code={WEB_ERROR.LOAD}>{organizationsError}</ErrorAlert>
+      )}
 
       {!loadingOrganizations && showFilters && (
         <PageFiltersToolbar
@@ -96,13 +105,13 @@ export function OrganizationsPage() {
       )}
 
       <section
-        className="organizations-list-section"
+        className="entity-list-section"
         aria-labelledby="organizations-list-heading"
       >
         {!loadingOrganizations && organizationCount > 0 && (
-          <div className="organizations-list-header">
-            <h3 id="organizations-list-heading">Your workspaces</h3>
-            <p className="organizations-list-count">
+          <div className="entity-list-header">
+            <h2 id="organizations-list-heading">Your workspaces</h2>
+            <p className="entity-list-count">
               {visibleCount}{' '}
               {visibleCount === 1 ? 'organization' : 'organizations'}
             </p>
@@ -122,7 +131,7 @@ export function OrganizationsPage() {
             </span>
             <p className="status-message">
               {isAdmin
-                ? 'No organizations yet. Create your first workspace to group projects.'
+                ? 'No organizations yet. Select Filters to create your first workspace.'
                 : 'No organizations yet. An admin can assign you to projects in an organization.'}
             </p>
           </div>

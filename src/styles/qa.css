@@ -340,7 +340,7 @@
   transform: rotate(45deg);
 }
 
-.qa-info-section h3 {
+.qa-info-section :is(h2, h3) {
   margin: 0 0 0.5rem;
   font-size: var(--type-section);
 }

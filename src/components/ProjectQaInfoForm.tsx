@@ -88,6 +88,9 @@ export function ProjectQaInfoForm({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  // Standalone page sections sit under the page h1; the compact form lives
+  // inside the task modal whose title is already an h2.
+  const SectionHeading = compact ? 'h3' : 'h2';
   const removeCopyForTarget = removeTarget
     ? removeCopy(removeTarget.kind)
     : { title: 'Remove', description: '', toast: '' };
@@ -206,7 +209,7 @@ export function ProjectQaInfoForm({
       )}
 
       <section className="qa-info-section" aria-labelledby={`${formId}-environments`}>
-        <h3 id={`${formId}-environments`}>Environments</h3>
+        <SectionHeading id={`${formId}-environments`}>Environments</SectionHeading>
         {environments.map((item, index) => (
           <div className="qa-info-row" key={item.key}>
             <label className="form-field">
@@ -287,7 +290,7 @@ export function ProjectQaInfoForm({
       </section>
 
       <section className="qa-info-section" aria-labelledby={`${formId}-users`}>
-        <h3 id={`${formId}-users`}>Test users</h3>
+        <SectionHeading id={`${formId}-users`}>Test users</SectionHeading>
         {users.map((item, index) => (
           <div className="qa-info-row" key={item.key}>
             <label className="form-field">
@@ -378,7 +381,7 @@ export function ProjectQaInfoForm({
       </section>
 
       <section className="qa-info-section" aria-labelledby={`${formId}-notes`}>
-        <h3 id={`${formId}-notes`}>Notes</h3>
+        <SectionHeading id={`${formId}-notes`}>Notes</SectionHeading>
         <label className="form-field">
           <span className="sr-only">Notes</span>
           <textarea

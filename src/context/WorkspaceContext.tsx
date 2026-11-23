@@ -10,6 +10,7 @@ import {
 import { useParams } from 'react-router-dom';
 import { fetchOrganizations } from '../lib/api/organizations';
 import { fetchProjects } from '../lib/api/projects';
+import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import {
   setLastOrganizationId,
   setLastProjectId,
@@ -26,6 +27,8 @@ interface WorkspaceContextValue {
   currentProject: Project | null;
   loadingOrganizations: boolean;
   loadingProjects: boolean;
+  organizationsError: string | null;
+  projectsError: string | null;
   refreshOrganizations: () => Promise<void>;
   refreshProjects: (orgId: string) => Promise<void>;
 }
@@ -39,12 +42,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [organizationsError, setOrganizationsError] = useState<string | null>(
+    null,
+  );
+  const [projectsError, setProjectsError] = useState<string | null>(null);
 
   const refreshOrganizations = useCallback(async () => {
     setLoadingOrganizations(true);
+    setOrganizationsError(null);
     try {
       const data = await fetchOrganizations();
       setOrganizations(data);
+    } catch (err) {
+      setOrganizationsError(
+        userMessage(err, WEB_ERROR.LOAD, { thing: 'organizations' }),
+      );
     } finally {
       setLoadingOrganizations(false);
     }
@@ -52,9 +64,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const refreshProjects = useCallback(async (orgId: string) => {
     setLoadingProjects(true);
+    setProjectsError(null);
     try {
       const data = await fetchProjects(orgId);
       setProjects(data);
+    } catch (err) {
+      setProjectsError(
+        userMessage(err, WEB_ERROR.LOAD, { thing: 'this organization' }),
+      );
     } finally {
       setLoadingProjects(false);
     }
@@ -100,6 +117,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       currentProject,
       loadingOrganizations,
       loadingProjects,
+      organizationsError,
+      projectsError,
       refreshOrganizations,
       refreshProjects,
     }),
@@ -112,6 +131,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       currentProject,
       loadingOrganizations,
       loadingProjects,
+      organizationsError,
+      projectsError,
       refreshOrganizations,
       refreshProjects,
     ],

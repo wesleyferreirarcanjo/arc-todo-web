@@ -2,12 +2,14 @@ import { BrowserExtensionDownload } from '../components/BrowserExtensionDownload
 import { ProjectQaInfoForm } from '../components/ProjectQaInfoForm';
 import { WorkspaceEyebrow } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import { projectTasksHref } from '../lib/board/boardShellPath';
 import { getProjectColor } from '../lib/color/entityColor';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import type { CSSProperties } from 'react';
 
 export function ProjectQaInfoPage() {
+  useDocumentChrome('QA info');
   const { orgId, projectId } = useParams();
   const { currentProject } = useWorkspace();
 
@@ -26,7 +28,7 @@ export function ProjectQaInfoPage() {
     >
       <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
         <WorkspaceEyebrow />
-        <h2>{currentProject?.name ?? 'Project'} QA info</h2>
+        <h1>{currentProject?.name ?? 'Project'} QA info</h1>
         <p className="page-subtitle">
           Environment URLs, test users, and how to sign in for this project.
         </p>

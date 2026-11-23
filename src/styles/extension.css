@@ -10,7 +10,7 @@
   background: var(--bg-surface);
 }
 
-.extension-download h3 {
+.extension-download h2 {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--type-section);

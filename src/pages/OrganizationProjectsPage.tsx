@@ -1,5 +1,5 @@
-import { userMessage, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useState } from 'react';
+import { WEB_ERROR } from '../lib/errors/messages';
+import { useCallback, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { createProject } from '../lib/api/projects';
 import { ErrorAlert } from '../components/ErrorAlert';
@@ -13,29 +13,23 @@ import {
 } from '../components/WorkspaceChrome';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import type { CreateProjectInput } from '../types/project';
 
 export function OrganizationProjectsPage() {
+  useDocumentChrome('Projects');
   const { orgId } = useParams();
   const { isAdmin } = useAuth();
   const {
     currentOrganization,
     projects,
     loadingProjects,
+    projectsError,
     refreshProjects,
   } = useWorkspace();
   const { color } = useWorkspaceAccent();
-  const [error, setError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-
-  useEffect(() => {
-    if (!orgId) return;
-    setError(null);
-    refreshProjects(orgId).catch((err) => {
-      setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'this organization' }));
-    });
-  }, [orgId, refreshProjects]);
 
   const handleCreate = useCallback(
     async (input: CreateProjectInput) => {
@@ -58,7 +52,7 @@ export function OrganizationProjectsPage() {
   return (
     <div className="page-shell org-projects-page" style={entityAccentStyle(color)}>
       <header className={`page-header${color ? ' has-accent' : ''}`}>
-        <h2>{currentOrganization?.name ?? 'Projects'}</h2>
+        <h1>{currentOrganization?.name ?? 'Projects'}</h1>
         <div className="page-links">
           <Link to="/organizations" className="text-link">
             Back to organizations
@@ -69,8 +63,8 @@ export function OrganizationProjectsPage() {
         </div>
       </header>
 
-      {error && (
-        <ErrorAlert code={WEB_ERROR.LOAD}>{error}</ErrorAlert>
+      {projectsError && (
+        <ErrorAlert code={WEB_ERROR.LOAD}>{projectsError}</ErrorAlert>
       )}
 
       {isAdmin && (
@@ -98,18 +92,30 @@ export function OrganizationProjectsPage() {
           </span>
           <p className="status-message">
             {isAdmin
-              ? 'No projects yet. Create your first one in Filters.'
+              ? 'No projects yet. Select Filters to create your first project.'
               : 'No projects assigned in this organization yet.'}
           </p>
         </div>
       )}
 
       {!loadingProjects && projects.length > 0 && (
-        <ProjectList
-          projects={projects}
-          canManage={isAdmin}
-          onUpdated={handleUpdated}
-        />
+        <section
+          className="entity-list-section"
+          aria-labelledby="org-projects-list-heading"
+        >
+          <div className="entity-list-header">
+            <h2 id="org-projects-list-heading">Projects</h2>
+            <p className="entity-list-count">
+              {projects.length}{' '}
+              {projects.length === 1 ? 'project' : 'projects'}
+            </p>
+          </div>
+          <ProjectList
+            projects={projects}
+            canManage={isAdmin}
+            onUpdated={handleUpdated}
+          />
+        </section>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ const VERSION_HREF = '/extension/version.json';
 const CHROMIUM_HREF = '/extension/chromium.zip';
 const FIREFOX_HREF = '/extension/firefox.zip';
 const FIREFOX_NOTE =
-  'No Firefox, abra about:debugging, Este Firefox, Carregar extensão temporária, e escolha o arquivo. A extensão some ao fechar o Firefox até haver uma versão assinada.';
+  'In Firefox, open about:debugging, select This Firefox, then Load Temporary Add-on, and choose the file. The extension is removed when Firefox closes until a signed version exists.';
 
 export function BrowserExtensionDownload() {
   const [version, setVersion] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export function BrowserExtensionDownload() {
 
   return (
     <section className="extension-download" aria-labelledby="extension-download-heading">
-      <h3 id="extension-download-heading">Browser extension</h3>
+      <h2 id="extension-download-heading">Browser extension</h2>
       {loadError ? (
         <ErrorAlert code={WEB_ERROR.LOAD}>{loadError}</ErrorAlert>
       ) : null}
@@ -50,7 +50,7 @@ export function BrowserExtensionDownload() {
       <p className="extension-download-lede">
         Unzip the Chrome/Edge package once, then load the folder at chrome://extensions
         (or edge://extensions): Developer mode → Load unpacked. Later versions: open the
-        side panel and use Atualizar (pick that unzipped folder the first time).
+        side panel and use Update (pick that unzipped folder the first time).
       </p>
       <div className="extension-download-actions">
         <a className="btn btn-primary" href={CHROMIUM_HREF} download>

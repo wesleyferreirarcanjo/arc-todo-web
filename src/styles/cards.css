@@ -238,15 +238,14 @@
   border-radius: var(--radius-blob-alt);
 }
 
-.organizations-create-section,
-.organizations-list-section {
+.entity-list-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
 }
 
-.organizations-list-header {
+.entity-list-header {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -254,21 +253,22 @@
   gap: 0.5rem 1rem;
 }
 
-.organizations-list-header h3 {
+.entity-list-header h2 {
   font-size: var(--type-section);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
-.organizations-list-count {
+.entity-list-count {
   margin: 0;
   color: var(--text-muted);
   font-size: var(--type-meta);
   font-weight: 500;
 }
 
-.organization-form-header h3 {
+.organization-form-header h2,
+.entity-form > h2 {
   font-size: var(--type-section);
   font-weight: 700;
   line-height: 1.2;
@@ -379,7 +379,7 @@
 
 
 @media (max-width: 1023px) {
-  .organizations-list-header,
+  .entity-list-header,
   .organization-form-actions,
   .user-form-actions,
   .entity-edit-actions {
@@ -387,7 +387,7 @@
     align-items: stretch;
   }
 
-  .organizations-list-header {
+  .entity-list-header {
     gap: 0.75rem;
   }
 

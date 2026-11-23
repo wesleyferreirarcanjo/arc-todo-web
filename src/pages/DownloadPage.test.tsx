@@ -70,7 +70,7 @@ describe('DownloadPage', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /No Firefox, abra about:debugging, Este Firefox, Carregar extensão temporária/,
+        /In Firefox, open about:debugging, select This Firefox, then Load Temporary Add-on/,
       ),
     ).toBeInTheDocument();
   });

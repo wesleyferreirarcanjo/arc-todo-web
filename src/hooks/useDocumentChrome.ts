@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useWorkspaceAccent } from '../components/WorkspaceChrome';
 import { brandMarkFaviconHref } from '../lib/brand/brandMark';
@@ -46,7 +46,6 @@ function ensureFaviconLink(): HTMLLinkElement {
 }
 
 function buildTitle(
-  viewLabel: string | null,
   projectName: string | null,
   orgName: string | null,
   hasProjectId: boolean,
@@ -54,31 +53,36 @@ function buildTitle(
   // Project wins when selected — name first for tab truncation.
   if (hasProjectId) {
     if (projectName && orgName) {
-      return joinTitle(viewLabel, `${projectName} · ${orgName}`);
+      return `${projectName} · ${orgName} · ${DEFAULT_TITLE}`;
     }
-    if (projectName) return joinTitle(viewLabel, projectName);
+    if (projectName) return `${projectName} · ${DEFAULT_TITLE}`;
     // Name still loading — avoid flashing org-only title.
-    return joinTitle(viewLabel, null);
+    return DEFAULT_TITLE;
   }
-  if (orgName) return joinTitle(viewLabel, orgName);
-  return joinTitle(viewLabel, null);
+  if (orgName) return `${orgName} · ${DEFAULT_TITLE}`;
+  return DEFAULT_TITLE;
 }
 
-function joinTitle(viewLabel: string | null, workspace: string | null): string {
-  return [viewLabel, workspace, DEFAULT_TITLE].filter(Boolean).join(' · ');
-}
+/**
+ * Layout provides the setter so a routed page can contribute its name to
+ * `document.title`. `null` outside the app shell (standalone routes).
+ */
+export const PageTitleSetterContext = createContext<
+  ((title: string | null) => void) | null
+>(null);
 
-/** Keeps document.title + favicon in sync with the current view and workspace. */
-export function useDocumentChrome(): void {
+/**
+ * Keeps document.title + favicon in sync with board filters or route workspace.
+ * `viewTitle` names the current view explicitly (e.g. "Organizations"); when it
+ * is omitted the label is derived from the route and primary nav.
+ */
+export function useDocumentChrome(viewTitle?: string | null): void {
   const location = useLocation();
   const { color, projectId, orgName, projectName } = useWorkspaceAccent();
 
-  const title = buildTitle(
-    viewLabelForPath(location.pathname),
-    projectName,
-    orgName,
-    Boolean(projectId),
-  );
+  const label = viewTitle ?? viewLabelForPath(location.pathname);
+  const baseTitle = buildTitle(projectName, orgName, Boolean(projectId));
+  const title = label ? `${label} · ${baseTitle}` : baseTitle;
   const faviconHref = color ? brandMarkFaviconHref(color) : MARK_FAVICON_HREF;
 
   useEffect(() => {
@@ -92,4 +96,26 @@ export function useDocumentChrome(): void {
       ensureFaviconLink().href = MARK_FAVICON_HREF;
     };
   }, []);
+}
+
+/**
+ * Names the current view in `document.title`. Inside the app shell the title
+ * is prepended to the workspace title; on standalone routes (no provider) it
+ * writes `<title> · Arc Todo` directly.
+ */
+export function usePageTitle(title: string | null): void {
+  const setPageTitle = useContext(PageTitleSetterContext);
+
+  useEffect(() => {
+    if (setPageTitle) {
+      setPageTitle(title);
+      return () => setPageTitle(null);
+    }
+    if (!title) return;
+    const previous = document.title;
+    document.title = `${title} · ${DEFAULT_TITLE}`;
+    return () => {
+      document.title = previous || DEFAULT_TITLE;
+    };
+  }, [setPageTitle, title]);
 }

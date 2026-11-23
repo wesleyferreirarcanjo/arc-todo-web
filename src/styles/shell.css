@@ -977,8 +977,7 @@ button.sidebar-nav-link {
   flex-shrink: 0;
 }
 
-.page-header h1,
-.page-header h2 {
+.page-header :is(h1, h2) {
   font-family: var(--font-display);
   font-size: var(--type-page);
   font-weight: 700;
