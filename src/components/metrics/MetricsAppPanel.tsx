@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useReducedMotion } from 'framer-motion';
 import { ErrorAlert } from '../ErrorAlert';
 import { useChartColors } from '../analytics/useChartColors';
 import { getAppMetrics, getAppSeries } from '../../lib/api/metrics';
@@ -64,6 +65,7 @@ export function MetricsAppPanel({
   onSelect,
 }: MetricsAppPanelProps) {
   const colors = useChartColors();
+  const reducedMotion = useReducedMotion();
   const [metrics, setMetrics] = useState<MetricsAppMetric[]>([]);
   const selected =
     selectedApp && selectedMetric
@@ -170,18 +172,19 @@ export function MetricsAppPanel({
                   key={`${row.app}:${row.metric}`}
                   className={isSelected ? 'is-selected' : undefined}
                 >
-                  <td>
+                  <th scope="row">
                     <button
                       type="button"
-                      className="btn btn-link"
+                      className="analytics-row-name"
+                      aria-pressed={isSelected}
                       onClick={() => onSelect(isSelected ? null : row)}
                     >
                       {row.app}
                     </button>
-                  </td>
-                  <td>{row.metric}</td>
-                  <td>{row.series}</td>
-                  <td className="logs-cell-nowrap">
+                  </th>
+                  <td data-label="Metric">{row.metric}</td>
+                  <td data-label="Series">{row.series}</td>
+                  <td className="logs-cell-nowrap" data-label="Last seen">
                     {row.lastSeenAt
                       ? new Date(row.lastSeenAt).toLocaleString()
                       : '—'}
@@ -202,9 +205,7 @@ export function MetricsAppPanel({
           aria-label={`${selected.app} ${selected.metric}`}
         >
           <header className="analytics-panel-head">
-            <h3>
-              {selected.app} — {selected.metric}
-            </h3>
+            <h2>{selected.app} — {selected.metric}</h2>
           </header>
           {chart.enough ? (
             <div className="analytics-chart">
@@ -222,7 +223,7 @@ export function MetricsAppPanel({
                   />
                   {chart.names.length > 1 ? <Legend /> : null}
                   {chart.names.map((name, index) => (
-                    <Line
+                    <Line isAnimationActive={!reducedMotion}
                       key={name}
                       type="monotone"
                       dataKey={`s${index}`}

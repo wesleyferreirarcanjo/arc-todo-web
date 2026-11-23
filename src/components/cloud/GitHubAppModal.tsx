@@ -41,6 +41,10 @@ export function GitHubAppModal({ open, onClose }: Props) {
   }, [open]);
 
   async function handleSaveGithubApp() {
+    if (!ghAppId.trim()) {
+      setGhError('Enter the App ID.');
+      return;
+    }
     setGhBusy(true);
     setGhError(null);
     try {
@@ -65,7 +69,13 @@ export function GitHubAppModal({ open, onClose }: Props) {
   return (
     <Modal open={open} onClose={onClose} title="GitHub App">
       {open ? (
-        <div className="cloud-add-form">
+        <form
+          className="cloud-add-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSaveGithubApp();
+          }}
+        >
           {ghError ? <ErrorAlert>{ghError}</ErrorAlert> : null}
           <p className="status-message">
             {ghStatus?.configured
@@ -129,15 +139,14 @@ export function GitHubAppModal({ open, onClose }: Props) {
           </label>
           <div className="hub-actions">
             <button
-              type="button"
+              type="submit"
               className="btn btn-primary"
-              disabled={ghBusy || !ghAppId.trim()}
-              onClick={() => void handleSaveGithubApp()}
+              disabled={ghBusy}
             >
               {ghBusy ? 'Saving…' : 'Save GitHub App'}
             </button>
           </div>
-        </div>
+        </form>
       ) : null}
     </Modal>
   );

@@ -45,28 +45,29 @@ export function AppDetailDeployments({
             <tbody>
               {deployments.map((dep) => (
                 <tr key={dep.id}>
-                  <td>
+                  <th scope="row">
                     <button
                       type="button"
-                      className="cloud-server-name"
+                      className="analytics-row-name"
+                      aria-expanded={openLog === dep.id}
                       onClick={() => void onToggleLog(dep)}
                     >
                       {dep.status}
                     </button>
-                  </td>
-                  <td>{dep.imageRef ?? 'compose'}</td>
-                  <td>{dep.commitSha ? dep.commitSha.slice(0, 8) : '—'}</td>
-                  <td>{dep.builtOnName ?? '—'}</td>
-                  <td>
+                  </th>
+                  <td data-label="Image ref">{dep.imageRef ?? 'compose'}</td>
+                  <td data-label="Commit">{dep.commitSha ? dep.commitSha.slice(0, 8) : '—'}</td>
+                  <td data-label="Built on">{dep.builtOnName ?? '—'}</td>
+                  <td data-label="Build">
                     {dep.buildSeconds === null
                       ? '—'
                       : dep.pushSeconds !== null
                         ? `${dep.buildSeconds}s +${dep.pushSeconds}s`
                         : `${dep.buildSeconds}s`}
                   </td>
-                  <td>{dep.trigger}</td>
-                  <td>{fmt(dep.startedAt)}</td>
-                  <td>{fmt(dep.finishedAt)}</td>
+                  <td data-label="Trigger">{dep.trigger}</td>
+                  <td data-label="Started">{fmt(dep.startedAt)}</td>
+                  <td data-label="Finished">{fmt(dep.finishedAt)}</td>
                 </tr>
               ))}
             </tbody>

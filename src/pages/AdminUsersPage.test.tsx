@@ -94,10 +94,10 @@ describe('AdminUsersPage', () => {
     renderPage();
 
     expect(
-      await screen.findByRole('heading', { level: 3, name: 'New user' }),
+      await screen.findByRole('heading', { level: 2, name: 'New user' }),
     ).toHaveAttribute('id', 'users-create-heading');
     expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Users' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Users' })).toBeInTheDocument();
   });
 
   it('does not call window.confirm when deleting a user', async () => {

@@ -34,7 +34,7 @@ export function MetricsCpuBreakdown({
 
   return (
     <section className="metrics-cpu-breakdown" aria-label="CPU breakdown">
-      <h3>CPU breakdown</h3>
+      <h2>CPU breakdown</h2>
       <div className="metrics-cpu-bar" aria-hidden>
         {PARTS.map((part) => (
           <span

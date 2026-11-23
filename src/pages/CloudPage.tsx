@@ -115,7 +115,7 @@ export function CloudPage() {
     <div className="page-shell analytics-page cloud-page">
       <header className="analytics-toolbar">
         <div className="analytics-toolbar-title">
-          <h2>Cloud</h2>
+          <h1>Cloud</h1>
         </div>
         <div className="analytics-toolbar-controls">
           <button

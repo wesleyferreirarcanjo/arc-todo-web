@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useReducedMotion } from 'framer-motion';
 import {
   Bar,
   BarChart,
@@ -132,7 +133,7 @@ function PanelHead({
   return (
     <header className="analytics-panel-head">
       <AnalyticsClockChip clock={clock} />
-      <h3>{title}</h3>
+      <h2>{title}</h2>
       <AnalyticsMetricInfo label={title}>{info}</AnalyticsMetricInfo>
     </header>
   );
@@ -197,7 +198,7 @@ function AnalyticsEmpty({
   }
   return (
     <div className="diagrams-empty">
-      <div className="hub-empty-glyph">
+      <div className="hub-empty-glyph" aria-hidden="true">
         <AnalyticsIcon className="arc-icon arc-icon-empty" />
       </div>
       <p className="status-message">{nextStep}</p>
@@ -209,6 +210,7 @@ export function AnalyticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = useMemo(() => readAnalyticsFilters(searchParams), [searchParams]);
   const colors = useChartColors();
+  const reducedMotion = useReducedMotion();
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -363,6 +365,11 @@ export function AnalyticsPage() {
       />
 
       {error && <ErrorAlert>{error}</ErrorAlert>}
+      {pendingDates && !error ? (
+        <p className="status-message">
+          Pick a From date and a To date to see this window.
+        </p>
+      ) : null}
       {loading && !summary && <p className="status-message">Loading analytics...</p>}
       {loading && !summary && <AnalyticsSkeleton />}
 
@@ -437,7 +444,7 @@ export function AnalyticsPage() {
           <section className="analytics-hero" aria-label="Trend">
             <header className="analytics-panel-head">
               <AnalyticsClockChip clock="window" />
-              <h3>Trend</h3>
+              <h2>Trend</h2>
               <AnalyticsMetricInfo label="Trend">
                 New tasks, tasks completed, column moves, and bugs flagged across {windowName}.
               </AnalyticsMetricInfo>
@@ -470,7 +477,7 @@ export function AnalyticsPage() {
                         <span style={{ color: colors.muted }}>{value}</span>
                       )}
                     />
-                    <Line
+                    <Line isAnimationActive={!reducedMotion}
                       type="monotone"
                       dataKey="created"
                       name="New tasks"
@@ -478,7 +485,7 @@ export function AnalyticsPage() {
                       strokeWidth={2}
                       dot={false}
                     />
-                    <Line
+                    <Line isAnimationActive={!reducedMotion}
                       type="monotone"
                       dataKey="completed"
                       name="Tasks completed"
@@ -486,7 +493,7 @@ export function AnalyticsPage() {
                       strokeWidth={2}
                       dot={false}
                     />
-                    <Line
+                    <Line isAnimationActive={!reducedMotion}
                       type="monotone"
                       dataKey="moves"
                       name="Column moves"
@@ -494,7 +501,7 @@ export function AnalyticsPage() {
                       strokeWidth={2}
                       dot={false}
                     />
-                    <Line
+                    <Line isAnimationActive={!reducedMotion}
                       type="monotone"
                       dataKey="bugs"
                       name="Bugs flagged"
@@ -552,7 +559,7 @@ export function AnalyticsPage() {
                         />
                       }
                     />
-                    <Bar dataKey="ms" name="Average stay" fill={colors.secondary} radius={[0, 6, 6, 0]}>
+                    <Bar isAnimationActive={!reducedMotion} dataKey="ms" name="Average stay" fill={colors.secondary} radius={[0, 6, 6, 0]}>
                       <LabelList
                         dataKey="ms"
                         position="right"
@@ -604,7 +611,7 @@ export function AnalyticsPage() {
                         />
                       }
                     />
-                    <Bar dataKey="count" name="Tasks now" fill={colors.accent} radius={[0, 6, 6, 0]}>
+                    <Bar isAnimationActive={!reducedMotion} dataKey="count" name="Tasks now" fill={colors.accent} radius={[0, 6, 6, 0]}>
                       <LabelList dataKey="count" position="right" fill={colors.text} fontSize={12} />
                     </Bar>
                   </BarChart>
@@ -683,7 +690,7 @@ export function AnalyticsPage() {
               />
               <article className="analytics-kpi">
                 <header className="analytics-kpi-head">
-                  <h3>QA checklist</h3>
+                  <h2>QA checklist</h2>
                   <AnalyticsMetricInfo label="QA checklist">
                     Checklist items on tasks that are on the board now. These are not limited to{' '}
                     {windowName}.
@@ -718,7 +725,7 @@ export function AnalyticsPage() {
           <section className="analytics-people" aria-label="By person">
             <header className="analytics-panel-head">
               <p className="analytics-scope">Both clocks</p>
-              <h3>By person</h3>
+              <h2>By person</h2>
               <AnalyticsMetricInfo label="By person">
                 New tasks, tasks completed, and column moves are for {windowName}. Open bugs are
                 the board right now.
@@ -786,7 +793,7 @@ export function AnalyticsPage() {
           <section className="analytics-activity" aria-label="Last interaction">
             <header className="analytics-panel-head">
               <p className="analytics-scope">Both clocks</p>
-              <h3>Last interaction</h3>
+              <h2>Last interaction</h2>
               <AnalyticsMetricInfo label="Last interaction">
                 Last seen is right now. Tasks, checklist, and bug flags are rolling Last 24 hours
                 and Last 7 days — not the toolbar dates. Tasks are distinct cards the person
@@ -888,7 +895,7 @@ export function AnalyticsPage() {
           <section className="analytics-flags" aria-label="Grok bug flags">
             <header className="analytics-panel-head">
               <AnalyticsClockChip clock="window" />
-              <h3>Grok bug flags</h3>
+              <h2>Grok bug flags</h2>
               <AnalyticsMetricInfo label="Grok bug flags">
                 Latest Grok dossier per task in {windowName}, with when it was filed. Task is
                 a 1–10 rating of the ticket; Flag is a 1–10 rating of the bug report.

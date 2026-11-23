@@ -88,6 +88,7 @@ export function LogsPage() {
   const [draftQ, setDraftQ] = useState(qParam);
   const [explain, setExplain] = useState<ObserverExplainResult | null>(null);
   const [explaining, setExplaining] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const patchParams = useCallback(
     (next: Record<string, string | null>) => {
@@ -228,6 +229,7 @@ export function LogsPage() {
       return;
     }
     const toMs = Date.now();
+    setLoadingOlder(true);
     try {
       const page = await searchLogs({
         server: selectedServerName ?? undefined,
@@ -242,6 +244,8 @@ export function LogsPage() {
       setHasMore(page.hasMore);
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.LOAD, { thing: 'logs' }));
+    } finally {
+      setLoadingOlder(false);
     }
   }
 
@@ -374,7 +378,7 @@ export function LogsPage() {
     <div className="page-shell analytics-page metrics-page logs-page is-tight-page">
       <header className="analytics-toolbar">
         <div className="analytics-toolbar-title">
-          <h2>Logs</h2>
+          <h1>Logs</h1>
         </div>
         <div className="analytics-toolbar-controls">
           <div className="board-view-toggle" role="group" aria-label="Logs sections">
@@ -426,7 +430,7 @@ export function LogsPage() {
           ) : null}
           {!loading && servers.length === 0 && sdkApps.length === 0 && !error ? (
             <div className="diagrams-empty">
-              <div className="hub-empty-glyph">
+              <div className="hub-empty-glyph" aria-hidden="true">
                 <LogsIcon className="arc-icon arc-icon-empty" />
               </div>
               <p className="status-message">{EMPTY_SERVERS}</p>
@@ -512,8 +516,12 @@ export function LogsPage() {
                           autoComplete="off"
                         />
                       </label>
-                      <button type="submit" className="btn btn-secondary">
-                        Search
+                      <button
+                        type="submit"
+                        className="btn btn-secondary"
+                        disabled={searching}
+                      >
+                        {searching ? 'Searching…' : 'Search'}
                       </button>
                     </form>
                   </>
@@ -542,7 +550,7 @@ export function LogsPage() {
 
               {explain ? (
                 <section className="logs-explain" aria-label="AI explanation">
-                  <h3>AI explanation</h3>
+                  <h2>AI explanation</h2>
                   <p className="logs-explain-meta">
                     {explain.linesUsed} error lines,{' '}
                     {formatTs(new Date(explain.fromMs).toISOString())} –{' '}
@@ -621,9 +629,10 @@ export function LogsPage() {
                   <button
                     type="button"
                     className="btn btn-secondary"
+                    disabled={loadingOlder}
                     onClick={() => void loadOlder()}
                   >
-                    Load older lines
+                    {loadingOlder ? 'Loading…' : 'Load older lines'}
                   </button>
                 </div>
               ) : null}

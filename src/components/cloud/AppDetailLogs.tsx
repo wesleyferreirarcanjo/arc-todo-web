@@ -3,6 +3,7 @@ import { Select } from '../Select';
 interface Props {
   tail: number;
   appLogLines: string[] | null;
+  loading: boolean;
   onTailChange: (value: number) => void;
   onRefresh: () => void;
 }
@@ -10,6 +11,7 @@ interface Props {
 export function AppDetailLogs({
   tail,
   appLogLines,
+  loading,
   onTailChange,
   onRefresh,
 }: Props) {
@@ -31,9 +33,10 @@ export function AppDetailLogs({
         <button
           type="button"
           className="btn btn-secondary"
+          disabled={loading}
           onClick={onRefresh}
         >
-          Refresh
+          {loading ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>
       {appLogLines === null ? (

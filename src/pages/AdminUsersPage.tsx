@@ -109,7 +109,7 @@ export function AdminUsersPage() {
   return (
     <div className="page-shell">
       <header className="page-header">
-        <h2>Users</h2>
+        <h1>Users</h1>
         <p className="page-subtitle">
           Manage system login accounts and assign project access.
         </p>

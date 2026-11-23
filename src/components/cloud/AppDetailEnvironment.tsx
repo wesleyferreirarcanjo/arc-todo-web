@@ -45,8 +45,8 @@ export function AppDetailEnvironment({
                 <tbody>
                   {Object.entries(env).map(([key, value]) => (
                     <tr key={key}>
-                      <td>{key}</td>
-                      <td>{revealed ? value : MASK}</td>
+                      <th scope="row">{key}</th>
+                      <td data-label="Value">{revealed ? value : MASK}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -219,7 +219,7 @@ export function AppDetailOverview({
           disabled={busy !== null}
           onClick={onRefresh}
         >
-          Refresh
+          {busy === 'refresh' ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>
     </div>

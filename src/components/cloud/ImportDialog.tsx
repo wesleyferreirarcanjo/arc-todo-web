@@ -116,6 +116,10 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
   }, [open, panel]);
 
   async function savePanel() {
+    if (!token.trim()) {
+      setError('Paste the API token.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -135,7 +139,14 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
 
   async function handleImport() {
     const item = list.find((i) => i.key === picked);
-    if (!item || !serverId) return;
+    if (!item) {
+      setError(`Pick a ${PANEL_NAME[panel]} app to import.`);
+      return;
+    }
+    if (!serverId) {
+      setError('Pick a target server.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -176,7 +187,7 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
     <Modal open={open} onClose={onClose} title={`Import from ${PANEL_NAME[panel]}`}>
       {open ? (
         <div className="cloud-add-form">
-          {error ? <p className="alert alert-error">{error}</p> : null}
+          {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
           {configured === false ? (
             <>
@@ -213,7 +224,7 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
                 <button
                   type="button"
                   className="btn btn-primary"
-                  disabled={busy || !token.trim()}
+                  disabled={busy}
                   onClick={() => void savePanel()}
                 >
                   Save token
@@ -266,7 +277,7 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
                 <button
                   type="button"
                   className="btn btn-primary"
-                  disabled={busy || !picked || !serverId}
+                  disabled={busy}
                   onClick={() => void handleImport()}
                 >
                   Import
@@ -277,29 +288,31 @@ export function ImportDialog({ panel, servers, open, onClose, onImported }: Prop
 
           {result && summary ? (
             <>
-              <table className="analytics-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Field</th>
-                    <th scope="col">{PANEL_NAME[panel]}</th>
-                    <th scope="col">arc-cloud</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summary.fields.map((f) => (
-                    <tr key={f.label}>
-                      <td>{f.label}</td>
-                      <td>{f.panel || '—'}</td>
-                      <td>{f.arc || '—'}</td>
+              <div className="analytics-table-wrap">
+                <table className="analytics-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Field</th>
+                      <th scope="col">{PANEL_NAME[panel]}</th>
+                      <th scope="col">arc-cloud</th>
                     </tr>
-                  ))}
-                  <tr>
-                    <td>Env vars</td>
-                    <td>{summary.envKeys.join(', ') || '—'}</td>
-                    <td>{summary.envCount} copied (values encrypted)</td>
-                  </tr>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {summary.fields.map((f) => (
+                      <tr key={f.label}>
+                        <th scope="row">{f.label}</th>
+                        <td data-label={PANEL_NAME[panel]}>{f.panel || '—'}</td>
+                        <td data-label="arc-cloud">{f.arc || '—'}</td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <th scope="row">Env vars</th>
+                      <td data-label={PANEL_NAME[panel]}>{summary.envKeys.join(', ') || '—'}</td>
+                      <td data-label="arc-cloud">{summary.envCount} copied (values encrypted)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               {summary.volumes.length > 0 ? (
                 <p className="status-message">
                   Volumes to migrate by hand:{' '}

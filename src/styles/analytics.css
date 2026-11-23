@@ -12,7 +12,7 @@
   gap: 0.5rem;
 }
 
-.analytics-toolbar-title h2 {
+.analytics-toolbar-title h1 {
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--type-page);
@@ -131,9 +131,9 @@
   gap: 0.4rem;
 }
 
-.analytics-kpi h3,
-.analytics-panel h3,
-.analytics-panel-head h3 {
+.analytics-kpi h2,
+.analytics-panel h2,
+.analytics-panel-head h2 {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--type-meta);
@@ -350,6 +350,23 @@
 
 .devices-page .analytics-table tbody tr.is-selected td:first-child {
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-page));
+}
+
+/* Row-name button: the keyboard-reachable way to pick a row in a
+   clickable table (server, app, resource, deployment). */
+.analytics-table .analytics-row-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.analytics-table .analytics-row-name:hover {
+  text-decoration: underline;
 }
 
 .analytics-flag-id {

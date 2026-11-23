@@ -35,6 +35,10 @@
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 
+.metrics-server-card.is-selected .metrics-server-card-name {
+  font-weight: 800;
+}
+
 .metrics-server-card-name {
   font-weight: 600;
 }
@@ -59,7 +63,7 @@
   min-width: 0;
 }
 
-.metrics-detail h3 {
+.metrics-detail :is(h2, h3) {
   margin: 0.5rem 0 0;
   font-family: var(--font-display);
   font-size: var(--type-page);
@@ -86,7 +90,7 @@
   gap: 0.65rem;
 }
 
-.metrics-cpu-breakdown h3 {
+.metrics-cpu-breakdown h2 {
   margin: 0;
 }
 
@@ -188,6 +192,21 @@
   background: var(--bg-elevated);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   word-break: break-all;
+}
+
+@media (min-width: 1024px) {
+  /* Wide resource tables scroll inside their wrapper, never the page. */
+  .metrics-resource-table .analytics-table-wrap {
+    overflow-x: auto;
+  }
+
+  .metrics-resource-table .analytics-table th:first-child,
+  .metrics-resource-table .analytics-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bg-page);
+  }
 }
 
 @media (max-width: 1023px) {

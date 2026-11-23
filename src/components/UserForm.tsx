@@ -77,7 +77,7 @@ export function UserForm({ projectOptions, onSubmit }: UserFormProps) {
       aria-labelledby="users-create-heading"
     >
       <div className="user-form-header">
-        <h3 id="users-create-heading">New user</h3>
+        <h2 id="users-create-heading">New user</h2>
         <p className="user-form-description">
           Create a system user. Set SSO assign to their Google email so they can
           sign in. Password is optional when SSO-only mode is enabled.

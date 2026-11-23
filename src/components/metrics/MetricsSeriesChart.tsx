@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useReducedMotion } from 'framer-motion';
 import { useChartColors } from '../analytics/useChartColors';
 import type { MetricsSeries, MetricsSeriesPoint } from '../../types/metrics';
 import { formatBinary, formatCores, formatPercent, mcoresToMachinePct } from './format';
@@ -77,6 +78,7 @@ export function MetricsSeriesChart({
   emptyLabel?: string;
 }) {
   const colors = useChartColors();
+  const reducedMotion = useReducedMotion();
   const cpuAsPct = kind === 'cpu' && cpuCount != null && cpuCount > 0;
   const points: ChartPoint[] = (series?.points ?? []).map((point) => {
     const withDisk = kind === 'hostDisk' ? { ...point, diskTotalBytes: capacityBytes } : point;
@@ -97,7 +99,7 @@ export function MetricsSeriesChart({
   return (
     <section className="analytics-panel-wide metrics-chart-panel" aria-label={title}>
       <header className="analytics-panel-head">
-        <h3>{title}</h3>
+        <h2>{title}</h2>
       </header>
       {enoughHistory ? (
         <div className="analytics-chart">
@@ -119,7 +121,7 @@ export function MetricsSeriesChart({
                     cpuAsPct ? formatPercent(Number(value)) : formatCores(Number(value))
                   }
                 />
-                <Area
+                <Area isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey={cpuAsPct ? 'cpuPct' : 'cpuMcores'}
                   name="CPU"
@@ -129,7 +131,7 @@ export function MetricsSeriesChart({
                   dot={false}
                 />
                 {hasSteal ? (
-                  <Area
+                  <Area isAnimationActive={!reducedMotion}
                     dataKey={cpuAsPct ? 'cpuStealPct' : 'cpuStealMcores'}
                     name="Stolen by VPS"
                     stroke={colors.secondary}
@@ -151,7 +153,7 @@ export function MetricsSeriesChart({
                   formatter={(value) => formatBinary(Number(value))}
                 />
                 <Legend />
-                <Line
+                <Line isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey="memBytes"
                   name="Memory"
@@ -159,7 +161,7 @@ export function MetricsSeriesChart({
                   dot={false}
                 />
                 {hasLimit ? (
-                  <Line
+                  <Line isAnimationActive={!reducedMotion}
                     type="monotone"
                     dataKey="memLimitBytes"
                     name={memoryLimitName}
@@ -182,14 +184,14 @@ export function MetricsSeriesChart({
                   formatter={(value) => formatBinary(Number(value), true)}
                 />
                 <Legend />
-                <Line
+                <Line isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey="netRxBps"
                   name="Network in"
                   stroke={colors.accent}
                   dot={false}
                 />
-                <Line
+                <Line isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey="netTxBps"
                   name="Network out"
@@ -207,7 +209,7 @@ export function MetricsSeriesChart({
                   formatter={(value) => formatBinary(Number(value))}
                 />
                 <Legend />
-                <Line
+                <Line isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey="diskUsedBytes"
                   name="Disk used"
@@ -215,7 +217,7 @@ export function MetricsSeriesChart({
                   dot={false}
                 />
                 {hasCapacity ? (
-                  <Line
+                  <Line isAnimationActive={!reducedMotion}
                     type="monotone"
                     dataKey="diskTotalBytes"
                     name="Disk total"
@@ -238,14 +240,14 @@ export function MetricsSeriesChart({
                   formatter={(value) => formatBinary(Number(value), true)}
                 />
                 <Legend />
-                <Line
+                <Line isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey="diskReadBps"
                   name="Disk read"
                   stroke={colors.accent}
                   dot={false}
                 />
-                <Line
+                <Line isAnimationActive={!reducedMotion}
                   type="monotone"
                   dataKey="diskWriteBps"
                   name="Disk write"

@@ -141,6 +141,7 @@ export function MetricsResourceTable({
         <button
           type="button"
           className="board-view-toggle-btn"
+          aria-pressed={allColumns}
           onClick={onToggleColumns}
         >
           {allColumns ? 'Fewer columns' : 'All columns'}
@@ -191,9 +192,28 @@ export function MetricsResourceTable({
                     className={selected ? 'is-selected' : undefined}
                     onClick={() => onSelect(row.resourceId)}
                   >
-                    {columns.map((column) => (
-                      <td key={column}>{cell(row, column)}</td>
-                    ))}
+                    {columns.map((column) =>
+                      column === 'App' ? (
+                        <th key={column} scope="row">
+                          <button
+                            type="button"
+                            className="analytics-row-name"
+                            aria-pressed={selected}
+                            onClick={(event) => {
+                              // Keep the row's own click from toggling twice.
+                              event.stopPropagation();
+                              onSelect(row.resourceId);
+                            }}
+                          >
+                            {cell(row, column)}
+                          </button>
+                        </th>
+                      ) : (
+                        <td key={column} data-label={column}>
+                          {cell(row, column)}
+                        </td>
+                      ),
+                    )}
                   </tr>
                 );
               })}

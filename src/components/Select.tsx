@@ -103,6 +103,7 @@ export function Select({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setOpen(false);
+        triggerRef.current?.focus();
       }
     }
 
@@ -117,6 +118,7 @@ export function Select({
   function handleSelect(nextValue: string) {
     onChange(nextValue);
     setOpen(false);
+    triggerRef.current?.focus();
   }
 
   const menu = createPortal(
