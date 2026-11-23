@@ -26,7 +26,9 @@ describe('DownloadPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Download' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Download' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Download for Chrome/Edge' }),
     ).toHaveAttribute('href', '/extension/chromium.zip');
@@ -44,7 +46,9 @@ describe('DownloadPage', () => {
       screen.getByRole('link', { name: 'Open evidence lab' }),
     ).toHaveAttribute('href', '/download/extension-lab');
     expect(
-      screen.getByRole('heading', { name: 'Download' }).closest('.download-page'),
+      screen
+        .getByRole('heading', { level: 1, name: 'Download' })
+        .closest('.download-page'),
     ).toHaveClass('is-tight-page');
     expect(screen.queryByRole('button', { name: /filters/i })).not.toBeInTheDocument();
   });

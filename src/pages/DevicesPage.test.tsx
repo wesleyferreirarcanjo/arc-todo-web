@@ -106,7 +106,9 @@ describe('DevicesPage', () => {
     api.listDevices.mockResolvedValue([]);
     renderPage();
     expect(await screen.findByText(DEVICES_EMPTY)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Devices' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Devices' }),
+    ).toBeInTheDocument();
     expect(document.querySelector('.hub-empty-glyph')).not.toBeNull();
   });
 
@@ -139,6 +141,9 @@ describe('DevicesPage', () => {
     expect(screen.getByText('Office PC')).toBeInTheDocument();
     expect(screen.getByText('Browser')).toBeInTheDocument();
     expect(screen.getByText('PC')).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Actions' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Studio')).not.toBeInTheDocument();
     expect(screen.queryByText('IDE')).not.toBeInTheDocument();
   });
@@ -181,6 +186,9 @@ describe('DevicesPage', () => {
     expect(screen.getByRole('heading', { name: 'Revoke this browser' })).toBeInTheDocument();
     expect(api.revokeDevice).not.toHaveBeenCalled();
     const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancel' }),
+    ).toHaveFocus();
     await user.click(within(dialog).getByRole('button', { name: 'Revoke' }));
     expect(api.revokeDevice).toHaveBeenCalledWith('br-1');
   });
