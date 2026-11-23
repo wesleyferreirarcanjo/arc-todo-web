@@ -42,7 +42,7 @@ export function BrowserExtensionDownload() {
 
   return (
     <section className="extension-download" aria-labelledby="extension-download-heading">
-      <h3 id="extension-download-heading">Browser extension</h3>
+      <h2 id="extension-download-heading">Browser extension</h2>
       {loadError ? (
         <ErrorAlert code={WEB_ERROR.LOAD}>{loadError}</ErrorAlert>
       ) : null}

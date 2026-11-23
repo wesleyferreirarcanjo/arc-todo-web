@@ -224,9 +224,9 @@ export function DevicesPage() {
   const sessionRows = sessionViews(sessions, audit);
 
   return (
-    <div className="page-shell">
+    <div className="page-shell devices-page">
       <header className="page-header">
-        <h2>Devices</h2>
+        <h1>Devices</h1>
         <p className="page-subtitle">
           Browsers, PCs, and IDE hosts. Revoke disconnects a device immediately.
         </p>
@@ -249,60 +249,57 @@ export function DevicesPage() {
       ) : null}
 
       {devices.length > 0 ? (
-        <section aria-labelledby="devices-heading">
-          <h3 id="devices-heading">Devices</h3>
-          <AnalyticsTable
-            rows={devices}
-            rowKey={(device) => device.id}
-            selectedKey={selected}
-            onRowClick={(device) => setSelected(device.id)}
-            columns={[
-              { id: 'name', header: 'Name', cell: (device) => device.name },
-              {
-                id: 'kind',
-                header: 'Kind',
-                cell: (device) => kindLabel(device.kind),
-              },
-              {
-                id: 'status',
-                header: 'Status',
-                cell: (device) => deviceStatusLabel(device),
-              },
-              {
-                id: 'consent',
-                header: 'Consent',
-                cell: (device) => consentLabel(device.consentMode),
-              },
-              {
-                id: 'lastSeen',
-                header: 'Last seen',
-                cell: (device) => formatTime(device.lastSeenAt),
-              },
-              {
-                id: 'actions',
-                header: ' ',
-                cell: (device) =>
-                  !device.revokedAt ? (
-                    <button
-                      type="button"
-                      className="btn btn-danger"
-                      onClick={(event) => {
-                        stopRowClick(event);
-                        setRevoking(device);
-                      }}
-                    >
-                      Revoke
-                    </button>
-                  ) : null,
-              },
-            ]}
-          />
-        </section>
+        <AnalyticsTable
+          rows={devices}
+          rowKey={(device) => device.id}
+          selectedKey={selected}
+          onRowClick={(device) => setSelected(device.id)}
+          columns={[
+            { id: 'name', header: 'Name', cell: (device) => device.name },
+            {
+              id: 'kind',
+              header: 'Kind',
+              cell: (device) => kindLabel(device.kind),
+            },
+            {
+              id: 'status',
+              header: 'Status',
+              cell: (device) => deviceStatusLabel(device),
+            },
+            {
+              id: 'consent',
+              header: 'Consent',
+              cell: (device) => consentLabel(device.consentMode),
+            },
+            {
+              id: 'lastSeen',
+              header: 'Last seen',
+              cell: (device) => formatTime(device.lastSeenAt),
+            },
+            {
+              id: 'actions',
+              header: 'Actions',
+              cell: (device) =>
+                !device.revokedAt ? (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={(event) => {
+                      stopRowClick(event);
+                      setRevoking(device);
+                    }}
+                  >
+                    Revoke
+                  </button>
+                ) : null,
+            },
+          ]}
+        />
       ) : null}
 
       {ownsSelected ? (
         <section aria-labelledby="sessions-heading">
-          <h3 id="sessions-heading">Sessions</h3>
+          <h2 id="sessions-heading">Sessions</h2>
           {sessionRows.length === 0 ? (
             <p className="status-message">{SESSIONS_EMPTY}</p>
           ) : (

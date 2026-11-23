@@ -10,7 +10,7 @@
   background: var(--bg-surface);
 }
 
-.extension-download h3 {
+.extension-download h2 {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--type-section);
@@ -61,7 +61,7 @@
   background: var(--bg-surface);
 }
 
-.extension-lab-entry h3 {
+.extension-lab-entry h2 {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--type-section);
@@ -100,8 +100,8 @@
   gap: 0.55rem;
 }
 
-.extension-lab-group h3,
-.extension-lab-log h3 {
+.extension-lab-group h2,
+.extension-lab-log h2 {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--type-section);

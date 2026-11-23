@@ -105,7 +105,7 @@ export function ExtensionLabPage() {
             Download
           </Link>
         </WorkspaceEyebrowShell>
-        <h2>Evidence lab</h2>
+        <h1>Evidence lab</h1>
         <p className="page-subtitle">
           Stay on this tab. In the Arc Todo extension, pick a Fila de QA card,{' '}
           <strong>Focar neste passo</strong>, fire a probe, then{' '}
@@ -142,7 +142,7 @@ export function ExtensionLabPage() {
           className="extension-lab-group"
           aria-labelledby={`extension-lab-${group.id}`}
         >
-          <h3 id={`extension-lab-${group.id}`}>{group.title}</h3>
+          <h2 id={`extension-lab-${group.id}`}>{group.title}</h2>
           <p className="extension-lab-lede">{group.lede}</p>
           <ol className="extension-lab-probes">
             {group.probes.map((probe, index) => (
@@ -170,7 +170,7 @@ export function ExtensionLabPage() {
       ))}
 
       <section className="extension-lab-log" aria-labelledby="extension-lab-log">
-        <h3 id="extension-lab-log">Fired just now</h3>
+        <h2 id="extension-lab-log">Fired just now</h2>
         {log.length === 0 ? (
           <div className="diagrams-empty">
             <p className="status-message">No probes yet.</p>

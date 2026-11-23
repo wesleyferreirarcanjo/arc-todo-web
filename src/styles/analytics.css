@@ -332,6 +332,26 @@
   font-weight: 700;
 }
 
+/* Devices: section headings share the section-title type ramp. */
+.devices-page > section > h2 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-section);
+  font-weight: 650;
+}
+
+/* Devices: keep the Name column pinned while the table scrolls horizontally at narrow widths. */
+.devices-page .analytics-table th:first-child,
+.devices-page .analytics-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--bg-page);
+}
+
+.devices-page .analytics-table tbody tr.is-selected td:first-child {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-page));
+}
+
 .analytics-flag-id {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

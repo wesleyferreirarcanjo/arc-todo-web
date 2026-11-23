@@ -884,6 +884,7 @@ button.sidebar-nav-link {
   flex-shrink: 0;
 }
 
+.page-header h1,
 .page-header h2 {
   font-family: var(--font-display);
   font-size: var(--type-page);

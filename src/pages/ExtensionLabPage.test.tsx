@@ -45,7 +45,7 @@ describe('ExtensionLabPage', () => {
   it('names the lab and links back to Download', () => {
     renderPage();
     expect(
-      screen.getByRole('heading', { name: 'Evidence lab' }),
+      screen.getByRole('heading', { level: 1, name: 'Evidence lab' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
       'href',
