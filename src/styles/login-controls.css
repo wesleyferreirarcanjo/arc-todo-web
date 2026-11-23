@@ -113,6 +113,12 @@ textarea:focus {
   box-shadow: 0 0 0 2px var(--ring);
 }
 
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--danger-text);
+}
+
 .password-field {
   position: relative;
   display: flex;

@@ -114,6 +114,21 @@ describe('ChatbotTestingPage', () => {
     expect(document.querySelector('.form-error')).toBeNull();
   });
 
+  it('asks for a final prompt instead of a disabled Run test', async () => {
+    const user = userEvent.setup();
+    await renderPage();
+
+    const prompt = screen.getByLabelText('Final user prompt');
+    await user.clear(prompt);
+    await user.click(screen.getByRole('button', { name: 'Run test' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Enter a final prompt before running the test.',
+    );
+    expect(api.streamChatMessage).not.toHaveBeenCalled();
+    expect(api.sendChatMessage).not.toHaveBeenCalled();
+  });
+
   it('uses Select for scenario and conversation, with no native select', async () => {
     await renderPage();
 

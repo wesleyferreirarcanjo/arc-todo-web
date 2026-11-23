@@ -54,6 +54,8 @@ describe('ChatbotSettingsNav', () => {
   it('uses the shared page-shell header with tight density', () => {
     const { container } = renderNav('/settings/chatbot');
     expect(container.querySelector('.page-shell')).toHaveClass('is-tight-page');
-    expect(screen.getByRole('heading', { name: 'Chatbot Settings' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Chatbot Settings' }),
+    ).toBeInTheDocument();
   });
 });

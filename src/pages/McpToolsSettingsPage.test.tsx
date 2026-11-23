@@ -125,7 +125,9 @@ describe('McpToolsSettingsPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(await screen.findByRole('checkbox', { name: 'On' }));
+    await user.click(
+      await screen.findByRole('checkbox', { name: 'On List tasks' }),
+    );
 
     expect(updateMcpToolSetting).toHaveBeenCalledWith('list_tasks', {
       enabled: false,

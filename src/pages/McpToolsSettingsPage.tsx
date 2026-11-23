@@ -228,12 +228,25 @@ export function McpToolsSettingsPage() {
       </div>
 
       {error ? <ErrorAlert>{error}</ErrorAlert> : null}
+      {!loading && error && groups.length === 0 ? (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => void loadSettings()}
+        >
+          Try again
+        </button>
+      ) : null}
       {saved ? (
         <p className="status-message" role="status">
           {saved}
         </p>
       ) : null}
-      {loading ? <p className="status-message">Loading MCP tools...</p> : null}
+      {loading ? (
+        <p className="status-message" role="status">
+          Loading MCP tools...
+        </p>
+      ) : null}
 
       {!loading && !error && groups.length === 0 ? (
         <div className="diagrams-empty">
@@ -255,7 +268,9 @@ export function McpToolsSettingsPage() {
               <section key={group.group} className="settings-group-card">
                 <div className="settings-group-header">
                   <div>
-                    <h3>{MCP_TOOL_GROUP_LABELS[group.group]}</h3>
+                    <h2 id={`mcp-group-name-${group.group}`}>
+                      {MCP_TOOL_GROUP_LABELS[group.group]}
+                    </h2>
                     <p className="subtitle">
                       {group.tools.filter((tool) => tool.enabled).length} of{' '}
                       {group.tools.length} enabled · startup{' '}
@@ -266,10 +281,11 @@ export function McpToolsSettingsPage() {
                     </p>
                   </div>
                   <label className="toggle-row">
-                    <span>Group</span>
+                    <span id={`mcp-group-toggle-${group.group}`}>Group</span>
                     <input
                       type="checkbox"
                       checked={groupEnabled}
+                      aria-labelledby={`mcp-group-toggle-${group.group} mcp-group-name-${group.group}`}
                       ref={(input) => {
                         if (input) {
                           input.indeterminate = groupMixed;
@@ -287,7 +303,9 @@ export function McpToolsSettingsPage() {
                   {group.tools.map((tool) => (
                     <article key={tool.key} className="settings-tool-row">
                       <div>
-                        <strong>{tool.displayName}</strong>
+                        <strong id={`mcp-tool-name-${tool.key}`}>
+                          {tool.displayName}
+                        </strong>
                         <p className="subtitle">{tool.description}</p>
                         <div className="settings-tool-meta">
                           <code className="tool-key">{tool.key}</code>
@@ -305,10 +323,13 @@ export function McpToolsSettingsPage() {
                         </div>
                       </div>
                       <label className="toggle-row">
-                        <span>{tool.enabled ? 'On' : 'Off'}</span>
+                        <span id={`mcp-tool-toggle-${tool.key}`}>
+                          {tool.enabled ? 'On' : 'Off'}
+                        </span>
                         <input
                           type="checkbox"
                           checked={tool.enabled}
+                          aria-labelledby={`mcp-tool-toggle-${tool.key} mcp-tool-name-${tool.key}`}
                           disabled={savingKey === tool.key}
                           onChange={(event) =>
                             void handleToolToggle(tool.key, event.target.checked)
