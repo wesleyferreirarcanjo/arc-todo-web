@@ -11,6 +11,7 @@
   gap: 0.35rem;
 }
 
+.names-session-page > .page-header h1,
 .names-session-page > .page-header h2 {
   margin-bottom: 0.15rem;
 }
@@ -163,9 +164,14 @@
   cursor: pointer;
 }
 
-.names-brief-line:hover,
 .names-brief-line:focus-visible {
   color: var(--text-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .names-brief-line:hover {
+    color: var(--text-primary);
+  }
 }
 
 .names-shortlist-name {
@@ -181,10 +187,16 @@
   cursor: pointer;
 }
 
-.names-shortlist-name:hover,
 .names-shortlist-name:focus-visible {
   text-decoration: underline;
   text-underline-offset: 0.12em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .names-shortlist-name:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+  }
 }
 
 .names-brief-example {
@@ -240,11 +252,13 @@
   gap: 0.5rem;
 }
 
+.names-shortlist-heading h2,
 .names-shortlist-heading h3,
 .names-shortlist-heading span {
   margin: 0;
 }
 
+.names-shortlist-heading h2,
 .names-shortlist-heading h3 {
   font-size: 0.95rem;
 }
@@ -439,6 +453,14 @@
   min-height: 3rem;
   max-width: none;
   font-size: 1.12rem;
+}
+
+.names-composer-hero .names-composer-field {
+  min-width: 0;
+}
+
+.names-composer-hero > .btn-primary {
+  align-self: end;
 }
 
 .names-composer-hero .btn-primary,
@@ -644,9 +666,14 @@
   cursor: pointer;
 }
 
-.names-compare-matrix button:hover,
 .names-compare-matrix button:focus-visible {
   text-decoration: underline;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .names-compare-matrix button:hover {
+    text-decoration: underline;
+  }
 }
 
 .names-compare-decision {
@@ -918,8 +945,10 @@
   cursor: pointer;
 }
 
-.names-desk-name-link:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .names-desk-name-link:hover {
+    color: var(--accent);
+  }
 }
 
 @media (max-width: 700px) {
@@ -964,8 +993,10 @@
   text-underline-offset: 0.12em;
 }
 
-.names-text-link:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .names-text-link:hover {
+    color: var(--accent);
+  }
 }
 
 .names-unknown-mark {
@@ -1098,6 +1129,13 @@
   .evidence-ledger-row {
     grid-template-columns: 1fr;
     gap: 0.15rem;
+  }
+
+  /* Sheet behavior comes from .modal; these classes only widen on desktop. */
+  .names-inspector-modal,
+  .names-score-modal {
+    width: 100%;
+    max-height: none;
   }
 }
 

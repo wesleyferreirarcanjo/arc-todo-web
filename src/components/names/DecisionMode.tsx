@@ -479,7 +479,7 @@ export function DecisionMode(props: {
                     >
                       <h3 id={`ballot-depth-${id}`}>{candidate?.name ?? 'Name'}</h3>
                       <div className="names-card-block">
-                        <h5 className="names-brief-label">Heard spelling</h5>
+                        <p className="names-brief-label">Heard spelling</p>
                         <div className="names-inline">
                           <button
                             type="button"
@@ -497,13 +497,14 @@ export function DecisionMode(props: {
                           ) : null}
                           <input
                             placeholder="How you heard the spelling"
+                            autoComplete="off"
                             value={entry.rememberedSpelling}
                             onChange={(event) =>
                               patchEntry(id, {
                                 rememberedSpelling: event.target.value,
                               })
                             }
-                            aria-label={`How you heard the spelling of ${candidate?.name ?? 'this name'}`}
+                            aria-label={`Heard spelling for ${candidate?.name ?? 'this name'}`}
                           />
                         </div>
                       </div>
@@ -663,8 +664,8 @@ function ResultsPanel(props: {
             <span style={{ width: `${(row.points / maxPoints) * 100}%` }} />
           </div>
           <p className="names-meta">
-            Medians: easy to say {row.agg.easyToSay ?? '—'}, memorable{' '}
-            {row.agg.memorable ?? '—'}, fits product {row.agg.fitsProduct ?? '—'}
+            Medians: easy to say {row.agg.easyToSay ?? 'no score'}, memorable{' '}
+            {row.agg.memorable ?? 'no score'}, fits product {row.agg.fitsProduct ?? 'no score'}
           </p>
           <h3 className="names-brief-label">Repeated concerns</h3>
           {row.agg.repeatedConcerns.length === 0 ? (

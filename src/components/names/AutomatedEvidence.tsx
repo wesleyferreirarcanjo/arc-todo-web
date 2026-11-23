@@ -162,7 +162,7 @@ export function AutomatedEvidence(props: {
           {handlesRecheck.detail}
         </p>
       ) : null}
-      <h5 className="names-brief-label">Domain history</h5>
+      <p className="names-brief-label">Domain history</p>
       {(candidate.domainHistory ?? []).map((item) => (
         <p key={item.host}>
           {item.host}: {historyLabel(item.status)}

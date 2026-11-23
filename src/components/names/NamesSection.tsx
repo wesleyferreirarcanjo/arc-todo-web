@@ -16,24 +16,27 @@ export function NamesComposer(props: {
   const busy = Boolean(props.busy);
   return (
     <div className="names-composer names-composer-hero">
-      <input
-        value={props.typedName}
-        placeholder="Type a name"
-        aria-label="Name to check"
-        onChange={(event) => props.onTypedName(event.target.value)}
-        onPaste={(event) => {
-          const text = event.clipboardData.getData('text');
-          if (!looksLikeAiNameResponse(text)) return;
-          event.preventDefault();
-          props.onPastePacket(text);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
+      <label className="form-field names-composer-field">
+        <span>Name to check</span>
+        <input
+          value={props.typedName}
+          placeholder="Type a name"
+          autoComplete="off"
+          onChange={(event) => props.onTypedName(event.target.value)}
+          onPaste={(event) => {
+            const text = event.clipboardData.getData('text');
+            if (!looksLikeAiNameResponse(text)) return;
             event.preventDefault();
-            void props.onCheckName();
-          }
-        }}
-      />
+            props.onPastePacket(text);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              void props.onCheckName();
+            }
+          }}
+        />
+      </label>
       <button
         type="button"
         className="btn btn-primary"
@@ -111,7 +114,7 @@ export function NamesWorkbench(props: {
       ) : (
         <>
           <div className="names-shortlist-heading">
-            <h3>Candidates</h3>
+            <h2>Candidates</h2>
             <span>{wave.length}</span>
           </div>
           <CandidateShortlistTable

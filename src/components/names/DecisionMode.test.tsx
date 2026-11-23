@@ -194,7 +194,7 @@ describe('DecisionMode', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(
-      screen.getByLabelText('How you heard the spelling of Nova'),
+      screen.getByLabelText('Heard spelling for Nova'),
     ).toBeTruthy();
     expect(screen.getByText('Heard spelling')).toBeTruthy();
     expect(screen.getByPlaceholderText('How you heard the spelling')).toBeTruthy();
@@ -271,7 +271,7 @@ describe('DecisionMode', () => {
     await vote(user, 'Rift', 'Pass');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     await user.type(
-      screen.getByLabelText('How you heard the spelling of Nova'),
+      screen.getByLabelText('Heard spelling for Nova'),
       'Nova',
     );
     await user.type(screen.getByLabelText('What you think it does'), 'A board');

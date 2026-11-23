@@ -249,10 +249,11 @@ export function NamesHubPage() {
           Search
           <input
             type="search"
+            autoComplete="off"
             value={searchQuery}
             onChange={(event) => patchParams({ q: event.target.value })}
             placeholder="Filter by title"
-            aria-label="Filter name sessions by title"
+            aria-label="Search name sessions by title"
           />
         </label>
         <label className="board-filter-field">
@@ -270,7 +271,7 @@ export function NamesHubPage() {
   return (
     <div className="page-shell names-hub-page">
       <header className="page-header">
-        <h2>Names</h2>
+        <h1>Names</h1>
       </header>
 
       {loading && <p className="status-message">Loading name sessions...</p>}
@@ -365,6 +366,7 @@ export function NamesHubPage() {
               value={newTitle}
               onChange={(event) => setNewTitle(event.target.value)}
               placeholder="e.g. project-g"
+              autoComplete="off"
               autoFocus
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -429,6 +431,7 @@ export function NamesHubPage() {
             type="text"
             value={renameTitle}
             onChange={(event) => setRenameTitle(event.target.value)}
+            autoComplete="off"
             autoFocus
           />
         </label>

@@ -27,9 +27,9 @@ export function TeamViewsMode(props: { session: ProjectNameSession }) {
       {members.map((member) => (
         <section key={member.userId} aria-labelledby={`team-view-${member.userId}`}>
           <div className="names-shortlist-heading">
-            <h3 id={`team-view-${member.userId}`}>{member.displayName}</h3>
+            <h2 id={`team-view-${member.userId}`}>{member.displayName}</h2>
           </div>
-          <h4>Liked and loved</h4>
+          <h3>Liked and loved</h3>
           {member.likedLoved.length === 0 ? (
             <p className="names-meta">No liked or loved names.</p>
           ) : (
@@ -41,7 +41,7 @@ export function TeamViewsMode(props: { session: ProjectNameSession }) {
               ))}
             </ul>
           )}
-          <h4>Scores</h4>
+          <h3>Scores</h3>
           {member.ratings.length === 0 ? (
             <p className="names-meta">No 1–10 scores yet.</p>
           ) : (
@@ -49,7 +49,7 @@ export function TeamViewsMode(props: { session: ProjectNameSession }) {
               {member.ratings.map((item) => (
                 <li key={item.candidateId} className="names-check-line">
                   {item.name} · {item.overall}/10
-                  {item.notes ? ` — ${item.notes}` : ''}
+                  {item.notes ? ` · ${item.notes}` : ''}
                 </li>
               ))}
             </ul>

@@ -66,7 +66,7 @@ export function ShortlistGrid(props: {
                 <HeartIcon filled={favorited} />
               </button>
             </div>
-            <h3 className="names-deck-name">{candidate.name}</h3>
+            <h2 className="names-deck-name">{candidate.name}</h2>
             <p className="names-deck-rationale">
               {candidate.rationale?.trim() || 'Added to this session.'}
             </p>

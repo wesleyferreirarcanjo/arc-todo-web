@@ -35,14 +35,45 @@ export function Modal({
   const { base, reducedMotion } = useMotionTransition();
   const onCloseRef = useRef(onClose);
   const scatterRafRef = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
 
+    const returnFocusTo =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const panel = panelRef.current;
+    // Children with autoFocus may already hold focus; only move it when the
+    // dialog opened without an inner target (focus must not stay behind it).
+    if (panel && !panel.contains(document.activeElement)) {
+      panel.focus();
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab' || !panel) return;
+      const focusables = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || active === panel)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
@@ -52,6 +83,9 @@ export function Modal({
     return () => {
       releaseBodyScrollLock();
       document.removeEventListener('keydown', handleKeyDown);
+      if (returnFocusTo && document.contains(returnFocusTo)) {
+        returnFocusTo.focus();
+      }
     };
   }, [open]);
 
@@ -101,6 +135,8 @@ export function Modal({
           transition={base}
         >
           <motion.div
+            ref={panelRef}
+            tabIndex={-1}
             className={[
               'modal',
               className,

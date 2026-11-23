@@ -112,7 +112,7 @@ export function CandidateDeckCard(props: {
         </span>
         <span className={webfitClass(fit.availability)}>{fit.text}</span>
       </div>
-      <h3 className="names-deck-name">{candidate.name}</h3>
+      <h2 className="names-deck-name">{candidate.name}</h2>
       <p className="names-deck-rationale">{description}</p>
       {traits.length > 0 && (
         <ul className="names-deck-traits">
