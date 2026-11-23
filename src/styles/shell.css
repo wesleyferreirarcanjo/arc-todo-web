@@ -44,6 +44,25 @@
   z-index: -1;
 }
 
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1100;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  font-weight: 600;
+  transform: translateY(-250%);
+  transition: transform var(--transition-fast);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
 .app-main {
   padding: 1.5rem 0 0;
   width: 100%;
@@ -958,6 +977,7 @@ button.sidebar-nav-link {
   flex-shrink: 0;
 }
 
+.page-header h1,
 .page-header h2 {
   font-family: var(--font-display);
   font-size: var(--type-page);

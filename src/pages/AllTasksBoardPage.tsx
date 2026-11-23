@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { userMessage, WEB_ERROR } from '../lib/errors/messages';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -103,6 +104,7 @@ export function AllTasksBoardPage() {
     () => getBoardTaskSort().direction,
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [advanceConfirmOpen, setAdvanceConfirmOpen] = useState(false);
   const [chromePanel, setChromePanel] = useState<BoardChromePanel>(null);
   const [cycleHistory, setCycleHistory] = useState<BoardCycleHistoryResponse>({
     cycles: [],
@@ -390,6 +392,7 @@ export function AllTasksBoardPage() {
     setError(null);
     try {
       await advanceBoardCycle(organizationId, projectId);
+      setAdvanceConfirmOpen(false);
       await loadProjectCycle({ silent: true });
     } catch (err) {
       setError(userMessage(err, WEB_ERROR.SAVE, { thing: 'the weekly cycle' }));
@@ -724,7 +727,7 @@ export function AllTasksBoardPage() {
   return (
     <div className="tasks-page">
       <header className="page-header">
-        <h2>All tasks</h2>
+        <h1>All tasks</h1>
       </header>
       <PageFiltersToolbar
         open={chromePanel === 'filters'}
@@ -777,7 +780,7 @@ export function AllTasksBoardPage() {
             cycle={activeCycle}
             autoClosesOn={autoClosesOn}
             advancing={advancing}
-            onAdvance={() => void handleAdvanceCycle()}
+            onAdvance={() => setAdvanceConfirmOpen(true)}
             embedded
           />
         </div>
@@ -800,8 +803,8 @@ export function AllTasksBoardPage() {
 
       {hiddenColumns.length > 0 && !loading && (
         <p className="status-message board-columns-hidden-hint" role="status">
-          {hiddenColumns.length} column{hiddenColumns.length === 1 ? '' : 's'} hidden
-          — use Columns to show them again. List view still shows all tasks.
+          {hiddenColumns.length} column{hiddenColumns.length === 1 ? '' : 's'} hidden.
+          Use Columns to show them again. List view still shows all tasks.
         </p>
       )}
 
@@ -929,6 +932,21 @@ export function AllTasksBoardPage() {
           subtasks={deepLinkTask.subtasks}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={advanceConfirmOpen}
+        title="Close the weekly cycle early?"
+        description="Done tasks move to sprint history and a new cycle starts. This cannot be undone."
+        confirmLabel="Close early"
+        variant="danger"
+        loading={advancing}
+        onConfirm={() => void handleAdvanceCycle()}
+        onCancel={() => {
+          if (!advancing) {
+            setAdvanceConfirmOpen(false);
+          }
+        }}
+      />
     </div>
   );
 }

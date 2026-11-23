@@ -45,7 +45,7 @@ export function ConfirmDialog({
         <Button
           variant="secondary"
           disabled={loading}
-          autoFocus={variant === 'danger'}
+          autoFocus
           onClick={onCancel}
         >
           {cancelLabel}

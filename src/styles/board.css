@@ -173,10 +173,12 @@
     background var(--transition-fast);
 }
 
-.board-column-visibility-toggle:hover:not(:disabled) {
-  color: var(--text-primary);
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+@media (hover: hover) and (pointer: fine) {
+  .board-column-visibility-toggle:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+  }
 }
 
 .board-column-visibility-toggle:disabled {
@@ -286,10 +288,12 @@
     background var(--transition-base);
 }
 
-.board-column-show-more:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .board-column-show-more:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
 }
 
 .board-column-show-more:focus-visible {
@@ -330,19 +334,21 @@
   flex-direction: column;
 }
 
-.task-card:hover,
 .task-card.has-menu-open,
 .task-card:focus-within {
   z-index: 20;
 }
 
-.task-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-card);
-}
+@media (hover: hover) and (pointer: fine) {
+  .task-card:hover {
+    z-index: 20;
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-card);
+  }
 
-.task-card.has-accent.has-scatter-lights:hover {
-  box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
+  .task-card.has-accent.has-scatter-lights:hover {
+    box-shadow: var(--shadow-soft), var(--entity-corner-glow), var(--entity-rail-glow);
+  }
 }
 
 .task-card:active {
@@ -1076,7 +1082,6 @@
   color: var(--entity-accent, var(--smart-copy));
 }
 
-.task-card-action-btn.task-card-smart-copy-btn:hover,
 .task-card-action-btn.task-card-smart-copy-btn:focus-visible {
   background: color-mix(
     in srgb,
@@ -1085,6 +1090,18 @@
   );
   border-color: color-mix(in srgb, var(--entity-accent, var(--smart-copy)) 45%, var(--border));
   color: var(--entity-accent, var(--smart-copy));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-card-action-btn.task-card-smart-copy-btn:hover {
+    background: color-mix(
+      in srgb,
+      var(--bg-surface) 78%,
+      var(--entity-accent, var(--smart-copy)) 22%
+    );
+    border-color: color-mix(in srgb, var(--entity-accent, var(--smart-copy)) 45%, var(--border));
+    color: var(--entity-accent, var(--smart-copy));
+  }
 }
 
 .task-card-qa-progress,
@@ -1198,13 +1215,22 @@
   filter: brightness(calc(0.94 + (var(--qa-progress) * 0.16)));
 }
 
-.task-card-qa-progress:hover,
 .task-card-qa-progress:focus-visible {
   background: color-mix(
     in srgb,
     var(--entity-accent, var(--accent)) calc(18% + (var(--qa-progress) * 16%)),
     var(--bg-surface)
   );
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-card-qa-progress:hover {
+    background: color-mix(
+      in srgb,
+      var(--entity-accent, var(--accent)) calc(18% + (var(--qa-progress) * 16%)),
+      var(--bg-surface)
+    );
+  }
 }
 
 .task-card-done-hold {
@@ -1237,11 +1263,18 @@
   background: color-mix(in srgb, var(--smart-copy) 12%, var(--bg-surface));
 }
 
-.btn.task-details-smart-copy-btn:hover:not(:disabled),
 .btn.task-details-smart-copy-btn:focus-visible {
   color: var(--smart-copy);
   border-color: color-mix(in srgb, var(--smart-copy) 62%, var(--border));
   background: color-mix(in srgb, var(--smart-copy) 20%, var(--bg-surface));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn.task-details-smart-copy-btn:hover:not(:disabled) {
+    color: var(--smart-copy);
+    border-color: color-mix(in srgb, var(--smart-copy) 62%, var(--border));
+    background: color-mix(in srgb, var(--smart-copy) 20%, var(--bg-surface));
+  }
 }
 
 .task-copy-icon {
@@ -1281,11 +1314,18 @@
     color var(--transition-fast), transform var(--transition-fast);
 }
 
-.task-card-action-btn:hover,
 .task-card-action-btn:focus-visible {
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   color: var(--text-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-card-action-btn:hover {
+    border-color: var(--border-strong);
+    background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
+    color: var(--text-primary);
+  }
 }
 
 .task-card-action-btn:active {
@@ -1322,10 +1362,16 @@
   z-index: 30;
 }
 
-.task-card-action-btn:hover .task-card-action-tooltip,
 .task-card-action-btn:focus-visible .task-card-action-tooltip {
   opacity: 1;
   visibility: visible;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-card-action-btn:hover .task-card-action-tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 .task-action-menu {
@@ -1349,11 +1395,18 @@
     color var(--transition-fast);
 }
 
-.task-menu-trigger:hover,
 .task-menu-trigger[aria-expanded='true'] {
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   color: var(--text-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-menu-trigger:hover {
+    border-color: var(--border-strong);
+    background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
+    color: var(--text-primary);
+  }
 }
 
 .task-menu-icon {
@@ -1392,10 +1445,16 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.task-action-menu-item:hover:not(:disabled),
 .task-action-menu-item:focus-visible {
   background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-action-menu-item:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
+    outline: none;
+  }
 }
 
 .task-action-menu-item:disabled {
@@ -1407,9 +1466,14 @@
   color: var(--danger-text);
 }
 
-.task-action-menu-item-danger:hover:not(:disabled),
 .task-action-menu-item-danger:focus-visible {
   background: color-mix(in srgb, var(--danger-bg) 84%, var(--danger-text) 16%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-action-menu-item-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger-bg) 84%, var(--danger-text) 16%);
+  }
 }
 
 .task-menu-item-icon {
@@ -1910,9 +1974,14 @@
   text-underline-offset: 0.15em;
 }
 
-.task-comment-action:hover,
 .task-comment-action:focus-visible {
   color: var(--accent-secondary, var(--accent));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-comment-action:hover {
+    color: var(--accent-secondary, var(--accent));
+  }
 }
 
 .task-comment-action.is-danger {
@@ -1984,7 +2053,9 @@
   transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
 }
 
-.text-link:hover {
-  color: color-mix(in srgb, var(--accent) 82%, var(--text-primary));
-  text-decoration-color: currentColor;
+@media (hover: hover) and (pointer: fine) {
+  .text-link:hover {
+    color: color-mix(in srgb, var(--accent) 82%, var(--text-primary));
+    text-decoration-color: currentColor;
+  }
 }
