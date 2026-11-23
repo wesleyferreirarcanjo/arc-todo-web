@@ -406,7 +406,7 @@ export function DiagramsHubPage() {
   return (
     <div className="page-shell diagrams-hub-page">
       <header className="page-header">
-        <h2>Diagrams</h2>
+        <h1>Diagrams</h1>
       </header>
 
       {loading && <p className="status-message">Loading diagrams...</p>}
@@ -502,9 +502,9 @@ export function DiagramsHubPage() {
                           {formatBadgeLabel(project.name)}
                         </span>
                       </div>
-                      <h3 className="diagram-card-title">
+                      <h2 className="diagram-card-title">
                         <Link to={editorPath}>{diagram.title}</Link>
-                      </h3>
+                      </h2>
                       <p className="diagram-card-meta">
                         Updated {formatUpdatedAt(diagram.updatedAt)}
                       </p>

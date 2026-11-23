@@ -30,6 +30,13 @@ describe('diagrams hub New diagram (#arc-270)', () => {
   });
 });
 
+describe('diagrams hub UI floor (#arc-765)', () => {
+  it('names the view with one h1', () => {
+    expect(page).toContain('<h1>Diagrams</h1>');
+    expect(page).not.toContain('<h2>');
+  });
+});
+
 describe('diagrams hub board standard (#arc-663)', () => {
   it('starts Filters closed and lists Rename/Delete on hub cards', () => {
     expect(page).toContain('PageFiltersToolbar');

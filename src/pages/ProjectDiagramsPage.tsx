@@ -244,7 +244,7 @@ export function ProjectDiagramsPage() {
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>Diagrams</h2>
+          <h1>Diagrams</h1>
           <ErrorAlert code="ERR-ARC-ACL-02">
             {catalogMessage('ERR-ARC-ACL-02')}
           </ErrorAlert>
@@ -306,7 +306,7 @@ export function ProjectDiagramsPage() {
     >
       <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
         <WorkspaceEyebrow />
-        <h2>{currentProject?.name ?? 'Project'} diagrams</h2>
+        <h1>{currentProject?.name ?? 'Project'} diagrams</h1>
         <div className="page-links">
           <Link
             to={projectTasksHref(orgId, projectId)}
@@ -399,13 +399,13 @@ export function ProjectDiagramsPage() {
                 )}
               </Link>
               <div className="diagram-card-body">
-                <h3 className="diagram-card-title">
+                <h2 className="diagram-card-title">
                   <Link
                     to={`/organizations/${orgId}/projects/${projectId}/diagrams/${diagram.id}`}
                   >
                     {diagram.title}
                   </Link>
-                </h3>
+                </h2>
                 <p className="diagram-card-meta">
                   Updated {formatUpdatedAt(diagram.updatedAt)}
                 </p>

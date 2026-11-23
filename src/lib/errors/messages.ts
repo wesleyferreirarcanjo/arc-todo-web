@@ -64,7 +64,7 @@ const MESSAGES: Record<string, string> = {
   [WEB_ERROR.VAL_ORG]: 'Choose an organization first.',
   [WEB_ERROR.VAL_PROJECT]: 'Choose a project first.',
   [WEB_ERROR.VAL_NAME]: 'Enter a name to continue.',
-  [WEB_ERROR.VAL_DIAGRAM]: 'Enter a diagram name to continue.',
+  [WEB_ERROR.VAL_DIAGRAM]: 'Enter a diagram name.',
   [WEB_ERROR.VAL_WIREFRAME]: 'Enter a wireframe name to continue.',
   [WEB_ERROR.VAL_SESSION]: 'Enter a session name to continue.',
   [WEB_ERROR.VAL_WORKING]: 'Enter a working name to continue.',

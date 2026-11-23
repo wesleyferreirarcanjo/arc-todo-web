@@ -38,10 +38,11 @@ function buildTitle(
 }
 
 /** Keeps document.title + favicon in sync with board filters or route workspace. */
-export function useDocumentChrome(): void {
+export function useDocumentChrome(viewTitle?: string | null): void {
   const { color, projectId, orgName, projectName } = useWorkspaceAccent();
 
-  const title = buildTitle(projectName, orgName, Boolean(projectId));
+  const baseTitle = buildTitle(projectName, orgName, Boolean(projectId));
+  const title = viewTitle ? `${viewTitle} · ${baseTitle}` : baseTitle;
   const faviconHref = color ? brandMarkFaviconHref(color) : MARK_FAVICON_HREF;
 
   useEffect(() => {

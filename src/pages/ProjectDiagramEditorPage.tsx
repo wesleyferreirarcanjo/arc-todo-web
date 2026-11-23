@@ -8,6 +8,7 @@ import '@excalidraw/excalidraw/index.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import { ApiError } from '../lib/api/client';
 import {
   fetchProjectDiagram,
@@ -103,6 +104,7 @@ export function ProjectDiagramEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [forbidden, setForbidden] = useState(false);
+  useDocumentChrome(title.trim() || 'Diagram');
 
   const elementsRef = useRef<ExcalidrawElements>([]);
   const appStateRef = useRef<ExcalidrawAppState | null>(null);
@@ -246,9 +248,9 @@ export function ProjectDiagramEditorPage() {
 
   if (forbidden) {
     return (
-      <div className="page-shell">
+      <main className="page-shell">
         <header className="page-header">
-          <h2>Diagrams</h2>
+          <h1>Diagrams</h1>
           <ErrorAlert code="ERR-ARC-ACL-02">
             You do not have access to this project. Ask an administrator to add you.
           </ErrorAlert>
@@ -258,7 +260,7 @@ export function ProjectDiagramEditorPage() {
             </Link>
           </div>
         </header>
-      </div>
+      </main>
     );
   }
 
@@ -270,9 +272,10 @@ export function ProjectDiagramEditorPage() {
   };
 
   return (
-    <div className="diagram-editor-page">
+    <main className="diagram-editor-page">
       <header className="diagram-editor-header">
         <div className="diagram-editor-header-main">
+          <h1 className="sr-only">Diagram editor</h1>
           <Link
             to={`/organizations/${orgId}/projects/${projectId}/diagrams`}
             className="text-link"
@@ -306,6 +309,7 @@ export function ProjectDiagramEditorPage() {
             type="button"
             className="btn btn-primary"
             disabled={saveStatus === 'saving' || loading || !diagram}
+            aria-busy={saveStatus === 'saving'}
             onClick={() => void handleSave()}
           >
             {saveStatus === 'saving' ? 'Saving...' : 'Save'}
@@ -341,6 +345,6 @@ export function ProjectDiagramEditorPage() {
           />
         </div>
       )}
-    </div>
+    </main>
   );
 }
