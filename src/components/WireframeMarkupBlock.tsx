@@ -87,7 +87,7 @@ export function WireframeMarkupBlock({
   function openMarkupName() {
     setNameMode('markup');
     setNameTarget(null);
-    setNameValue(`${wireframeTitle} — markup`);
+    setNameValue(`${wireframeTitle}: markup`);
     setNameError(null);
     setNameErrorCode(undefined);
     setError(null);

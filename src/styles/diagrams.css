@@ -135,7 +135,13 @@
   cursor: pointer;
 }
 
-.wireframe-preview-nav:hover,
+@media (hover: hover) and (pointer: fine) {
+  .wireframe-preview-nav:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-surface);
+  }
+}
+
 .wireframe-preview-nav:focus-visible {
   border-color: var(--border-strong);
   background: var(--bg-surface);
@@ -322,6 +328,7 @@
 
 .diagram-editor-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
 }
@@ -344,6 +351,13 @@
   font-size: var(--type-page);
   font-weight: 600;
   line-height: 1.2;
+}
+
+.wireframe-preview-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .wireframe-preview-frame {
@@ -395,8 +409,10 @@
   text-decoration: none;
 }
 
-.wireframe-markup-link:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .wireframe-markup-link:hover {
+    color: var(--accent);
+  }
 }
 
 .wireframe-markup-thumb,

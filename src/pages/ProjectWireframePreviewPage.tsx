@@ -71,6 +71,14 @@ export function ProjectWireframePreviewPage() {
     void loadWireframe();
   }, [loadWireframe]);
 
+  // Standalone shell has no Layout, so this page owns the document title.
+  useEffect(() => {
+    document.title = `${wireframe?.title ?? 'Wireframe'} · Arc Todo`;
+    return () => {
+      document.title = 'Arc Todo';
+    };
+  }, [wireframe?.title]);
+
   const commitDelete = useCallback(async () => {
     if (!orgId || !projectId || !wireframeId) return;
     setDeleting(true);
@@ -123,7 +131,7 @@ export function ProjectWireframePreviewPage() {
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>Wireframes</h2>
+          <h1>Wireframes</h1>
           <ErrorAlert code={ACL_PROJECT}>
             {catalogMessage(ACL_PROJECT)}
           </ErrorAlert>
@@ -142,11 +150,11 @@ export function ProjectWireframePreviewPage() {
       <header className="diagram-editor-header">
         <div className="diagram-editor-header-main">
           <Link to={listPath} className="text-link">
-            ← Wireframes
+            Back to wireframes
           </Link>
-          <h2 className="wireframe-preview-title">
+          <h1 className="wireframe-preview-title">
             {wireframe?.title ?? 'Wireframe'}
-          </h2>
+          </h1>
         </div>
         <div className="diagram-editor-header-actions">
           <WireframeMarkupBlock
@@ -157,7 +165,7 @@ export function ProjectWireframePreviewPage() {
             html={wireframe?.html}
             diagrams={markupDiagrams}
             disabled={!wireframe || loading}
-            markUpClassName="btn btn-secondary"
+            markUpClassName="btn btn-primary"
             showList={markupDiagrams.length > 0}
             onDiagramsChange={() => {
               void fetchProjectDiagrams(orgId, projectId, { wireframeId }).then(
@@ -189,17 +197,19 @@ export function ProjectWireframePreviewPage() {
         </div>
       </header>
 
-      {loading && <p className="status-message">Loading wireframe...</p>}
-      {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
+      <main className="wireframe-preview-main">
+        {loading && <p className="status-message">Loading wireframe...</p>}
+        {error && <ErrorAlert code={errorCode}>{error}</ErrorAlert>}
 
-      {!loading && !error && wireframe && (
-        <iframe
-          className="wireframe-preview-frame"
-          title={wireframe.title}
-          sandbox="allow-scripts"
-          srcDoc={wireframe.html}
-        />
-      )}
+        {!loading && !error && wireframe && (
+          <iframe
+            className="wireframe-preview-frame"
+            title={wireframe.title}
+            sandbox="allow-scripts"
+            srcDoc={wireframe.html}
+          />
+        )}
+      </main>
 
       <Modal
         open={renameOpen}

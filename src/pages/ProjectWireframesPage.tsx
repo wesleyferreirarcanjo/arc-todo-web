@@ -253,7 +253,7 @@ export function ProjectWireframesPage() {
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>Wireframes</h2>
+          <h1>Wireframes</h1>
           <ErrorAlert code="ERR-ARC-ACL-02">
             {catalogMessage('ERR-ARC-ACL-02')}
           </ErrorAlert>
@@ -312,7 +312,7 @@ export function ProjectWireframesPage() {
     >
       <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
         <WorkspaceEyebrow />
-        <h2>{currentProject?.name ?? 'Project'} wireframes</h2>
+        <h1>{currentProject?.name ?? 'Project'} wireframes</h1>
         <div className="page-links">
           <Link
             to={projectTasksHref(orgId, projectId)}

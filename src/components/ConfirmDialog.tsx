@@ -38,6 +38,7 @@ export function ConfirmDialog({
           variant={variant === 'danger' ? 'danger' : 'primary'}
           disabled={loading}
           aria-busy={loading}
+          autoFocus={variant !== 'danger'}
           onClick={onConfirm}
         >
           {loading ? 'Working...' : confirmLabel}
