@@ -1,3 +1,4 @@
+import { Button } from './Button';
 import { Modal } from './Modal';
 
 interface ConfirmDialogProps {
@@ -33,23 +34,22 @@ export function ConfirmDialog({
     >
       <p className="confirm-dialog-description">{description}</p>
       <div className="hub-actions">
-        <button
-          type="button"
-          className={`btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`}
+        <Button
+          variant={variant === 'danger' ? 'danger' : 'primary'}
           disabled={loading}
           aria-busy={loading}
           onClick={onConfirm}
         >
           {loading ? 'Working...' : confirmLabel}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
+        </Button>
+        <Button
+          variant="secondary"
           disabled={loading}
+          autoFocus={variant === 'danger'}
           onClick={onCancel}
         >
           {cancelLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

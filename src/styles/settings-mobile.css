@@ -130,7 +130,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 40;
+  z-index: var(--z-banner);
   pointer-events: none;
   /* Slim strip for status icons only — FAB sits fully above this box. */
   height: calc(var(--mobile-bottom-bar-h) + env(safe-area-inset-bottom, 0px));
@@ -197,7 +197,7 @@
     env(safe-area-inset-bottom, 0px) + var(--mobile-bottom-bar-h) +
       var(--mobile-fab-gap)
   );
-  z-index: 41;
+  z-index: var(--z-fab);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -223,7 +223,7 @@
   position: fixed;
   left: 50%;
   bottom: max(7.5rem, calc(6.5rem + env(safe-area-inset-bottom, 0px)));
-  z-index: 80;
+  z-index: var(--z-toast);
   display: flex;
   align-items: center;
   gap: 0.85rem;
@@ -257,8 +257,10 @@
   transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
-.undo-toast-action:hover {
-  background: color-mix(in srgb, var(--accent) 28%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .undo-toast-action:hover {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
 }
 
 .undo-toast-action:active {
@@ -306,11 +308,13 @@
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
-.mobile-board-fab-button:hover {
-  box-shadow:
-    0 6px 10px rgba(0, 0, 0, 0.2),
-    0 14px 32px rgba(0, 0, 0, 0.32),
-    0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .mobile-board-fab-button:hover {
+    box-shadow:
+      0 6px 10px rgba(0, 0, 0, 0.2),
+      0 14px 32px rgba(0, 0, 0, 0.32),
+      0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
 }
 
 .mobile-board-fab-button:active {
@@ -445,12 +449,23 @@
     transform var(--transition-fast);
 }
 
-.mobile-board-fab-dial-item:hover,
+@media (hover: hover) and (pointer: fine) {
+  .mobile-board-fab-dial-item:hover {
+    border-color: var(--accent, var(--border-strong));
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated, var(--bg-surface)));
+    outline: none;
+  }
+}
+
 .mobile-board-fab-dial-item:focus-visible,
 .mobile-board-fab-dial-item.is-active {
   border-color: var(--accent, var(--border-strong));
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated, var(--bg-surface)));
-  outline: none;
+}
+
+.mobile-board-fab-dial-item:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .mobile-board-fab-dial-item:active {
@@ -631,9 +646,11 @@
     transform var(--transition-fast);
 }
 
-.chat-widget-back:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated, var(--bg-surface)));
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-back:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated, var(--bg-surface)));
+  }
 }
 
 .chat-widget-back:active {

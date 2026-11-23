@@ -386,7 +386,7 @@
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
-  z-index: 950;
+  z-index: var(--z-chat);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -425,7 +425,7 @@
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
-  z-index: 951;
+  z-index: calc(var(--z-chat) + 1);
   width: 4.2rem;
   height: 4.2rem;
 }
@@ -440,16 +440,18 @@
   box-shadow: var(--shadow-soft);
 }
 
-.chat-widget-fab:hover {
-  box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
-  transform: translateY(-1px);
-}
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-fab:hover {
+    box-shadow: var(--shadow-lift), 0 0 0 3px var(--ring);
+    transform: translateY(-1px);
+  }
 
-.chat-widget-fab.is-open:hover {
-  border-color: var(--accent);
-  color: var(--accent-contrast);
-  box-shadow: var(--shadow-soft), 0 0 0 2px var(--ring);
-  transform: translateY(0);
+  .chat-widget-fab.is-open:hover {
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: var(--shadow-soft), 0 0 0 2px var(--ring);
+    transform: translateY(0);
+  }
 }
 
 .chat-widget-fab-content {
@@ -558,9 +560,11 @@
   cursor: pointer;
 }
 
-.chat-widget-tab-close:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-tab-close:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  }
 }
 
 .chat-widget-tab-close:disabled {
@@ -587,9 +591,11 @@
   flex-shrink: 0;
 }
 
-.chat-widget-tab-new:hover {
-  border-color: var(--accent);
-  color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-tab-new:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
 }
 
 .chat-widget-tab-overflow {
@@ -610,7 +616,13 @@
   cursor: pointer;
 }
 
-.chat-widget-tab-overflow-trigger:hover,
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-tab-overflow-trigger:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+}
+
 .chat-widget-tab-overflow-trigger[aria-expanded='true'] {
   border-color: var(--accent);
   color: var(--text-primary);
@@ -648,7 +660,12 @@
   text-overflow: ellipsis;
 }
 
-.chat-widget-tab-overflow-item:hover,
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-tab-overflow-item:hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+  }
+}
+
 .chat-widget-tab-overflow-item.is-active {
   background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
 }
@@ -685,8 +702,10 @@
   cursor: pointer;
 }
 
-.chat-widget-context-chip:hover {
-  border-color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-context-chip:hover {
+    border-color: var(--accent);
+  }
 }
 
 .chat-widget-context-chip-label {
@@ -879,9 +898,11 @@
     background var(--transition-fast);
 }
 
-.chat-widget-close:hover {
-  border-color: var(--accent);
-  color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .chat-widget-close:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
 }
 
 .chat-widget-messages,

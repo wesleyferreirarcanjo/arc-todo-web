@@ -473,7 +473,11 @@
   color: var(--text-primary);
   font-size: 0.875rem;
   box-shadow: var(--shadow-card);
-  z-index: 80;
+  z-index: var(--z-toast);
+}
+
+.recording-indicator-label {
+  font-weight: 600;
 }
 
 .recording-indicator-dot {

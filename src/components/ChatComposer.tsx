@@ -218,6 +218,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
         contentEditable={disabled ? 'false' : 'true'}
         role="textbox"
         aria-multiline="true"
+        aria-disabled={disabled || undefined}
         aria-label="Message composer"
         data-placeholder={placeholder}
         onKeyDown={(event) => {

@@ -1,5 +1,5 @@
 import { userMessage as formatUserError, WEB_ERROR } from '../lib/errors/messages';
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type Ref } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { streamChatMessage } from '../lib/api/chat';
 import type { ChatMessage } from '../lib/api/chat';
@@ -20,6 +20,8 @@ import {
 } from '../lib/motion/variants';
 import { SHELL_MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
+import { Button } from './Button';
+import { EmptyState } from './EmptyState';
 import { IosHapticHit } from './IosHapticHit';
 
 function AssistantIcon() {
@@ -105,6 +107,7 @@ interface ChatLauncherButtonProps {
   panelId: string;
   fabIconTransition: ReturnType<typeof useMotionTransition>['fast'] | object;
   onToggle: () => void;
+  buttonRef?: Ref<HTMLButtonElement>;
 }
 
 function ChatLauncherButton({
@@ -113,9 +116,11 @@ function ChatLauncherButton({
   panelId,
   fabIconTransition,
   onToggle,
+  buttonRef,
 }: ChatLauncherButtonProps) {
   return (
     <motion.button
+      ref={buttonRef}
       type="button"
       layout
       layoutId="chat-widget-launcher"
@@ -237,6 +242,8 @@ export function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<ChatComposerHandle>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(chatOpen);
   const panelId = 'chat-widget-panel';
 
   const scrollToBottom = useCallback(() => {
@@ -292,6 +299,14 @@ export function ChatWidget() {
       composerRef.current?.focus();
     }
   }, [chatOpen, activeConversationId]);
+
+  // Return focus to the launcher after the panel closes (Escape or close button).
+  useEffect(() => {
+    if (wasOpenRef.current && !chatOpen) {
+      launcherRef.current?.focus();
+    }
+    wasOpenRef.current = chatOpen;
+  }, [chatOpen]);
 
   useEffect(() => {
     const delayMs = reducedMotion ? 0 : 320;
@@ -495,12 +510,11 @@ export function ChatWidget() {
                   </button>
 
                   {overflowOpen ? (
-                    <div className="chat-widget-tab-overflow-menu" role="menu">
+                    <div className="chat-widget-tab-overflow-menu">
                       {overflowConversations.map((conversation) => (
                         <button
                           key={conversation.id}
                           type="button"
-                          role="menuitem"
                           className={
                             conversation.id === activeConversationId
                               ? 'chat-widget-tab-overflow-item is-active'
@@ -541,6 +555,11 @@ export function ChatWidget() {
             <div className="chat-widget-messages" aria-live="polite">
               {loadingMessages ? (
                 <p className="chat-widget-loading">Loading conversation...</p>
+              ) : messages.length === 0 ? (
+                <EmptyState
+                  title="No messages yet"
+                  body="Ask about your tasks and projects."
+                />
               ) : (
                 messages.map((message, index) => {
                   const isStreamingPlaceholder =
@@ -598,13 +617,14 @@ export function ChatWidget() {
                 onSubmit={() => void handleSubmit()}
               />
               <div className="chat-widget-composer-actions">
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-primary chat-widget-send"
+                  className="chat-widget-send"
                   disabled={loading || loadingMessages}
+                  aria-busy={loading}
                 >
                   {loading ? 'Sending...' : 'Send'}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.section>
@@ -620,6 +640,7 @@ export function ChatWidget() {
           panelId={panelId}
           fabIconTransition={fabIconTransition}
           onToggle={() => setChatOpen(!chatOpen)}
+          buttonRef={launcherRef}
         />
       ) : null}
     </LayoutGroup>

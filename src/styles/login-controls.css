@@ -535,14 +535,16 @@ textarea {
   box-shadow: var(--shadow-soft);
 }
 
-.btn-primary:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent-secondary) 72%, transparent);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent) 88%, white) 0%,
-    color-mix(in srgb, var(--accent-secondary) 88%, white) 100%
-  );
-  box-shadow: var(--shadow-card);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-secondary) 72%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 88%, white) 0%,
+      color-mix(in srgb, var(--accent-secondary) 88%, white) 100%
+    );
+    box-shadow: var(--shadow-card);
+  }
 }
 
 .btn-primary:active:not(:disabled) {
@@ -555,10 +557,12 @@ textarea {
   border: 1px solid var(--border-strong);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
-  box-shadow: var(--shadow-soft);
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
+    box-shadow: var(--shadow-soft);
+  }
 }
 
 .btn-secondary:active:not(:disabled) {
@@ -571,10 +575,12 @@ textarea {
   border: 1px solid color-mix(in srgb, var(--danger-text) 42%, var(--border));
 }
 
-.btn-danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--danger-bg) 72%, var(--danger-text) 28%);
-  border-color: color-mix(in srgb, var(--danger-text) 64%, var(--border));
-  box-shadow: var(--shadow-soft);
+@media (hover: hover) and (pointer: fine) {
+  .btn-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger-bg) 72%, var(--danger-text) 28%);
+    border-color: color-mix(in srgb, var(--danger-text) 64%, var(--border));
+    box-shadow: var(--shadow-soft);
+  }
 }
 
 .btn-danger:active:not(:disabled) {
@@ -593,9 +599,11 @@ textarea {
   background: var(--bg-elevated);
 }
 
-.theme-toggle-btn:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle-btn:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--bg-elevated) 76%, var(--accent) 24%);
+  }
 }
 
 .theme-toggle-btn:active {

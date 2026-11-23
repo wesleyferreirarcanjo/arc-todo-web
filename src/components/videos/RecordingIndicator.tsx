@@ -4,6 +4,7 @@ import {
   recordingSession,
   setRecordingSessionNavigate,
 } from '../../lib/videos/recordingSession';
+import { Button } from '../Button';
 
 function formatElapsed(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -39,6 +40,7 @@ export function RecordingIndicator() {
       {state.status === 'recording' && (
         <>
           <span className="recording-indicator-dot" aria-hidden="true" />
+          <span className="recording-indicator-label">Recording</span>
           <span className="recording-indicator-time">
             {formatElapsed(nowMs - (state.startedAt ?? nowMs))}
           </span>
@@ -53,30 +55,30 @@ export function RecordingIndicator() {
         <span className="recording-indicator-message">{state.message}</span>
       )}
       {state.status === 'recording' && (
-        <button
-          type="button"
-          className="btn btn-danger btn-sm"
+        <Button
+          variant="danger"
+          size="sm"
           onClick={() => void recordingSession.stop()}
         >
           Stop
-        </button>
+        </Button>
       )}
       {state.status === 'error' && (
         <>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => recordingSession.downloadFailedRecording()}
           >
             Download recording
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => recordingSession.dismiss()}
           >
             Dismiss
-          </button>
+          </Button>
         </>
       )}
     </div>

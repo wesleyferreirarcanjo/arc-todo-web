@@ -87,6 +87,11 @@
   --transition-base: 0.22s ease;
   --icon-nav: 1.25rem;
   --icon-duotone-fill: 0.22;
+  --z-banner: 40;
+  --z-fab: 41;
+  --z-toast: 80;
+  --z-modal: 900;
+  --z-chat: 950;
   --criticity-low-bg: rgba(154, 166, 188, 0.16);
   --criticity-low-text: #9aa6bc;
   --criticity-medium-bg: rgba(213, 170, 99, 0.16);

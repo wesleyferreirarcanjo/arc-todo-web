@@ -57,6 +57,7 @@ function SidebarNavLink({
       to={entry.to}
       end={entry.end}
       aria-label={entry.label}
+      aria-current={active ? 'page' : undefined}
       data-tooltip={tooltip ? entry.label : undefined}
       className={() => (active ? 'sidebar-nav-link active' : 'sidebar-nav-link')}
       onClick={onNavigate}
@@ -73,6 +74,7 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
   const { color: workspaceColor } = useWorkspaceAccent();
   const location = useLocation();
   const settingsRef = useRef<HTMLDivElement>(null);
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const isMobileShell = useMediaQuery(SHELL_MOBILE_QUERY);
@@ -168,7 +170,10 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        closeSettingsMenu();
+        if (settingsOpen) {
+          closeSettingsMenu();
+          settingsTriggerRef.current?.focus();
+        }
         setCollapsedFlyout(null);
       }
     }
@@ -253,6 +258,9 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
 
   return (
     <div className={`app-shell${collapsed ? ' is-sidebar-collapsed' : ''}`}>
+      <a href="#main" className="skip-link">
+        Skip to main content
+      </a>
       <div className="app-body">
         <aside
           ref={sidebarRef}
@@ -311,9 +319,10 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
             >
               <button
                 type="button"
+                ref={settingsTriggerRef}
                 className={`sidebar-settings-trigger${isSettingsPage ? ' active' : ''}`}
                 aria-expanded={settingsOpen}
-                aria-haspopup="menu"
+                aria-controls="sidebar-settings-menu"
                 aria-label="Settings"
                 data-tooltip={collapsed ? 'Settings' : undefined}
                 onClick={() => {
@@ -326,12 +335,11 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
               </button>
 
               {settingsOpen ? (
-                <div className="sidebar-settings-menu" role="menu">
+                <div className="sidebar-settings-menu" id="sidebar-settings-menu">
                   <p className="sidebar-settings-category">AI</p>
                   <NavLink
                     to="/settings/chatbot"
                     end
-                    role="menuitem"
                     className={({ isActive }) =>
                       isActive
                         ? 'sidebar-settings-menu-item active'
@@ -344,7 +352,6 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
                   </NavLink>
                   <NavLink
                     to="/settings/chatbot/testing"
-                    role="menuitem"
                     className={({ isActive }) =>
                       isActive
                         ? 'sidebar-settings-menu-item sidebar-settings-submenu-item active'
@@ -356,7 +363,6 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
                   </NavLink>
                   <NavLink
                     to="/settings/mcp-tools"
-                    role="menuitem"
                     className={({ isActive }) =>
                       isActive
                         ? 'sidebar-settings-menu-item active'
@@ -370,7 +376,6 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
                   <p className="sidebar-settings-category">System</p>
                   <NavLink
                     to="/settings/storage"
-                    role="menuitem"
                     className={({ isActive }) =>
                       isActive
                         ? 'sidebar-settings-menu-item active'
@@ -383,7 +388,6 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
                   </NavLink>
                   <NavLink
                     to="/settings/seo"
-                    role="menuitem"
                     className={({ isActive }) =>
                       isActive
                         ? 'sidebar-settings-menu-item active'
@@ -422,7 +426,11 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
                 key={isBoardShell ? 'board-shell' : 'page-shell'}
               >
                 <OfflineBanner />
-                <main className={`app-main${isBoardShell ? ' is-board-page' : ''}`}>
+                <main
+                  id="main"
+                  tabIndex={-1}
+                  className={`app-main${isBoardShell ? ' is-board-page' : ''}`}
+                >
                   <Outlet />
                 </main>
               </div>

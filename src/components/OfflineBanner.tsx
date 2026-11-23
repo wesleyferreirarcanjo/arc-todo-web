@@ -1,8 +1,8 @@
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
 
 export function OfflineBanner() {
-  const { offline, dismiss } = useOfflineStatus();
-  if (!offline) return null;
+  const { offline, dismissed, dismiss } = useOfflineStatus();
+  if (!offline || dismissed) return null;
 
   return (
     <div className="offline-banner" role="status">
