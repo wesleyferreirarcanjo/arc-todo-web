@@ -94,4 +94,20 @@ describe('NameSessionRow', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('moves menu focus with arrows and returns it on Escape', async () => {
+    const user = userEvent.setup();
+    renderRow();
+    const trigger = screen.getByRole('button', { name: 'Session actions' });
+
+    await user.click(trigger);
+    expect(screen.getByRole('menuitem', { name: 'Rename' })).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(screen.getByRole('menuitem', { name: 'Rename' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
 });

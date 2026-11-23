@@ -612,7 +612,7 @@ export function NameSessionPage() {
   if (forbidden) {
     return (
       <div className="page-shell">
-        <h2>Names</h2>
+        <h1>Names</h1>
         <ErrorAlert code="ERR-ARC-NAME-29">
           You do not have access to this naming session.
         </ErrorAlert>
@@ -685,7 +685,7 @@ export function NameSessionPage() {
               ← Names
             </Link>
           </div>
-          <h2>{session?.title ?? 'Name session'}</h2>
+          <h1>{session?.title ?? 'Name session'}</h1>
           {session && !briefEditing && (
             <div className="names-session-meta">
               {pickName ? (
@@ -707,6 +707,7 @@ export function NameSessionPage() {
                 <span>Working name</span>
                 <input
                   value={session.title}
+                  autoComplete="off"
                   onChange={(event) =>
                     setSession({ ...session, title: event.target.value })
                   }

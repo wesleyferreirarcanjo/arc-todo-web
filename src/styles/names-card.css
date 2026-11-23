@@ -153,8 +153,10 @@
   cursor: pointer;
 }
 
-.names-card-links .names-text-link:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .names-card-links .names-text-link:hover {
+    text-decoration: underline;
+  }
 }
 
 .names-card-group {

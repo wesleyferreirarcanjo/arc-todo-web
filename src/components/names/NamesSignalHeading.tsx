@@ -5,7 +5,7 @@ export function NamesSignalHeading({ id }: { id: NameSignalId }) {
   const copy = SIGNAL_COPY[id];
   return (
     <div className="names-signal-heading">
-      <h5 className="names-brief-label">{copy.name}</h5>
+      <p className="names-brief-label">{copy.name}</p>
       <InfoPopover label={copy.name}>
         <p>{copy.howToRead}</p>
         <p>{copy.honestLimit}</p>

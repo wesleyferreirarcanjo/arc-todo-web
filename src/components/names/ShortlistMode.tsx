@@ -473,7 +473,7 @@ export function ShortlistMode(props: {
             />
           )}
           <div className="names-shortlist-heading">
-            <h3>Team finalists</h3>
+            <h2>Team finalists</h2>
             <span>
               {promotedCount} / {TEAM_SHORTLIST_CAP}
             </span>

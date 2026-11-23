@@ -143,7 +143,7 @@ describe('CandidateCard verdict, evidence, judgment', () => {
     ).toBe(true);
 
     await user.type(
-      screen.getByRole('textbox', { name: 'How you heard the spelling' }),
+      screen.getByRole('textbox', { name: 'Heard spelling for Nova' }),
       'Nova',
     );
     await user.click(screen.getByRole('button', { name: 'Save heard spelling' }));

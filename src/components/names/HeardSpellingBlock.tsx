@@ -22,7 +22,7 @@ export function HeardSpellingBlock(props: {
 
   return (
     <div className="names-card-block">
-      <h5 className="names-brief-label">Heard spelling</h5>
+      <p className="names-brief-label">Heard spelling</p>
       <div className="names-inline">
         <button
           type="button"
@@ -46,9 +46,10 @@ export function HeardSpellingBlock(props: {
         )}
         <input
           placeholder="How you heard the spelling"
+          autoComplete="off"
           value={heard}
           onChange={(event) => setHeard(event.target.value)}
-          aria-label="How you heard the spelling"
+          aria-label={`Heard spelling for ${candidate.name}`}
         />
         <button
           type="button"
@@ -68,7 +69,7 @@ export function HeardSpellingBlock(props: {
         </button>
         {spoken.pt.flags.includes('heard_mismatch') && (
           <span>
-            Heard spelling does not match — strongest negative for this kept
+            Heard spelling does not match. Strongest negative for this kept
             name.
           </span>
         )}

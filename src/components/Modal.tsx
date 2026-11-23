@@ -50,7 +50,6 @@ export function Modal({
   const instanceIdRef = useRef(Symbol('modal'));
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const scatterRafRef = useRef<number | null>(null);
-  const restoreFocusRef = useRef<Element | null>(null);
   onCloseRef.current = onClose;
 
   // Track the last element focused while closed: content autofocus runs before

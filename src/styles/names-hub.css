@@ -88,9 +88,11 @@
   );
 }
 
-.names-session-row:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-card);
+@media (hover: hover) and (pointer: fine) {
+  .names-session-row:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-card);
+  }
 }
 
 .names-session-row-main {
@@ -173,10 +175,16 @@
   cursor: pointer;
 }
 
-.names-session-kebab:hover,
 .names-session-kebab[aria-expanded='true'] {
   border-color: var(--border-strong);
   color: var(--text-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .names-session-kebab:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
 }
 
 .names-session-kebab-icon {
@@ -210,8 +218,14 @@
   cursor: pointer;
 }
 
-.names-session-menu button:hover {
+.names-session-menu button:focus-visible {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .names-session-menu button:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
 }
 
 @media (hover: none) {

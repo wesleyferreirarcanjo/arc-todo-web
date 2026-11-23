@@ -103,7 +103,7 @@ describe('Names hub Filters and rail (#arc-688)', () => {
 
     const filters = screen.getByRole('button', { name: 'Filters' });
     expect(filters).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByLabelText('Filter name sessions by title')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Search name sessions by title')).not.toBeInTheDocument();
     expect(document.getElementById('board-chrome-panel')).not.toBeInTheDocument();
   });
 
@@ -135,7 +135,7 @@ describe('Names hub Filters and rail (#arc-688)', () => {
       'aria-expanded',
       'true',
     );
-    expect(screen.getByLabelText('Filter name sessions by title')).toHaveValue('Project');
+    expect(screen.getByLabelText('Search name sessions by title')).toHaveValue('Project');
     expect(screen.getByRole('link', { name: /Project G/ })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Attached session/ })).not.toBeInTheDocument();
   });

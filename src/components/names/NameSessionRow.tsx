@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { sessionHubModeLabel, sessionHubNextAction, sessionHubProgress, sessionHubStage, sessionHubSubtitle } from '../../lib/names/hubList';
 import { MoreVerticalIcon } from '../icons';
 import type { ParticipationMode } from '../../types/name-session';
@@ -68,6 +68,7 @@ export function NameSessionRow(props: {
 
   useEffect(() => {
     if (!menu) return;
+    menuRef.current?.querySelector('button')?.focus();
     function onPointerDown(event: PointerEvent) {
       const target = event.target as Node | null;
       if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) {
@@ -85,6 +86,35 @@ export function NameSessionRow(props: {
       document.removeEventListener('keydown', onKey);
     };
   }, [menu]);
+
+  function closeMenu(refocus: boolean) {
+    setMenu(null);
+    if (refocus) triggerRef.current?.focus();
+  }
+
+  function onMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const items = Array.from(
+      menuRef.current?.querySelectorAll('button') ?? [],
+    );
+    if (items.length === 0) return;
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      items[(index + 1) % items.length].focus();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      items[(index - 1 + items.length) % items.length].focus();
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      items[0].focus();
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      items[items.length - 1].focus();
+    } else if (event.key === 'Escape' || event.key === 'Tab') {
+      event.preventDefault();
+      closeMenu(true);
+    }
+  }
 
   return (
     <li
@@ -154,12 +184,16 @@ export function NameSessionRow(props: {
             role="menu"
             aria-label="Session actions"
             style={{ left: menu.x, top: menu.y }}
+            onKeyDown={onMenuKeyDown}
           >
             <button
               type="button"
               role="menuitem"
               onClick={() => {
                 setMenu(null);
+                // Focus lands on the trigger so a dialog opened by the action
+                // can return focus here when it closes.
+                triggerRef.current?.focus();
                 props.onRename();
               }}
             >
@@ -170,6 +204,7 @@ export function NameSessionRow(props: {
               role="menuitem"
               onClick={() => {
                 setMenu(null);
+                triggerRef.current?.focus();
                 props.onDelete();
               }}
             >
