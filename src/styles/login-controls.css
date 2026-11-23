@@ -254,6 +254,10 @@ textarea {
 }
 
 @media (hover: none) {
+  .login-card .btn {
+    min-height: 2.75rem;
+  }
+
   .checkbox-field {
     padding: 0.8rem 0.75rem;
     min-height: 3rem;
@@ -535,14 +539,16 @@ textarea {
   box-shadow: var(--shadow-soft);
 }
 
-.btn-primary:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent-secondary) 72%, transparent);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent) 88%, white) 0%,
-    color-mix(in srgb, var(--accent-secondary) 88%, white) 100%
-  );
-  box-shadow: var(--shadow-card);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent-secondary) 72%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 88%, white) 0%,
+      color-mix(in srgb, var(--accent-secondary) 88%, white) 100%
+    );
+    box-shadow: var(--shadow-card);
+  }
 }
 
 .btn-primary:active:not(:disabled) {
@@ -690,4 +696,10 @@ textarea {
   color: var(--text-muted);
   font-size: var(--type-body);
   font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card .btn {
+    transition: none;
+  }
 }

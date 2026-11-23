@@ -19,6 +19,13 @@ export function LoginPage() {
   const handlingRef = useRef(false);
 
   useEffect(() => {
+    document.title = 'Login · Arc Todo';
+    return () => {
+      document.title = 'Arc Todo';
+    };
+  }, []);
+
+  useEffect(() => {
     if (isAuthenticated) return;
     if (!GOOGLE_CLIENT_ID) {
       setError(catalogMessage(WEB_ERROR.GIS_MISSING));
@@ -73,12 +80,14 @@ export function LoginPage() {
         cancel_on_tap_outside: true,
       });
       buttonRef.current.innerHTML = '';
+      // GIS takes a fixed pixel width; clamp to the card so the button fits 320px viewports.
+      const hostWidth = buttonRef.current.clientWidth;
       window.google.accounts.id.renderButton(buttonRef.current, {
         theme: 'outline',
         size: 'large',
         text: 'signin_with',
         shape: 'rectangular',
-        width: 320,
+        width: Math.min(320, hostWidth > 0 ? hostWidth : 320),
       });
     }
 
@@ -138,7 +147,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page">
+    <main className="login-page">
       <div className="login-card notranslate" translate="no">
         <BrandMarkIcon className="arc-icon login-mark" />
         <h1>Arc Todo</h1>
@@ -161,6 +170,6 @@ export function LoginPage() {
           style={loading ? { pointerEvents: 'none' } : undefined}
         />
       </div>
-    </div>
+    </main>
   );
 }

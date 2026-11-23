@@ -33,6 +33,27 @@ describe('ConnectMachinePage', () => {
     ).toThrow(/expected link/);
   });
 
+  it('exposes a main landmark, names the view, and focuses Connect', () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          `/connect-machine?state=${state}&code_challenge=${challenge}`,
+        ]}
+      >
+        <ConnectMachinePage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Connect this machine' }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Connect this machine · Arc Todo');
+    expect(
+      screen.getByRole('button', { name: 'Connect this machine' }),
+    ).toHaveFocus();
+  });
+
   it('asks before handing off only the callback', async () => {
     const user = userEvent.setup();
     const assign = vi.fn();

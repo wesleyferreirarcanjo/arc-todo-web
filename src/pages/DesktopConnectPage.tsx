@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { BrandMarkIcon } from '../components/icons';
@@ -41,6 +41,19 @@ export function DesktopConnectPage() {
     ready ? null : 'This Arc IDE connection link is incomplete. Start it again from Arc IDE.',
   );
   const [busy, setBusy] = useState(false);
+  const continueRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    document.title = 'Connect Arc IDE · Arc Todo';
+    return () => {
+      document.title = 'Arc Todo';
+    };
+  }, []);
+
+  // Disabled-while-busy drops focus to body; a retryable error hands it back.
+  useEffect(() => {
+    if (error && ready) continueRef.current?.focus();
+  }, [error, ready]);
 
   async function continueToIde() {
     setBusy(true);
@@ -57,7 +70,7 @@ export function DesktopConnectPage() {
   }
 
   return (
-    <div className="login-page">
+    <main className="login-page">
       <div className="login-card">
         <BrandMarkIcon className="arc-icon login-mark" />
         <h1>Connect Arc IDE</h1>
@@ -73,14 +86,17 @@ export function DesktopConnectPage() {
           </p>
         ) : null}
         <button
+          ref={continueRef}
           className="btn btn-primary"
           type="button"
+          autoFocus={ready}
+          aria-busy={busy}
           disabled={!ready || busy}
           onClick={() => void continueToIde()}
         >
           Continue to Arc IDE
         </button>
       </div>
-    </div>
+    </main>
   );
 }
