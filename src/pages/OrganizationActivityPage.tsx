@@ -11,6 +11,7 @@ import {
   useWorkspaceAccent,
 } from '../components/WorkspaceChrome';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useDocumentChrome } from '../hooks/useDocumentChrome';
 import type { UserActivityEntry } from '../types/activity';
 
 function formatTimestamp(value: string): string {
@@ -18,6 +19,7 @@ function formatTimestamp(value: string): string {
 }
 
 export function OrganizationActivityPage() {
+  useDocumentChrome('Activity');
   const { orgId } = useParams();
   const { currentOrganization } = useWorkspace();
   const { color } = useWorkspaceAccent();
@@ -86,7 +88,7 @@ export function OrganizationActivityPage() {
   return (
     <div className="page-shell" style={entityAccentStyle(color)}>
       <header className={`page-header${color ? ' has-accent' : ''}`}>
-        <h2>{currentOrganization?.name ?? 'Organization'} activity</h2>
+        <h1>{currentOrganization?.name ?? 'Organization'} activity</h1>
         <div className="page-links">
           <Link to={`/organizations/${orgId}`} className="text-link">
             Back to projects
@@ -123,7 +125,7 @@ export function OrganizationActivityPage() {
       {!loading && !error && filterMiss && (
         <div className="diagrams-empty">
           <p className="status-message" role="status">
-            No activity matches these filters. {activity.length} matching.
+            No activity matches this user.
           </p>
           <button
             type="button"

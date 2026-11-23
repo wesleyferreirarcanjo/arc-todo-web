@@ -7,6 +7,9 @@ import { WEB_ERROR } from '../lib/errors/messages';
 const refreshProjects = vi.hoisted(() => vi.fn());
 const fetchUsers = vi.hoisted(() => vi.fn());
 const authState = vi.hoisted(() => ({ isAdmin: false }));
+const workspaceState = vi.hoisted(() => ({
+  projectsError: null as string | null,
+}));
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
@@ -43,6 +46,7 @@ vi.mock('../context/WorkspaceContext', () => ({
     currentProject: null,
     loadingOrganizations: false,
     loadingProjects: false,
+    projectsError: workspaceState.projectsError,
     refreshOrganizations: vi.fn(async () => undefined),
     refreshProjects,
   }),
@@ -72,22 +76,26 @@ describe('OrganizationProjectsPage', () => {
   afterEach(() => {
     cleanup();
     authState.isAdmin = false;
+    workspaceState.projectsError = null;
     refreshProjects.mockReset();
     fetchUsers.mockReset();
   });
 
-  it('stays on the page with an alert when refreshProjects rejects', async () => {
-    refreshProjects.mockRejectedValue({ message: 'Internal Server Error' });
+  it('stays on the page with an alert when projects fail to load', () => {
+    workspaceState.projectsError =
+      "Couldn't load this organization. Check your connection and try again.";
     fetchUsers.mockResolvedValue([]);
 
     renderPage();
 
-    const alert = await screen.findByRole('alert');
+    const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(
       "Couldn't load this organization. Check your connection and try again.",
     );
     expect(alert).toHaveAttribute('data-error-code', WEB_ERROR.LOAD);
-    expect(screen.getByRole('heading', { name: 'Acme' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Acme' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Organizations hub')).not.toBeInTheDocument();
   });
 
@@ -104,7 +112,9 @@ describe('OrganizationProjectsPage', () => {
     expect(alert).toHaveTextContent(
       "Couldn't load users. Check your connection and try again.",
     );
-    expect(screen.getByRole('heading', { name: 'Acme' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Acme' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Organizations hub')).not.toBeInTheDocument();
   });
 });

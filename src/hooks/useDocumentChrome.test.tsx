@@ -26,6 +26,11 @@ function Probe() {
   return null;
 }
 
+function TitledProbe() {
+  useDocumentChrome('Organizations');
+  return null;
+}
+
 function favicon() {
   return document.head.querySelector<HTMLLinkElement>(
     'link[rel="icon"][data-arc-todo-chrome="1"]',
@@ -42,6 +47,28 @@ describe('useDocumentChrome favicon', () => {
     workspace.currentProject = null;
     document.title = '';
     favicon()?.remove();
+  });
+
+  it('prefixes the workspace title with the view title and resets on unmount', () => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/organizations']}>
+        <TitledProbe />
+      </MemoryRouter>,
+    );
+    expect(document.title).toBe('Organizations · Arc Todo');
+
+    unmount();
+    expect(document.title).toBe('Arc Todo');
+  });
+
+  it('keeps the view title when a second caller has none', () => {
+    render(
+      <MemoryRouter initialEntries={['/organizations']}>
+        <TitledProbe />
+        <Probe />
+      </MemoryRouter>,
+    );
+    expect(document.title).toBe('Organizations · Arc Todo');
   });
 
   it('uses the brand mark when no workspace is focused', () => {

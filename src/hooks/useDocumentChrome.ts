@@ -37,20 +37,41 @@ function buildTitle(
   return DEFAULT_TITLE;
 }
 
-/** Keeps document.title + favicon in sync with board filters or route workspace. */
-export function useDocumentChrome(): void {
+// Layout and the active page both call this hook. The page passes its view
+// title; every caller recomputes from this shared value so whichever effect
+// runs last writes the same document.title.
+let activeViewTitle: string | null = null;
+
+/**
+ * Keeps document.title + favicon in sync with board filters or route workspace.
+ * Pages pass `viewTitle` (e.g. "Organizations") so the tab names the view.
+ */
+export function useDocumentChrome(viewTitle?: string): void {
   const { color, projectId, orgName, projectName } = useWorkspaceAccent();
 
-  const title = buildTitle(projectName, orgName, Boolean(projectId));
   const faviconHref = color ? brandMarkFaviconHref(color) : MARK_FAVICON_HREF;
 
   useEffect(() => {
-    document.title = title;
+    if (viewTitle !== undefined) {
+      activeViewTitle = viewTitle;
+    }
+    const base = buildTitle(projectName, orgName, Boolean(projectId));
+    document.title = activeViewTitle ? `${activeViewTitle} · ${base}` : base;
     ensureFaviconLink().href = faviconHref;
-  }, [title, faviconHref]);
+
+    return () => {
+      if (viewTitle !== undefined && activeViewTitle === viewTitle) {
+        activeViewTitle = null;
+        document.title = buildTitle(projectName, orgName, Boolean(projectId));
+      }
+    };
+  }, [viewTitle, projectName, orgName, projectId, faviconHref]);
 
   useEffect(() => {
     return () => {
+      if (viewTitle !== undefined && activeViewTitle === viewTitle) {
+        activeViewTitle = null;
+      }
       document.title = DEFAULT_TITLE;
       ensureFaviconLink().href = MARK_FAVICON_HREF;
     };

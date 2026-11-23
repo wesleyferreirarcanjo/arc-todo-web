@@ -115,7 +115,9 @@ describe('OrganizationActivityPage', () => {
         screen.getByRole('button', { name: 'Clear filters' }),
       ).toBeInTheDocument();
     });
-    expect(screen.getByRole('status')).toHaveTextContent(/0 matching/);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'No activity matches this user.',
+    );
     expect(screen.queryByText(EMPTY_CATALOG)).not.toBeInTheDocument();
   });
 });

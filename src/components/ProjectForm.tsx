@@ -69,7 +69,7 @@ export function ProjectForm({ onSubmit }: ProjectFormProps) {
 
   return (
     <form className="entity-form" onSubmit={handleSubmit}>
-      <h3>New project</h3>
+      <h2>New project</h2>
       {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <label>

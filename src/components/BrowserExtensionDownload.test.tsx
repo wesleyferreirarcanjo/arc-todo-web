@@ -35,13 +35,13 @@ describe('BrowserExtensionDownload', () => {
     expect(firefox).toHaveAttribute('download');
 
     expect(
-      screen.getByText(/Atualizar/),
+      screen.getByText(/use Update/),
     ).toHaveTextContent(/pick that unzipped folder the first time/i);
 
     expect(
       screen.getByText(/about:debugging/i),
     ).toHaveTextContent(
-      'No Firefox, abra about:debugging, Este Firefox, Carregar extensão temporária, e escolha o arquivo. A extensão some ao fechar o Firefox até haver uma versão assinada.',
+      'In Firefox, open about:debugging, select This Firefox, then Load Temporary Add-on, and choose the file. The extension is removed when Firefox closes until a signed version exists.',
     );
 
     await waitFor(() => {
