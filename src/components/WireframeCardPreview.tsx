@@ -139,14 +139,17 @@ export function WireframeCardPreview({
             <span>
               {current?.name || 'Page'} ({index + 1}/{pageCount})
             </span>
-            <div className="wireframe-preview-dots" role="tablist">
+            <div
+              className="wireframe-preview-dots"
+              role="group"
+              aria-label="Wireframe pages"
+            >
               {pages.map((page, pageIndex) => (
                 <button
                   key={`${page.name}-${pageIndex}`}
                   type="button"
-                  role="tab"
-                  aria-label={page.name}
-                  aria-selected={pageIndex === index}
+                  aria-label={`Show ${page.name || `page ${pageIndex + 1}`}`}
+                  aria-current={pageIndex === index ? 'true' : undefined}
                   className={
                     pageIndex === index
                       ? 'wireframe-preview-dot is-active'

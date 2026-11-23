@@ -35,10 +35,13 @@ export function Modal({
   const { base, reducedMotion } = useMotionTransition();
   const onCloseRef = useRef(onClose);
   const scatterRafRef = useRef<number | null>(null);
+  const restoreFocusRef = useRef<Element | null>(null);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
+
+    restoreFocusRef.current = document.activeElement;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -52,6 +55,11 @@ export function Modal({
     return () => {
       releaseBodyScrollLock();
       document.removeEventListener('keydown', handleKeyDown);
+      const trigger = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      if (trigger instanceof HTMLElement && document.contains(trigger)) {
+        trigger.focus();
+      }
     };
   }, [open]);
 

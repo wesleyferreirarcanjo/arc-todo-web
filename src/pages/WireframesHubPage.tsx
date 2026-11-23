@@ -357,7 +357,7 @@ export function WireframesHubPage() {
   return (
     <div className="page-shell diagrams-hub-page">
       <header className="page-header">
-        <h2>Wireframes</h2>
+        <h1>Wireframes</h1>
       </header>
 
       {loading && <p className="status-message">Loading wireframes...</p>}
