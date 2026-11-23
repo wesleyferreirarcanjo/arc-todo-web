@@ -10,6 +10,18 @@ import { useMotionTransition } from '../lib/motion/useMotionTransition';
 import { clearScatterPointer, setScatterPointer } from '../lib/ui/scatterLights';
 import { EntityScatterLights } from './EntityScatterLights';
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+/** Open dialogs in mount order; only the topmost handles Escape/Tab (nested modals). */
+const openModalStack: symbol[] = [];
+
+function visibleFocusable(dialog: HTMLElement): HTMLElement[] {
+  return Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => element.getClientRects().length > 0,
+  );
+}
+
 interface ModalProps {
   open: boolean;
   onClose: () => void;
@@ -35,14 +47,55 @@ export function Modal({
   const { base, reducedMotion } = useMotionTransition();
   const onCloseRef = useRef(onClose);
   const scatterRafRef = useRef<number | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const instanceIdRef = useRef(Symbol('modal'));
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
 
+    const id = instanceIdRef.current;
+    openModalStack.push(id);
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    // Move focus inside unless a child already claimed it (e.g. autoFocus).
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.contains(document.activeElement)) {
+      const target = visibleFocusable(dialog)[0] ?? dialog;
+      target.focus({ preventScroll: true });
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
+      if (openModalStack[openModalStack.length - 1] !== id) return;
+
       if (event.key === 'Escape') {
         onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const dialogElement = dialogRef.current;
+      if (!dialogElement) return;
+
+      const focusables = visibleFocusable(dialogElement);
+      if (focusables.length === 0) {
+        event.preventDefault();
+        dialogElement.focus();
+        return;
+      }
+
+      const active = document.activeElement;
+      const inside = active instanceof Node && dialogElement.contains(active);
+      if (event.shiftKey) {
+        if (!inside || active === focusables[0]) {
+          event.preventDefault();
+          focusables[focusables.length - 1].focus();
+        }
+      } else if (!inside || active === focusables[focusables.length - 1]) {
+        event.preventDefault();
+        focusables[0].focus();
       }
     }
 
@@ -50,8 +103,20 @@ export function Modal({
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      const index = openModalStack.indexOf(id);
+      if (index !== -1) openModalStack.splice(index, 1);
       releaseBodyScrollLock();
       document.removeEventListener('keydown', handleKeyDown);
+
+      // Return focus to the trigger; never let it fall back to body.
+      const restoreTarget = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      const focusWasInside =
+        dialogRef.current?.contains(document.activeElement) ??
+        document.activeElement === document.body;
+      if (restoreTarget?.isConnected && focusWasInside) {
+        restoreTarget.focus({ preventScroll: true });
+      }
     };
   }, [open]);
 
@@ -101,6 +166,7 @@ export function Modal({
           transition={base}
         >
           <motion.div
+            ref={dialogRef}
             className={[
               'modal',
               className,
@@ -116,6 +182,7 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
             onPointerMove={accentColor ? handleScatterPointerMove : undefined}
             onPointerLeave={accentColor ? handleScatterPointerLeave : undefined}

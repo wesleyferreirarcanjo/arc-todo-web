@@ -81,10 +81,12 @@
     background var(--transition-fast), transform var(--transition-fast);
 }
 
-.modal-close:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
-  color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .modal-close:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+    color: var(--text-primary);
+  }
 }
 
 .modal-close:active {
@@ -99,6 +101,32 @@
   gap: 1rem;
   position: relative;
   z-index: 1;
+}
+
+/* Small screens: dialogs become bottom sheets. */
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0;
+    place-items: end stretch;
+  }
+
+  .modal,
+  .modal.has-accent {
+    width: 100%;
+    max-height: 92dvh;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+  }
 }
 
 .modal.has-accent {
@@ -408,9 +436,11 @@
   cursor: pointer;
 }
 
-.board-column-visibility-item:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
-  border-color: var(--border);
+@media (hover: hover) and (pointer: fine) {
+  .board-column-visibility-item:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+    border-color: var(--border);
+  }
 }
 
 .board-column-visibility-item:disabled {
@@ -480,9 +510,11 @@
   outline-offset: -2px;
 }
 
-.board-view-toggle-btn:hover:not(.is-active) {
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+@media (hover: hover) and (pointer: fine) {
+  .board-view-toggle-btn:hover:not(.is-active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+  }
 }
 
 .board-view-toggle-btn.is-active {
@@ -492,14 +524,22 @@
   box-shadow: var(--shadow-soft), 0 0 14px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
-.board-view-toggle-btn:first-child:hover:not(.is-active),
 .board-view-toggle-btn:first-child.is-active {
   border-radius: 24px 0 0 8px;
 }
 
-.board-view-toggle-btn:last-child:hover:not(.is-active),
 .board-view-toggle-btn:last-child.is-active {
   border-radius: 0 8px 24px 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .board-view-toggle-btn:first-child:hover:not(.is-active) {
+    border-radius: 24px 0 0 8px;
+  }
+
+  .board-view-toggle-btn:last-child:hover:not(.is-active) {
+    border-radius: 0 8px 24px 0;
+  }
 }
 
 .board-view-toggle-btn:has(+ .board-view-toggle-btn.is-active),
@@ -591,16 +631,20 @@
   border-bottom: none;
 }
 
-.task-list-row:hover {
-  background: color-mix(in srgb, var(--accent) 7%, var(--bg-surface));
+@media (hover: hover) and (pointer: fine) {
+  .task-list-row:hover {
+    background: color-mix(in srgb, var(--accent) 7%, var(--bg-surface));
+  }
 }
 
 .task-list-row.is-subtask {
   background: color-mix(in srgb, var(--bg-elevated) 35%, transparent);
 }
 
-.task-list-row.is-subtask:hover {
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+@media (hover: hover) and (pointer: fine) {
+  .task-list-row.is-subtask:hover {
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+  }
 }
 
 .task-list-row.is-subtask .task-list-col-title {
@@ -831,10 +875,16 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.task-import-export-item:hover:not(:disabled),
 .task-import-export-item:focus-visible {
   background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
   outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .task-import-export-item:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--bg-surface) 82%, var(--accent) 18%);
+    outline: none;
+  }
 }
 
 .task-import-export-item:disabled {

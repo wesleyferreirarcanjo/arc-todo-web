@@ -253,6 +253,9 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
 
   return (
     <div className={`app-shell${collapsed ? ' is-sidebar-collapsed' : ''}`}>
+      <a className="skip-link" href="#app-main">
+        Skip to main content
+      </a>
       <div className="app-body">
         <aside
           ref={sidebarRef}
@@ -422,7 +425,11 @@ export function Layout({ tightPage = false }: { tightPage?: boolean }) {
                 key={isBoardShell ? 'board-shell' : 'page-shell'}
               >
                 <OfflineBanner />
-                <main className={`app-main${isBoardShell ? ' is-board-page' : ''}`}>
+                <main
+                  id="app-main"
+                  tabIndex={-1}
+                  className={`app-main${isBoardShell ? ' is-board-page' : ''}`}
+                >
                   <Outlet />
                 </main>
               </div>
