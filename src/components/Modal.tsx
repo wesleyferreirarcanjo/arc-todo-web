@@ -46,18 +46,35 @@ export function Modal({
 }: ModalProps) {
   const { base, reducedMotion } = useMotionTransition();
   const onCloseRef = useRef(onClose);
-  const scatterRafRef = useRef<number | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const instanceIdRef = useRef(Symbol('modal'));
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const scatterRafRef = useRef<number | null>(null);
   onCloseRef.current = onClose;
+
+  // Track the last element focused while closed: content autofocus runs before
+  // the open effect, so document.activeElement can no longer name the trigger.
+  useEffect(() => {
+    if (open) return;
+    function trackFocus(event: FocusEvent) {
+      if (!(event.target instanceof HTMLElement)) return;
+      // Autofocus inside the panel fires before the closed-tracker detaches
+      // (and before dialogRef attaches), so sniff the dialog role instead.
+      if (event.target.closest('[role="dialog"]')) return;
+      restoreFocusRef.current = event.target;
+    }
+    document.addEventListener('focusin', trackFocus);
+    return () => document.removeEventListener('focusin', trackFocus);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
     const id = instanceIdRef.current;
     openModalStack.push(id);
-    restoreFocusRef.current =
+    // The focusin tracker already recorded the trigger; only fall back to
+    // activeElement when nothing was tracked (e.g. opened programmatically).
+    restoreFocusRef.current ??=
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     // Move focus inside unless a child already claimed it (e.g. autoFocus).

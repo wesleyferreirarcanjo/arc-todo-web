@@ -45,3 +45,18 @@ describe('diagram editor board-standard polish (#arc-667)', () => {
     expect(page).toContain("{saveStatus === 'saving' ? 'Saving...' : 'Save'}");
   });
 });
+
+describe('diagram editor standalone shell UI floor (#arc-765)', () => {
+  it('uses a main landmark, one h1, and a view-named document title', () => {
+    expect(page).toContain('<main className="diagram-editor-page">');
+    expect(page).toContain('<h1 className="sr-only">Diagram editor</h1>');
+    expect(page).toContain("useDocumentChrome(title.trim() || 'Diagram')");
+    expect(page).not.toContain('<h2>');
+  });
+
+  it('keeps the back control and a busy-aware Save in the header', () => {
+    expect(page).toContain('← Diagrams');
+    expect(page).toContain("aria-busy={saveStatus === 'saving'}");
+    expect(page).toContain('aria-label="Diagram title"');
+  });
+});

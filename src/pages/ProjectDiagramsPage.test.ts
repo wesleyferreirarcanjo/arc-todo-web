@@ -6,6 +6,16 @@ import { describe, expect, it } from 'vitest';
 const here = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(resolve(here, 'ProjectDiagramsPage.tsx'), 'utf8');
 
+describe('project diagrams UI floor (#arc-765)', () => {
+  it('names the view with one h1, including the forbidden state', () => {
+    expect(page).toContain('<h1>{currentProject?.name ?? \'Project\'} diagrams</h1>');
+    const forbiddenStart = page.indexOf('if (forbidden)');
+    const forbidden = page.slice(forbiddenStart, page.indexOf('\n  return (', forbiddenStart));
+    expect(forbidden).toContain('<h1>Diagrams</h1>');
+    expect(page).not.toContain('<h2>');
+  });
+});
+
 describe('project diagrams list (#arc-665)', () => {
   it('puts has-accent on list cards', () => {
     expect(page).toContain('className="diagram-card entity-card has-accent"');

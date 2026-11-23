@@ -76,9 +76,11 @@
   );
 }
 
-.diagram-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-card);
+@media (hover: hover) and (pointer: fine) {
+  .diagram-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-card);
+  }
 }
 
 .diagram-card-preview-link {
@@ -246,8 +248,10 @@
   text-decoration: none;
 }
 
-.diagram-card-title a:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .diagram-card-title a:hover {
+    color: var(--accent);
+  }
 }
 
 .diagram-card-meta {
