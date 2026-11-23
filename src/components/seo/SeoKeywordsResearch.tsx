@@ -156,7 +156,7 @@ export function SeoKeywordsResearch({
           disabled={saving}
           onClick={() => void handleFindKeywords()}
         >
-          Find keywords
+          {saving ? 'Saving...' : 'Find keywords'}
         </button>
         <button
           type="button"
@@ -164,7 +164,7 @@ export function SeoKeywordsResearch({
           disabled={saving}
           onClick={() => void handleNameThisOffering()}
         >
-          Name this offering
+          {saving ? 'Creating...' : 'Name this offering'}
         </button>
       </div>
     </div>

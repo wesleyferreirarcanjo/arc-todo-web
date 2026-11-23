@@ -53,6 +53,14 @@ describe('SEO hub, workspace, and settings (#arc-392)', () => {
   });
 });
 
+describe('SEO hub UI floor (#arc-769)', () => {
+  it('uses one h1 and labels the create selects', () => {
+    expect(hub).toContain('<h1>SEO</h1>');
+    expect(hub).toContain('aria-label="Organization"');
+    expect(hub).toContain('aria-label="Project"');
+  });
+});
+
 describe('SEO hub board standard (#arc-695)', () => {
   it('puts New SEO site in Filters, not the page header', () => {
     expect(hub).toContain('PageFiltersToolbar');

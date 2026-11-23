@@ -214,7 +214,7 @@ export function SeoHubPage() {
   return (
     <div className="page-shell seo-hub-page">
       <header className="page-header">
-        <h2>SEO</h2>
+        <h1>SEO</h1>
       </header>
 
       {loading && <p className="status-message">Loading SEO sites...</p>}
@@ -230,7 +230,7 @@ export function SeoHubPage() {
               'No SEO sites yet. Add a public site address to run an audit.'
             ) : (
               <>
-                Join an organization, then add a site — or{' '}
+                Join an organization to add a site, or{' '}
                 <Link to="/organizations" className="text-link">
                   open a project
                 </Link>{' '}
@@ -280,13 +280,13 @@ export function SeoHubPage() {
                     style={{ '--entity-accent': getProjectColor(item.project) } as CSSProperties}
                   >
                     <div className="names-session-row-main">
-                      <h3 className="names-session-row-title">
+                      <h2 className="names-session-row-title">
                         <Link
                           to={`/organizations/${item.org.id}/projects/${item.project.id}/seo/${item.site.id}`}
                         >
                           {item.site.title || item.site.hostname}
                         </Link>
-                      </h3>
+                      </h2>
                       <p className="names-session-row-subtitle">{item.site.hostname}</p>
                       <p className="names-session-row-meta">
                         {item.org.name} · {item.project.name}
@@ -320,6 +320,7 @@ export function SeoHubPage() {
           <div className="form-field">
             <span>Organization</span>
             <Select
+              aria-label="Organization"
               value={createOrgId}
               onChange={(value) => {
                 setCreateOrgId(value);
@@ -334,6 +335,7 @@ export function SeoHubPage() {
           <div className="form-field">
             <span>Project</span>
             <Select
+              aria-label="Project"
               value={createProjectId}
               onChange={setCreateProjectId}
               disabled={!createOrgId}

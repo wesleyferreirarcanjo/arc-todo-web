@@ -48,6 +48,13 @@ const KEYWORD_SEGMENT_LABELS: Record<KeywordSegment, string> = {
   gsc: 'Search Console',
 };
 
+const AUDIT_STATUS_LABELS: Record<string, string> = {
+  queued: 'Queued',
+  running: 'Running',
+  complete: 'Complete',
+  failed: 'Failed',
+};
+
 function isKeywordSegment(value: string | null): value is KeywordSegment {
   return value != null && (KEYWORD_SEGMENTS as readonly string[]).includes(value);
 }
@@ -324,7 +331,7 @@ export function SeoSitePage() {
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>SEO</h2>
+          <h1>SEO</h1>
           <p className="page-subtitle">
             You do not have access to this project&apos;s SEO workspace.
           </p>
@@ -355,7 +362,7 @@ export function SeoSitePage() {
       >
         <div>
           <WorkspaceEyebrow />
-          <h2>{site?.title || site?.hostname || currentProject?.name || 'SEO'}</h2>
+          <h1>{site?.title || site?.hostname || currentProject?.name || 'SEO'}</h1>
           <p className="page-subtitle">{site?.hostname}</p>
           <div className="page-links">
             <Link
@@ -406,18 +413,18 @@ export function SeoSitePage() {
                   </span>
                   <p className="status-message">
                     No audit yet. Run audit to crawl this address with Arc Todo&apos;s
-                    own crawler — no paid SEO key.
+                    own crawler. No paid SEO key needed.
                   </p>
                 </div>
               )}
               {audit && (
                 <>
                   <p className="page-subtitle">
-                    Status: {audit.status}
-                    {audit.errorMessage ? ` — ${audit.errorMessage}` : ''}
+                    Status: {AUDIT_STATUS_LABELS[audit.status] ?? audit.status}
+                    {audit.errorMessage ? `. ${audit.errorMessage}` : ''}
                   </p>
                   {audit.status === 'complete' && <SeoFindings audit={audit} />}
-                  <h3>Pages</h3>
+                  <h2>Pages</h2>
                   {audit.pages.length === 0 ? (
                     <p className="status-message">
                       {auditBusy
@@ -456,7 +463,7 @@ export function SeoSitePage() {
                       </table>
                     </div>
                   )}
-                  <h3>Robots and sitemap</h3>
+                  <h2>Robots and sitemap</h2>
                   <p className="page-subtitle">
                     Sitemap URLs:{' '}
                     {audit.sitemapUrls.length
@@ -468,12 +475,11 @@ export function SeoSitePage() {
                   ) : (
                     <p className="status-message">No robots.txt captured.</p>
                   )}
-                  <h3>Performance</h3>
+                  <h2>Performance</h2>
                   {audit.lighthouse ? (
                     audit.lighthouse.errorCode ? (
                       <p className="status-message">
-                        Performance report unavailable ({audit.lighthouse.errorCode}
-                        ).
+                        Performance report unavailable for this run.
                       </p>
                     ) : (
                       <ul className="seo-metrics">

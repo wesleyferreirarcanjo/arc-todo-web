@@ -135,6 +135,7 @@ describe('SeoSitePage URL tabs and poll errors', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByRole('button', { name: 'Run audit' });
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Example');
 
     await user.click(screen.getByRole('button', { name: 'Keywords' }));
     await waitFor(() => {
@@ -168,6 +169,7 @@ describe('SeoSitePage URL tabs and poll errors', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     renderPage();
     await screen.findByRole('button', { name: 'Running audit...' });
+    expect(screen.getByText('Status: Running')).toBeInTheDocument();
     await vi.advanceTimersByTimeAsync(2000);
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "Couldn't load this audit. Check your connection and try again.",

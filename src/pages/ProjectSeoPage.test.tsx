@@ -65,6 +65,7 @@ describe('ProjectSeoPage board standard (#arc-698)', () => {
     renderPage('/organizations/org-1/projects/proj-1/seo');
 
     const alert = await screen.findByRole('alert');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('SEO');
     expect(alert).toHaveAttribute('data-error-code', 'ERR-ARC-ACL-02');
     expect(alert).toHaveTextContent(catalogMessage('ERR-ARC-ACL-02'));
     expect(screen.getByRole('link', { name: 'Back to organizations' })).toHaveAttribute(
@@ -79,6 +80,7 @@ describe('ProjectSeoPage board standard (#arc-698)', () => {
     renderPage('/organizations/org-1/projects/proj-1/seo?q=no-such-site');
 
     const toggle = await screen.findByRole('button', { name: 'Filters' });
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Demo SEO');
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('region', { name: 'Filters' })).not.toBeInTheDocument();
 

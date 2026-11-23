@@ -11,6 +11,7 @@
   gap: 0.35rem;
 }
 
+.names-session-page > .page-header h1,
 .names-session-page > .page-header h2 {
   margin-bottom: 0.15rem;
 }
