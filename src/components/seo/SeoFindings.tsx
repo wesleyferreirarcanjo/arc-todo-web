@@ -45,7 +45,7 @@ export function SeoFindings({ audit }: { audit: SeoAudit }) {
 
   return (
     <section className="seo-findings">
-      <h3>Findings</h3>
+      <h2>Findings</h2>
       <nav className="names-stepper" aria-label="Findings">
         {BUCKETS.map((bucket) => {
           const count = findings.filter((item) => item.bucket === bucket).length;
@@ -97,18 +97,18 @@ export function SeoFindings({ audit }: { audit: SeoAudit }) {
                 </button>
                 {open && (
                   <div id={panelId} className="seo-finding-panel">
-                    <h4>Why it matters</h4>
+                    <h3>Why it matters</h3>
                     <p>{finding.why}</p>
-                    <h4>How to fix</h4>
+                    <h3>How to fix</h3>
                     <p>{finding.fix}</p>
                     {finding.note ? <p>{finding.note}</p> : null}
                     {shown.length > 0 && (
                       <>
-                        <h4>Affected pages</h4>
+                        <h3>Affected pages</h3>
                         <ul>
                           {shown.map((item) => (
                             <li key={`${item.url}-${item.detail}`}>
-                              {item.url} — {item.detail}
+                              {item.url}: {item.detail}
                             </li>
                           ))}
                         </ul>
@@ -124,7 +124,7 @@ export function SeoFindings({ audit }: { audit: SeoAudit }) {
       )}
       {audit.siteProbe?.addressVariants && (
         <>
-          <h4>Address redirects</h4>
+          <h3>Address redirects</h3>
           <div className="seo-table-wrap">
             <table className="seo-table">
               <thead>

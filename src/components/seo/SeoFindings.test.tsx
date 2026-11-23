@@ -115,7 +115,7 @@ describe('SeoFindings', () => {
     expect(row).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('heading', { name: 'Why it matters' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'How to fix' })).toBeInTheDocument();
-    expect(screen.getByText(/https:\/\/example.com\/about — missing/)).toBeInTheDocument();
+    expect(screen.getByText(/https:\/\/example.com\/about: missing/)).toBeInTheDocument();
 
     expect(screen.getByRole('heading', { name: 'Address redirects' })).toBeInTheDocument();
     expect(screen.getByText('Yes')).toBeInTheDocument();

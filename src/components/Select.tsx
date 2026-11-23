@@ -24,6 +24,7 @@ interface SelectProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  'aria-label'?: string;
 }
 
 const MENU_GAP_PX = 6;
@@ -38,6 +39,7 @@ export function Select({
   disabled = false,
   className,
   id,
+  'aria-label': ariaLabel,
 }: SelectProps) {
   const { fast } = useMotionTransition();
   const generatedId = useId();
@@ -163,6 +165,7 @@ export function Select({
           type="button"
           className="select-trigger"
           disabled={disabled}
+          aria-label={ariaLabel}
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}

@@ -131,7 +131,7 @@ export function ProjectSeoPage() {
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>SEO</h2>
+          <h1>SEO</h1>
           <ErrorAlert code={FORBIDDEN_CODE}>
             {catalogMessage(FORBIDDEN_CODE)}
           </ErrorAlert>
@@ -184,7 +184,7 @@ export function ProjectSeoPage() {
     >
       <header className={`page-header${currentProject ? ' has-accent' : ''}`}>
         <WorkspaceEyebrow />
-        <h2>{currentProject?.name ?? 'Project'} SEO</h2>
+        <h1>{currentProject?.name ?? 'Project'} SEO</h1>
         <div className="page-links">
           <Link
             to={projectTasksHref(orgId, projectId)}
@@ -285,13 +285,13 @@ export function ProjectSeoPage() {
                 }
               >
                 <div className="names-session-row-main">
-                  <h3 className="names-session-row-title">
+                  <h2 className="names-session-row-title">
                     <Link
                       to={`/organizations/${orgId}/projects/${projectId}/seo/${site.id}`}
                     >
                       {site.title || site.hostname}
                     </Link>
-                  </h3>
+                  </h2>
                   <p className="names-session-row-subtitle">{site.hostname}</p>
                   <p className="names-session-row-meta">
                     {site.gscConnected
