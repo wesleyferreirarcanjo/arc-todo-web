@@ -116,6 +116,17 @@ describe('LoginPage SSO 401', () => {
     });
   });
 
+  it('exposes a main landmark and names the view in the document title', () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(document.title).toBe('Login · Arc Todo');
+  });
+
   it('does not advertise the extension download', async () => {
     render(
       <MemoryRouter>

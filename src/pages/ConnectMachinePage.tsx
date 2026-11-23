@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorAlert } from '../components/ErrorAlert';
 import { BrandMarkIcon } from '../components/icons';
@@ -47,6 +47,19 @@ export function ConnectMachinePage() {
   );
   const [errorCode, setErrorCode] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
+  const continueRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    document.title = 'Connect this machine · Arc Todo';
+    return () => {
+      document.title = 'Arc Todo';
+    };
+  }, []);
+
+  // Disabled-while-busy drops focus to body; a retryable error hands it back.
+  useEffect(() => {
+    if (error && ready) continueRef.current?.focus();
+  }, [error, ready]);
 
   async function continueToMachine() {
     setBusy(true);
@@ -76,7 +89,7 @@ export function ConnectMachinePage() {
   }
 
   return (
-    <div className="login-page">
+    <main className="login-page">
       <div className="login-card">
         <BrandMarkIcon className="arc-icon login-mark" />
         <h1>Connect this machine</h1>
@@ -91,14 +104,17 @@ export function ConnectMachinePage() {
           </p>
         ) : null}
         <button
+          ref={continueRef}
           className="btn btn-primary"
           type="button"
+          autoFocus={ready}
+          aria-busy={busy}
           disabled={!ready || busy}
           onClick={() => void continueToMachine()}
         >
           {busy ? 'Connecting…' : 'Connect this machine'}
         </button>
       </div>
-    </div>
+    </main>
   );
 }

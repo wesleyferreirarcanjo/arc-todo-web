@@ -38,6 +38,23 @@ describe('DesktopConnectPage', () => {
     );
   });
 
+  it('exposes a main landmark, names the view, and focuses Continue', () => {
+    render(
+      <MemoryRouter initialEntries={[`/desktop/connect?state=${state}&code_challenge=${challenge}`]}>
+        <DesktopConnectPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Connect Arc IDE' }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Connect Arc IDE · Arc Todo');
+    expect(
+      screen.getByRole('button', { name: 'Continue to Arc IDE' }),
+    ).toHaveFocus();
+  });
+
   it('asks before opening Arc IDE and hands off only the callback', async () => {
     const user = userEvent.setup();
     const assign = vi.fn();

@@ -254,6 +254,10 @@ textarea {
 }
 
 @media (hover: none) {
+  .login-card .btn {
+    min-height: 2.75rem;
+  }
+
   .checkbox-field {
     padding: 0.8rem 0.75rem;
     min-height: 3rem;
@@ -698,4 +702,10 @@ textarea {
   color: var(--text-muted);
   font-size: var(--type-body);
   font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card .btn {
+    transition: none;
+  }
 }
