@@ -19,7 +19,7 @@ vi.mock('../context/WorkspaceContext', () => ({
   useWorkspace: () => workspace,
 }));
 
-import { useDocumentChrome } from './useDocumentChrome';
+import { useDocumentChrome, usePageTitle } from './useDocumentChrome';
 
 function Probe() {
   useDocumentChrome();
@@ -28,6 +28,11 @@ function Probe() {
 
 function TitledProbe() {
   useDocumentChrome('Organizations');
+  return null;
+}
+
+function PageTitleProbe() {
+  usePageTitle('Videos');
   return null;
 }
 
@@ -94,5 +99,20 @@ describe('useDocumentChrome favicon', () => {
     expect(svg).toContain('fill="#c45c26"');
     expect(svg).toContain('stroke="#000000"');
     expect(svg).toContain('M9.5 16.4 12 8.6l2.5 7.8');
+  });
+});
+
+describe('usePageTitle', () => {
+  afterEach(() => {
+    document.title = '';
+  });
+
+  it('names the view in document.title on standalone routes (no provider)', () => {
+    render(
+      <MemoryRouter initialEntries={['/videos']}>
+        <PageTitleProbe />
+      </MemoryRouter>,
+    );
+    expect(document.title).toBe('Videos · Arc Todo');
   });
 });

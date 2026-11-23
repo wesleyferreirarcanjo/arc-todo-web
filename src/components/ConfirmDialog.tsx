@@ -41,12 +41,12 @@ export function ConfirmDialog({
           autoFocus={variant !== 'danger'}
           onClick={onConfirm}
         >
-          {loading ? 'Working...' : confirmLabel}
+          {loading ? 'Working…' : confirmLabel}
         </Button>
         <Button
           variant="secondary"
           disabled={loading}
-          autoFocus
+          autoFocus={variant === 'danger'}
           onClick={onCancel}
         >
           {cancelLabel}

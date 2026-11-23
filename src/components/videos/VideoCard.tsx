@@ -1,5 +1,5 @@
-import type { CSSProperties, MouseEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import type { CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import { VideosIcon } from '../icons';
 import type { ProjectVideoSummary } from '../../types/video';
 
@@ -20,7 +20,7 @@ function formatUpdatedAt(value: string): string {
 }
 
 function formatBadgeLabel(label: string): string {
-  return label.length > 18 ? `${label.slice(0, 18)}...` : label;
+  return label.length > 18 ? `${label.slice(0, 18)}…` : label;
 }
 
 interface VideoCardProps {
@@ -46,13 +46,6 @@ export function VideoCard({
   onDelete,
   onDownloadExport,
 }: VideoCardProps) {
-  const navigate = useNavigate();
-
-  function handleCardClick(event: MouseEvent<HTMLLIElement>) {
-    if ((event.target as HTMLElement).closest('a, button')) return;
-    navigate(editorPath);
-  }
-
   return (
     <li
       className={`diagram-card diagram-card--video entity-card${accentColor ? ' has-accent' : ''}`}
@@ -61,7 +54,6 @@ export function VideoCard({
           ? ({ '--entity-accent': accentColor } as CSSProperties)
           : undefined
       }
-      onClick={handleCardClick}
     >
       <Link
         to={editorPath}
@@ -132,7 +124,7 @@ export function VideoCard({
               disabled={downloadingExport}
               onClick={onDownloadExport}
             >
-              {downloadingExport ? 'Downloading...' : 'Download export'}
+              {downloadingExport ? 'Downloading…' : 'Download export'}
             </button>
           )}
         </div>

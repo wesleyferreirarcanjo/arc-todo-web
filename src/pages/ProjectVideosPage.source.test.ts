@@ -16,6 +16,12 @@ describe('project videos list board standard (#arc-691)', () => {
     expect(page).toContain('getProjectColor(currentProject)');
   });
 
+  it('names the view with one h1 and a document title', () => {
+    expect(page).toContain('usePageTitle(');
+    expect(page).toContain('<h1>');
+    expect(page).not.toContain('<h2>');
+  });
+
   it('uses Filters toolbar, filter-miss status, forbidden code, and deferred delete', () => {
     expect(page).toContain('PageFiltersToolbar');
     expect(page).toContain('role="status"');

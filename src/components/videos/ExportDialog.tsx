@@ -213,7 +213,7 @@ export function ExportDialog({
             <span style={{ width: `${progressPct}%` }} />
           </div>
           <p className="status-message">
-            Exporting... {progressPct}% — keep this tab open while exporting.
+            Exporting… {progressPct}%. Keep this tab open.
           </p>
           <div className="hub-actions">
             <button
@@ -250,7 +250,7 @@ export function ExportDialog({
               aria-busy={saving}
               onClick={() => void handleSave()}
             >
-              {saving ? 'Saving...' : saved ? 'Saved' : 'Save to project'}
+              {saving ? 'Saving…' : saved ? 'Saved' : 'Save to project'}
             </button>
             <button
               type="button"

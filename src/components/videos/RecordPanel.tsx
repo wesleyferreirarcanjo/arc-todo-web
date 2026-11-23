@@ -69,26 +69,32 @@ export function RecordPanel({ previousFrame, onCancel }: RecordPanelProps) {
         Record your screen, then trim, zoom, and export the result.
       </p>
       <div className="record-panel-options">
-        {supportsThisTab && (
+        <div
+          className="record-panel-source"
+          role="radiogroup"
+          aria-label="Recording source"
+        >
+          {supportsThisTab && (
+            <label className="record-panel-option">
+              <input
+                type="radio"
+                name="record-source"
+                checked={source === 'this-tab'}
+                onChange={() => setSource('this-tab')}
+              />
+              This tab
+            </label>
+          )}
           <label className="record-panel-option">
             <input
               type="radio"
               name="record-source"
-              checked={source === 'this-tab'}
-              onChange={() => setSource('this-tab')}
+              checked={source === 'other'}
+              onChange={() => setSource('other')}
             />
-            This tab
+            Screen or window
           </label>
-        )}
-        <label className="record-panel-option">
-          <input
-            type="radio"
-            name="record-source"
-            checked={source === 'other'}
-            onChange={() => setSource('other')}
-          />
-          Screen or window
-        </label>
+        </div>
         <label className="record-panel-option">
           <input
             type="checkbox"

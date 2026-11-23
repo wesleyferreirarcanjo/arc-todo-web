@@ -11,6 +11,7 @@ import { FramePanel } from '../components/videos/FramePanel';
 import { ExportDialog } from '../components/videos/ExportDialog';
 import { ApiError } from '../lib/api/client';
 import { recordingSession } from '../lib/videos/recordingSession';
+import { usePageTitle } from '../hooks/useDocumentChrome';
 import {
   downloadProjectVideoFile,
   fetchProjectVideo,
@@ -100,6 +101,7 @@ export function ProjectVideoEditorPage({
   const { orgId, projectId, videoId } = useParams();
   const [video, setVideo] = useState<ProjectVideo | null>(null);
   const [title, setTitle] = useState('');
+  usePageTitle(title.trim() ? title.trim() : 'Video editor');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [missing, setMissing] = useState<string | null>(null);
@@ -538,7 +540,7 @@ export function ProjectVideoEditorPage({
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>Videos</h2>
+          <h1>Videos</h1>
           <ErrorAlert code="ERR-ARC-ACL-02">
             You do not have access to this project. Ask an administrator to add
             you.
@@ -557,7 +559,7 @@ export function ProjectVideoEditorPage({
     return (
       <div className="page-shell">
         <header className="page-header">
-          <h2>Videos</h2>
+          <h1>Videos</h1>
           <p className="page-subtitle">{missing}</p>
           <div className="page-links">
             <Link to={listPath} className="text-link">
@@ -579,6 +581,7 @@ export function ProjectVideoEditorPage({
 
   return (
     <div className="diagram-editor-page video-editor-page">
+      <h1 className="sr-only">Video editor</h1>
       <header className="diagram-editor-header">
         <div className="diagram-editor-header-main">
           <Link to={listPath} className="text-link">
@@ -644,7 +647,7 @@ export function ProjectVideoEditorPage({
         </div>
       </header>
 
-      {loading && <p className="status-message">Loading video...</p>}
+      {loading && <p className="status-message">Loading video…</p>}
       {error && <ErrorAlert>{error}</ErrorAlert>}
       {saveStatus === 'error' && (
         <ErrorAlert code={WEB_ERROR.SAVE}>

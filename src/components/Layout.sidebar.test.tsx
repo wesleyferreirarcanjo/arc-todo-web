@@ -16,9 +16,11 @@ const workspace = vi.hoisted(() => ({
   currentProject: null as { id: string; name: string; color: string } | null,
 }));
 
-vi.mock('../hooks/useDocumentChrome', () => ({
-  useDocumentChrome: () => undefined,
-}));
+vi.mock('../hooks/useDocumentChrome', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../hooks/useDocumentChrome')>();
+  return { ...actual, useDocumentChrome: () => undefined };
+});
 
 vi.mock('../hooks/useMediaQuery', () => ({
   SHELL_MOBILE_QUERY: '(max-width: 1023px)',

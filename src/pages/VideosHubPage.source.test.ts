@@ -39,6 +39,12 @@ describe('videos hub board standard (#arc-689)', () => {
     expect(page).toContain('New video');
   });
 
+  it('names the view with one h1 and a document title', () => {
+    expect(page).toContain("usePageTitle('Videos')");
+    expect(page).toContain('<h1>Videos</h1>');
+    expect(page).not.toContain('<h2>Videos</h2>');
+  });
+
   it('uses Filters toolbar, filter-miss status, error codes, and deferred delete', () => {
     expect(page).toContain('PageFiltersToolbar');
     expect(page).not.toContain('diagrams-hub-filters');
