@@ -16,6 +16,12 @@
   }
 }
 
+@media (hover: none) {
+  .settings-page-tab {
+    min-height: 2.75rem;
+  }
+}
+
 .chatbot-testing-page {
   display: grid;
   gap: 1rem;
@@ -93,8 +99,15 @@
   margin-bottom: 0.5rem;
 }
 
-.chatbot-testing-result-header h3 {
+.chatbot-testing-result-header h2 {
   margin: 0;
+  font-size: var(--type-section);
+}
+
+.chatbot-testing-status-card h2,
+.chatbot-testing-results-card > h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--type-section);
 }
 
 .chatbot-testing-request-summary {
@@ -105,7 +118,7 @@
   margin-top: 1rem;
 }
 
-.chatbot-testing-result-section h4 {
+.chatbot-testing-result-section h3 {
   margin: 0 0 0.5rem;
   font-size: 0.8rem;
   font-weight: 700;
@@ -165,8 +178,9 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.chatbot-testing-error-card h3 {
+.chatbot-testing-error-card h2 {
   margin: 0 0 0.5rem;
+  font-size: var(--type-section);
   color: var(--danger-text);
 }
 
@@ -182,8 +196,9 @@
   gap: 1rem;
 }
 
-.chatbot-testing-saved-header h3 {
+.chatbot-testing-saved-header h2 {
   margin: 0;
+  font-size: var(--type-section);
 }
 
 .chatbot-testing-saved-grid {

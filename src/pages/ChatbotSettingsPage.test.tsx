@@ -71,6 +71,23 @@ describe('ChatbotSettingsPage alerts', () => {
     expect(document.querySelector('.form-error')).not.toBeInTheDocument();
   });
 
+  it('validates on submit, keeps input, and marks the invalid field', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const providerInput = await screen.findByLabelText('Provider');
+    await user.clear(providerInput);
+    await user.click(screen.getByRole('button', { name: 'Save settings' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Enter a provider.',
+    );
+    expect(providerInput).toHaveAttribute('aria-invalid', 'true');
+    expect(providerInput).toHaveFocus();
+    expect(updateChatbotSettings).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Model')).toHaveValue('deepseek-chat');
+  });
+
   it('announces a save with role=status', async () => {
     const user = userEvent.setup();
     renderPage();

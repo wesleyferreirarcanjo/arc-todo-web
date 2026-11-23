@@ -350,6 +350,11 @@
   margin-bottom: 0.75rem;
 }
 
+.settings-group-header h2 {
+  margin: 0;
+  font-size: var(--type-section);
+}
+
 .settings-tool-list {
   display: grid;
   gap: 0.75rem;
@@ -374,6 +379,49 @@
   align-items: center;
   gap: 0.5rem;
   white-space: nowrap;
+}
+
+.toggle-row input[type='checkbox'] {
+  width: 2.4rem;
+  height: 1.5rem;
+  margin: 0;
+  appearance: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background:
+    radial-gradient(circle at 0.6rem 50%, var(--text-muted) 0.32rem, transparent 0.34rem),
+    var(--bg-elevated);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.toggle-row input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background:
+    radial-gradient(circle at calc(100% - 0.6rem) 50%, var(--accent-contrast) 0.32rem, transparent 0.34rem),
+    var(--accent);
+}
+
+.toggle-row input[type='checkbox']:indeterminate {
+  border-color: var(--accent);
+  background:
+    radial-gradient(circle at 50% 50%, var(--accent) 0.32rem, transparent 0.34rem),
+    var(--bg-elevated);
+}
+
+.toggle-row input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.toggle-row input[type='checkbox']:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.toggle-row:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .tool-key {
@@ -1132,9 +1180,13 @@
   gap: 0.35rem;
 }
 
-.settings-section-header h3,
+.settings-section-header h2,
 .settings-section-header p {
   margin: 0;
+}
+
+.settings-section-header h2 {
+  font-size: var(--type-section);
 }
 
 .settings-section-header p {

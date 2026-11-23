@@ -698,9 +698,11 @@ button.sidebar-nav-link {
   outline-offset: -2px;
 }
 
-.settings-page-tab:hover:not(.active) {
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+@media (hover: hover) and (pointer: fine) {
+  .settings-page-tab:hover:not(.active) {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+  }
 }
 
 .settings-page-tab.active {
@@ -715,10 +717,12 @@ button.sidebar-nav-link {
   border-right-color: transparent;
 }
 
-.settings-page-tab.active:hover {
-  color: var(--accent-contrast);
-  background: var(--gradient-accent);
-  box-shadow: var(--shadow-lift), 0 0 16px color-mix(in srgb, var(--accent-secondary) 30%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .settings-page-tab.active:hover {
+    color: var(--accent-contrast);
+    background: var(--gradient-accent);
+    box-shadow: var(--shadow-lift), 0 0 16px color-mix(in srgb, var(--accent-secondary) 30%, transparent);
+  }
 }
 
 .settings-page-tab:first-child:hover:not(.active),
@@ -884,6 +888,7 @@ button.sidebar-nav-link {
   flex-shrink: 0;
 }
 
+.page-header h1,
 .page-header h2 {
   font-family: var(--font-display);
   font-size: var(--type-page);

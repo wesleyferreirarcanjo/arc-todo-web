@@ -66,7 +66,7 @@ const SCENARIOS: TestScenario[] = [
       {
         role: 'assistant',
         content:
-          'Understood — login bug is critical for enterprise customers with a Friday deadline.',
+          'Understood. Login bug is critical for enterprise customers with a Friday deadline.',
       },
       {
         role: 'user',
@@ -218,7 +218,7 @@ function ConfigStatusCard({ settings }: { settings: ChatbotSettings | null }) {
   if (!settings) {
     return (
       <div className="notice-card chatbot-testing-status-card">
-        <h3>Chatbot status</h3>
+        <h2>Chatbot status</h2>
         <p className="subtitle">Settings unavailable.</p>
       </div>
     );
@@ -232,7 +232,7 @@ function ConfigStatusCard({ settings }: { settings: ChatbotSettings | null }) {
   return (
     <div className="notice-card chatbot-testing-status-card">
       <div className="chatbot-testing-status-header">
-        <h3>Chatbot status</h3>
+        <h2>Chatbot status</h2>
         <span
           className={`chatbot-testing-status-badge status-${
             settings.enabled && settings.hasApiKey ? 'completed' : 'failed'
@@ -284,7 +284,7 @@ function ResultCard({ result }: { result: RunResult }) {
     <div className="notice-card chatbot-testing-results-card">
       <div className="chatbot-testing-result-header">
         <div>
-          <h3>Run result</h3>
+          <h2>Run result</h2>
           <p className="subtitle">
             Scenario: {result.scenarioLabel} · Mode: {result.mode} ·{' '}
             {formatMs(result.elapsedMs)}
@@ -329,14 +329,14 @@ function ResultCard({ result }: { result: RunResult }) {
       </p>
 
       <section className="chatbot-testing-result-section">
-        <h4>Assistant response</h4>
+        <h3>Assistant response</h3>
         <p className="chatbot-testing-response-text">
           {result.response || '(empty response)'}
         </p>
       </section>
 
       <section className="chatbot-testing-result-section">
-        <h4>Used tools</h4>
+        <h3>Used tools</h3>
         {result.usedTools.length === 0 ? (
           <p className="subtitle">No tools reported.</p>
         ) : (
@@ -351,7 +351,7 @@ function ResultCard({ result }: { result: RunResult }) {
       </section>
 
       <section className="chatbot-testing-result-section">
-        <h4>Request payload</h4>
+        <h3>Request payload</h3>
         <pre className="chatbot-testing-json">
           {JSON.stringify(redactSecrets(result.request), null, 2)}
         </pre>
@@ -372,7 +372,7 @@ function SavedRunCard({
   const deferred = useDeferredDelete(() => onDelete(run.id));
 
   return (
-    <article className="settings-section-card chatbot-testing-saved-card" tabIndex={0}>
+    <article className="settings-section-card chatbot-testing-saved-card">
       <div className="task-context-badges chatbot-testing-saved-badges">
         <div className="task-context-badges-main">
           <span className="task-badge">{run.mode}</span>
@@ -417,7 +417,7 @@ function SavedRunCard({
       <ConfirmDialog
         open={deferred.confirmOpen}
         title="Delete saved run"
-        description="Delete this saved test run?"
+        description="Delete this saved test run? This cannot be undone."
         confirmLabel="Delete"
         variant="danger"
         onConfirm={deferred.confirm}
@@ -450,7 +450,7 @@ function SavedRunCards({
     <section className="notice-card chatbot-testing-saved-section">
       <div className="chatbot-testing-saved-header">
         <div>
-          <h3>Saved test runs</h3>
+          <h2>Saved test runs</h2>
           <p className="subtitle">
             Successful tests are saved locally as review cards for quick comparison.
           </p>
@@ -484,7 +484,7 @@ function SavedRunCards({
       <ConfirmDialog
         open={deferredClear.confirmOpen}
         title="Clear saved runs"
-        description="Clear all saved test runs?"
+        description="Clear all saved test runs? This cannot be undone."
         confirmLabel="Clear"
         variant="danger"
         onConfirm={deferredClear.confirm}
@@ -522,7 +522,7 @@ export function ChatbotTestingPage() {
   const [errorCode, setErrorCode] = useState<string | undefined>();
   const [rawError, setRawError] = useState<string | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
-  const [savedRuns, setSavedRuns] = useState<RunResult[]>([]);
+  const [savedRuns, setSavedRuns] = useState<RunResult[]>(() => loadSavedRuns());
 
   const selectedScenario = useMemo(
     () => SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? SCENARIOS[0],
@@ -554,14 +554,6 @@ export function ChatbotTestingPage() {
   useEffect(() => {
     void loadInitial();
   }, [loadInitial]);
-
-  useEffect(() => {
-    setSavedRuns(loadSavedRuns());
-  }, []);
-
-  useEffect(() => {
-    setFinalPrompt(selectedScenario.finalPrompt);
-  }, [selectedScenario]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -599,6 +591,14 @@ export function ChatbotTestingPage() {
       cancelled = true;
     };
   }, [conversationId]);
+
+  function handleScenarioChange(id: string) {
+    setScenarioId(id);
+    const next = SCENARIOS.find((scenario) => scenario.id === id);
+    if (next) {
+      setFinalPrompt(next.finalPrompt);
+    }
+  }
 
   function buildRequest(prompt: string): ChatRequest {
     const priorMessages = loadedConversation
@@ -651,7 +651,13 @@ export function ChatbotTestingPage() {
 
   async function handleRun(event: React.FormEvent) {
     event.preventDefault();
-    if (!finalPrompt.trim() || running) {
+    if (running) {
+      return;
+    }
+    if (!finalPrompt.trim()) {
+      setError('Enter a final prompt before running the test.');
+      setErrorCode(undefined);
+      document.getElementById('chatbot-testing-final-prompt')?.focus();
       return;
     }
 
@@ -751,7 +757,9 @@ export function ChatbotTestingPage() {
 
       {error ? <ErrorAlert code={errorCode}>{error}</ErrorAlert> : null}
       {loading ? (
-        <p className="status-message">Loading chatbot testing console...</p>
+        <p className="status-message" role="status">
+          Loading chatbot testing console...
+        </p>
       ) : null}
 
       {!loading ? (
@@ -764,7 +772,7 @@ export function ChatbotTestingPage() {
           >
             <section className="settings-section-card">
               <div className="settings-section-header">
-                <h3>Test setup</h3>
+                <h2>Test setup</h2>
                 <p>
                   Choose a predefined scenario or load an existing conversation, then
                   run with streaming or synchronous mode.
@@ -776,7 +784,7 @@ export function ChatbotTestingPage() {
                   <Select
                     value={scenarioId}
                     disabled={Boolean(conversationId)}
-                    onChange={setScenarioId}
+                    onChange={handleScenarioChange}
                     options={SCENARIOS.map((scenario) => ({
                       value: scenario.id,
                       label: scenario.label,
@@ -811,6 +819,7 @@ export function ChatbotTestingPage() {
                 <label className="form-field setting-field-wide">
                   <span>Final user prompt</span>
                   <textarea
+                    id="chatbot-testing-final-prompt"
                     rows={3}
                     value={finalPrompt}
                     onChange={(event) => setFinalPrompt(event.target.value)}
@@ -822,7 +831,7 @@ export function ChatbotTestingPage() {
 
             <section className="settings-section-card">
               <div className="settings-section-header">
-                <h3>Context preview</h3>
+                <h2>Context preview</h2>
                 <p>
                   {conversationId
                     ? loadingConversation
@@ -846,7 +855,7 @@ export function ChatbotTestingPage() {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={running || !finalPrompt.trim() || loadingConversation}
+                disabled={running || loadingConversation}
               >
                 {running
                   ? useStreaming
@@ -866,7 +875,7 @@ export function ChatbotTestingPage() {
 
           {running && useStreaming && streamingText ? (
             <div className="notice-card chatbot-testing-results-card">
-              <h3>Streaming output</h3>
+              <h2>Streaming output</h2>
               <p className="chatbot-testing-response-text">{streamingText}</p>
             </div>
           ) : null}
@@ -875,7 +884,7 @@ export function ChatbotTestingPage() {
 
           {rawError ? (
             <div className="notice-card chatbot-testing-error-card">
-              <h3>Error details</h3>
+              <h2>Error details</h2>
               <pre className="chatbot-testing-json">{rawError}</pre>
             </div>
           ) : null}

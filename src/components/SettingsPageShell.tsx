@@ -21,7 +21,7 @@ export function SettingsPageShell({
         }
       >
         <div>
-          <h2>{title}</h2>
+          <h1>{title}</h1>
           <p className="page-subtitle">{subtitle}</p>
         </div>
         {actions}

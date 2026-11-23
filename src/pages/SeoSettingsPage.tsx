@@ -62,9 +62,18 @@ export function SeoSettingsPage() {
       <ChatbotSettingsNav />
 
       {loading ? (
-        <p className="status-message">Loading SEO settings...</p>
+        <p className="status-message" role="status">
+          Loading SEO settings...
+        </p>
       ) : (
-        <div className="seo-settings-form">
+        <form
+          className="seo-settings-form"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave();
+          }}
+        >
           <label className="form-field">
             <span>Max pages per audit</span>
             <input
@@ -72,6 +81,7 @@ export function SeoSettingsPage() {
               min={1}
               max={2000}
               value={maxPages}
+              aria-invalid={Boolean(errorCode)}
               onChange={(event) => setMaxPages(event.target.value)}
             />
           </label>
@@ -83,10 +93,9 @@ export function SeoSettingsPage() {
           )}
           <div className="hub-actions">
             <button
-              type="button"
+              type="submit"
               className="btn btn-primary"
               disabled={saving}
-              onClick={() => void handleSave()}
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
@@ -94,7 +103,7 @@ export function SeoSettingsPage() {
           <p className="page-subtitle">
             Crawl limits apply to every project. Secrets are never shown.
           </p>
-        </div>
+        </form>
       )}
     </SettingsPageShell>
   );
